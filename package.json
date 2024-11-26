@@ -34,6 +34,7 @@
     "@ionic/angular": "^8.0.0",
     "@ionic/storage": "^4.0.0",
     "@ionic/storage-angular": "^4.0.0",
+    "dotenv": "^16.4.5",
     "firebase": "^10.14.1",
     "ionicons": "^7.2.1",
     "rxjs": "~7.8.0",

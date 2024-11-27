@@ -19,9 +19,6 @@ import { provideAuth, getAuth } from '@angular/fire/auth';
 import { provideFirestore, getFirestore } from '@angular/fire/firestore';
 import { provideAnalytics, getAnalytics } from '@angular/fire/analytics';
 
-// import * as dotenv from 'dotenv';
-// dotenv.config();
-
 import { environment } from './environments/environment';
 
 bootstrapApplication(AppComponent, {

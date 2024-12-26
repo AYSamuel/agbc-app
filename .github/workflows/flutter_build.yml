@@ -18,7 +18,7 @@ jobs:
           channel: 'stable'
 
       - name: Install firebase_tools
-        run: pub global activate firebase_tools
+        run: flutter pub global activate firebase_tools
 
       - name: Create .env file
         run: |
@@ -32,6 +32,9 @@ jobs:
 
       - name: Get dependencies
         run: flutter pub get
+
+      - name: Add pub cache bin to PATH
+        run: echo "$HOME/.pub-cache/bin" >> $GITHUB_PATH
 
       - name: Generate firebase_options.dart
         run: flutterfire configure

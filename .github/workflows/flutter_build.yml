@@ -60,8 +60,8 @@ jobs:
       - name: Build for release (Android)
         run: flutter build apk --release
 
-      - name: Build for release (iOS)
-        run: flutter build ios --release --no-codesign
+      # - name: Build for release (iOS)
+      #   run: flutter build ios --release --no-codesign
 
       - name: Upload Android build artifact
         uses: actions/upload-artifact@v3
@@ -69,8 +69,8 @@ jobs:
           name: android-release
           path: build/app/outputs/flutter-apk/app-release.apk
 
-      - name: Upload iOS build artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: ios-release
-          path: build/ios/iphoneos/Runner.app
+      # - name: Upload iOS build artifact
+      #   uses: actions/upload-artifact@v3
+      #   with:
+      #     name: ios-release
+      #     path: build/ios/iphoneos/Runner.app

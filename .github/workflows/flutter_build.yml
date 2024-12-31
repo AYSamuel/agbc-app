@@ -35,6 +35,11 @@ jobs:
           echo "FIREBASE_IOS_APP_ID=${{ secrets.FIREBASE_IOS_APP_ID }}" >> .env
           echo "FIREBASE_ANDROID_APP_ID=${{ secrets.FIREBASE_ANDROID_APP_ID }}" >> .env
 
+      - name: Create config files
+        run: |
+          echo "${{ secrets.GOOGLE_SERVICE_INFO_PLIST_BASE64 }}" | base64 -d > ios/Runner/GoogleService-Info.plist
+          echo "${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}" | base64 -d > android/app/google-services.json
+
       - name: Get dependencies
         run: flutter pub get
 

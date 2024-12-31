@@ -20,8 +20,11 @@ jobs:
       - run: flutter pub get
       - run: flutter test
 
-      - name: Install firebase_tools
-        run: flutter pub global activate firebase_tools
+      - name: Install FlutterFire CLI
+        run: dart pub global activate flutterfire_cli
+
+      - name: Add FlutterFire to PATH
+        run: echo "$HOME/.pub-cache/bin" >> $GITHUB_PATH
 
       - name: Create .env file
         run: |
@@ -46,11 +49,8 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
-      - name: Add pub cache bin to PATH
-        run: echo "$HOME/.pub-cache/bin" >> $GITHUB_PATH
-
       - name: Generate firebase_options.dart
-        run: flutterfire configure
+        run: flutterfire configure --project=${{ secrets.FIREBASE_PROJECT_ID }} --platforms=android,ios --yes
 
       - name: Build for release (Android)
         run: flutter build apk --release

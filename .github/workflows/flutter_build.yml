@@ -19,8 +19,6 @@ jobs:
       - run: flutter --version
       - run: flutter pub get
       - run: flutter test
-      - run: flutter build apk
-      - run: flutter build appbundle
 
       - name: Install firebase_tools
         run: flutter pub global activate firebase_tools
@@ -35,10 +33,15 @@ jobs:
           echo "FIREBASE_IOS_APP_ID=${{ secrets.FIREBASE_IOS_APP_ID }}" >> .env
           echo "FIREBASE_ANDROID_APP_ID=${{ secrets.FIREBASE_ANDROID_APP_ID }}" >> .env
 
-      - name: Create config files
+      - name: Create Firebase configuration files
         run: |
-          echo "${{ secrets.GOOGLE_SERVICE_INFO_PLIST_BASE64 }}" | base64 -d > ios/Runner/GoogleService-Info.plist
           echo "${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}" | base64 -d > android/app/google-services.json
+          echo "${{ secrets.GOOGLE_SERVICE_INFO_PLIST_BASE64 }}" | base64 -d > ios/Runner/GoogleService-Info.plist
+
+      - name: Verify Firebase configuration files
+        run: |
+          ls -l android/app/google-services.json
+          ls -l ios/Runner/GoogleService-Info.plist
 
       - name: Get dependencies
         run: flutter pub get

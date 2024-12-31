@@ -39,6 +39,12 @@ jobs:
           echo "FIREBASE_IOS_APP_ID=${{ secrets.FIREBASE_IOS_APP_ID }}" >> .env
           echo "FIREBASE_ANDROID_APP_ID=${{ secrets.FIREBASE_ANDROID_APP_ID }}" >> .env
 
+      - name: Authenticate to Firebase
+        run: firebase use --token "${{ secrets.FIREBASE_TOKEN }}"
+
+      - name: Generate firebase_options.dart
+        run: flutterfire configure --project=${{ secrets.FIREBASE_PROJECT_ID }} --platforms=android,ios --yes --token "${{ secrets.FIREBASE_TOKEN }}"
+
       - name: Create Firebase configuration files
         run: |
           echo "${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}" | base64 -d > android/app/google-services.json
@@ -51,9 +57,6 @@ jobs:
 
       - name: Get dependencies
         run: flutter pub get
-
-      - name: Generate firebase_options.dart
-        run: flutterfire configure --project=${{ secrets.FIREBASE_PROJECT_ID }} --platforms=android,ios --yes
 
       - name: Build for release (Android)
         run: flutter build apk --release

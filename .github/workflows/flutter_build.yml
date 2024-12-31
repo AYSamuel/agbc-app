@@ -44,9 +44,6 @@ jobs:
         with:
           credentials_json: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}'
 
-      - name: Generate firebase_options.dart
-        run: flutterfire configure --project=${{ secrets.FIREBASE_PROJECT_ID }} --platforms=android,ios --yes
-
       - name: Create Firebase configuration files
         run: |
           echo "${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}" | base64 -d > android/app/google-services.json

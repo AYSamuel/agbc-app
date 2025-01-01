@@ -49,6 +49,9 @@ jobs:
             exit 1
           fi
 
+      - name: Run Flutter tests
+        run: flutter test
+
       - name: Authenticate to Google Cloud
         uses: 'google-github-actions/auth@v2'
         with:
@@ -66,9 +69,6 @@ jobs:
 
       - name: Get dependencies
         run: flutter pub get
-
-      - name: Run Flutter tests
-        run: flutter test
 
       - name: Build for release (Android)
         run: flutter build apk --release

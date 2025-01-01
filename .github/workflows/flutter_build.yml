@@ -39,6 +39,17 @@ jobs:
           echo "FIREBASE_IOS_APP_ID=${{ secrets.FIREBASE_IOS_APP_ID }}" >> .env
           echo "FIREBASE_ANDROID_APP_ID=${{ secrets.FIREBASE_ANDROID_APP_ID }}" >> .env
 
+      - name: Verify .env file
+        run: |
+          if [ -f .env ]; then
+            echo ".env file exists"
+            echo "File contents (keys only):"
+            grep -v '^#' .env | cut -d '=' -f1
+          else
+            echo ".env file does not exist"
+            exit 1
+          fi
+
       - name: Authenticate to Google Cloud
         uses: 'google-github-actions/auth@v2'
         with:

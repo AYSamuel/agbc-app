@@ -1,38 +1,130 @@
-// lib/models/church_model.dart
-
+/// This class handles all branch-specific data and provides methods
+/// for JSON conversion and object manipulation.
 class ChurchModel {
-  final String id; // Unique identifier for the church branch
+  // Core identification and basic information
+  final String id; // Unique identifier for the branch
   final String name; // Name of the church branch
-  final String location; // Location of the church (e.g., city)
-  final String personInCharge; // Name of the person in charge of the church
+  final String location; // City/area where the branch is located
+  final String personInCharge; // Pastor or leader in charge of this branch
 
-  // Constructor for creating an instance of ChurchModel
+  // Contact and address information
+  final String contactEmail; // Official email address for the branch
+  final String contactPhone; // Contact phone number for inquiries
+  final String address; // Complete physical address of the branch
+
+  // Administrative and operational details
+  final DateTime establishedDate; // Date when this branch was established
+  final List<String>
+      serviceSchedule; // List of regular service times (e.g., "Sunday 9:00 AM")
+  final int capacity; // Maximum seating capacity of the building
+  final bool isMainBranch; // Indicates if this is the headquarters/main branch
+
+  /// Constructor for creating a new ChurchModel instance
+  /// Required parameters ensure essential information is always provided
+  /// Optional parameters have default values to ensure null safety
   ChurchModel({
     required this.id,
     required this.name,
     required this.location,
     required this.personInCharge,
-  });
+    this.contactEmail = '', // Default empty string if not provided
+    this.contactPhone = '', // Default empty string if not provided
+    this.address = '', // Default empty string if not provided
+    DateTime? establishedDate, // Optional establishment date
+    this.serviceSchedule = const [], // Default empty list if not provided
+    this.capacity = 0, // Default capacity of 0 if not provided
+    this.isMainBranch = false, // Default to not being main branch
+  }) : establishedDate = establishedDate ??
+            DateTime.now(); // Use current date if not provided
 
-  // Factory constructor to create a ChurchModel instance from a JSON object
+  /// Factory constructor to create a ChurchModel from JSON data
+  /// Used when retrieving data from Firebase or other data sources
   factory ChurchModel.fromJson(Map<String, dynamic> json) {
     return ChurchModel(
-      id: json['id'], // Map JSON id to model property
-      name: json['name'], // Map JSON name to model property
-      location: json['location'], // Map JSON location to model property
-      personInCharge:
-          json['personInCharge'], // Map JSON personInCharge to model property
+      // Convert JSON data to appropriate types with null safety
+      id: json['id'] ?? '', // Use empty string if id is null
+      name: json['name'] ?? '', // Use empty string if name is null
+      location: json['location'] ?? '', // Use empty string if location is null
+      personInCharge: json['personInCharge'] ??
+          '', // Use empty string if personInCharge is null
+      contactEmail:
+          json['contactEmail'] ?? '', // Use empty string if email is null
+      contactPhone:
+          json['contactPhone'] ?? '', // Use empty string if phone is null
+      address: json['address'] ?? '', // Use empty string if address is null
+      // Convert ISO8601 string to DateTime, use current date if null
+      establishedDate: json['establishedDate'] != null
+          ? DateTime.parse(json['establishedDate'])
+          : null,
+      // Convert JSON array to List<String>, use empty list if null
+      serviceSchedule: List<String>.from(json['serviceSchedule'] ?? []),
+      capacity: json['capacity'] ?? 0, // Use 0 if capacity is null
+      isMainBranch:
+          json['isMainBranch'] ?? false, // Use false if isMainBranch is null
     );
   }
 
-  // Method to convert a ChurchModel instance to a JSON object
+  /// Converts the ChurchModel instance to a JSON object
+  /// Used when saving data to Firebase or other data sources
   Map<String, dynamic> toJson() {
     return {
-      'id': id, // Include id in JSON representation
-      'name': name, // Include name in JSON representation
-      'location': location, // Include location in JSON representation
-      'personInCharge':
-          personInCharge, // Include personInCharge in JSON representation
+      'id': id,
+      'name': name,
+      'location': location,
+      'personInCharge': personInCharge,
+      'contactEmail': contactEmail,
+      'contactPhone': contactPhone,
+      'address': address,
+      'establishedDate': establishedDate
+          .toIso8601String(), // Convert DateTime to ISO8601 string
+      'serviceSchedule': serviceSchedule,
+      'capacity': capacity,
+      'isMainBranch': isMainBranch,
     };
   }
+
+  /// Creates a copy of the church model with updated fields
+  /// Useful for updating specific fields while maintaining immutability
+  ChurchModel copyWith({
+    String? id,
+    String? name,
+    String? location,
+    String? personInCharge,
+    String? contactEmail,
+    String? contactPhone,
+    String? address,
+    DateTime? establishedDate,
+    List<String>? serviceSchedule,
+    int? capacity,
+    bool? isMainBranch,
+  }) {
+    return ChurchModel(
+      // Use new value if provided, otherwise use existing value
+      id: id ?? this.id,
+      name: name ?? this.name,
+      location: location ?? this.location,
+      personInCharge: personInCharge ?? this.personInCharge,
+      contactEmail: contactEmail ?? this.contactEmail,
+      contactPhone: contactPhone ?? this.contactPhone,
+      address: address ?? this.address,
+      establishedDate: establishedDate ?? this.establishedDate,
+      serviceSchedule: serviceSchedule ?? this.serviceSchedule,
+      capacity: capacity ?? this.capacity,
+      isMainBranch: isMainBranch ?? this.isMainBranch,
+    );
+  }
+
+  /// Override equality operator to compare church branches
+  /// Two churches are considered equal if they have the same ID
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ChurchModel &&
+          runtimeType == other.runtimeType &&
+          id == other.id;
+
+  /// Override hashCode to be consistent with equality operator
+  /// Uses the ID's hash code since that's what we use for equality
+  @override
+  int get hashCode => id.hashCode;
 }

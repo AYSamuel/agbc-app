@@ -1,57 +1,186 @@
-// lib/models/task_model.dart
-
+/// Handles task creation, assignment, tracking, and completion status
+/// with support for deadlines, priorities, and notifications.
 class TaskModel {
+  // Basic task information
   final String id; // Unique identifier for the task
-  final String title; // Title of the task
-  final String description; // Description of the task
-  final DateTime deadline; // Deadline for the task
-  final String assignedTo; // ID of the user to whom the task is assigned
-  final bool
-      isAccepted; // Indicates if the task has been accepted by the assignee
-  final DateTime? reminder; // Optional reminder time for the task
+  final String title; // Title/name of the task
+  final String description; // Detailed description of the task
+  final DateTime createdAt; // When the task was created
+  final String createdBy; // ID of user who created the task
 
-  // Constructor for creating an instance of TaskModel
+  // Assignment and scheduling
+  final String assignedTo; // ID of user responsible for the task
+  final DateTime deadline; // When the task needs to be completed
+  final DateTime? reminder; // Optional reminder time
+  final String? churchId; // Associated church branch (optional)
+
+  // Task status and tracking
+  final bool isAccepted; // Whether assignee has accepted the task
+  final bool isCompleted; // Whether task has been completed
+  final DateTime? completedAt; // When the task was completed
+  final String status; // Current status (pending, in_progress, completed, etc.)
+
+  // Task classification
+  final String priority; // Priority level (high, medium, low)
+  final String category; // Category (e.g., "maintenance", "ministry", "event")
+  final List<String> tags; // Additional labels for organization
+
+  // Collaboration
+  final List<String> watchers; // Users following this task
+  final List<Map<String, dynamic>> comments; // Task-related comments/updates
+  final List<String> attachments; // Links to related files/documents
+
+  /// Constructor for creating a new TaskModel instance
   TaskModel({
     required this.id,
     required this.title,
     required this.description,
     required this.deadline,
     required this.assignedTo,
-    this.isAccepted = false, // Default value is false (not accepted)
-    this.reminder, // Optional parameter for reminder time
-  });
+    required this.createdBy,
+    DateTime? createdAt,
+    this.churchId,
+    this.reminder,
+    this.isAccepted = false,
+    this.isCompleted = false,
+    this.completedAt,
+    this.status = 'pending',
+    this.priority = 'medium',
+    this.category = 'general',
+    this.tags = const [],
+    this.watchers = const [],
+    this.comments = const [],
+    this.attachments = const [],
+  }) : createdAt = createdAt ?? DateTime.now();
 
-  // Factory constructor to create a TaskModel instance from a JSON object
+  /// Creates a TaskModel instance from JSON data
   factory TaskModel.fromJson(Map<String, dynamic> json) {
     return TaskModel(
-      id: json['id'], // Map JSON id to model property
-      title: json['title'], // Map JSON title to model property
-      description:
-          json['description'], // Map JSON description to model property
-      deadline: DateTime.parse(
-          json['deadline']), // Parse deadline from string to DateTime
-      assignedTo: json['assignedTo'], // Map JSON assignedTo to model property
-      isAccepted: json['isAccepted'] ??
-          false, // Default to false if not specified in JSON
+      id: json['id'] ?? '',
+      title: json['title'] ?? '',
+      description: json['description'] ?? '',
+      createdAt:
+          json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
+      createdBy: json['createdBy'] ?? '',
+      assignedTo: json['assignedTo'] ?? '',
+      deadline: DateTime.parse(json['deadline']),
+      churchId: json['churchId'],
       reminder:
           json['reminder'] != null ? DateTime.parse(json['reminder']) : null,
-      // Parse reminder if present, otherwise set it as null.
+      isAccepted: json['isAccepted'] ?? false,
+      isCompleted: json['isCompleted'] ?? false,
+      completedAt: json['completedAt'] != null
+          ? DateTime.parse(json['completedAt'])
+          : null,
+      status: json['status'] ?? 'pending',
+      priority: json['priority'] ?? 'medium',
+      category: json['category'] ?? 'general',
+      tags: List<String>.from(json['tags'] ?? []),
+      watchers: List<String>.from(json['watchers'] ?? []),
+      comments: List<Map<String, dynamic>>.from(json['comments'] ?? []),
+      attachments: List<String>.from(json['attachments'] ?? []),
     );
   }
 
-  // Method to convert a TaskModel instance to a JSON object
+  /// Converts the TaskModel instance to JSON format
   Map<String, dynamic> toJson() {
     return {
-      'id': id, // Include id in JSON representation
-      'title': title, // Include title in JSON representation
-      'description': description, // Include description in JSON representation
+      'id': id,
+      'title': title,
+      'description': description,
+      'createdAt': createdAt.toIso8601String(),
+      'createdBy': createdBy,
+      'assignedTo': assignedTo,
       'deadline': deadline.toIso8601String(),
-      // Convert DateTime deadline to ISO string format for JSON representation.
-      'assignedTo': assignedTo, // Include assignedTo in JSON representation
-      'isAccepted':
-          isAccepted, // Include isAccepted status in JSON representation
+      'churchId': churchId,
       'reminder': reminder?.toIso8601String(),
-      // Convert reminder DateTime to ISO string if present.
+      'isAccepted': isAccepted,
+      'isCompleted': isCompleted,
+      'completedAt': completedAt?.toIso8601String(),
+      'status': status,
+      'priority': priority,
+      'category': category,
+      'tags': tags,
+      'watchers': watchers,
+      'comments': comments,
+      'attachments': attachments,
     };
   }
+
+  /// Checks if the task is overdue
+  bool get isOverdue {
+    return !isCompleted && DateTime.now().isAfter(deadline);
+  }
+
+  /// Checks if the task needs attention (approaching deadline)
+  bool get needsAttention {
+    final daysUntilDeadline = deadline.difference(DateTime.now()).inDays;
+    return !isCompleted && !isOverdue && daysUntilDeadline <= 2;
+  }
+
+  /// Creates a copy of the task with updated fields
+  TaskModel copyWith({
+    String? id,
+    String? title,
+    String? description,
+    DateTime? createdAt,
+    String? createdBy,
+    String? assignedTo,
+    DateTime? deadline,
+    String? churchId,
+    DateTime? reminder,
+    bool? isAccepted,
+    bool? isCompleted,
+    DateTime? completedAt,
+    String? status,
+    String? priority,
+    String? category,
+    List<String>? tags,
+    List<String>? watchers,
+    List<Map<String, dynamic>>? comments,
+    List<String>? attachments,
+  }) {
+    return TaskModel(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      createdAt: createdAt ?? this.createdAt,
+      createdBy: createdBy ?? this.createdBy,
+      assignedTo: assignedTo ?? this.assignedTo,
+      deadline: deadline ?? this.deadline,
+      churchId: churchId ?? this.churchId,
+      reminder: reminder ?? this.reminder,
+      isAccepted: isAccepted ?? this.isAccepted,
+      isCompleted: isCompleted ?? this.isCompleted,
+      completedAt: completedAt ?? this.completedAt,
+      status: status ?? this.status,
+      priority: priority ?? this.priority,
+      category: category ?? this.category,
+      tags: tags ?? this.tags,
+      watchers: watchers ?? this.watchers,
+      comments: comments ?? this.comments,
+      attachments: attachments ?? this.attachments,
+    );
+  }
+
+  /// Adds a comment to the task
+  TaskModel addComment(String userId, String content) {
+    final newComment = {
+      'userId': userId,
+      'content': content,
+      'timestamp': DateTime.now().toIso8601String(),
+    };
+    return copyWith(
+      comments: [...comments, newComment],
+    );
+  }
+
+  /// Two tasks are considered equal if they have the same ID
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is TaskModel && runtimeType == other.runtimeType && id == other.id;
+
+  @override
+  int get hashCode => id.hashCode;
 }

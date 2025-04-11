@@ -1,11 +1,13 @@
 import 'package:flutter/foundation.dart'; // Import for ChangeNotifier
 import 'package:firebase_auth/firebase_auth.dart'; // Import Firebase Authentication
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/user_model.dart'; // Import our custom UserModel
 
 /// Service class for handling authentication-related operations.
 class AuthService with ChangeNotifier {
   // Instance of FirebaseAuth for authentication operations
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   // Private variable to store the current user
   UserModel? _currentUser;
@@ -14,7 +16,10 @@ class AuthService with ChangeNotifier {
   UserModel? get currentUser => _currentUser;
 
   /// Logs in a user with the provided email and password.
-  Future<bool> login(String email, String password) async {
+  Future<void> signInWithEmailAndPassword({
+    required String email,
+    required String password,
+  }) async {
     try {
       // Attempt to sign in with email and password
       UserCredential userCredential =
@@ -23,55 +28,146 @@ class AuthService with ChangeNotifier {
         password: password,
       );
 
-      // If login is successful, create a UserModel from the Firebase User
-      _currentUser = UserModel(
-        uid: userCredential.user!.uid,
-        email: userCredential.user!.email!,
-        displayName: userCredential.user!.displayName ??
-            '', // Use empty string if displayName is null
-        churchId: '', // Add churchId if applicable
-        role: '', // Add role if applicable
-        location: '', // Add location if applicable
-      );
+      // Get user data from Firestore
+      DocumentSnapshot userDoc = await _firestore
+          .collection('users')
+          .doc(userCredential.user!.uid)
+          .get();
+
+      if (userDoc.exists) {
+        _currentUser = UserModel.fromJson(userDoc.data() as Map<String, dynamic>);
+      } else {
+        // If no user document exists, create a basic one
+        _currentUser = UserModel(
+          uid: userCredential.user!.uid,
+          email: userCredential.user!.email!,
+          displayName: userCredential.user!.displayName ?? '',
+          churchId: '',
+          role: 'member',
+          location: '',
+        );
+      }
 
       // Notify listeners that the user state has changed
       notifyListeners();
-      return true; // Return true to indicate successful login
     } on FirebaseAuthException catch (e) {
-      // If a FirebaseAuthException is caught, print the error message
-      print('Login failed: ${e.message}');
-      return false; // Return false to indicate failed login
+      throw _handleAuthException(e);
     }
   }
 
   /// Registers a new user with the provided email and password.
-  Future<bool> register(String email, String password) async {
+  Future<void> registerWithEmailAndPassword({
+    required String email,
+    required String password,
+    required String name,
+    required String phoneNumber,
+    required String location,
+    required String churchId,
+  }) async {
     try {
-      // Attempt to create a new user with email and password
-      UserCredential userCredential =
-          await _firebaseAuth.createUserWithEmailAndPassword(
+      // Create user in Firebase Auth
+      UserCredential userCredential = await _firebaseAuth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
 
-      // If registration is successful, create a UserModel from the Firebase User
-      _currentUser = UserModel(
+      // Update display name
+      await userCredential.user!.updateDisplayName(name);
+
+      // Create user document in Firestore with default 'member' role
+      final userModel = UserModel(
         uid: userCredential.user!.uid,
-        email: userCredential.user!.email!,
-        displayName: userCredential.user!.displayName ??
-            '', // Use empty string if displayName is null
-        churchId: '', // Add churchId if applicable
-        role: '', // Add role if applicable
-        location: '', // Add location if applicable
+        email: email,
+        displayName: name,
+        phoneNumber: phoneNumber,
+        location: location,
+        churchId: churchId,
+        role: 'member', // All new users are registered as members
+        createdAt: DateTime.now(),
+        lastLogin: DateTime.now(),
+        isActive: true,
+        emailVerified: false,
+        departments: [],
+        permissions: _getDefaultPermissions('member'),
+        notificationSettings: {
+          'email': true,
+          'push': true,
+        },
       );
 
-      // Notify listeners that the user state has changed
+      await _firestore
+          .collection('users')
+          .doc(userCredential.user!.uid)
+          .set(userModel.toJson());
+
+      _currentUser = userModel;
       notifyListeners();
-      return true; // Return true to indicate successful registration
     } on FirebaseAuthException catch (e) {
-      // If a FirebaseAuthException is caught, print the error message
-      print('Registration failed: ${e.message}');
-      return false; // Return false to indicate failed registration
+      throw _handleAuthException(e);
+    }
+  }
+
+  /// Updates a user's role (only accessible by admins)
+  Future<void> updateUserRole({
+    required String userId,
+    required String newRole,
+  }) async {
+    // Check if current user is admin
+    if (_currentUser?.role != 'admin') {
+      throw 'Only administrators can update user roles';
+    }
+
+    // Validate the new role
+    if (!['member', 'worker', 'pastor', 'admin'].contains(newRole)) {
+      throw 'Invalid role specified';
+    }
+
+    try {
+      // Update the user's role in Firestore
+      await _firestore.collection('users').doc(userId).update({
+        'role': newRole,
+        'permissions': _getDefaultPermissions(newRole),
+      });
+
+      // If updating the current user's role, update the local state
+      if (userId == _currentUser?.uid) {
+        _currentUser = _currentUser?.copyWith(
+          role: newRole,
+          permissions: _getDefaultPermissions(newRole),
+        );
+        notifyListeners();
+      }
+    } catch (e) {
+      throw 'Failed to update user role: $e';
+    }
+  }
+
+  Map<String, bool> _getDefaultPermissions(String role) {
+    switch (role) {
+      case 'admin':
+        return {
+          'manage_users': true,
+          'manage_church': true,
+          'manage_meetings': true,
+          'manage_tasks': true,
+        };
+      case 'pastor':
+        return {
+          'manage_meetings': true,
+          'manage_tasks': true,
+          'view_members': true,
+        };
+      case 'worker':
+        return {
+          'manage_tasks': true,
+          'view_members': true,
+        };
+      case 'member':
+      default:
+        return {
+          'view_meetings': true,
+          'view_tasks': true,
+        };
     }
   }
 
@@ -86,24 +182,46 @@ class AuthService with ChangeNotifier {
   }
 
   /// Checks if there's a currently authenticated user.
-  Future<bool> checkAuthStatus() async {
+  Future<bool> isAuthenticated() async {
     // Get the current user from FirebaseAuth
     User? user = _firebaseAuth.currentUser;
     if (user != null) {
-      // If a user is signed in, create a UserModel from the Firebase User
-      _currentUser = UserModel(
-        uid: user.uid,
-        email: user.email!,
-        displayName:
-            user.displayName ?? '', // Use empty string if displayName is null
-        churchId: '', // Add churchId if applicable
-        role: '', // Add role if applicable
-        location: '', // Add location if applicable
-      );
-      // Notify listeners that the user state has changed
-      notifyListeners();
-      return true; // Return true to indicate a user is signed in
+      try {
+        DocumentSnapshot userDoc = await _firestore
+            .collection('users')
+            .doc(user.uid)
+            .get();
+
+        if (userDoc.exists) {
+          _currentUser = UserModel.fromJson(userDoc.data() as Map<String, dynamic>);
+          notifyListeners();
+          return true; // Return true to indicate a user is signed in
+        }
+      } catch (e) {
+        print('Error fetching user data: $e');
+      }
     }
     return false; // Return false if no user is signed in
+  }
+
+  String _handleAuthException(FirebaseAuthException e) {
+    switch (e.code) {
+      case 'user-not-found':
+        return 'No user found with this email.';
+      case 'wrong-password':
+        return 'Wrong password provided.';
+      case 'email-already-in-use':
+        return 'An account already exists with this email.';
+      case 'weak-password':
+        return 'The password provided is too weak.';
+      case 'invalid-email':
+        return 'The email address is not valid.';
+      case 'operation-not-allowed':
+        return 'Email & Password accounts are not enabled.';
+      case 'user-disabled':
+        return 'This user account has been disabled.';
+      default:
+        return 'An error occurred. Please try again.';
+    }
   }
 }

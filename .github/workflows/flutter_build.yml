@@ -77,13 +77,13 @@ jobs:
       #   run: flutter build ios --release --no-codesign
 
       - name: Upload Android build artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: android-release
           path: build/app/outputs/flutter-apk/app-release.apk
 
       # - name: Upload iOS build artifact
-      #   uses: actions/upload-artifact@v3
+      #   uses: actions/upload-artifact@v4
       #   with:
       #     name: ios-release
       #     path: build/ios/iphoneos/Runner.app

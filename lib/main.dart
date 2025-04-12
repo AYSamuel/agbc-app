@@ -5,6 +5,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 import 'config/theme.dart';
+import 'screens/splash_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -31,7 +32,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'AGBC App',
       theme: AppTheme.lightTheme,
-      home: const MyHomePage(title: 'Home Page'),
+      home: const SplashScreen(),
     );
   }
 }

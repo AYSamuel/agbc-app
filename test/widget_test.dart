@@ -25,11 +25,10 @@ void main() {
     );
 
     // Verify that the login screen is displayed
-    expect(find.text('Welcome Back'), findsOneWidget);
-    expect(find.text('Sign in to continue'), findsOneWidget);
+    expect(find.text('AGBC'), findsOneWidget);
+    expect(find.text('Welcome Back!'), findsOneWidget);
     expect(find.byType(TextFormField), findsNWidgets(2)); // Email and password fields
-    expect(find.text('Sign In'), findsOneWidget);
-    expect(find.text('Don\'t have an account?'), findsOneWidget);
-    expect(find.text('Sign Up'), findsOneWidget);
+    expect(find.text('Login'), findsOneWidget);
+    expect(find.text("Don't have an account? Register"), findsOneWidget);
   });
 }

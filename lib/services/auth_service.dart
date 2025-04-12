@@ -28,6 +28,12 @@ class AuthService with ChangeNotifier {
         password: password,
       );
 
+      // Check if email is verified
+      if (!userCredential.user!.emailVerified) {
+        await _firebaseAuth.signOut();
+        throw 'Please verify your email before logging in.';
+      }
+
       // Get user data from Firestore
       DocumentSnapshot userDoc = await _firestore
           .collection('users')
@@ -60,28 +66,33 @@ class AuthService with ChangeNotifier {
     required String email,
     required String password,
     required String name,
-    required String phoneNumber,
     required String location,
-    required String churchId,
   }) async {
     try {
+      print('Debug: Starting Firebase user creation');
       // Create user in Firebase Auth
       UserCredential userCredential = await _firebaseAuth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
 
+      print('Debug: User created, sending verification email');
+      // Send email verification
+      await userCredential.user!.sendEmailVerification();
+      print('Debug: Verification email sent');
+
+      print('Debug: Updating display name');
       // Update display name
       await userCredential.user!.updateDisplayName(name);
 
+      print('Debug: Creating user document in Firestore');
       // Create user document in Firestore with default 'member' role
       final userModel = UserModel(
         uid: userCredential.user!.uid,
         email: email,
         displayName: name,
-        phoneNumber: phoneNumber,
         location: location,
-        churchId: churchId,
+        churchId: '', // Empty string as default
         role: 'member', // All new users are registered as members
         createdAt: DateTime.now(),
         lastLogin: DateTime.now(),
@@ -100,10 +111,15 @@ class AuthService with ChangeNotifier {
           .doc(userCredential.user!.uid)
           .set(userModel.toJson());
 
+      print('Debug: User document created in Firestore');
       _currentUser = userModel;
       notifyListeners();
     } on FirebaseAuthException catch (e) {
+      print('Debug: Firebase Auth Error: ${e.code} - ${e.message}');
       throw _handleAuthException(e);
+    } catch (e) {
+      print('Debug: General Error during registration: $e');
+      rethrow;
     }
   }
 
@@ -183,25 +199,61 @@ class AuthService with ChangeNotifier {
 
   /// Checks if there's a currently authenticated user.
   Future<bool> isAuthenticated() async {
-    // Get the current user from FirebaseAuth
-    User? user = _firebaseAuth.currentUser;
-    if (user != null) {
-      try {
+    try {
+      // Get the current user from FirebaseAuth
+      User? user = _firebaseAuth.currentUser;
+      if (user != null) {
+        // Get user data from Firestore
         DocumentSnapshot userDoc = await _firestore
             .collection('users')
             .doc(user.uid)
             .get();
 
-        if (userDoc.exists) {
+        if (userDoc.exists && userDoc.data() != null) {
           _currentUser = UserModel.fromJson(userDoc.data() as Map<String, dynamic>);
           notifyListeners();
-          return true; // Return true to indicate a user is signed in
+          return true;
+        } else {
+          // If no user document exists, create a basic one
+          _currentUser = UserModel(
+            uid: user.uid,
+            email: user.email ?? '',
+            displayName: user.displayName ?? '',
+            churchId: '',
+            role: 'member',
+            location: '',
+          );
+          notifyListeners();
+          return true;
         }
-      } catch (e) {
-        print('Error fetching user data: $e');
       }
+      return false;
+    } catch (e) {
+      print('Error in isAuthenticated: $e');
+      return false;
     }
-    return false; // Return false if no user is signed in
+  }
+
+  /// Sends a verification email to the current user
+  Future<void> sendVerificationEmail() async {
+    try {
+      final user = _firebaseAuth.currentUser;
+      if (user != null) {
+        await user.sendEmailVerification();
+      }
+    } catch (e) {
+      throw 'Failed to send verification email: $e';
+    }
+  }
+
+  /// Checks if the current user's email is verified
+  Future<bool> isEmailVerified() async {
+    final user = _firebaseAuth.currentUser;
+    if (user != null) {
+      await user.reload(); // Reload the user to get the latest email verification status
+      return user.emailVerified;
+    }
+    return false;
   }
 
   String _handleAuthException(FirebaseAuthException e) {

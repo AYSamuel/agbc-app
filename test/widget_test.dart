@@ -25,10 +25,11 @@ void main() {
     );
 
     // Verify that the login screen is displayed
-    expect(find.text('AGBC'), findsOneWidget);
+    expect(find.text('Amazing Grace Bible Church'), findsOneWidget);
     expect(find.text('Welcome Back!'), findsOneWidget);
     expect(find.byType(TextFormField), findsNWidgets(2)); // Email and password fields
     expect(find.text('Login'), findsOneWidget);
-    expect(find.text("Don't have an account? Register"), findsOneWidget);
+    expect(find.text("Don't have an account?"), findsOneWidget);
+    expect(find.text('Register'), findsOneWidget);
   });
 }

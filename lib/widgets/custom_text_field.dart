@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:agbc_app/utils/theme.dart';
 
-class CustomTextField extends StatelessWidget {
+class CustomTextField extends StatefulWidget {
   final TextEditingController controller;
   final String hintText;
   final IconData prefixIcon;
@@ -9,6 +10,7 @@ class CustomTextField extends StatelessWidget {
   final TextInputType? keyboardType;
   final String? Function(String?)? validator;
   final void Function()? onSuffixIconPressed;
+  final bool autofocus;
 
   const CustomTextField({
     super.key,
@@ -20,23 +22,70 @@ class CustomTextField extends StatelessWidget {
     this.keyboardType,
     this.validator,
     this.onSuffixIconPressed,
+    this.autofocus = false,
   });
+
+  @override
+  State<CustomTextField> createState() => _CustomTextFieldState();
+}
+
+class _CustomTextFieldState extends State<CustomTextField> {
+  @override
+  void initState() {
+    super.initState();
+    widget.controller.addListener(_handleTextChange);
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_handleTextChange);
+    super.dispose();
+  }
+
+  void _handleTextChange() {
+    setState(() {}); // Trigger rebuild when text changes
+  }
 
   @override
   Widget build(BuildContext context) {
     return TextFormField(
-      controller: controller,
-      obscureText: obscureText,
-      keyboardType: keyboardType,
-      validator: validator,
-      style: const TextStyle(color: Colors.white),
+      controller: widget.controller,
+      obscureText: widget.obscureText,
+      keyboardType: widget.keyboardType,
+      validator: widget.validator,
+      autofocus: widget.autofocus,
+      style: const TextStyle(
+        color: AppTheme.darkNeutralColor,
+        fontSize: 16,
+      ),
       decoration: InputDecoration(
-        hintText: hintText,
-        hintStyle: const TextStyle(color: Colors.white54),
-        prefixIcon: Icon(prefixIcon, color: Colors.white70),
-        suffixIcon: suffixIcon,
+        hintText: widget.hintText,
+        hintStyle: TextStyle(
+          color: AppTheme.neutralColor.withOpacity(0.7),
+          fontSize: 16,
+        ),
+        prefixIcon: Icon(
+          widget.prefixIcon,
+          color: AppTheme.neutralColor,
+        ),
+        suffixIcon: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (widget.controller.text.isNotEmpty && !widget.obscureText)
+              IconButton(
+                icon: const Icon(
+                  Icons.close,
+                  color: AppTheme.neutralColor,
+                ),
+                onPressed: () {
+                  widget.controller.clear();
+                },
+              ),
+            if (widget.suffixIcon != null) widget.suffixIcon!,
+          ],
+        ),
         filled: true,
-        fillColor: Colors.white.withOpacity(0.1),
+        fillColor: Colors.white,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
@@ -47,17 +96,21 @@ class CustomTextField extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.white24, width: 2),
+          borderSide: const BorderSide(color: AppTheme.primaryColor, width: 2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.red, width: 1),
+          borderSide: const BorderSide(color: AppTheme.errorColor, width: 1),
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.red, width: 2),
+          borderSide: const BorderSide(color: AppTheme.errorColor, width: 2),
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        errorStyle: const TextStyle(
+          color: AppTheme.errorColor,
+          fontSize: 14,
+        ),
       ),
     );
   }

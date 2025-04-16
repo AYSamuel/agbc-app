@@ -3,17 +3,33 @@ import 'package:firebase_auth/firebase_auth.dart'; // Import Firebase Authentica
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/user_model.dart'; // Import our custom UserModel
 
+/// Exception for user-facing authentication errors.
+class AuthException implements Exception {
+  final String message;
+  AuthException(this.message);
+
+  @override
+  String toString() => message;
+}
+
 /// Service class for handling authentication-related operations.
 class AuthService with ChangeNotifier {
   // Instance of FirebaseAuth for authentication operations
-  final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth _firebaseAuth;
+  final FirebaseFirestore _firestore;
 
   // Private variable to store the current user
   UserModel? _currentUser;
 
   // Getter to access the current user
   UserModel? get currentUser => _currentUser;
+
+  // Constructor with dependency injection
+  AuthService({
+    FirebaseAuth? firebaseAuth,
+    FirebaseFirestore? firestore,
+  })  : _firebaseAuth = firebaseAuth ?? FirebaseAuth.instance,
+        _firestore = firestore ?? FirebaseFirestore.instance;
 
   /// Logs in a user with the provided email and password.
   Future<void> signInWithEmailAndPassword({
@@ -31,7 +47,7 @@ class AuthService with ChangeNotifier {
       // Check if email is verified
       if (!userCredential.user!.emailVerified) {
         await _firebaseAuth.signOut();
-        throw 'Please verify your email before logging in.';
+        throw AuthException('Please verify your email before logging in.');
       }
 
       // Get user data from Firestore
@@ -57,7 +73,7 @@ class AuthService with ChangeNotifier {
       // Notify listeners that the user state has changed
       notifyListeners();
     } on FirebaseAuthException catch (e) {
-      throw _handleAuthException(e);
+      throw AuthException(_handleAuthException(e));
     }
   }
 
@@ -115,11 +131,11 @@ class AuthService with ChangeNotifier {
       _currentUser = userModel;
       notifyListeners();
     } on FirebaseAuthException catch (e) {
-      print('Debug: Firebase Auth Error: ${e.code} - ${e.message}');
-      throw _handleAuthException(e);
+      print('Debug: Firebase Auth Error: [33m${e.code}[0m - [36m${e.message}[0m');
+      throw AuthException(_handleAuthException(e));
     } catch (e) {
       print('Debug: General Error during registration: $e');
-      rethrow;
+      throw AuthException(e.toString());
     }
   }
 
@@ -257,11 +273,10 @@ class AuthService with ChangeNotifier {
   }
 
   String _handleAuthException(FirebaseAuthException e) {
+    print('FirebaseAuthException code: [33m${e.code}[0m, message: [36m${e.message}[0m');
     switch (e.code) {
-      case 'user-not-found':
-        return 'No user found with this email.';
       case 'wrong-password':
-        return 'Wrong password provided.';
+        return 'Incorrect password. Please try again.';
       case 'email-already-in-use':
         return 'An account already exists with this email.';
       case 'weak-password':
@@ -272,8 +287,17 @@ class AuthService with ChangeNotifier {
         return 'Email & Password accounts are not enabled.';
       case 'user-disabled':
         return 'This user account has been disabled.';
+      case 'user-not-found':
+        return 'This email is not registered. Please create an account first.';
+      case 'too-many-requests':
+        return 'Too many attempts. Please try again later.';
+      case 'network-request-failed':
+        return 'Network error. Please check your internet connection.';
+      case 'invalid-credential':
+        return 'Incorrect email or password. Please try again.';
       default:
-        return 'An error occurred. Please try again.';
+        // Return the actual Firebase error message if available, otherwise a generic message
+        return e.message ?? 'An error occurred. Please try again.';
     }
   }
 }

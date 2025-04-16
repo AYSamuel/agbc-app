@@ -1,6 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:agbc_app/utils/theme.dart';
 import 'package:agbc_app/widgets/radial_menu.dart';
+import 'package:provider/provider.dart';
+import '../services/auth_service.dart';
+import '../providers/firestore_provider.dart';
+import '../models/task_model.dart';
+import '../models/meeting_model.dart';
+import 'user_management_screen.dart';
+import 'task_management_screen.dart';
+import 'meeting_management_screen.dart';
+import 'admin_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -41,28 +50,196 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final authService = Provider.of<AuthService>(context);
+    final firestoreProvider = Provider.of<FirestoreProvider>(context);
+    final user = authService.currentUser;
+
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
-      appBar: AppBar(
-        title: const Text(
-          'AGBC App',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        backgroundColor: AppTheme.primaryColor,
-        elevation: 0,
-      ),
       body: SafeArea(
         child: Column(
           children: [
-            // TODO: Add content sections for tasks and meetings
+            // Welcome and profile section
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 32.0, horizontal: 24.0),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // Welcome and name
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Welcome,',
+                          style: TextStyle(
+                            fontSize: 22,
+                            color: Colors.grey.shade500,
+                            fontWeight: FontWeight.w400,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          user?.displayName ?? 'User',
+                          style: const TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF1A237E),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: _getRoleColor(user?.role ?? 'member'),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            user?.role.toUpperCase() ?? 'MEMBER',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 8,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Profile picture
+                  Container(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 4),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.10),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: CircleAvatar(
+                      radius: 36,
+                      backgroundColor: Colors.transparent,
+                      backgroundImage: (user != null && user.photoUrl != null && user.photoUrl!.isNotEmpty)
+                          ? NetworkImage(user.photoUrl!)
+                          : null,
+                      child: (user == null || user.photoUrl == null || user.photoUrl!.isEmpty)
+                          ? const Icon(Icons.person, size: 40, color: Color(0xFFB0BEC5))
+                          : null,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Tasks and Meetings Section
             Expanded(
-              child: Center(
-                child: Text(
-                  'Welcome to AGBC App',
-                  style: AppTheme.titleStyle,
+              child: DefaultTabController(
+                length: 2,
+                child: Column(
+                  children: [
+                    TabBar(
+                      labelColor: AppTheme.primaryColor,
+                      unselectedLabelColor: Colors.grey,
+                      indicatorColor: AppTheme.primaryColor,
+                      tabs: const [
+                        Tab(text: 'Tasks'),
+                        Tab(text: 'Meetings'),
+                      ],
+                    ),
+                    Expanded(
+                      child: TabBarView(
+                        children: [
+                          // Tasks Tab
+                          StreamBuilder<List<TaskModel>>(
+                            stream: firestoreProvider.getTasksForUser(user?.uid ?? ''),
+                            builder: (context, snapshot) {
+                              if (snapshot.hasError) {
+                                return Center(child: Text('Error: ${snapshot.error}'));
+                              }
+                              if (!snapshot.hasData) {
+                                return const Center(child: CircularProgressIndicator());
+                              }
+                              final tasks = snapshot.data!;
+                              if (tasks.isEmpty) {
+                                return const Center(
+                                  child: Text('No tasks assigned'),
+                                );
+                              }
+                              return ListView.builder(
+                                padding: const EdgeInsets.all(16),
+                                itemCount: tasks.length,
+                                itemBuilder: (context, index) {
+                                  final task = tasks[index];
+                                  return Card(
+                                    margin: const EdgeInsets.only(bottom: 16),
+                                    child: ListTile(
+                                      title: Text(task.title),
+                                      subtitle: Text(task.description),
+                                      trailing: Text(
+                                        task.status,
+                                        style: TextStyle(
+                                          color: task.status == 'completed'
+                                              ? Colors.green
+                                              : Colors.orange,
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              );
+                            },
+                          ),
+                          // Meetings Tab
+                          StreamBuilder<List<MeetingModel>>(
+                            stream: firestoreProvider.getMeetingsForUser(user?.uid ?? ''),
+                            builder: (context, snapshot) {
+                              if (snapshot.hasError) {
+                                return Center(child: Text('Error: ${snapshot.error}'));
+                              }
+                              if (!snapshot.hasData) {
+                                return const Center(child: CircularProgressIndicator());
+                              }
+                              final meetings = snapshot.data!;
+                              if (meetings.isEmpty) {
+                                return const Center(
+                                  child: Text('No meetings scheduled'),
+                                );
+                              }
+                              return ListView.builder(
+                                padding: const EdgeInsets.all(16),
+                                itemCount: meetings.length,
+                                itemBuilder: (context, index) {
+                                  final meeting = meetings[index];
+                                  return Card(
+                                    margin: const EdgeInsets.only(bottom: 16),
+                                    child: ListTile(
+                                      title: Text(meeting.title),
+                                      subtitle: Text(
+                                        '${meeting.dateTime.toString()} - ${meeting.location}',
+                                      ),
+                                      trailing: Text(
+                                        meeting.status,
+                                        style: TextStyle(
+                                          color: meeting.status == 'completed'
+                                              ? Colors.green
+                                              : Colors.blue,
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -74,5 +251,19 @@ class HomeScreen extends StatelessWidget {
         onMeetingPressed: () => _showMeetingCreationDialog(context),
       ),
     );
+  }
+
+  Color _getRoleColor(String role) {
+    switch (role.toLowerCase()) {
+      case 'admin':
+        return Colors.red;
+      case 'pastor':
+        return Colors.purple;
+      case 'worker':
+        return Colors.blue;
+      case 'member':
+      default:
+        return Colors.green;
+    }
   }
 }

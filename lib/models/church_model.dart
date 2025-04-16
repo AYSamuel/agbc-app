@@ -19,6 +19,8 @@ class ChurchModel {
   final int capacity; // Maximum seating capacity of the building
   final bool isMainBranch; // Indicates if this is the headquarters/main branch
 
+  final List<String> departments;
+
   /// Constructor for creating a new ChurchModel instance
   /// Required parameters ensure essential information is always provided
   /// Optional parameters have default values to ensure null safety
@@ -34,6 +36,7 @@ class ChurchModel {
     this.serviceSchedule = const [], // Default empty list if not provided
     this.capacity = 0, // Default capacity of 0 if not provided
     this.isMainBranch = false, // Default to not being main branch
+    required this.departments,
   }) : establishedDate = establishedDate ??
             DateTime.now(); // Use current date if not provided
 
@@ -61,6 +64,7 @@ class ChurchModel {
       capacity: json['capacity'] ?? 0, // Use 0 if capacity is null
       isMainBranch:
           json['isMainBranch'] ?? false, // Use false if isMainBranch is null
+      departments: List<String>.from(json['departments'] ?? []),
     );
   }
 
@@ -80,6 +84,7 @@ class ChurchModel {
       'serviceSchedule': serviceSchedule,
       'capacity': capacity,
       'isMainBranch': isMainBranch,
+      'departments': departments,
     };
   }
 
@@ -97,6 +102,7 @@ class ChurchModel {
     List<String>? serviceSchedule,
     int? capacity,
     bool? isMainBranch,
+    List<String>? departments,
   }) {
     return ChurchModel(
       // Use new value if provided, otherwise use existing value
@@ -111,6 +117,7 @@ class ChurchModel {
       serviceSchedule: serviceSchedule ?? this.serviceSchedule,
       capacity: capacity ?? this.capacity,
       isMainBranch: isMainBranch ?? this.isMainBranch,
+      departments: departments ?? this.departments,
     );
   }
 

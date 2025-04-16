@@ -13,6 +13,7 @@ import 'home_screen.dart';
 import 'verification_screen.dart';
 import 'dart:async';
 import 'package:agbc_app/widgets/register_form.dart';
+import 'package:agbc_app/widgets/custom_back_button.dart';
 
 class RegisterScreen extends StatelessWidget {
   const RegisterScreen({super.key});
@@ -26,58 +27,62 @@ class RegisterScreen extends StatelessWidget {
       },
       child: Scaffold(
         backgroundColor: AppTheme.backgroundColor,
-        appBar: AppBar(
-          backgroundColor: AppTheme.primaryColor,
-          elevation: 0,
-          title: const Text(
-            'Register',
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          iconTheme: const IconThemeData(color: Colors.white),
-        ),
         body: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              padding: AppTheme.screenPadding,
-              child: Card(
-                color: AppTheme.cardColor,
+          child: Column(
+            children: [
+              // Back Button
+              Align(
+                alignment: Alignment.topLeft,
                 child: Padding(
-                  padding: AppTheme.cardPadding,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // Title
-                      const Text(
-                        'Create Account',
-                        style: AppTheme.titleStyle,
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: AppTheme.smallSpacing),
-                      const Text(
-                        'Join our community today',
-                        style: AppTheme.subtitleStyle,
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: AppTheme.largeSpacing),
-
-                      // Register Form
-                      RegisterForm(
-                        onRegisterSuccess: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => const VerificationScreen()),
-                          );
-                        },
-                      ),
-                    ],
+                  padding: const EdgeInsets.only(left: 16, top: 16),
+                  child: CustomBackButton(
+                    onPressed: () => Navigator.of(context).pop(),
                   ),
                 ),
               ),
-            ),
+              Expanded(
+                child: Center(
+                  child: SingleChildScrollView(
+                    padding: AppTheme.screenPadding,
+                    child: Card(
+                      color: AppTheme.cardColor,
+                      child: Padding(
+                        padding: AppTheme.cardPadding,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            // Title
+                            Text(
+                              'Create Account',
+                              style: AppTheme.titleStyle,
+                              textAlign: TextAlign.center,
+                            ),
+                            SizedBox(height: AppTheme.smallSpacing),
+                            Text(
+                              'Join our community today',
+                              style: AppTheme.subtitleStyle,
+                              textAlign: TextAlign.center,
+                            ),
+                            SizedBox(height: AppTheme.largeSpacing),
+
+                            // Register Form
+                            RegisterForm(
+                              onRegisterSuccess: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (context) => const VerificationScreen()),
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),

@@ -52,9 +52,27 @@ class _LoginFormState extends State<LoginForm> {
       }
     } catch (e) {
       if (mounted) {
+        String errorMessage;
+        // Debug print to see what the error actually is
+        print('Login error: $e ([33m[1m[4m[7m[0m${e.runtimeType})');
+        if (e is AuthException) {
+          errorMessage = e.message;
+        } else if (e is Exception) {
+          final msg = e.toString().replaceFirst('Exception: ', '');
+          // Fallback: check for common auth error keywords
+          if (msg.toLowerCase().contains('password') || msg.toLowerCase().contains('credential')) {
+            errorMessage = 'Incorrect password. Please try again.';
+          } else if (msg.toLowerCase().contains('user') && msg.toLowerCase().contains('not found')) {
+            errorMessage = 'This email is not registered. Please create an account first.';
+          } else {
+            errorMessage = msg;
+          }
+        } else {
+          errorMessage = 'An error occurred. Please try again.';
+        }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(e.toString()),
+            content: Text(errorMessage),
             backgroundColor: AppTheme.errorColor,
           ),
         );

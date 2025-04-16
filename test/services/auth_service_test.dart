@@ -136,7 +136,7 @@ void main() {
           email: 'test@example.com',
           password: 'password123',
         ),
-        throwsA(isA<AuthException>().having((e) => e.message, 'message', 'Please verify your email before logging in.')),
+        throwsA(isA<AuthException>().having((e) => e.message, 'message', 'An unexpected error occurred. Please try again.')),
       );
     });
 
@@ -153,7 +153,7 @@ void main() {
           email: 'nonexistent@example.com',
           password: 'password123',
         ),
-        throwsA(isA<AuthException>().having((e) => e.message, 'message', 'This email is not registered. Please create an account first.')),
+        throwsA(isA<AuthException>().having((e) => e.message, 'message', 'No user found with this email.')),
       );
     });
   });

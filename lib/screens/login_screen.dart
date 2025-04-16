@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:agbc_app/screens/register_screen.dart';
 import 'package:agbc_app/screens/home_screen.dart';
+import 'package:agbc_app/screens/main_navigation_screen.dart';
 import 'package:agbc_app/widgets/login_form.dart';
 import 'package:agbc_app/utils/theme.dart';
 
@@ -29,30 +30,30 @@ class LoginScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       // Logo and Title
-                      const Icon(
+                      Icon(
                         Icons.church,
                         size: AppTheme.largeIconSize,
                         color: AppTheme.primaryColor,
                       ),
-                      const SizedBox(height: AppTheme.defaultSpacing),
-                      const Text(
+                      SizedBox(height: AppTheme.defaultSpacing),
+                      Text(
                         'Amazing Grace Bible Church',
                         style: AppTheme.titleStyle,
                         textAlign: TextAlign.center,
                       ),
-                      const SizedBox(height: AppTheme.smallSpacing),
-                      const Text(
+                      SizedBox(height: AppTheme.smallSpacing),
+                      Text(
                         'Welcome Back!',
                         style: AppTheme.welcomeStyle,
                         textAlign: TextAlign.center,
                       ),
-                      const SizedBox(height: AppTheme.largeSpacing),
+                      SizedBox(height: AppTheme.largeSpacing),
 
                       // Login Form
                       LoginForm(
                         onLoginSuccess: () {
                           Navigator.of(context).pushReplacement(
-                            MaterialPageRoute(builder: (context) => const HomeScreen()),
+                            MaterialPageRoute(builder: (context) => const MainNavigationScreen()),
                           );
                         },
                       ),
@@ -75,7 +76,7 @@ class LoginScreen extends StatelessWidget {
                                 ),
                               );
                             },
-                            child: const Text(
+                            child: Text(
                               'Register',
                               style: AppTheme.linkStyle,
                             ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:agbc_app/services/auth_service.dart';
 import 'package:agbc_app/widgets/custom_text_field.dart';
 import 'package:agbc_app/widgets/custom_button.dart';
@@ -53,27 +54,58 @@ class _LoginFormState extends State<LoginForm> {
     } catch (e) {
       if (mounted) {
         String errorMessage;
-        // Debug print to see what the error actually is
-        print('Login error: $e ([33m[1m[4m[7m[0m${e.runtimeType})');
+        print('Login error: $e (${e.runtimeType})');
+        
         if (e is AuthException) {
           errorMessage = e.message;
-        } else if (e is Exception) {
-          final msg = e.toString().replaceFirst('Exception: ', '');
-          // Fallback: check for common auth error keywords
-          if (msg.toLowerCase().contains('password') || msg.toLowerCase().contains('credential')) {
-            errorMessage = 'Incorrect password. Please try again.';
-          } else if (msg.toLowerCase().contains('user') && msg.toLowerCase().contains('not found')) {
-            errorMessage = 'This email is not registered. Please create an account first.';
-          } else {
-            errorMessage = msg;
+        } else if (e is FirebaseAuthException) {
+          switch (e.code) {
+            case 'user-not-found':
+              errorMessage = 'No account found with this email. Please register first.';
+              break;
+            case 'wrong-password':
+              errorMessage = 'Incorrect password. Please try again.';
+              break;
+            case 'invalid-email':
+              errorMessage = 'The email address is invalid.';
+              break;
+            case 'user-disabled':
+              errorMessage = 'This account has been disabled.';
+              break;
+            case 'too-many-requests':
+              errorMessage = 'Too many failed login attempts. Please try again later.';
+              break;
+            default:
+              errorMessage = 'An error occurred during login. Please try again.';
           }
         } else {
-          errorMessage = 'An error occurred. Please try again.';
+          errorMessage = 'An unexpected error occurred. Please try again.';
         }
+
+        // Show error in a more user-friendly way
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(errorMessage),
+            content: Row(
+              children: [
+                const Icon(Icons.error_outline, color: Colors.white),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    errorMessage,
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
             backgroundColor: AppTheme.errorColor,
+            duration: const Duration(seconds: 4),
+            action: SnackBarAction(
+              label: 'Dismiss',
+              textColor: Colors.white,
+              onPressed: () {
+                ScaffoldMessenger.of(context).hideCurrentSnackBar();
+              },
+            ),
           ),
         );
       }
@@ -98,7 +130,8 @@ class _LoginFormState extends State<LoginForm> {
             hintText: 'Email',
             prefixIcon: Icons.email,
             keyboardType: TextInputType.emailAddress,
-            autofocus: false,
+            textInputAction: TextInputAction.next,
+            onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
             validator: (value) {
               if (value == null || value.isEmpty) {
                 return 'Please enter your email';
@@ -117,7 +150,8 @@ class _LoginFormState extends State<LoginForm> {
             hintText: 'Password',
             prefixIcon: Icons.lock,
             obscureText: _obscurePassword,
-            autofocus: false,
+            textInputAction: TextInputAction.done,
+            onFieldSubmitted: (_) => _login(),
             suffixIcon: IconButton(
               icon: Icon(
                 _obscurePassword ? Icons.visibility_off : Icons.visibility,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
   // Primary Colors
@@ -20,37 +21,6 @@ class AppTheme {
   static const Color warningColor = Color(0xFFB38E5E); // Earthy Gold
   static const Color errorColor = Color(0xFFA05D4A); // Soft Red-Brown
 
-  // Text Styles
-  static const TextStyle titleStyle = TextStyle(
-    fontSize: 24,
-    fontWeight: FontWeight.bold,
-    color: secondaryColor,
-  );
-
-  static const TextStyle subtitleStyle = TextStyle(
-    fontSize: 16,
-    color: neutralColor,
-  );
-
-  static const TextStyle welcomeStyle = TextStyle(
-    fontSize: 18,
-    color: neutralColor,
-  );
-
-  static const TextStyle linkStyle = TextStyle(
-    color: primaryColor,
-    fontSize: 14,
-    fontWeight: FontWeight.w600,
-    decoration: TextDecoration.underline,
-    decorationColor: primaryColor,
-    decorationThickness: 1.5,
-  );
-
-  static const TextStyle regularTextStyle = TextStyle(
-    color: neutralColor,
-    fontSize: 14,
-  );
-
   // Layout
   static const EdgeInsets screenPadding = EdgeInsets.all(24.0);
   static const EdgeInsets cardPadding = EdgeInsets.all(24.0);
@@ -61,6 +31,41 @@ class AppTheme {
   // Icons
   static const double largeIconSize = 80.0;
   static const double smallIconSize = 20.0;
+
+  static TextStyle get titleStyle => GoogleFonts.inter(
+    fontSize: 24,
+    fontWeight: FontWeight.bold,
+    color: secondaryColor,
+    letterSpacing: 0.2,
+  );
+
+  static TextStyle get subtitleStyle => GoogleFonts.inter(
+    fontSize: 16,
+    color: neutralColor,
+    fontWeight: FontWeight.w500,
+    letterSpacing: 0.1,
+  );
+
+  static TextStyle get welcomeStyle => GoogleFonts.inter(
+    fontSize: 18,
+    color: neutralColor,
+    fontWeight: FontWeight.w400,
+  );
+
+  static TextStyle get linkStyle => GoogleFonts.inter(
+    color: primaryColor,
+    fontSize: 14,
+    fontWeight: FontWeight.w600,
+    decoration: TextDecoration.underline,
+    decorationColor: primaryColor,
+    decorationThickness: 1.5,
+  );
+
+  static TextStyle get regularTextStyle => GoogleFonts.inter(
+    color: neutralColor,
+    fontSize: 14,
+    fontWeight: FontWeight.w400,
+  );
 
   static ThemeData get lightTheme {
     return ThemeData(
@@ -77,32 +82,32 @@ class AppTheme {
         onSurface: darkNeutralColor,
       ),
       scaffoldBackgroundColor: backgroundColor,
-      appBarTheme: const AppBarTheme(
+      appBarTheme: AppBarTheme(
         backgroundColor: primaryColor,
         elevation: 0,
-        iconTheme: IconThemeData(color: Colors.white),
-        titleTextStyle: TextStyle(
+        iconTheme: const IconThemeData(color: Colors.white),
+        titleTextStyle: GoogleFonts.inter(
           color: Colors.white,
           fontSize: 20,
           fontWeight: FontWeight.bold,
         ),
       ),
-      textTheme: const TextTheme(
-        displayLarge: TextStyle(
+      textTheme: GoogleFonts.interTextTheme().copyWith(
+        displayLarge: GoogleFonts.inter(
           color: darkNeutralColor,
           fontSize: 32,
           fontWeight: FontWeight.bold,
         ),
-        displayMedium: TextStyle(
+        displayMedium: GoogleFonts.inter(
           color: darkNeutralColor,
           fontSize: 24,
           fontWeight: FontWeight.bold,
         ),
-        bodyLarge: TextStyle(
+        bodyLarge: GoogleFonts.inter(
           color: darkNeutralColor,
           fontSize: 16,
         ),
-        bodyMedium: TextStyle(
+        bodyMedium: GoogleFonts.inter(
           color: darkNeutralColor,
           fontSize: 14,
         ),

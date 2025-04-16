@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
+import 'package:agbc_app/providers/firestore_provider.dart';
 import 'firebase_options.dart';
 import 'config/theme.dart';
 import 'screens/splash_screen.dart';
@@ -31,8 +32,11 @@ Future<void> main() async {
   final authService = AuthService();
 
   runApp(
-    ChangeNotifierProvider(
-      create: (context) => authService,
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (context) => authService),
+        ChangeNotifierProvider(create: (context) => FirestoreProvider()),
+      ],
       child: const MyApp(),
     ),
   );

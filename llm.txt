@@ -1,0 +1,94 @@
+# AGBC App - Project Documentation
+
+## Overview
+AGBC App is a Flutter application designed for Amazing Grace Bible Church, providing features for user authentication, profile management, and church-related activities.
+
+## Project Structure
+```
+lib/
+├── config/          # Configuration files
+├── models/          # Data models
+├── screens/         # UI screens
+│   ├── home_screen.dart
+│   ├── login_screen.dart
+│   ├── profile_screen.dart
+│   ├── register_screen.dart
+│   ├── verification_screen.dart
+│   └── main_navigation_screen.dart
+├── services/        # Business logic and API services
+│   ├── auth_service.dart
+│   └── user_service.dart
+├── utils/           # Utility classes and constants
+│   └── theme.dart
+└── widgets/         # Reusable UI components
+```
+
+## Key Features
+- **Authentication**: Email/password login and registration with email verification.
+- **User Profile**: Profile management with logout functionality.
+- **Navigation**: Bottom navigation with Home and Profile tabs.
+- **Modern UI**: Clean, modern design with consistent theming and typography.
+
+## Core Components
+### Authentication Flow
+1. User registration with email verification
+2. Email verification check
+3. Login with verified credentials
+4. Session management and logout
+
+### State Management
+- **Provider Pattern**: Used for authentication state
+- **AuthService**: Manages user authentication state
+- **UserModel**: Represents user data structure
+
+### Firebase Integration
+- **Authentication**: Firebase Auth for user management
+- **Database**: Firestore for user data storage
+- **Configuration**: Environment variables for Firebase setup
+
+## Design Patterns
+### UI Patterns
+- **No AppBar**: Screens use custom headers instead of AppBar
+- **Bottom Navigation**: Consistent navigation across main screens
+- **Custom Back Buttons**: Platform-specific navigation handling
+
+### Code Patterns
+- **Service Layer**: Business logic separated in service classes
+- **Widget Composition**: Reusable UI components in widgets directory
+- **Theme Consistency**: Centralized theming through AppTheme
+
+## Implementation Details
+### Theme System
+- Uses Google Fonts (Inter) for typography
+- Custom color palette in AppTheme
+- Consistent spacing and sizing constants
+
+### Navigation
+- MainNavigationScreen manages bottom tabs
+- Custom back buttons for iOS compatibility
+- Route management for authentication flow
+
+### Authentication
+- Email verification required for login
+- Secure password handling
+- Session persistence
+
+## Future Enhancements
+- Task and meeting management features
+- Additional profile customization options
+- Enhanced church-specific functionalities
+
+## Notes for AI Assistance
+- All screens should follow the no-AppBar pattern
+- Use AppTheme for consistent styling
+- Maintain platform-specific navigation patterns
+- Follow the established file structure for new features
+- Use Provider for state management
+- Implement Firebase services for data persistence
+
+## Key Dependencies
+- firebase_core: ^3.13.0
+- firebase_auth: ^5.5.2
+- cloud_firestore: ^5.6.6
+- provider: ^6.1.1
+- google_fonts: ^6.1.0 

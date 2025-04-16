@@ -37,6 +37,8 @@ class AuthService with ChangeNotifier {
     required String password,
   }) async {
     try {
+      print('Debug: Attempting to sign in with email: $email');
+
       // Attempt to sign in with email and password
       UserCredential userCredential =
           await _firebaseAuth.signInWithEmailAndPassword(
@@ -44,11 +46,16 @@ class AuthService with ChangeNotifier {
         password: password,
       );
 
+      print('Debug: Successfully authenticated with Firebase');
+
       // Check if email is verified
       if (!userCredential.user!.emailVerified) {
+        print('Debug: Email not verified');
         await _firebaseAuth.signOut();
         throw AuthException('Please verify your email before logging in.');
       }
+
+      print('Debug: Email verified, fetching user data from Firestore');
 
       // Get user data from Firestore
       DocumentSnapshot userDoc = await _firestore
@@ -57,8 +64,49 @@ class AuthService with ChangeNotifier {
           .get();
 
       if (userDoc.exists) {
-        _currentUser = UserModel.fromJson(userDoc.data() as Map<String, dynamic>);
+        print('Debug: User document found in Firestore');
+        final userData = userDoc.data();
+        if (userData != null) {
+          try {
+            // Cast userData to Map<String, dynamic> before accessing its keys
+            final Map<String, dynamic> userDataMap =
+                userData as Map<String, dynamic>;
+
+            // Create a new user model with default values
+            _currentUser = UserModel(
+              uid: userCredential.user!.uid,
+              email: userCredential.user!.email!,
+              displayName: userCredential.user!.displayName ?? '',
+              churchId: userDataMap['churchId'] ?? '',
+              role: userDataMap['role'] ?? 'member',
+              location: userDataMap['location'] ?? '',
+              createdAt: userDataMap['createdAt'] != null
+                  ? DateTime.parse(userDataMap['createdAt'].toString())
+                  : DateTime.now(),
+              lastLogin: DateTime.now(),
+              isActive: userDataMap['isActive'] ?? true,
+              emailVerified: userCredential.user!.emailVerified,
+              departments: List<String>.from(userDataMap['departments'] ?? []),
+              permissions:
+                  Map<String, bool>.from(userDataMap['permissions'] ?? {}),
+              notificationSettings: Map<String, dynamic>.from(
+                  userDataMap['notificationSettings'] ??
+                      {
+                        'email': true,
+                        'push': true,
+                      }),
+            );
+            print('Debug: Successfully loaded user data');
+          } catch (e) {
+            print('Error converting user data: $e');
+            throw AuthException('Error loading user data. Please try again.');
+          }
+        } else {
+          print('Debug: User data is null');
+          throw AuthException('User data is null. Please try again.');
+        }
       } else {
+        print('Debug: Creating new user document');
         // If no user document exists, create a basic one
         _currentUser = UserModel(
           uid: userCredential.user!.uid,
@@ -67,13 +115,56 @@ class AuthService with ChangeNotifier {
           churchId: '',
           role: 'member',
           location: '',
+          createdAt: DateTime.now(),
+          lastLogin: DateTime.now(),
+          isActive: true,
+          emailVerified: userCredential.user!.emailVerified,
+          departments: [],
+          permissions: _getDefaultPermissions('member'),
+          notificationSettings: {
+            'email': true,
+            'push': true,
+          },
         );
+
+        // Save the new user document to Firestore
+        await _firestore
+            .collection('users')
+            .doc(userCredential.user!.uid)
+            .set(_currentUser!.toJson());
+        print('Debug: Created new user document');
       }
 
       // Notify listeners that the user state has changed
       notifyListeners();
+      print('Debug: Login process completed successfully');
     } on FirebaseAuthException catch (e) {
-      throw AuthException(_handleAuthException(e));
+      print('Debug: Firebase Auth Error: ${e.code} - ${e.message}');
+      String errorMessage;
+      switch (e.code) {
+        case 'user-not-found':
+          errorMessage = 'No user found with this email.';
+          break;
+        case 'wrong-password':
+          errorMessage = 'Incorrect password. Please try again.';
+          break;
+        case 'invalid-email':
+          errorMessage = 'The email address is invalid.';
+          break;
+        case 'user-disabled':
+          errorMessage = 'This account has been disabled.';
+          break;
+        case 'too-many-requests':
+          errorMessage =
+              'Too many failed login attempts. Please try again later.';
+          break;
+        default:
+          errorMessage = 'An error occurred during login. Please try again.';
+      }
+      throw AuthException(errorMessage);
+    } catch (e) {
+      print('Debug: Unexpected error during login: $e');
+      throw AuthException('An unexpected error occurred. Please try again.');
     }
   }
 
@@ -87,7 +178,8 @@ class AuthService with ChangeNotifier {
     try {
       print('Debug: Starting Firebase user creation');
       // Create user in Firebase Auth
-      UserCredential userCredential = await _firebaseAuth.createUserWithEmailAndPassword(
+      UserCredential userCredential =
+          await _firebaseAuth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
@@ -131,7 +223,8 @@ class AuthService with ChangeNotifier {
       _currentUser = userModel;
       notifyListeners();
     } on FirebaseAuthException catch (e) {
-      print('Debug: Firebase Auth Error: [33m${e.code}[0m - [36m${e.message}[0m');
+      print(
+          'Debug: Firebase Auth Error: [33m${e.code}[0m - [36m${e.message}[0m');
       throw AuthException(_handleAuthException(e));
     } catch (e) {
       print('Debug: General Error during registration: $e');
@@ -178,28 +271,143 @@ class AuthService with ChangeNotifier {
     switch (role) {
       case 'admin':
         return {
+          // User Management
           'manage_users': true,
+          'view_users': true,
+          'assign_roles': true,
+
+          // Church Management
           'manage_church': true,
-          'manage_meetings': true,
-          'manage_tasks': true,
+          'manage_departments': true,
+
+          // Task Management
+          'create_tasks': true,
+          'edit_tasks': true,
+          'delete_tasks': true,
+          'assign_tasks': true,
+          'view_all_tasks': true,
+
+          // Meeting Management
+          'create_meetings': true,
+          'edit_meetings': true,
+          'delete_meetings': true,
+          'invite_to_meetings': true,
+          'view_all_meetings': true,
+
+          // Content Management
+          'create_content': true,
+          'edit_content': true,
+          'delete_content': true,
         };
       case 'pastor':
         return {
-          'manage_meetings': true,
-          'manage_tasks': true,
-          'view_members': true,
+          // User Management
+          'view_users': true,
+
+          // Task Management
+          'create_tasks': true,
+          'edit_tasks': true,
+          'delete_tasks': true,
+          'assign_tasks': true,
+          'view_all_tasks': true,
+
+          // Meeting Management
+          'create_meetings': true,
+          'edit_meetings': true,
+          'delete_meetings': true,
+          'invite_to_meetings': true,
+          'view_all_meetings': true,
+
+          // Content Management
+          'create_content': true,
+          'edit_content': true,
         };
       case 'worker':
         return {
-          'manage_tasks': true,
-          'view_members': true,
+          // User Management
+          'view_users': true,
+
+          // Task Management
+          'create_tasks': true,
+          'edit_tasks': true,
+          'delete_tasks': true,
+          'view_all_tasks': true,
+
+          // Meeting Management
+          'view_all_meetings': true,
+
+          // Content Management
+          'create_content': true,
         };
       case 'member':
       default:
         return {
-          'view_meetings': true,
-          'view_tasks': true,
+          // Task Management
+          'view_assigned_tasks': true,
+
+          // Meeting Management
+          'view_invited_meetings': true,
+
+          // Content Management
+          'view_content': true,
         };
+    }
+  }
+
+  /// Check if the current user has a specific permission
+  bool hasPermission(String permission) {
+    return _currentUser?.permissions[permission] ?? false;
+  }
+
+  /// Check if the current user can perform an action
+  bool canPerformAction(String action) {
+    switch (action) {
+      case 'create_task':
+        return hasPermission('create_tasks');
+      case 'assign_task':
+        return hasPermission('assign_tasks');
+      case 'create_meeting':
+        return hasPermission('create_meetings');
+      case 'invite_to_meeting':
+        return hasPermission('invite_to_meetings');
+      case 'manage_users':
+        return hasPermission('manage_users');
+      default:
+        return false;
+    }
+  }
+
+  /// Get tasks based on user's role and permissions
+  Stream<List<Map<String, dynamic>>> getTasks() {
+    if (hasPermission('view_all_tasks')) {
+      return _firestore.collection('tasks').snapshots().map((snapshot) {
+        return snapshot.docs.map((doc) => doc.data()).toList();
+      });
+    } else {
+      return _firestore
+          .collection('tasks')
+          .where('assignedTo', isEqualTo: _currentUser?.uid)
+          .snapshots()
+          .map((snapshot) {
+        return snapshot.docs.map((doc) => doc.data()).toList();
+      });
+    }
+  }
+
+  /// Get meetings based on user's role and permissions
+  Stream<List<Map<String, dynamic>>> getMeetings() {
+    if (hasPermission('view_all_meetings')) {
+      return _firestore.collection('meetings').snapshots().map((snapshot) {
+        return snapshot.docs.map((doc) => doc.data()).toList();
+      });
+    } else {
+      return _firestore
+          .collection('meetings')
+          .where('invitedUsers', arrayContains: _currentUser?.uid)
+          .snapshots()
+          .map((snapshot) {
+        return snapshot.docs.map((doc) => doc.data()).toList();
+      });
     }
   }
 
@@ -220,13 +428,12 @@ class AuthService with ChangeNotifier {
       User? user = _firebaseAuth.currentUser;
       if (user != null) {
         // Get user data from Firestore
-        DocumentSnapshot userDoc = await _firestore
-            .collection('users')
-            .doc(user.uid)
-            .get();
+        DocumentSnapshot userDoc =
+            await _firestore.collection('users').doc(user.uid).get();
 
         if (userDoc.exists && userDoc.data() != null) {
-          _currentUser = UserModel.fromJson(userDoc.data() as Map<String, dynamic>);
+          _currentUser =
+              UserModel.fromJson(userDoc.data() as Map<String, dynamic>);
           notifyListeners();
           return true;
         } else {
@@ -266,14 +473,16 @@ class AuthService with ChangeNotifier {
   Future<bool> isEmailVerified() async {
     final user = _firebaseAuth.currentUser;
     if (user != null) {
-      await user.reload(); // Reload the user to get the latest email verification status
+      await user
+          .reload(); // Reload the user to get the latest email verification status
       return user.emailVerified;
     }
     return false;
   }
 
   String _handleAuthException(FirebaseAuthException e) {
-    print('FirebaseAuthException code: [33m${e.code}[0m, message: [36m${e.message}[0m');
+    print(
+        'FirebaseAuthException code: [33m${e.code}[0m, message: [36m${e.message}[0m');
     switch (e.code) {
       case 'wrong-password':
         return 'Incorrect password. Please try again.';
@@ -294,7 +503,7 @@ class AuthService with ChangeNotifier {
       case 'network-request-failed':
         return 'Network error. Please check your internet connection.';
       case 'invalid-credential':
-        return 'Incorrect email or password. Please try again.';
+        return 'Incorrect email or password. Please register if you don\'t have an account.';
       default:
         // Return the actual Firebase error message if available, otherwise a generic message
         return e.message ?? 'An error occurred. Please try again.';

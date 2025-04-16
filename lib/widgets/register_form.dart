@@ -159,6 +159,8 @@ class _RegisterFormState extends State<RegisterForm> {
             controller: _nameController,
             hintText: 'Full Name',
             prefixIcon: Icons.person,
+            textInputAction: TextInputAction.next,
+            onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
             validator: (value) {
               if (value == null || value.isEmpty) {
                 return 'Please enter your name';
@@ -174,6 +176,8 @@ class _RegisterFormState extends State<RegisterForm> {
             hintText: 'Email',
             prefixIcon: Icons.email,
             keyboardType: TextInputType.emailAddress,
+            textInputAction: TextInputAction.next,
+            onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
             validator: (value) {
               if (value == null || value.isEmpty) {
                 return 'Please enter your email';
@@ -191,6 +195,8 @@ class _RegisterFormState extends State<RegisterForm> {
             controller: _locationController,
             hintText: 'Location',
             prefixIcon: Icons.location_on,
+            textInputAction: TextInputAction.next,
+            onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
             suffixIcon: _isGettingLocation || _isValidatingLocation
                 ? const SizedBox(
                     width: 20,
@@ -222,6 +228,8 @@ class _RegisterFormState extends State<RegisterForm> {
             hintText: 'Password',
             prefixIcon: Icons.lock,
             obscureText: _obscurePassword,
+            textInputAction: TextInputAction.next,
+            onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
             suffixIcon: IconButton(
               icon: Icon(
                 _obscurePassword ? Icons.visibility_off : Icons.visibility,
@@ -251,6 +259,8 @@ class _RegisterFormState extends State<RegisterForm> {
             hintText: 'Confirm Password',
             prefixIcon: Icons.lock,
             obscureText: _obscureConfirmPassword,
+            textInputAction: TextInputAction.done,
+            onFieldSubmitted: (_) => _register(),
             suffixIcon: IconButton(
               icon: Icon(
                 _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,

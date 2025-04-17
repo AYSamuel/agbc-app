@@ -6,6 +6,7 @@ import '../services/auth_service.dart';
 import '../providers/firestore_provider.dart';
 import '../models/task_model.dart';
 import '../models/meeting_model.dart';
+import '../models/church_model.dart';
 import 'user_management_screen.dart';
 import 'task_management_screen.dart';
 import 'meeting_management_screen.dart';
@@ -15,6 +16,17 @@ class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   void _showTaskCreationDialog(BuildContext context) {
+    final user = Provider.of<AuthService>(context, listen: false).currentUser;
+    if (!(user?.hasPermission('create_tasks') ?? false) || user?.role == 'member') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Only workers, pastors, and administrators can create tasks'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     // TODO: Implement task creation dialog
     showDialog(
       context: context,
@@ -32,6 +44,17 @@ class HomeScreen extends StatelessWidget {
   }
 
   void _showMeetingCreationDialog(BuildContext context) {
+    final user = Provider.of<AuthService>(context, listen: false).currentUser;
+    if (!(user?.hasPermission('create_meetings') ?? false)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('You do not have permission to create meetings'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     // TODO: Implement meeting creation dialog
     showDialog(
       context: context,
@@ -48,11 +71,44 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
+  void _showBranchCreationDialog(BuildContext context) {
+    final user = Provider.of<AuthService>(context, listen: false).currentUser;
+    if (!(user?.hasPermission('manage_church') ?? false)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Only administrators can create church branches'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // TODO: Implement branch creation dialog
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Create Church Branch'),
+        content: const Text('Branch creation dialog will be implemented here.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final authService = Provider.of<AuthService>(context);
     final firestoreProvider = Provider.of<FirestoreProvider>(context);
     final user = authService.currentUser;
+
+    // Determine which options to show based on user role
+    final bool showTasks = user?.role != 'member';
+    final bool showMeetings = user?.role == 'pastor' || user?.role == 'admin';
+    final bool showBranches = user?.role == 'admin';
 
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
@@ -227,10 +283,15 @@ class HomeScreen extends StatelessWidget {
           ],
         ),
       ),
-      floatingActionButton: RadialMenu(
-        onTaskPressed: () => _showTaskCreationDialog(context),
-        onMeetingPressed: () => _showMeetingCreationDialog(context),
-      ),
+      floatingActionButton: user?.role != 'member' 
+          ? RadialMenu(
+              onTaskPressed: () => _showTaskCreationDialog(context),
+              onMeetingPressed: showMeetings ? () => _showMeetingCreationDialog(context) : null,
+              onBranchPressed: showBranches ? () => _showBranchCreationDialog(context) : null,
+              showBranchOption: showBranches,
+              showMeetingOption: showMeetings,
+            )
+          : null,
     );
   }
 

@@ -3,12 +3,18 @@ import 'package:agbc_app/utils/theme.dart';
 
 class RadialMenu extends StatefulWidget {
   final VoidCallback onTaskPressed;
-  final VoidCallback onMeetingPressed;
+  final VoidCallback? onMeetingPressed;
+  final VoidCallback? onBranchPressed;
+  final bool showBranchOption;
+  final bool showMeetingOption;
 
   const RadialMenu({
     super.key,
     required this.onTaskPressed,
-    required this.onMeetingPressed,
+    this.onMeetingPressed,
+    this.onBranchPressed,
+    required this.showBranchOption,
+    required this.showMeetingOption,
   });
 
   @override
@@ -25,22 +31,23 @@ class _RadialMenuState extends State<RadialMenu> with SingleTickerProviderStateM
   void initState() {
     super.initState();
     _controller = AnimationController(
-      duration: const Duration(milliseconds: 300),
       vsync: this,
+      duration: const Duration(milliseconds: 300),
     );
 
-    _scaleAnimation = CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeInOut,
+    _scaleAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: Curves.easeInOut,
+      ),
     );
 
-    _rotationAnimation = Tween<double>(
-      begin: 0.0,
-      end: 0.5,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeInOut,
-    ));
+    _rotationAnimation = Tween<double>(begin: 0.0, end: 0.5).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: Curves.easeInOut,
+      ),
+    );
   }
 
   @override
@@ -58,6 +65,40 @@ class _RadialMenuState extends State<RadialMenu> with SingleTickerProviderStateM
         _controller.reverse();
       }
     });
+  }
+
+  Widget _buildMenuItem({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return ScaleTransition(
+      scale: _scaleAnimation,
+      child: FloatingActionButton(
+        heroTag: null,
+        onPressed: onTap,
+        backgroundColor: Colors.white,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              color: AppTheme.primaryColor,
+              size: 24,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: const TextStyle(
+                color: AppTheme.primaryColor,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -81,21 +122,39 @@ class _RadialMenuState extends State<RadialMenu> with SingleTickerProviderStateM
           ),
         ),
         // Meeting Option
-        Positioned(
-          right: 80,
-          bottom: 20,
-          child: ScaleTransition(
-            scale: _scaleAnimation,
-            child: _buildMenuItem(
-              icon: Icons.calendar_today,
-              label: 'Meeting',
-              onTap: () {
-                _toggleMenu();
-                widget.onMeetingPressed();
-              },
+        if (widget.showMeetingOption)
+          Positioned(
+            right: 80,
+            bottom: 20,
+            child: ScaleTransition(
+              scale: _scaleAnimation,
+              child: _buildMenuItem(
+                icon: Icons.calendar_today,
+                label: 'Meeting',
+                onTap: () {
+                  _toggleMenu();
+                  widget.onMeetingPressed?.call();
+                },
+              ),
             ),
           ),
-        ),
+        // Branch Option (only visible for admins)
+        if (widget.showBranchOption)
+          Positioned(
+            right: 20,
+            bottom: 80,
+            child: ScaleTransition(
+              scale: _scaleAnimation,
+              child: _buildMenuItem(
+                icon: Icons.church,
+                label: 'Branch',
+                onTap: () {
+                  _toggleMenu();
+                  widget.onBranchPressed?.call();
+                },
+              ),
+            ),
+          ),
         // Main Button
         Positioned(
           right: 20,
@@ -113,52 +172,6 @@ class _RadialMenuState extends State<RadialMenu> with SingleTickerProviderStateM
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildMenuItem({
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-  }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(30),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          decoration: BoxDecoration(
-            color: AppTheme.cardColor,
-            borderRadius: BorderRadius.circular(30),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                icon,
-                color: AppTheme.primaryColor,
-                size: 20,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                label,
-                style: const TextStyle(
-                  color: AppTheme.darkNeutralColor,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 } 

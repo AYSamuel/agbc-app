@@ -87,25 +87,6 @@ class HomeScreen extends StatelessWidget {
                             color: Color(0xFF1A237E),
                           ),
                         ),
-                        const SizedBox(height: 4),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: _getRoleColor(user?.role ?? 'member'),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            user?.role.toUpperCase() ?? 'MEMBER',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 8,
-                            ),
-                          ),
-                        ),
                       ],
                     ),
                   ),

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:agbc_app/services/auth_service.dart';
 import 'package:agbc_app/services/location_service.dart';
-import 'package:agbc_app/widgets/custom_text_field.dart';
+import 'package:agbc_app/widgets/custom_input.dart';
 import 'package:agbc_app/widgets/custom_button.dart';
 import 'package:agbc_app/widgets/loading_indicator.dart';
 import 'package:agbc_app/utils/theme.dart';
@@ -155,12 +155,13 @@ class _RegisterFormState extends State<RegisterForm> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // Name Field
-          CustomTextField(
+          CustomInput(
+            label: 'Full Name',
             controller: _nameController,
-            hintText: 'Full Name',
-            prefixIcon: Icons.person,
+            hint: 'Enter your full name',
+            prefixIcon: Icon(Icons.person, color: AppTheme.neutralColor),
             textInputAction: TextInputAction.next,
-            onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
+            onSubmitted: (_) => FocusScope.of(context).nextFocus(),
             validator: (value) {
               if (value == null || value.isEmpty) {
                 return 'Please enter your name';
@@ -171,13 +172,14 @@ class _RegisterFormState extends State<RegisterForm> {
           const SizedBox(height: 16),
 
           // Email Field
-          CustomTextField(
+          CustomInput(
+            label: 'Email',
             controller: _emailController,
-            hintText: 'Email',
-            prefixIcon: Icons.email,
+            hint: 'Enter your email',
+            prefixIcon: Icon(Icons.email, color: AppTheme.neutralColor),
             keyboardType: TextInputType.emailAddress,
             textInputAction: TextInputAction.next,
-            onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
+            onSubmitted: (_) => FocusScope.of(context).nextFocus(),
             validator: (value) {
               if (value == null || value.isEmpty) {
                 return 'Please enter your email';
@@ -191,12 +193,13 @@ class _RegisterFormState extends State<RegisterForm> {
           const SizedBox(height: 16),
 
           // Location Field
-          CustomTextField(
+          CustomInput(
+            label: 'Location',
             controller: _locationController,
-            hintText: 'Location',
-            prefixIcon: Icons.location_on,
+            hint: 'Enter your location',
+            prefixIcon: Icon(Icons.location_on, color: AppTheme.neutralColor),
             textInputAction: TextInputAction.next,
-            onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
+            onSubmitted: (_) => FocusScope.of(context).nextFocus(),
             suffixIcon: _isGettingLocation || _isValidatingLocation
                 ? const SizedBox(
                     width: 20,
@@ -207,7 +210,7 @@ class _RegisterFormState extends State<RegisterForm> {
                     ),
                   )
                 : IconButton(
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.my_location,
                       color: AppTheme.neutralColor,
                     ),
@@ -223,13 +226,14 @@ class _RegisterFormState extends State<RegisterForm> {
           const SizedBox(height: 16),
 
           // Password Field
-          CustomTextField(
+          CustomInput(
+            label: 'Password',
             controller: _passwordController,
-            hintText: 'Password',
-            prefixIcon: Icons.lock,
+            hint: 'Enter your password',
+            prefixIcon: Icon(Icons.lock, color: AppTheme.neutralColor),
             obscureText: _obscurePassword,
             textInputAction: TextInputAction.next,
-            onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
+            onSubmitted: (_) => FocusScope.of(context).nextFocus(),
             suffixIcon: IconButton(
               icon: Icon(
                 _obscurePassword ? Icons.visibility_off : Icons.visibility,
@@ -254,13 +258,14 @@ class _RegisterFormState extends State<RegisterForm> {
           const SizedBox(height: 16),
 
           // Confirm Password Field
-          CustomTextField(
+          CustomInput(
+            label: 'Confirm Password',
             controller: _confirmPasswordController,
-            hintText: 'Confirm Password',
-            prefixIcon: Icons.lock,
+            hint: 'Confirm your password',
+            prefixIcon: Icon(Icons.lock, color: AppTheme.neutralColor),
             obscureText: _obscureConfirmPassword,
             textInputAction: TextInputAction.done,
-            onFieldSubmitted: (_) => _register(),
+            onSubmitted: (_) => _register(),
             suffixIcon: IconButton(
               icon: Icon(
                 _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,

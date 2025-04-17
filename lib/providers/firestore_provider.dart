@@ -156,6 +156,10 @@ class FirestoreProvider with ChangeNotifier {
     return _firestoreService.getAllMeetings();
   }
 
+  Stream<List<ChurchModel>> getAllBranches() {
+    return _firestoreService.getAllBranches();
+  }
+
   Stream<ChurchModel?> getChurch(String churchId) {
     return _firestoreService.getChurch(churchId);
   }

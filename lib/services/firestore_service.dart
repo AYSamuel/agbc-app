@@ -84,9 +84,15 @@ class FirestoreService {
   }
 
   Stream<List<MeetingModel>> getAllMeetings() {
-    return _firestore.collection('meetings').snapshots().map((snapshot) {
-      return snapshot.docs.map((doc) => MeetingModel.fromJson(doc.data())).toList();
-    });
+    return _firestore
+        .collection('meetings')
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((doc) => MeetingModel.fromJson({
+                  'id': doc.id,
+                  ...doc.data(),
+                }))
+            .toList());
   }
 
   Future<void> createMeeting(MeetingModel meeting) async {
@@ -119,12 +125,14 @@ class FirestoreService {
 
   // Church operations
   Stream<ChurchModel?> getChurch(String churchId) {
-    return _firestore.collection('churches').doc(churchId).snapshots().map((doc) {
-      if (doc.exists) {
-        return ChurchModel.fromJson(doc.data()!);
-      }
-      return null;
-    });
+    return _firestore
+        .collection('churches')
+        .doc(churchId)
+        .snapshots()
+        .map((doc) => doc.exists ? ChurchModel.fromJson({
+              'id': doc.id,
+              ...doc.data()!,
+            }) : null);
   }
 
   Future<void> updateChurch(ChurchModel church) async {
@@ -171,5 +179,17 @@ class FirestoreService {
     } catch (e) {
       throw Exception('Failed to update user role: $e');
     }
+  }
+
+  Stream<List<ChurchModel>> getAllBranches() {
+    return _firestore
+        .collection('churches')
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((doc) => ChurchModel.fromJson({
+                  'id': doc.id,
+                  ...doc.data(),
+                }))
+            .toList());
   }
 }

@@ -10,7 +10,8 @@ class ProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final user = Provider.of<AuthService>(context).currentUser;
+    final authService = Provider.of<AuthService>(context);
+    final user = authService.currentUser;
     
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
@@ -111,7 +112,7 @@ class ProfileScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: 8),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                             decoration: BoxDecoration(
                               color: _getRoleColor(user?.role ?? 'member'),
                               borderRadius: BorderRadius.circular(20),
@@ -128,16 +129,17 @@ class ProfileScreen extends StatelessWidget {
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
-                                fontSize: 14,
+                                fontSize: 12,
                                 letterSpacing: 0.5,
                               ),
                             ),
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'Member of AGBC Lighthouse Berlin Church',
+                            'AGBC Lighthouse Berlin',
                             style: TextStyle(
                               fontSize: 14,
+                              fontWeight: FontWeight.w500,
                               color: Colors.grey.shade600,
                             ),
                           ),
@@ -147,7 +149,7 @@ class ProfileScreen extends StatelessWidget {
                   ],
                 ),
               ),
-              
+               
               // Personal Information Section
               Padding(
                 padding: const EdgeInsets.all(24),

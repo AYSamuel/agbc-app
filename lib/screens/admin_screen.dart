@@ -4,6 +4,7 @@ import '../providers/firestore_provider.dart';
 import 'user_management_screen.dart';
 import 'task_management_screen.dart';
 import 'meeting_management_screen.dart';
+import 'branch_management_screen.dart';
 import '../utils/theme.dart';
 
 class AdminScreen extends StatelessWidget {
@@ -50,6 +51,17 @@ class AdminScreen extends StatelessWidget {
                 context,
                 MaterialPageRoute(
                   builder: (context) => const MeetingManagementScreen(),
+                ),
+              ),
+            ),
+            _buildAdminCard(
+              context,
+              icon: Icons.church,
+              title: 'Branches',
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const BranchManagementScreen(),
                 ),
               ),
             ),

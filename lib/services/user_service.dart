@@ -2,14 +2,30 @@
 
 import 'package:firebase_auth/firebase_auth.dart'; // Import Firebase Authentication
 import 'package:cloud_firestore/cloud_firestore.dart'; // Import Firestore for database access
+import 'package:flutter/foundation.dart';
 import '../models/user_model.dart'; // Import the UserModel
 
 /// Service class for handling user-related operations with Firebase.
-class UserService {
+class UserService with ChangeNotifier {
   final FirebaseAuth _auth =
       FirebaseAuth.instance; // Instance of FirebaseAuth for authentication
   final FirebaseFirestore _firestore =
       FirebaseFirestore.instance; // Instance of Firestore for database access
+
+  UserModel? _currentUser;
+  
+  UserModel? get currentUser => _currentUser;
+  
+  UserService() {
+    _auth.authStateChanges().listen((User? user) async {
+      if (user != null) {
+        _currentUser = await getUserDetails(user.uid);
+      } else {
+        _currentUser = null;
+      }
+      notifyListeners();
+    });
+  }
 
   /// Fetches user details from Firestore by user ID (UID).
   ///
@@ -38,6 +54,8 @@ class UserService {
     try {
       // Update the user's document in the 'users' collection with new data
       await _firestore.collection('users').doc(user.uid).update(user.toJson());
+      _currentUser = user;
+      notifyListeners();
       return true; // Return true if the update was successful
     } catch (e) {
       print('Error updating user: $e'); // Log any errors that occur

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:agbc_app/services/auth_service.dart';
-import 'package:agbc_app/widgets/custom_text_field.dart';
+import 'package:agbc_app/widgets/custom_input.dart';
 import 'package:agbc_app/widgets/custom_button.dart';
 import 'package:agbc_app/widgets/loading_indicator.dart';
 import 'package:agbc_app/utils/theme.dart';
@@ -23,6 +23,8 @@ class _LoginFormState extends State<LoginForm> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _emailFocusNode = FocusNode();
+  final _passwordFocusNode = FocusNode();
   bool _isLoading = false;
   bool _obscurePassword = true;
 
@@ -30,6 +32,8 @@ class _LoginFormState extends State<LoginForm> {
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _emailFocusNode.dispose();
+    _passwordFocusNode.dispose();
     super.dispose();
   }
 
@@ -125,13 +129,18 @@ class _LoginFormState extends State<LoginForm> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // Email Field
-          CustomTextField(
+          CustomInput(
+            label: 'Email',
             controller: _emailController,
-            hintText: 'Email',
-            prefixIcon: Icons.email,
+            hint: 'Enter your email',
+            prefixIcon: Icon(Icons.email, color: AppTheme.neutralColor),
             keyboardType: TextInputType.emailAddress,
+            focusNode: _emailFocusNode,
             textInputAction: TextInputAction.next,
-            onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
+            onSubmitted: (_) {
+              // Move focus to password field
+              FocusScope.of(context).requestFocus(_passwordFocusNode);
+            },
             validator: (value) {
               if (value == null || value.isEmpty) {
                 return 'Please enter your email';
@@ -145,13 +154,15 @@ class _LoginFormState extends State<LoginForm> {
           const SizedBox(height: 16),
 
           // Password Field
-          CustomTextField(
+          CustomInput(
+            label: 'Password',
             controller: _passwordController,
-            hintText: 'Password',
-            prefixIcon: Icons.lock,
+            hint: 'Enter your password',
+            prefixIcon: Icon(Icons.lock, color: AppTheme.neutralColor),
             obscureText: _obscurePassword,
+            focusNode: _passwordFocusNode,
             textInputAction: TextInputAction.done,
-            onFieldSubmitted: (_) => _login(),
+            onSubmitted: (_) => _login(),
             suffixIcon: IconButton(
               icon: Icon(
                 _obscurePassword ? Icons.visibility_off : Icons.visibility,

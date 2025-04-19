@@ -1,5 +1,12 @@
 import 'package:flutter/material.dart';
 
+/// A simple loading indicator widget that displays a circular progress indicator.
+/// 
+/// This widget provides a consistent loading indicator design across the app with:
+/// - Fixed size (20x20)
+/// - Thin stroke width (2)
+/// - White color
+/// - Can be used in buttons or other UI elements
 class LoadingIndicator extends StatelessWidget {
   const LoadingIndicator({super.key});
 

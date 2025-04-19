@@ -1,7 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../utils/theme.dart';
 
-class CustomBackButton extends StatelessWidget {
+/// A customizable back button widget with animation and haptic feedback.
+/// 
+/// This widget provides a consistent back button design across the app with:
+/// - Smooth animation on press
+/// - Haptic feedback
+/// - Customizable color
+/// - Shadow and rounded corners
+class CustomBackButton extends StatefulWidget {
   final VoidCallback onPressed;
   final Color? color;
 
@@ -12,30 +20,71 @@ class CustomBackButton extends StatelessWidget {
   });
 
   @override
+  State<CustomBackButton> createState() => _CustomBackButtonState();
+}
+
+class _CustomBackButtonState extends State<CustomBackButton> with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 150),
+    );
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.9).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleTap() async {
+    // Provide haptic feedback
+    await HapticFeedback.lightImpact();
+    
+    // Animate the button
+    await _controller.forward();
+    await _controller.reverse();
+    
+    // Call the onPressed callback
+    widget.onPressed();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
+    return ScaleTransition(
+      scale: _scaleAnimation,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
           borderRadius: BorderRadius.circular(12),
-          onTap: onPressed,
-          child: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Icon(
-              Icons.arrow_back_ios_new_rounded,
-              color: color ?? AppTheme.primaryColor,
-              size: 20,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(12),
+            onTap: _handleTap,
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Icon(
+                Icons.arrow_back_ios_new_rounded,
+                color: widget.color ?? AppTheme.primaryColor,
+                size: 20,
+              ),
             ),
           ),
         ),

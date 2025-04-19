@@ -22,9 +22,13 @@ class RadialMenu extends StatefulWidget {
 }
 
 class _RadialMenuState extends State<RadialMenu> with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _scaleAnimation;
-  late Animation<double> _rotationAnimation;
+  AnimationController? _controller;
+  Animation<double>? _scaleAnimation;
+  Animation<double>? _rotationAnimation;
+  Animation<double>? _opacityAnimation;
+  Animation<Offset>? _taskOffsetAnimation;
+  Animation<Offset>? _meetingOffsetAnimation;
+  Animation<Offset>? _branchOffsetAnimation;
   bool _isOpen = false;
 
   @override
@@ -35,34 +39,43 @@ class _RadialMenuState extends State<RadialMenu> with SingleTickerProviderStateM
       duration: const Duration(milliseconds: 300),
     );
 
-    _scaleAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: Curves.easeInOut,
-      ),
+    final curvedAnimation = CurvedAnimation(
+      parent: _controller!,
+      curve: Curves.easeInOut,
     );
 
-    _rotationAnimation = Tween<double>(begin: 0.0, end: 0.5).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: Curves.easeInOut,
-      ),
-    );
+    _scaleAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(curvedAnimation);
+    _rotationAnimation = Tween<double>(begin: 0.0, end: 0.5).animate(curvedAnimation);
+    _opacityAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(curvedAnimation);
+    _taskOffsetAnimation = Tween<Offset>(
+      begin: const Offset(0, 0),
+      end: const Offset(-0.5, -0.5),
+    ).animate(curvedAnimation);
+    _meetingOffsetAnimation = Tween<Offset>(
+      begin: const Offset(0, 0),
+      end: const Offset(-0.5, 0),
+    ).animate(curvedAnimation);
+    _branchOffsetAnimation = Tween<Offset>(
+      begin: const Offset(0, 0),
+      end: const Offset(0, -0.5),
+    ).animate(curvedAnimation);
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _controller?.dispose();
     super.dispose();
   }
 
   void _toggleMenu() {
+    if (_controller == null) return;
+    
     setState(() {
       _isOpen = !_isOpen;
       if (_isOpen) {
-        _controller.forward();
+        _controller!.forward();
       } else {
-        _controller.reverse();
+        _controller!.reverse();
       }
     });
   }
@@ -71,31 +84,46 @@ class _RadialMenuState extends State<RadialMenu> with SingleTickerProviderStateM
     required IconData icon,
     required String label,
     required VoidCallback onTap,
+    required String semanticLabel,
+    required Animation<Offset>? offsetAnimation,
   }) {
-    return ScaleTransition(
-      scale: _scaleAnimation,
-      child: FloatingActionButton(
-        heroTag: null,
-        onPressed: onTap,
-        backgroundColor: Colors.white,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              color: AppTheme.primaryColor,
-              size: 24,
+    if (offsetAnimation == null || _scaleAnimation == null || _opacityAnimation == null) {
+      return const SizedBox.shrink();
+    }
+
+    return SlideTransition(
+      position: offsetAnimation,
+      child: ScaleTransition(
+        scale: _scaleAnimation!,
+        child: FadeTransition(
+          opacity: _opacityAnimation!,
+          child: FloatingActionButton(
+            heroTag: null,
+            onPressed: onTap,
+            backgroundColor: Colors.white,
+            elevation: 4,
+            tooltip: label,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  icon,
+                  color: AppTheme.primaryColor,
+                  size: 24,
+                  semanticLabel: semanticLabel,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    color: AppTheme.primaryColor,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: const TextStyle(
-                color: AppTheme.primaryColor,
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -103,70 +131,74 @@ class _RadialMenuState extends State<RadialMenu> with SingleTickerProviderStateM
 
   @override
   Widget build(BuildContext context) {
+    if (_controller == null || _rotationAnimation == null) {
+      return const SizedBox.shrink();
+    }
+
     return Stack(
       children: [
         // Task Option
         Positioned(
-          right: 80,
-          bottom: 80,
-          child: ScaleTransition(
-            scale: _scaleAnimation,
-            child: _buildMenuItem(
-              icon: Icons.task_alt,
-              label: 'Task',
-              onTap: () {
-                _toggleMenu();
-                widget.onTaskPressed();
-              },
-            ),
+          right: 50,
+          bottom: 50,
+          child: _buildMenuItem(
+            icon: Icons.task_alt,
+            label: 'Task',
+            semanticLabel: 'Create new task',
+            onTap: () {
+              _toggleMenu();
+              widget.onTaskPressed();
+            },
+            offsetAnimation: _taskOffsetAnimation,
           ),
         ),
         // Meeting Option
         if (widget.showMeetingOption)
           Positioned(
-            right: 80,
-            bottom: 20,
-            child: ScaleTransition(
-              scale: _scaleAnimation,
-              child: _buildMenuItem(
-                icon: Icons.calendar_today,
-                label: 'Meeting',
-                onTap: () {
-                  _toggleMenu();
-                  widget.onMeetingPressed?.call();
-                },
-              ),
+            right: 50,
+            bottom: 10,
+            child: _buildMenuItem(
+              icon: Icons.calendar_today,
+              label: 'Meeting',
+              semanticLabel: 'Schedule new meeting',
+              onTap: () {
+                _toggleMenu();
+                widget.onMeetingPressed?.call();
+              },
+              offsetAnimation: _meetingOffsetAnimation,
             ),
           ),
         // Branch Option (only visible for admins)
         if (widget.showBranchOption)
           Positioned(
-            right: 20,
-            bottom: 80,
-            child: ScaleTransition(
-              scale: _scaleAnimation,
-              child: _buildMenuItem(
-                icon: Icons.church,
-                label: 'Branch',
-                onTap: () {
-                  _toggleMenu();
-                  widget.onBranchPressed?.call();
-                },
-              ),
+            right: 10,
+            bottom: 50,
+            child: _buildMenuItem(
+              icon: Icons.church,
+              label: 'Branch',
+              semanticLabel: 'Create new branch',
+              onTap: () {
+                _toggleMenu();
+                widget.onBranchPressed?.call();
+              },
+              offsetAnimation: _branchOffsetAnimation,
             ),
           ),
         // Main Button
         Positioned(
-          right: 20,
-          bottom: 20,
+          right: 10,
+          bottom: 10,
           child: RotationTransition(
-            turns: _rotationAnimation,
+            turns: _rotationAnimation!,
             child: FloatingActionButton(
               onPressed: _toggleMenu,
               backgroundColor: AppTheme.primaryColor,
+              elevation: 4,
+              tooltip: _isOpen ? 'Close menu' : 'Open menu',
               child: Icon(
                 _isOpen ? Icons.close : Icons.add,
                 color: Colors.white,
+                semanticLabel: _isOpen ? 'Close menu' : 'Open menu',
               ),
             ),
           ),

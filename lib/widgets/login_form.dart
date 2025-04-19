@@ -6,6 +6,7 @@ import 'package:agbc_app/widgets/custom_input.dart';
 import 'package:agbc_app/widgets/custom_button.dart';
 import 'package:agbc_app/widgets/loading_indicator.dart';
 import 'package:agbc_app/utils/theme.dart';
+import 'package:agbc_app/widgets/mixins/form_validation_mixin.dart';
 
 class LoginForm extends StatefulWidget {
   final VoidCallback onLoginSuccess;
@@ -19,7 +20,7 @@ class LoginForm extends StatefulWidget {
   State<LoginForm> createState() => _LoginFormState();
 }
 
-class _LoginFormState extends State<LoginForm> {
+class _LoginFormState extends State<LoginForm> with FormValidationMixin {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -29,12 +30,61 @@ class _LoginFormState extends State<LoginForm> {
   bool _obscurePassword = true;
 
   @override
+  void initState() {
+    super.initState();
+    _emailFocusNode.addListener(_onEmailFocusChange);
+    _passwordFocusNode.addListener(_onPasswordFocusChange);
+  }
+
+  @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _emailFocusNode.removeListener(_onEmailFocusChange);
     _emailFocusNode.dispose();
+    _passwordFocusNode.removeListener(_onPasswordFocusChange);
     _passwordFocusNode.dispose();
     super.dispose();
+  }
+
+  void _onEmailFocusChange() {
+    if (!_emailFocusNode.hasFocus) {
+      _formKey.currentState?.validate();
+    }
+  }
+
+  void _onPasswordFocusChange() {
+    if (!_passwordFocusNode.hasFocus) {
+      _formKey.currentState?.validate();
+    }
+  }
+
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.error_outline, color: Colors.white),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                message,
+                style: const TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: AppTheme.errorColor,
+        duration: const Duration(seconds: 4),
+        action: SnackBarAction(
+          label: 'Dismiss',
+          textColor: Colors.white,
+          onPressed: () {
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          },
+        ),
+      ),
+    );
   }
 
   Future<void> _login() async {
@@ -57,11 +107,8 @@ class _LoginFormState extends State<LoginForm> {
     } catch (e) {
       if (mounted) {
         String errorMessage;
-        print('Login error: $e (${e.runtimeType})');
         
-        if (e is AuthException) {
-          errorMessage = e.message;
-        } else if (e is FirebaseAuthException) {
+        if (e is FirebaseAuthException) {
           switch (e.code) {
             case 'user-not-found':
               errorMessage = 'No account found with this email. Please register first.';
@@ -85,32 +132,7 @@ class _LoginFormState extends State<LoginForm> {
           errorMessage = 'An unexpected error occurred. Please try again.';
         }
 
-        // Show error in a more user-friendly way
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.error_outline, color: Colors.white),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    errorMessage,
-                    style: const TextStyle(color: Colors.white),
-                  ),
-                ),
-              ],
-            ),
-            backgroundColor: AppTheme.errorColor,
-            duration: const Duration(seconds: 4),
-            action: SnackBarAction(
-              label: 'Dismiss',
-              textColor: Colors.white,
-              onPressed: () {
-                ScaffoldMessenger.of(context).hideCurrentSnackBar();
-              },
-            ),
-          ),
-        );
+        _showErrorSnackBar(errorMessage);
       }
     } finally {
       if (mounted) {
@@ -137,18 +159,10 @@ class _LoginFormState extends State<LoginForm> {
             focusNode: _emailFocusNode,
             textInputAction: TextInputAction.next,
             onSubmitted: (_) {
-              // Move focus to password field
               FocusScope.of(context).requestFocus(_passwordFocusNode);
             },
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Please enter your email';
-              }
-              if (!value.contains('@')) {
-                return 'Please enter a valid email';
-              }
-              return null;
-            },
+            validator: validateEmail,
+            autofillHints: const [AutofillHints.email],
           ),
           const SizedBox(height: 16),
 
@@ -173,15 +187,8 @@ class _LoginFormState extends State<LoginForm> {
                 });
               },
             ),
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Please enter your password';
-              }
-              if (value.length < 6) {
-                return 'Password must be at least 6 characters';
-              }
-              return null;
-            },
+            validator: validatePassword,
+            autofillHints: const [AutofillHints.password],
           ),
           const SizedBox(height: 24),
 

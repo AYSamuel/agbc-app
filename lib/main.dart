@@ -10,12 +10,53 @@ import 'config/theme.dart';
 import 'screens/splash_screen.dart';
 
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await dotenv.load(fileName: ".env");
-  await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform, name: 'agbc app');
+  try {
+    // Ensure Flutter bindings are initialized
+    WidgetsFlutterBinding.ensureInitialized();
 
-  // Set system UI overlay style to be completely independent
+    // Load environment variables
+    await dotenv.load(fileName: ".env");
+
+    // Initialize Firebase
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+      name: 'agbc app',
+    );
+
+    // Configure system UI
+    _configureSystemUI();
+
+    // Initialize services
+    final authService = AuthService();
+
+    runApp(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider(create: (context) => authService),
+          ChangeNotifierProvider(create: (context) => FirestoreProvider()),
+        ],
+        child: const MyApp(),
+      ),
+    );
+  } catch (e, stackTrace) {
+    // Handle initialization errors
+    debugPrint('Error initializing app: $e');
+    debugPrint('Stack trace: $stackTrace');
+    // You might want to show an error screen or handle the error differently
+    runApp(
+      MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: Text('Error initializing app: $e'),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+void _configureSystemUI() {
+  // Set system UI overlay style
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
@@ -26,30 +67,21 @@ Future<void> main() async {
     ),
   );
 
-  // Disable edge-to-edge mode to prevent app content from flowing under system bars
-  SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: SystemUiOverlay.values);
-
-  final authService = AuthService();
-
-  runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (context) => authService),
-        ChangeNotifierProvider(create: (context) => FirestoreProvider()),
-      ],
-      child: const MyApp(),
-    ),
+  // Disable edge-to-edge mode
+  SystemChrome.setEnabledSystemUIMode(
+    SystemUiMode.manual,
+    overlays: SystemUiOverlay.values,
   );
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'AGBC App',
+      debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme.copyWith(
         appBarTheme: const AppBarTheme(
           systemOverlayStyle: SystemUiOverlayStyle.dark,

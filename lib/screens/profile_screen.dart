@@ -245,13 +245,28 @@ class ProfileScreen extends StatelessWidget {
                     child: InkWell(
                       borderRadius: BorderRadius.circular(12),
                       onTap: () async {
-                        final authService = Provider.of<AuthService>(context, listen: false);
-                        await authService.logout();
-                        if (context.mounted) {
-                          Navigator.of(context).pushAndRemoveUntil(
-                            MaterialPageRoute(builder: (context) => const LoginScreen()),
-                            (route) => false,
-                          );
+                        try {
+                          final authService = Provider.of<AuthService>(context, listen: false);
+                          await authService.logout();
+                          
+                          if (context.mounted) {
+                            // Clear the navigation stack and go to login screen
+                            Navigator.of(context).pushAndRemoveUntil(
+                              MaterialPageRoute(
+                                builder: (context) => const LoginScreen(isLoggingOut: true),
+                              ),
+                              (route) => false,
+                            );
+                          }
+                        } catch (e) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Error during logout: $e'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
                         }
                       },
                       child: Padding(

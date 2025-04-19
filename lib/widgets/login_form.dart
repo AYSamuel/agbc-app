@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:agbc_app/services/auth_service.dart';
+import 'package:agbc_app/services/preferences_service.dart';
 import 'package:agbc_app/widgets/custom_input.dart';
 import 'package:agbc_app/widgets/custom_button.dart';
 import 'package:agbc_app/widgets/loading_indicator.dart';
@@ -10,10 +11,12 @@ import 'package:agbc_app/widgets/mixins/form_validation_mixin.dart';
 
 class LoginForm extends StatefulWidget {
   final VoidCallback onLoginSuccess;
+  final bool isLoggingOut;
 
   const LoginForm({
     super.key,
     required this.onLoginSuccess,
+    this.isLoggingOut = false,
   });
 
   @override
@@ -28,12 +31,37 @@ class _LoginFormState extends State<LoginForm> with FormValidationMixin {
   final _passwordFocusNode = FocusNode();
   bool _isLoading = false;
   bool _obscurePassword = true;
+  bool _rememberMe = false;
 
   @override
   void initState() {
     super.initState();
     _emailFocusNode.addListener(_onEmailFocusChange);
     _passwordFocusNode.addListener(_onPasswordFocusChange);
+    _loadSavedCredentials();
+  }
+
+  Future<void> _loadSavedCredentials() async {
+    // Check if we're coming from a logout
+    if (widget.isLoggingOut) {
+      return;
+    }
+
+    final isRememberMeEnabled = await PreferencesService.isRememberMeEnabled();
+    if (isRememberMeEnabled) {
+      final savedEmail = await PreferencesService.getSavedEmail();
+      final savedPassword = await PreferencesService.getSavedPassword();
+      
+      if (savedEmail != null && savedPassword != null) {
+        setState(() {
+          _rememberMe = true;
+          _emailController.text = savedEmail;
+          _passwordController.text = savedPassword;
+        });
+        // Auto-login if credentials are available
+        _login();
+      }
+    }
   }
 
   @override
@@ -97,10 +125,22 @@ class _LoginFormState extends State<LoginForm> with FormValidationMixin {
 
     try {
       final authService = Provider.of<AuthService>(context, listen: false);
+      
+      // Set remember me preference before login
+      await authService.setRememberMe(_rememberMe);
+      
       await authService.signInWithEmailAndPassword(
         _emailController.text.trim(),
         _passwordController.text,
       );
+
+      // Save credentials if remember me is enabled
+      await PreferencesService.saveLoginCredentials(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+        rememberMe: _rememberMe,
+      );
+
       if (mounted) {
         widget.onLoginSuccess();
       }
@@ -189,6 +229,29 @@ class _LoginFormState extends State<LoginForm> with FormValidationMixin {
             ),
             validator: validatePassword,
             autofillHints: const [AutofillHints.password],
+          ),
+          const SizedBox(height: 16),
+
+          // Remember Me Checkbox
+          Row(
+            children: [
+              Checkbox(
+                value: _rememberMe,
+                onChanged: (value) {
+                  setState(() {
+                    _rememberMe = value ?? false;
+                  });
+                },
+                activeColor: AppTheme.primaryColor,
+              ),
+              const Text(
+                'Remember Me',
+                style: TextStyle(
+                  color: Colors.black54,
+                  fontSize: 14,
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 24),
 

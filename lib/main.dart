@@ -8,6 +8,10 @@ import 'package:agbc_app/providers/firestore_provider.dart';
 import 'firebase_options.dart';
 import 'config/theme.dart';
 import 'screens/splash_screen.dart';
+import 'services/location_service.dart';
+import 'services/permissions_service.dart';
+import 'services/notification_service.dart';
+import 'services/user_service.dart';
 
 Future<void> main() async {
   try {
@@ -23,17 +27,32 @@ Future<void> main() async {
       name: 'agbc app',
     );
 
+    // Initialize services
+    final locationService = LocationService();
+    final permissionsService = PermissionsService();
+    final notificationService = NotificationService();
+    final userService = UserService();
+    final authService = AuthService();
+
+    // Initialize services in sequence
+    await permissionsService.initialize();
+    await locationService.initialize();
+    await notificationService.initialize();
+    await userService.initialize();
+    await authService.initialize();
+
     // Configure system UI
     _configureSystemUI();
-
-    // Initialize services
-    final authService = AuthService();
 
     runApp(
       MultiProvider(
         providers: [
           ChangeNotifierProvider(create: (context) => authService),
           ChangeNotifierProvider(create: (context) => FirestoreProvider()),
+          Provider(create: (context) => locationService),
+          Provider(create: (context) => permissionsService),
+          Provider(create: (context) => notificationService),
+          Provider(create: (context) => userService),
         ],
         child: const MyApp(),
       ),
@@ -42,7 +61,6 @@ Future<void> main() async {
     // Handle initialization errors
     debugPrint('Error initializing app: $e');
     debugPrint('Stack trace: $stackTrace');
-    // You might want to show an error screen or handle the error differently
     runApp(
       MaterialApp(
         home: Scaffold(

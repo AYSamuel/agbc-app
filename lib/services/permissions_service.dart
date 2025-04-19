@@ -1,7 +1,16 @@
 import 'package:flutter/foundation.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 /// Service class for handling role-based permissions
 class PermissionsService with ChangeNotifier {
+  Future<void> initialize() async {
+    // Initialize and request necessary permissions
+    await Permission.location.request();
+    await Permission.notification.request();
+    await Permission.camera.request();
+    await Permission.storage.request();
+  }
+
   /// Get default permissions for a given role
   static Map<String, bool> getDefaultPermissions(String role) {
     switch (role) {

@@ -5,6 +5,7 @@ import '../models/user_model.dart'; // Import our custom UserModel
 import '../models/task_model.dart';
 import '../models/meeting_model.dart';
 import '../services/firestore_service.dart';
+import '../services/permissions_service.dart';
 
 /// Exception for user-facing authentication errors.
 class AuthException implements Exception {
@@ -18,16 +19,39 @@ class AuthException implements Exception {
 /// Service class for handling authentication-related operations.
 class AuthService with ChangeNotifier {
   // Instance of FirebaseAuth for authentication operations
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirestoreService _firestoreService = FirestoreService();
+  @visibleForTesting
+  final FirebaseAuth _auth;
+  final FirestoreService _firestoreService;
+  final PermissionsService _permissionsService;
 
   // Private variable to store the current user
+  @visibleForTesting
   UserModel? _currentUser;
 
   // Getter to access the current user
   UserModel? get currentUser => _currentUser;
 
-  AuthService() {
+  // Setter for testing purposes
+  @visibleForTesting
+  set currentUser(UserModel? user) {
+    _currentUser = user;
+    notifyListeners();
+  }
+
+  // Rate limiting
+  @visibleForTesting
+  final Map<String, List<DateTime>> _loginAttempts = {};
+  @visibleForTesting
+  static const int _maxAttempts = 5;
+  @visibleForTesting
+  static const Duration _attemptWindow = Duration(minutes: 15);
+  @visibleForTesting
+  static const Duration _lockoutDuration = Duration(minutes: 30);
+
+  AuthService({FirebaseAuth? auth}) 
+      : _auth = auth ?? FirebaseAuth.instance,
+        _firestoreService = FirestoreService(),
+        _permissionsService = PermissionsService() {
     _auth.authStateChanges().listen((user) async {
       if (user != null) {
         try {
@@ -51,7 +75,7 @@ class AuthService with ChangeNotifier {
                 isActive: true,
                 emailVerified: user.emailVerified,
                 departments: [],
-                permissions: _getDefaultPermissions('member'),
+                permissions: PermissionsService.getDefaultPermissions('member'),
                 notificationSettings: {
                   'email': true,
                   'push': true,
@@ -71,13 +95,51 @@ class AuthService with ChangeNotifier {
     });
   }
 
+  /// Check if an IP is rate limited
+  @visibleForTesting
+  bool isRateLimited(String ip) {
+    final now = DateTime.now();
+    final attempts = _loginAttempts[ip] ?? [];
+    
+    // Remove attempts outside the window
+    attempts.removeWhere((attempt) => now.difference(attempt) > _attemptWindow);
+    
+    if (attempts.length >= _maxAttempts) {
+      final lastAttempt = attempts.last;
+      if (now.difference(lastAttempt) < _lockoutDuration) {
+        return true;
+      }
+      // Reset attempts if lockout period has passed
+      _loginAttempts[ip] = [];
+    }
+    return false;
+  }
+
+  /// Record a login attempt
+  @visibleForTesting
+  void recordLoginAttempt(String ip) {
+    final now = DateTime.now();
+    final attempts = _loginAttempts[ip] ?? [];
+    attempts.add(now);
+    _loginAttempts[ip] = attempts;
+  }
+
   /// Logs in a user with the provided email and password.
-  Future<UserModel?> signInWithEmailAndPassword(String email, String password) async {
+  Future<UserModel?> signInWithEmailAndPassword(String email, String password, {String? ip}) async {
     try {
+      // Check rate limiting if IP is provided
+      if (ip != null && isRateLimited(ip)) {
+        throw AuthException('Too many login attempts. Please try again later.');
+      }
+
       final userCredential = await _auth.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
+
+      if (ip != null) {
+        recordLoginAttempt(ip);
+      }
 
       if (userCredential.user != null) {
         // Get the user document from Firestore
@@ -102,7 +164,7 @@ class AuthService with ChangeNotifier {
             isActive: true,
             emailVerified: userCredential.user!.emailVerified,
             departments: [],
-            permissions: _getDefaultPermissions('member'),
+            permissions: PermissionsService.getDefaultPermissions('member'),
             notificationSettings: {
               'email': true,
               'push': true,
@@ -119,7 +181,10 @@ class AuthService with ChangeNotifier {
       }
       return null;
     } catch (e) {
-      throw Exception('Failed to sign in: $e');
+      if (ip != null) {
+        recordLoginAttempt(ip);
+      }
+      throw AuthException(_handleAuthException(e as FirebaseAuthException));
     }
   }
 
@@ -150,7 +215,7 @@ class AuthService with ChangeNotifier {
           isActive: true,
           emailVerified: false,
           departments: [],
-          permissions: _getDefaultPermissions(role),
+          permissions: PermissionsService.getDefaultPermissions(role),
           notificationSettings: {
             'email': true,
             'push': true,
@@ -187,106 +252,19 @@ class AuthService with ChangeNotifier {
       // Update the user's role in Firestore
       await _firestoreService.collection('users').doc(userId).update({
         'role': newRole,
-        'permissions': _getDefaultPermissions(newRole),
+        'permissions': PermissionsService.getDefaultPermissions(newRole),
       });
 
       // If updating the current user's role, update the local state
       if (userId == _currentUser?.uid) {
         _currentUser = _currentUser?.copyWith(
           role: newRole,
-          permissions: _getDefaultPermissions(newRole),
+          permissions: PermissionsService.getDefaultPermissions(newRole),
         );
         notifyListeners();
       }
     } catch (e) {
       throw 'Failed to update user role: $e';
-    }
-  }
-
-  Map<String, bool> _getDefaultPermissions(String role) {
-    switch (role) {
-      case 'admin':
-        return {
-          // User Management
-          'manage_users': true,
-          'view_users': true,
-          'assign_roles': true,
-
-          // Church Management
-          'manage_church': true,
-          'manage_departments': true,
-
-          // Task Management
-          'create_tasks': true,
-          'edit_tasks': true,
-          'delete_tasks': true,
-          'assign_tasks': true,
-          'view_all_tasks': true,
-
-          // Meeting Management
-          'create_meetings': true,
-          'edit_meetings': true,
-          'delete_meetings': true,
-          'invite_to_meetings': true,
-          'view_all_meetings': true,
-
-          // Content Management
-          'create_content': true,
-          'edit_content': true,
-          'delete_content': true,
-        };
-      case 'pastor':
-        return {
-          // User Management
-          'view_users': true,
-
-          // Task Management
-          'create_tasks': true,
-          'edit_tasks': true,
-          'delete_tasks': true,
-          'assign_tasks': true,
-          'view_all_tasks': true,
-
-          // Meeting Management
-          'create_meetings': true,
-          'edit_meetings': true,
-          'delete_meetings': true,
-          'invite_to_meetings': true,
-          'view_all_meetings': true,
-
-          // Content Management
-          'create_content': true,
-          'edit_content': true,
-        };
-      case 'worker':
-        return {
-          // User Management
-          'view_users': true,
-
-          // Task Management
-          'create_tasks': true,
-          'edit_tasks': true,
-          'delete_tasks': true,
-          'view_all_tasks': true,
-
-          // Meeting Management
-          'view_all_meetings': true,
-
-          // Content Management
-          'create_content': true,
-        };
-      case 'member':
-      default:
-        return {
-          // Task Management
-          'view_assigned_tasks': true,
-
-          // Meeting Management
-          'view_invited_meetings': true,
-
-          // Content Management
-          'view_content': true,
-        };
     }
   }
 
@@ -297,20 +275,7 @@ class AuthService with ChangeNotifier {
 
   /// Check if the current user can perform an action
   bool canPerformAction(String action) {
-    switch (action) {
-      case 'create_task':
-        return hasPermission('create_tasks');
-      case 'assign_task':
-        return hasPermission('assign_tasks');
-      case 'create_meeting':
-        return hasPermission('create_meetings');
-      case 'invite_to_meeting':
-        return hasPermission('invite_to_meetings');
-      case 'manage_users':
-        return hasPermission('manage_users');
-      default:
-        return false;
-    }
+    return PermissionsService.canPerformAction(_currentUser?.permissions ?? {}, action);
   }
 
   /// Get tasks based on user's role and permissions
@@ -321,49 +286,30 @@ class AuthService with ChangeNotifier {
     return Stream.value([]);
   }
 
-  /// Get meetings based on user's role and permissions
-  Stream<List<MeetingModel>> getMeetingsForCurrentUser() {
-    if (_currentUser != null) {
-      return _firestoreService.getMeetingsForUser(_currentUser!.uid);
-    }
-    return Stream.value([]);
-  }
-
   /// Logs out the current user.
   Future<void> logout() async {
-    await _auth.signOut();
-    _currentUser = null;
-    notifyListeners();
+    try {
+      await _auth.signOut();
+      _currentUser = null;
+      notifyListeners();
+    } catch (e) {
+      throw AuthException('Failed to logout: $e');
+    }
   }
 
   /// Checks if there's a currently authenticated user.
   Future<bool> checkAuthentication() async {
     try {
-      // Get the current user from FirebaseAuth
       User? user = _auth.currentUser;
       if (user != null) {
-        // Get user data from Firestore
-        DocumentSnapshot userDoc =
-            await _firestoreService.collection('users').doc(user.uid).get();
-
+        DocumentSnapshot userDoc = await _firestoreService.collection('users').doc(user.uid).get();
+        
         if (userDoc.exists && userDoc.data() != null) {
-          _currentUser =
-              UserModel.fromJson(userDoc.data() as Map<String, dynamic>);
-          notifyListeners();
-          return true;
-        } else {
-          // If no user document exists, create a basic one
-          _currentUser = UserModel(
-            uid: user.uid,
-            email: user.email ?? '',
-            displayName: user.displayName ?? '',
-            churchId: '',
-            role: 'member',
-            location: '',
-          );
+          _currentUser = UserModel.fromJson(userDoc.data() as Map<String, dynamic>);
           notifyListeners();
           return true;
         }
+        return false;
       }
       return false;
     } catch (e) {
@@ -378,21 +324,26 @@ class AuthService with ChangeNotifier {
       final user = _auth.currentUser;
       if (user != null) {
         await user.sendEmailVerification();
+      } else {
+        throw AuthException('No authenticated user found');
       }
     } catch (e) {
-      throw 'Failed to send verification email: $e';
+      throw AuthException('Failed to send verification email: $e');
     }
   }
 
   /// Checks if the current user's email is verified
   Future<bool> isEmailVerified() async {
-    final user = _auth.currentUser;
-    if (user != null) {
-      await user
-          .reload(); // Reload the user to get the latest email verification status
-      return user.emailVerified;
+    try {
+      final user = _auth.currentUser;
+      if (user != null) {
+        await user.reload();
+        return user.emailVerified;
+      }
+      return false;
+    } catch (e) {
+      throw AuthException('Failed to check email verification status: $e');
     }
-    return false;
   }
 
   String _handleAuthException(FirebaseAuthException e) {
@@ -432,65 +383,100 @@ class AuthService with ChangeNotifier {
   }
 
   Future<void> resetPassword(String email) async {
-    await _auth.sendPasswordResetEmail(email: email);
+    try {
+      await _auth.sendPasswordResetEmail(email: email);
+    } catch (e) {
+      throw AuthException(_handleAuthException(e as FirebaseAuthException));
+    }
   }
 
   Future<void> updatePassword(String newPassword) async {
-    if (_auth.currentUser != null) {
-      await _auth.currentUser!.updatePassword(newPassword);
+    try {
+      if (_auth.currentUser != null) {
+        await _auth.currentUser!.updatePassword(newPassword);
+      } else {
+        throw AuthException('No authenticated user found');
+      }
+    } catch (e) {
+      throw AuthException(_handleAuthException(e as FirebaseAuthException));
     }
   }
 
   Future<void> updateEmail(String newEmail) async {
-    if (_auth.currentUser != null) {
-      await _auth.currentUser!.updateEmail(newEmail);
-      if (_currentUser != null) {
-        _currentUser = _currentUser!.copyWith(email: newEmail);
-        await _firestoreService.updateUser(_currentUser!);
-        notifyListeners();
+    try {
+      if (_auth.currentUser != null) {
+        await _auth.currentUser!.updateEmail(newEmail);
+        if (_currentUser != null) {
+          _currentUser = _currentUser!.copyWith(email: newEmail);
+          await _firestoreService.updateUser(_currentUser!);
+          notifyListeners();
+        }
+      } else {
+        throw AuthException('No authenticated user found');
       }
+    } catch (e) {
+      throw AuthException(_handleAuthException(e as FirebaseAuthException));
     }
   }
 
   Future<void> updateProfile(String name, String? photoUrl) async {
-    if (_auth.currentUser != null) {
-      await _auth.currentUser!.updateDisplayName(name);
-      if (_currentUser != null) {
-        _currentUser = _currentUser!.copyWith(
-          displayName: name,
-          photoUrl: photoUrl,
-        );
-        await _firestoreService.updateUser(_currentUser!);
-        notifyListeners();
+    try {
+      if (_auth.currentUser != null) {
+        await _auth.currentUser!.updateDisplayName(name);
+        if (_currentUser != null) {
+          _currentUser = _currentUser!.copyWith(
+            displayName: name,
+            photoUrl: photoUrl,
+          );
+          await _firestoreService.updateUser(_currentUser!);
+          notifyListeners();
+        }
+      } else {
+        throw AuthException('No authenticated user found');
       }
+    } catch (e) {
+      throw AuthException('Failed to update profile: $e');
     }
   }
 
   Future<void> deleteAccount() async {
-    if (_auth.currentUser != null) {
-      await _firestoreService.collection('users').doc(_auth.currentUser!.uid).delete();
-      await _auth.currentUser!.delete();
-      _currentUser = null;
-      notifyListeners();
+    try {
+      if (_auth.currentUser != null) {
+        await _firestoreService.collection('users').doc(_auth.currentUser!.uid).delete();
+        await _auth.currentUser!.delete();
+        _currentUser = null;
+        notifyListeners();
+      } else {
+        throw AuthException('No authenticated user found');
+      }
+    } catch (e) {
+      throw AuthException('Failed to delete account: $e');
     }
   }
 
   /// Getter to check if user is authenticated
   bool get isAuthenticated => _auth.currentUser != null;
 
-  Stream<List<Map<String, dynamic>>> getMeetings() {
+  /// Get meetings based on user's role and permissions
+  Stream<List<MeetingModel>> getMeetings() {
+    if (_currentUser == null) {
+      return Stream.value([]);
+    }
+
     if (hasPermission('view_all_meetings')) {
-      return _firestoreService.collection('meetings').snapshots().map((snapshot) {
-        return snapshot.docs.map((doc) => doc.data()).toList();
-      });
+      return _firestoreService.collection('meetings')
+          .snapshots()
+          .map((snapshot) => snapshot.docs
+              .map((doc) => MeetingModel.fromJson(doc.data()))
+              .toList());
     } else {
       return _firestoreService
           .collection('meetings')
-          .where('invitedUsers', arrayContains: _currentUser?.uid)
+          .where('invitedUsers', arrayContains: _currentUser!.uid)
           .snapshots()
-          .map((snapshot) {
-        return snapshot.docs.map((doc) => doc.data()).toList();
-      });
+          .map((snapshot) => snapshot.docs
+              .map((doc) => MeetingModel.fromJson(doc.data()))
+              .toList());
     }
   }
 }

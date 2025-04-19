@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:agbc_app/utils/theme.dart';
 import 'package:agbc_app/widgets/radial_menu.dart';
+import 'package:agbc_app/widgets/task_status_card.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 import '../providers/firestore_provider.dart';
@@ -164,6 +165,20 @@ class HomeScreen extends StatelessWidget {
                 ],
               ),
             ),
+            // Task Status Section
+            StreamBuilder<List<TaskModel>>(
+              stream: firestoreProvider.getTasksForUser(user?.uid ?? ''),
+              builder: (context, snapshot) {
+                if (snapshot.hasError) {
+                  return const SizedBox.shrink();
+                }
+                if (!snapshot.hasData) {
+                  return const SizedBox.shrink();
+                }
+                return TaskStatusCard(tasks: snapshot.data!);
+              },
+            ),
+            const SizedBox(height: 24),
             // Tasks and Meetings Section
             Expanded(
               child: DefaultTabController(

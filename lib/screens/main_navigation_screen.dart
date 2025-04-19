@@ -15,14 +15,46 @@ class MainNavigationScreen extends StatefulWidget {
 
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _selectedIndex = 0;
+  List<Widget> _screens = [];
+  List<BottomNavigationBarItem> _navItems = [];
 
-  static List<Widget> _screens(BuildContext context) {
-    final user = Provider.of<AuthService>(context, listen: false).currentUser;
-    return [
-      const HomeScreen(),
-      const ProfileScreen(),
-      if (user?.isAdmin ?? false) const AdminScreen(),
+  @override
+  void initState() {
+    super.initState();
+    _initializeScreens();
+  }
+
+  void _initializeScreens() {
+    // Initialize with default screens
+    _screens = const [
+      HomeScreen(),
+      ProfileScreen(),
     ];
+    
+    // Initialize with default navigation items
+    _navItems = [
+      _buildNavItem(Icons.home, 'Home', 0, 0),
+      _buildNavItem(Icons.person, 'Profile', 1, 0),
+    ];
+  }
+
+  BottomNavigationBarItem _buildNavItem(IconData icon, String label, int index, int currentIndex) {
+    return BottomNavigationBarItem(
+      icon: Container(
+        decoration: currentIndex == index
+            ? BoxDecoration(
+                color: AppTheme.primaryColor.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(16),
+              )
+            : null,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        child: Icon(
+          icon,
+          color: currentIndex == index ? AppTheme.primaryColor : AppTheme.neutralColor,
+        ),
+      ),
+      label: label,
+    );
   }
 
   void _onItemTapped(int index) {
@@ -35,78 +67,56 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     });
   }
 
+  void _updateAdminAccess(bool hasAdminAccess) {
+    setState(() {
+      if (hasAdminAccess && _screens.length == 2) {
+        _screens = [..._screens, const AdminScreen()];
+        _navItems = [..._navItems, _buildNavItem(Icons.admin_panel_settings, 'Admin', 2, _selectedIndex)];
+      } else if (!hasAdminAccess && _screens.length > 2) {
+        _screens = _screens.sublist(0, 2);
+        _navItems = _navItems.sublist(0, 2);
+        if (_selectedIndex >= _screens.length) {
+          _selectedIndex = 0;
+        }
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = Provider.of<AuthService>(context).currentUser;
-    final screens = _screens(context);
+    final hasAdminAccess = user?.isAdmin ?? false;
     
-    // Ensure selected index is valid
-    if (_selectedIndex >= screens.length) {
-      _selectedIndex = 0;
+    // Update admin access if needed
+    if ((hasAdminAccess && _screens.length == 2) || 
+        (!hasAdminAccess && _screens.length > 2)) {
+      _updateAdminAccess(hasAdminAccess);
+    }
+    
+    // Rebuild nav items with current selected index
+    _navItems = [
+      _buildNavItem(Icons.home, 'Home', 0, _selectedIndex),
+      _buildNavItem(Icons.person, 'Profile', 1, _selectedIndex),
+    ];
+    if (hasAdminAccess) {
+      _navItems.add(_buildNavItem(Icons.admin_panel_settings, 'Admin', 2, _selectedIndex));
     }
     
     return Scaffold(
-      body: screens[_selectedIndex],
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: _screens,
+      ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
-        backgroundColor: AppTheme.cardColor,
+        backgroundColor: AppTheme.cardColor.withOpacity(0.75),
         selectedItemColor: AppTheme.primaryColor,
         unselectedItemColor: AppTheme.neutralColor,
         selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
         unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
         type: BottomNavigationBarType.fixed,
-        items: [
-          BottomNavigationBarItem(
-            icon: Container(
-              decoration: _selectedIndex == 0
-                  ? BoxDecoration(
-                      color: AppTheme.primaryColor.withOpacity(0.12),
-                      borderRadius: BorderRadius.circular(16),
-                    )
-                  : null,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              child: Icon(
-                Icons.home,
-                color: _selectedIndex == 0 ? AppTheme.primaryColor : AppTheme.neutralColor,
-              ),
-            ),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Container(
-              decoration: _selectedIndex == 1
-                  ? BoxDecoration(
-                      color: AppTheme.primaryColor.withOpacity(0.12),
-                      borderRadius: BorderRadius.circular(16),
-                    )
-                  : null,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              child: Icon(
-                Icons.person,
-                color: _selectedIndex == 1 ? AppTheme.primaryColor : AppTheme.neutralColor,
-              ),
-            ),
-            label: 'Profile',
-          ),
-          if (user?.isAdmin ?? false)
-            BottomNavigationBarItem(
-              icon: Container(
-                decoration: _selectedIndex == 2
-                    ? BoxDecoration(
-                        color: AppTheme.primaryColor.withOpacity(0.12),
-                        borderRadius: BorderRadius.circular(16),
-                      )
-                    : null,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                child: Icon(
-                  Icons.admin_panel_settings,
-                  color: _selectedIndex == 2 ? AppTheme.primaryColor : AppTheme.neutralColor,
-                ),
-              ),
-              label: 'Admin',
-            ),
-        ],
+        items: _navItems,
       ),
     );
   }

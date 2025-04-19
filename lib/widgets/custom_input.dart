@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
+import '../services/location_service.dart';
 
 class CustomInput extends StatefulWidget {
   final String? label;
@@ -11,6 +13,7 @@ class CustomInput extends StatefulWidget {
   final Widget? suffixIcon;
   final Function(String)? onChanged;
   final Function(String)? onSubmitted;
+  final Function()? onTap;
   final bool enabled;
   final int maxLines;
   final int? maxLength;
@@ -23,6 +26,10 @@ class CustomInput extends StatefulWidget {
   final TextInputAction? textInputAction;
   final bool autofocus;
   final bool showLabel;
+  final FocusNode? nextFocusNode;
+  final bool isLocationField;
+  final LocationService? locationService;
+  final bool readOnly;
 
   const CustomInput({
     Key? key,
@@ -36,6 +43,7 @@ class CustomInput extends StatefulWidget {
     this.suffixIcon,
     this.onChanged,
     this.onSubmitted,
+    this.onTap,
     this.enabled = true,
     this.maxLines = 1,
     this.maxLength,
@@ -48,6 +56,10 @@ class CustomInput extends StatefulWidget {
     this.textInputAction,
     this.autofocus = false,
     this.showLabel = true,
+    this.nextFocusNode,
+    this.isLocationField = false,
+    this.locationService,
+    this.readOnly = false,
   }) : super(key: key);
 
   @override
@@ -58,10 +70,15 @@ class _CustomInputState extends State<CustomInput> with SingleTickerProviderStat
   late AnimationController _animationController;
   late Animation<double> _elevationAnimation;
   bool _isFocused = false;
+  late FocusNode _focusNode;
+  bool _isValidatingLocation = false;
+  String? _locationError;
+  Timer? _debounce;
 
   @override
   void initState() {
     super.initState();
+    _focusNode = widget.focusNode ?? FocusNode();
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 200),
@@ -71,28 +88,93 @@ class _CustomInputState extends State<CustomInput> with SingleTickerProviderStat
       end: widget.elevation * 1.5,
     ).animate(_animationController);
     widget.controller.addListener(_handleTextChange);
+    
+    // Add listener to handle focus changes
+    _focusNode.addListener(_handleFocusChange);
   }
 
   @override
   void dispose() {
     widget.controller.removeListener(_handleTextChange);
+    _focusNode.removeListener(_handleFocusChange);
+    if (widget.focusNode == null) {
+      _focusNode.dispose();
+    }
     _animationController.dispose();
+    _debounce?.cancel();
     super.dispose();
   }
 
   void _handleTextChange() {
+    if (widget.isLocationField && widget.locationService != null) {
+      if (_debounce?.isActive ?? false) _debounce!.cancel();
+      _debounce = Timer(const Duration(milliseconds: 1500), () {
+        if (widget.controller.text.isNotEmpty) {
+          _validateLocation(widget.controller.text.trim());
+        } else {
+          setState(() => _locationError = null);
+        }
+      });
+    }
     setState(() {}); // Trigger rebuild when text changes
   }
 
-  void _handleFocusChange(bool hasFocus) {
+  Future<void> _validateLocation(String location) async {
+    if (!mounted) return;
+    setState(() => _isValidatingLocation = true);
+    try {
+      final result = await widget.locationService!.validateAndNormalizeLocation(location);
+      
+      if (!mounted) return;
+      
+      if (result.isValid && result.normalizedLocation != null) {
+        // Only update if the normalized location is different from current input
+        // and the user hasn't typed anything new
+        if (result.normalizedLocation != widget.controller.text && 
+            location == widget.controller.text.trim()) {
+          widget.controller.text = result.normalizedLocation!;
+          // Move cursor to end
+          widget.controller.selection = TextSelection.fromPosition(
+            TextPosition(offset: widget.controller.text.length),
+          );
+        }
+        setState(() => _locationError = null);
+      } else {
+        setState(() => _locationError = result.error ?? 'Invalid location');
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _locationError = 'Error validating location');
+    } finally {
+      if (mounted) {
+        setState(() => _isValidatingLocation = false);
+      }
+    }
+  }
+
+  void _handleFocusChange() {
     setState(() {
-      _isFocused = hasFocus;
-      if (hasFocus) {
+      _isFocused = _focusNode.hasFocus;
+      if (_isFocused) {
         _animationController.forward();
       } else {
         _animationController.reverse();
       }
     });
+  }
+
+  void _handleSubmitted(String value) {
+    if (widget.onSubmitted != null) {
+      widget.onSubmitted!(value);
+    }
+    
+    // Move to next field if available
+    if (widget.nextFocusNode != null) {
+      widget.nextFocusNode!.requestFocus();
+    } else {
+      // If no next field, unfocus to hide keyboard
+      _focusNode.unfocus();
+    }
   }
 
   @override
@@ -130,16 +212,24 @@ class _CustomInputState extends State<CustomInput> with SingleTickerProviderStat
               ),
               child: TextFormField(
                 controller: widget.controller,
-                focusNode: widget.focusNode,
+                focusNode: _focusNode,
                 onChanged: widget.onChanged,
-                onFieldSubmitted: widget.onSubmitted,
+                onFieldSubmitted: _handleSubmitted,
+                onTap: widget.onTap,
                 keyboardType: widget.keyboardType,
                 obscureText: widget.obscureText,
                 enabled: widget.enabled,
                 maxLines: widget.maxLines,
                 maxLength: widget.maxLength,
-                validator: widget.validator,
-                textInputAction: widget.textInputAction,
+                validator: (value) {
+                  if (widget.isLocationField && _locationError != null) {
+                    return _locationError;
+                  }
+                  return widget.validator?.call(value);
+                },
+                textInputAction: widget.nextFocusNode != null 
+                    ? TextInputAction.next 
+                    : TextInputAction.done,
                 autofocus: widget.autofocus,
                 style: theme.textTheme.bodyLarge,
                 decoration: InputDecoration(
@@ -149,6 +239,14 @@ class _CustomInputState extends State<CustomInput> with SingleTickerProviderStat
                   suffixIcon: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
+                      if (widget.isLocationField && _isValidatingLocation)
+                        const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                          ),
+                        ),
                       if (widget.controller.text.isNotEmpty && !widget.obscureText)
                         IconButton(
                           icon: Icon(
@@ -197,8 +295,8 @@ class _CustomInputState extends State<CustomInput> with SingleTickerProviderStat
                     ),
                   ),
                 ),
-                onTap: () => _handleFocusChange(true),
-                onTapOutside: (_) => _handleFocusChange(false),
+                onTapOutside: (_) => _focusNode.unfocus(),
+                readOnly: widget.readOnly,
               ),
             ),
           ],

@@ -11,6 +11,7 @@ import 'user_management_screen.dart';
 import 'task_management_screen.dart';
 import 'meeting_management_screen.dart';
 import 'admin_screen.dart';
+import 'add_branch_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -83,25 +84,15 @@ class HomeScreen extends StatelessWidget {
       return;
     }
 
-    // TODO: Implement branch creation dialog
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Create Church Branch'),
-        content: const Text('Branch creation dialog will be implemented here.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const AddBranchScreen()),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final authService = Provider.of<AuthService>(context);
+    final authService = Provider.of<AuthService>(context, listen: true);
     final firestoreProvider = Provider.of<FirestoreProvider>(context);
     final user = authService.currentUser;
 

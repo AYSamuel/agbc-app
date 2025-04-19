@@ -5,6 +5,7 @@ import '../models/task_model.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
 import '../utils/theme.dart';
+import '../widgets/custom_back_button.dart';
 
 class TaskManagementScreen extends StatelessWidget {
   const TaskManagementScreen({super.key});
@@ -22,13 +23,11 @@ class TaskManagementScreen extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back),
+                  CustomBackButton(
                     onPressed: () => Navigator.pop(context),
-                    color: AppTheme.primaryColor,
                   ),
+                  const SizedBox(width: 16),
                   const Text(
                     'Tasks',
                     style: TextStyle(
@@ -37,7 +36,6 @@ class TaskManagementScreen extends StatelessWidget {
                       color: Color(0xFF1A237E),
                     ),
                   ),
-                  const SizedBox(width: 48), // Placeholder for spacing
                 ],
               ),
             ),

@@ -166,9 +166,42 @@ class FirestoreProvider with ChangeNotifier {
 
   Future<void> updateUserRole(String userId, String newRole) async {
     try {
-      await _firestoreService.updateUserRole(userId, newRole);
+      final user = await _firestoreService.collection('users').doc(userId).get();
+      if (user.exists) {
+        final data = user.data() as Map<String, dynamic>;
+        data['role'] = newRole;
+        await _firestoreService.collection('users').doc(userId).update(data);
+      }
     } catch (e) {
       throw Exception('Failed to update user role: $e');
+    }
+  }
+
+  Future<void> addBranch(ChurchModel branch) async {
+    await _firestoreService.addBranch(branch);
+    notifyListeners();
+  }
+
+  Future<void> updateBranch(ChurchModel branch) async {
+    await _firestoreService.updateBranch(branch);
+    notifyListeners();
+  }
+
+  Future<void> deleteBranch(String branchId) async {
+    await _firestoreService.deleteBranch(branchId);
+    notifyListeners();
+  }
+
+  Future<List<UserModel>> getUsers() async {
+    try {
+      final snapshot = await _firestoreService.collection('users').get();
+      return snapshot.docs.map((doc) {
+        final data = doc.data() as Map<String, dynamic>;
+        data['uid'] = doc.id;
+        return UserModel.fromJson(data);
+      }).toList();
+    } catch (e) {
+      throw Exception('Failed to fetch users: $e');
     }
   }
 } 

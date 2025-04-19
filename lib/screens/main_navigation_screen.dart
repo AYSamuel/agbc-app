@@ -38,8 +38,15 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   @override
   Widget build(BuildContext context) {
     final user = Provider.of<AuthService>(context).currentUser;
+    final screens = _screens(context);
+    
+    // Ensure selected index is valid
+    if (_selectedIndex >= screens.length) {
+      _selectedIndex = 0;
+    }
+    
     return Scaffold(
-      body: _screens(context)[_selectedIndex],
+      body: screens[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,

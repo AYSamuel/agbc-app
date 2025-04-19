@@ -8,23 +8,36 @@ import '../services/notification_service.dart';
 class FirestoreService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
+  CollectionReference<Map<String, dynamic>> collection(String path) {
+    return _firestore.collection(path);
+  }
+
   // User operations
+  /// Gets a user by their uid
   Stream<UserModel?> getUser(String uid) {
     return _firestore.collection('users').doc(uid).snapshots().map((doc) {
       if (doc.exists) {
-        return UserModel.fromJson(doc.data()!);
+        final data = doc.data() as Map<String, dynamic>;
+        data['uid'] = uid; // Ensure uid is set
+        return UserModel.fromJson(data);
       }
       return null;
     });
   }
 
+  /// Updates a user's data
   Future<void> updateUser(UserModel user) async {
     await _firestore.collection('users').doc(user.uid).update(user.toJson());
   }
 
+  /// Gets all users
   Stream<List<UserModel>> getAllUsers() {
     return _firestore.collection('users').snapshots().map((snapshot) {
-      return snapshot.docs.map((doc) => UserModel.fromJson(doc.data())).toList();
+      return snapshot.docs.map((doc) {
+        final data = doc.data() as Map<String, dynamic>;
+        data['uid'] = doc.id;
+        return UserModel.fromJson(data);
+      }).toList();
     });
   }
 
@@ -125,14 +138,12 @@ class FirestoreService {
 
   // Church operations
   Stream<ChurchModel?> getChurch(String churchId) {
-    return _firestore
-        .collection('churches')
-        .doc(churchId)
-        .snapshots()
-        .map((doc) => doc.exists ? ChurchModel.fromJson({
-              'id': doc.id,
-              ...doc.data()!,
-            }) : null);
+    return _firestore.collection('churches').doc(churchId).snapshots().map((doc) {
+      if (doc.exists) {
+        return ChurchModel.fromJson({...doc.data()!, 'id': doc.id});
+      }
+      return null;
+    });
   }
 
   Future<void> updateChurch(ChurchModel church) async {
@@ -182,14 +193,24 @@ class FirestoreService {
   }
 
   Stream<List<ChurchModel>> getAllBranches() {
-    return _firestore
-        .collection('churches')
-        .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => ChurchModel.fromJson({
-                  'id': doc.id,
-                  ...doc.data(),
-                }))
-            .toList());
+    return _firestore.collection('churches').snapshots().map((snapshot) {
+      return snapshot.docs.map((doc) => ChurchModel.fromJson({
+        'id': doc.id,
+        ...doc.data(),
+      })).toList();
+    });
+  }
+
+  Future<void> addBranch(ChurchModel branch) async {
+    final docRef = await _firestore.collection('churches').add(branch.toJson());
+    await docRef.update({'id': docRef.id});
+  }
+
+  Future<void> updateBranch(ChurchModel branch) async {
+    await _firestore.collection('churches').doc(branch.id).update(branch.toJson());
+  }
+
+  Future<void> deleteBranch(String branchId) async {
+    await _firestore.collection('churches').doc(branchId).delete();
   }
 }

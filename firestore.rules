@@ -39,5 +39,11 @@ service cloud.firestore {
       allow update: if isAdmin() || isUser(resource.data.createdBy);
       allow delete: if isAdmin();
     }
+
+    // Churches collection
+    match /churches/{churchId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAdmin();
+    }
   }
 } 

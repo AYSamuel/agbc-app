@@ -2,9 +2,10 @@
 /// Handles user profile information, roles, permissions, and church departments.
 class UserModel {
   // Basic user information
-  final String uid; // Unique identifier for the user
-  final String email; // User's email address
-  final String displayName; // User's display name
+  final String uid; // Firebase Auth User ID
+  final String displayName;
+  final String email;
+  final String role;
   final String? phoneNumber; // User's contact number
   final String? photoUrl; // URL to user's profile photo
   final DateTime createdAt; // When the account was created
@@ -12,7 +13,6 @@ class UserModel {
 
   // Church affiliation
   final String churchId; // Primary church branch ID
-  final String role; // Primary role (admin, pastor, worker, member)
   final String location; // User's location/city
 
   // Department involvement
@@ -32,15 +32,15 @@ class UserModel {
   /// Constructor for creating a new UserModel instance
   UserModel({
     required this.uid,
-    required this.email,
     required this.displayName,
-    required this.churchId,
+    required this.email,
     required this.role,
-    required this.location,
     this.phoneNumber,
     this.photoUrl,
     DateTime? createdAt,
     DateTime? lastLogin,
+    this.churchId = '',
+    this.location = '',
     this.departments = const [],
     this.departmentJoinDate,
     this.isActive = true,
@@ -55,8 +55,9 @@ class UserModel {
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
       uid: json['uid'] ?? '',
-      email: json['email'] ?? '',
       displayName: json['displayName'] ?? '',
+      email: json['email'] ?? '',
+      role: json['role'] ?? 'member',
       phoneNumber: json['phoneNumber'],
       photoUrl: json['photoUrl'],
       createdAt:
@@ -64,7 +65,6 @@ class UserModel {
       lastLogin:
           json['lastLogin'] != null ? DateTime.parse(json['lastLogin']) : null,
       churchId: json['churchId'] ?? '',
-      role: json['role'] ?? 'member',
       location: json['location'] ?? '',
       departments: List<String>.from(json['departments'] ?? []),
       departmentJoinDate: json['departmentJoinDate'] != null
@@ -85,14 +85,14 @@ class UserModel {
   Map<String, dynamic> toJson() {
     return {
       'uid': uid,
-      'email': email,
       'displayName': displayName,
+      'email': email,
+      'role': role,
       'phoneNumber': phoneNumber,
       'photoUrl': photoUrl,
       'createdAt': createdAt.toIso8601String(),
       'lastLogin': lastLogin.toIso8601String(),
       'churchId': churchId,
-      'role': role,
       'location': location,
       'departments': departments,
       'departmentJoinDate': departmentJoinDate?.toIso8601String(),
@@ -123,14 +123,14 @@ class UserModel {
   /// Creates a copy of the user with updated fields
   UserModel copyWith({
     String? uid,
-    String? email,
     String? displayName,
+    String? email,
+    String? role,
     String? phoneNumber,
     String? photoUrl,
     DateTime? createdAt,
     DateTime? lastLogin,
     String? churchId,
-    String? role,
     String? location,
     List<String>? departments,
     DateTime? departmentJoinDate,
@@ -142,14 +142,14 @@ class UserModel {
   }) {
     return UserModel(
       uid: uid ?? this.uid,
-      email: email ?? this.email,
       displayName: displayName ?? this.displayName,
+      email: email ?? this.email,
+      role: role ?? this.role,
       phoneNumber: phoneNumber ?? this.phoneNumber,
       photoUrl: photoUrl ?? this.photoUrl,
       createdAt: createdAt ?? this.createdAt,
       lastLogin: lastLogin ?? this.lastLogin,
       churchId: churchId ?? this.churchId,
-      role: role ?? this.role,
       location: location ?? this.location,
       departments: departments ?? this.departments,
       departmentJoinDate: departmentJoinDate ?? this.departmentJoinDate,

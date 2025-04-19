@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/firestore_provider.dart';
 import '../models/church_model.dart';
 import '../utils/theme.dart';
+import '../widgets/custom_back_button.dart';
 
 class BranchManagementScreen extends StatelessWidget {
   const BranchManagementScreen({super.key});
@@ -20,13 +21,11 @@ class BranchManagementScreen extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back),
+                  CustomBackButton(
                     onPressed: () => Navigator.pop(context),
-                    color: AppTheme.primaryColor,
                   ),
+                  const SizedBox(width: 16),
                   const Text(
                     'Church Branches',
                     style: TextStyle(
@@ -35,7 +34,6 @@ class BranchManagementScreen extends StatelessWidget {
                       color: Color(0xFF1A237E),
                     ),
                   ),
-                  const SizedBox(width: 48), // Placeholder for spacing
                 ],
               ),
             ),

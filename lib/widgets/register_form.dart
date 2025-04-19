@@ -35,6 +35,7 @@ class _RegisterFormState extends State<RegisterForm> {
   bool _isValidatingLocation = false;
   String? _locationError;
   Timer? _debounce;
+  String _selectedRole = 'user';
 
   @override
   void initState() {
@@ -92,16 +93,29 @@ class _RegisterFormState extends State<RegisterForm> {
 
   Future<void> _validateLocation(String location) async {
     if (location.isEmpty) {
-      setState(() => _locationError = 'Please enter your location');
+      setState(() => _locationError = null);
       return;
     }
-    
+
     setState(() => _isValidatingLocation = true);
     try {
-      final isValid = await _locationService.validateLocation(location);
-      setState(() => _locationError = isValid ? null : 'Invalid location. Please enter a valid city or address');
+      final result = await _locationService.validateAndNormalizeLocation(location);
+      
+      if (result.isValid && result.normalizedLocation != null) {
+        // Only update if the normalized location is different from current input
+        if (result.normalizedLocation != _locationController.text) {
+          _locationController.text = result.normalizedLocation!;
+          // Move cursor to end
+          _locationController.selection = TextSelection.fromPosition(
+            TextPosition(offset: _locationController.text.length),
+          );
+        }
+        setState(() => _locationError = null);
+      } else {
+        setState(() => _locationError = result.error ?? 'Invalid location');
+      }
     } catch (e) {
-      setState(() => _locationError = 'Invalid location. Please enter a valid city or address');
+      setState(() => _locationError = 'Error validating location');
     } finally {
       if (mounted) {
         setState(() => _isValidatingLocation = false);
@@ -121,10 +135,10 @@ class _RegisterFormState extends State<RegisterForm> {
       final authService = Provider.of<AuthService>(context, listen: false);
       
       await authService.registerWithEmailAndPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text,
-        name: _nameController.text.trim(),
-        location: _locationController.text.trim(),
+        _emailController.text.trim(),
+        _passwordController.text,
+        _nameController.text.trim(),
+        _selectedRole,
       );
 
       if (mounted) {
@@ -135,7 +149,7 @@ class _RegisterFormState extends State<RegisterForm> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(e.toString()),
-            backgroundColor: AppTheme.errorColor,
+            backgroundColor: Colors.red,
           ),
         );
       }

@@ -48,10 +48,9 @@ class _LoginFormState extends State<LoginForm> {
     try {
       final authService = Provider.of<AuthService>(context, listen: false);
       await authService.signInWithEmailAndPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text,
+        _emailController.text.trim(),
+        _passwordController.text,
       );
-
       if (mounted) {
         widget.onLoginSuccess();
       }

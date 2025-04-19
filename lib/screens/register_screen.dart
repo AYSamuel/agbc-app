@@ -5,7 +5,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../services/auth_service.dart';
-import '../widgets/custom_text_field.dart';
+import '../widgets/custom_input.dart';
 import '../widgets/custom_button.dart';
 import '../widgets/loading_indicator.dart';
 import '../utils/theme.dart';

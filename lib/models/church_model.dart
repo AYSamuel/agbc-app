@@ -11,6 +11,7 @@ class ChurchModel {
   final String contactEmail; // Official email address for the branch
   final String contactPhone; // Contact phone number for inquiries
   final String address; // Complete physical address of the branch
+  final String cityCountry; // City and country of the branch
 
   // Administrative and operational details
   final DateTime establishedDate; // Date when this branch was established
@@ -32,6 +33,7 @@ class ChurchModel {
     this.contactEmail = '', // Default empty string if not provided
     this.contactPhone = '', // Default empty string if not provided
     this.address = '', // Default empty string if not provided
+    this.cityCountry = '', // Default empty string if not provided
     DateTime? establishedDate, // Optional establishment date
     this.serviceSchedule = const [], // Default empty list if not provided
     this.capacity = 0, // Default capacity of 0 if not provided
@@ -55,6 +57,7 @@ class ChurchModel {
       contactPhone:
           json['contactPhone'] ?? '', // Use empty string if phone is null
       address: json['address'] ?? '', // Use empty string if address is null
+      cityCountry: json['cityCountry'] ?? '', // Use empty string if cityCountry is null
       // Convert ISO8601 string to DateTime, use current date if null
       establishedDate: json['establishedDate'] != null
           ? DateTime.parse(json['establishedDate'])
@@ -79,6 +82,7 @@ class ChurchModel {
       'contactEmail': contactEmail,
       'contactPhone': contactPhone,
       'address': address,
+      'cityCountry': cityCountry,
       'establishedDate': establishedDate
           .toIso8601String(), // Convert DateTime to ISO8601 string
       'serviceSchedule': serviceSchedule,
@@ -98,6 +102,7 @@ class ChurchModel {
     String? contactEmail,
     String? contactPhone,
     String? address,
+    String? cityCountry,
     DateTime? establishedDate,
     List<String>? serviceSchedule,
     int? capacity,
@@ -113,6 +118,7 @@ class ChurchModel {
       contactEmail: contactEmail ?? this.contactEmail,
       contactPhone: contactPhone ?? this.contactPhone,
       address: address ?? this.address,
+      cityCountry: cityCountry ?? this.cityCountry,
       establishedDate: establishedDate ?? this.establishedDate,
       serviceSchedule: serviceSchedule ?? this.serviceSchedule,
       capacity: capacity ?? this.capacity,

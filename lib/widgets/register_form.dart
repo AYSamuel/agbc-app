@@ -1,12 +1,15 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:agbc_app/services/auth_service.dart';
 import 'package:agbc_app/services/location_service.dart';
 import 'package:agbc_app/widgets/custom_input.dart';
 import 'package:agbc_app/widgets/custom_button.dart';
 import 'package:agbc_app/widgets/loading_indicator.dart';
 import 'package:agbc_app/utils/theme.dart';
+import 'package:agbc_app/widgets/mixins/location_validation_mixin.dart';
+import 'package:agbc_app/widgets/mixins/form_validation_mixin.dart';
 
 class RegisterForm extends StatefulWidget {
   final VoidCallback onRegisterSuccess;
@@ -20,7 +23,7 @@ class RegisterForm extends StatefulWidget {
   State<RegisterForm> createState() => _RegisterFormState();
 }
 
-class _RegisterFormState extends State<RegisterForm> {
+class _RegisterFormState extends State<RegisterForm> with LocationValidationMixin, FormValidationMixin {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
@@ -32,15 +35,15 @@ class _RegisterFormState extends State<RegisterForm> {
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _isGettingLocation = false;
-  bool _isValidatingLocation = false;
-  String? _locationError;
-  Timer? _debounce;
   String _selectedRole = 'user';
 
   @override
   void initState() {
     super.initState();
-    _locationController.addListener(_onLocationChanged);
+    initializeLocationValidation(
+      controller: _locationController,
+      locationService: _locationService,
+    );
   }
 
   @override
@@ -49,21 +52,9 @@ class _RegisterFormState extends State<RegisterForm> {
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
-    _locationController.removeListener(_onLocationChanged);
     _locationController.dispose();
-    _debounce?.cancel();
+    disposeLocationValidation();
     super.dispose();
-  }
-
-  void _onLocationChanged() {
-    if (_debounce?.isActive ?? false) _debounce!.cancel();
-    _debounce = Timer(const Duration(milliseconds: 500), () {
-      if (_locationController.text.isNotEmpty) {
-        _validateLocation(_locationController.text.trim());
-      } else {
-        setState(() => _locationError = null);
-      }
-    });
   }
 
   Future<void> _getCurrentLocation() async {
@@ -74,15 +65,9 @@ class _RegisterFormState extends State<RegisterForm> {
       if (result != null && !result.startsWith('Error')) {
         setState(() {
           _locationController.text = result;
-          _locationError = null;
         });
       } else if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(result ?? 'Error getting location'),
-            backgroundColor: AppTheme.warningColor,
-          ),
-        );
+        _showErrorSnackBar(result ?? 'Error getting location');
       }
     } finally {
       if (mounted) {
@@ -91,43 +76,42 @@ class _RegisterFormState extends State<RegisterForm> {
     }
   }
 
-  Future<void> _validateLocation(String location) async {
-    if (location.isEmpty) {
-      setState(() => _locationError = null);
-      return;
-    }
-
-    setState(() => _isValidatingLocation = true);
-    try {
-      final result = await _locationService.validateAndNormalizeLocation(location);
-      
-      if (result.isValid && result.normalizedLocation != null) {
-        // Only update if the normalized location is different from current input
-        if (result.normalizedLocation != _locationController.text) {
-          _locationController.text = result.normalizedLocation!;
-          // Move cursor to end
-          _locationController.selection = TextSelection.fromPosition(
-            TextPosition(offset: _locationController.text.length),
-          );
-        }
-        setState(() => _locationError = null);
-      } else {
-        setState(() => _locationError = result.error ?? 'Invalid location');
-      }
-    } catch (e) {
-      setState(() => _locationError = 'Error validating location');
-    } finally {
-      if (mounted) {
-        setState(() => _isValidatingLocation = false);
-      }
-    }
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.error_outline, color: Colors.white),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                message,
+                style: const TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: AppTheme.errorColor,
+        duration: const Duration(seconds: 4),
+        action: SnackBarAction(
+          label: 'Dismiss',
+          textColor: Colors.white,
+          onPressed: () {
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          },
+        ),
+      ),
+    );
   }
 
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) return;
 
     // Validate location
-    if (_locationError != null) return;
+    if (locationError != null) {
+      _showErrorSnackBar(locationError!);
+      return;
+    }
 
     setState(() => _isLoading = true);
 
@@ -146,12 +130,28 @@ class _RegisterFormState extends State<RegisterForm> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.toString()),
-            backgroundColor: Colors.red,
-          ),
-        );
+        String errorMessage;
+        if (e is FirebaseAuthException) {
+          switch (e.code) {
+            case 'email-already-in-use':
+              errorMessage = 'This email is already registered. Please login instead.';
+              break;
+            case 'invalid-email':
+              errorMessage = 'The email address is invalid.';
+              break;
+            case 'operation-not-allowed':
+              errorMessage = 'Email/password accounts are not enabled.';
+              break;
+            case 'weak-password':
+              errorMessage = 'The password is too weak.';
+              break;
+            default:
+              errorMessage = 'An error occurred during registration. Please try again.';
+          }
+        } else {
+          errorMessage = 'An unexpected error occurred. Please try again.';
+        }
+        _showErrorSnackBar(errorMessage);
       }
     } finally {
       if (mounted) {
@@ -179,6 +179,9 @@ class _RegisterFormState extends State<RegisterForm> {
             validator: (value) {
               if (value == null || value.isEmpty) {
                 return 'Please enter your name';
+              }
+              if (value.length < 2) {
+                return 'Name must be at least 2 characters';
               }
               return null;
             },
@@ -214,7 +217,7 @@ class _RegisterFormState extends State<RegisterForm> {
             prefixIcon: Icon(Icons.location_on, color: AppTheme.neutralColor),
             textInputAction: TextInputAction.next,
             onSubmitted: (_) => FocusScope.of(context).nextFocus(),
-            suffixIcon: _isGettingLocation || _isValidatingLocation
+            suffixIcon: _isGettingLocation || isValidatingLocation
                 ? const SizedBox(
                     width: 20,
                     height: 20,
@@ -231,8 +234,11 @@ class _RegisterFormState extends State<RegisterForm> {
                     onPressed: _getCurrentLocation,
                   ),
             validator: (value) {
-              if (_locationError != null) {
-                return _locationError;
+              if (locationError != null) {
+                return locationError;
+              }
+              if (value == null || value.isEmpty) {
+                return 'Please enter your location';
               }
               return null;
             },
@@ -276,7 +282,7 @@ class _RegisterFormState extends State<RegisterForm> {
             label: 'Confirm Password',
             controller: _confirmPasswordController,
             hint: 'Confirm your password',
-            prefixIcon: Icon(Icons.lock, color: AppTheme.neutralColor),
+            prefixIcon: Icon(Icons.lock_outline, color: AppTheme.neutralColor),
             obscureText: _obscureConfirmPassword,
             textInputAction: TextInputAction.done,
             onSubmitted: (_) => _register(),

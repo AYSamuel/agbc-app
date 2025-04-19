@@ -1,11 +1,14 @@
 import 'package:flutter/foundation.dart'; // Import for ChangeNotifier
 import 'package:firebase_auth/firebase_auth.dart'; // Import Firebase Authentication
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:async'; // Import for StreamSubscription
+import 'package:flutter/foundation.dart' show kIsWeb;
 import '../models/user_model.dart'; // Import our custom UserModel
 import '../models/task_model.dart';
 import '../models/meeting_model.dart';
 import '../services/firestore_service.dart';
 import '../services/permissions_service.dart';
+import 'package:flutter/material.dart';
 
 /// Exception for user-facing authentication errors.
 class AuthException implements Exception {
@@ -23,20 +26,21 @@ class AuthService with ChangeNotifier {
   final FirebaseAuth _auth;
   final FirestoreService _firestoreService;
   final PermissionsService _permissionsService;
+  bool _rememberMe = false;
 
   // Private variable to store the current user
   @visibleForTesting
   UserModel? _currentUser;
+  StreamSubscription<User?>? _authStateSubscription;
 
   // Getter to access the current user
   UserModel? get currentUser => _currentUser;
 
-  // Setter for testing purposes
-  @visibleForTesting
-  set currentUser(UserModel? user) {
-    _currentUser = user;
-    notifyListeners();
-  }
+  // Getter to check if user is authenticated
+  bool get isAuthenticated => _currentUser != null;
+
+  // Getter for remember me setting
+  bool get rememberMe => _rememberMe;
 
   // Rate limiting
   @visibleForTesting
@@ -51,20 +55,22 @@ class AuthService with ChangeNotifier {
   AuthService({FirebaseAuth? auth}) 
       : _auth = auth ?? FirebaseAuth.instance,
         _firestoreService = FirestoreService(),
-        _permissionsService = PermissionsService() {
-    _auth.authStateChanges().listen((user) async {
-      if (user != null) {
-        try {
-          _firestoreService.getUser(user.uid).listen((userData) {
-            if (userData != null) {
-              // If user data exists but displayName is empty, use displayName from Firebase Auth
-              if (userData.displayName.isEmpty && user.displayName != null) {
-                userData = userData.copyWith(displayName: user.displayName!);
-                _firestoreService.collection('users').doc(user.uid).update({'displayName': user.displayName!});
-              }
-              _currentUser = userData;
+        _permissionsService = PermissionsService();
+
+  Future<void> initialize() async {
+    try {
+      // Cancel any existing subscription
+      await _authStateSubscription?.cancel();
+      
+      // Set up new auth state listener
+      _authStateSubscription = _auth.authStateChanges().listen((User? user) async {
+        if (user != null) {
+          try {
+            DocumentSnapshot userDoc = await _firestoreService.collection('users').doc(user.uid).get();
+            
+            if (userDoc.exists && userDoc.data() != null) {
+              _currentUser = UserModel.fromJson(userDoc.data() as Map<String, dynamic>);
             } else {
-              // If no user data exists, create a basic user document
               _currentUser = UserModel(
                 uid: user.uid,
                 displayName: user.displayName ?? '',
@@ -81,18 +87,68 @@ class AuthService with ChangeNotifier {
                   'push': true,
                 },
               );
-              _firestoreService.collection('users').doc(user.uid).set(_currentUser!.toJson());
+              await _firestoreService.collection('users').doc(user.uid).set(_currentUser!.toJson());
             }
-            notifyListeners();
-          });
-        } catch (e) {
-          print('Error getting user data: $e');
+          } catch (e) {
+            debugPrint('Error getting user data: $e');
+            _currentUser = null;
+          }
+        } else {
+          _currentUser = null;
         }
-      } else {
-        _currentUser = null;
         notifyListeners();
+      });
+    } catch (e) {
+      debugPrint('Error initializing AuthService: $e');
+      _currentUser = null;
+      notifyListeners();
+    }
+  }
+
+  /// Set the remember me preference
+  Future<void> setRememberMe(bool value) async {
+    _rememberMe = value;
+    if (kIsWeb) {
+      // Only set persistence on web platforms
+      if (!value) {
+        await _auth.setPersistence(Persistence.NONE);
+      } else {
+        await _auth.setPersistence(Persistence.LOCAL);
       }
-    });
+    }
+  }
+
+  /// Logs out the current user.
+  Future<void> logout() async {
+    try {
+      // Cancel the auth state listener
+      await _authStateSubscription?.cancel();
+      _authStateSubscription = null;
+
+      // Clear the current user
+      _currentUser = null;
+      notifyListeners();
+
+      // Clear Firebase persistence (web only)
+      if (kIsWeb) {
+        await _auth.setPersistence(Persistence.NONE);
+      }
+
+      // Sign out from Firebase
+      await _auth.signOut();
+
+      // Clear any cached data
+      _loginAttempts.clear();
+    } catch (e) {
+      debugPrint('Error during logout: $e');
+      throw AuthException('Failed to logout: $e');
+    }
+  }
+
+  @override
+  void dispose() {
+    _authStateSubscription?.cancel();
+    super.dispose();
   }
 
   /// Check if an IP is rate limited
@@ -286,17 +342,6 @@ class AuthService with ChangeNotifier {
     return Stream.value([]);
   }
 
-  /// Logs out the current user.
-  Future<void> logout() async {
-    try {
-      await _auth.signOut();
-      _currentUser = null;
-      notifyListeners();
-    } catch (e) {
-      throw AuthException('Failed to logout: $e');
-    }
-  }
-
   /// Checks if there's a currently authenticated user.
   Future<bool> checkAuthentication() async {
     try {
@@ -376,10 +421,22 @@ class AuthService with ChangeNotifier {
     }
   }
 
+  /// Signs out the user and clears all auth state
   Future<void> signOut() async {
-    await _auth.signOut();
-    _currentUser = null;
-    notifyListeners();
+    try {
+      // Clear the current user first
+      _currentUser = null;
+      notifyListeners();
+
+      // Sign out from Firebase
+      await _auth.signOut();
+
+      // Clear any cached data
+      _loginAttempts.clear();
+    } catch (e) {
+      debugPrint('Error during sign out: $e');
+      throw AuthException('Failed to sign out: $e');
+    }
   }
 
   Future<void> resetPassword(String email) async {
@@ -453,9 +510,6 @@ class AuthService with ChangeNotifier {
       throw AuthException('Failed to delete account: $e');
     }
   }
-
-  /// Getter to check if user is authenticated
-  bool get isAuthenticated => _auth.currentUser != null;
 
   /// Get meetings based on user's role and permissions
   Stream<List<MeetingModel>> getMeetings() {

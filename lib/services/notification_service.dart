@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -5,18 +6,31 @@ class NotificationService {
   final FirebaseMessaging _messaging = FirebaseMessaging.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  // Request permission for notifications
-  Future<void> requestPermission() async {
-    NotificationSettings settings = await _messaging.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
-    );
+  Future<void> initialize() async {
+    try {
+      // Request permission for notifications
+      NotificationSettings settings = await _messaging.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
 
-    if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-      print('User granted permission');
-    } else {
-      print('User declined or has not accepted permission');
+      if (settings.authorizationStatus == AuthorizationStatus.authorized) {
+        // Get FCM token
+        String? token = await _messaging.getToken();
+        debugPrint('FCM Token: $token');
+
+        // Handle foreground messages
+        FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+          debugPrint('Got a message whilst in the foreground!');
+          debugPrint('Message data: ${message.data}');
+        });
+
+        // Handle background messages
+        FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+      }
+    } catch (e) {
+      debugPrint('Error initializing notifications: $e');
     }
   }
 
@@ -75,18 +89,6 @@ class NotificationService {
     }
   }
 
-  // Handle incoming notifications when the app is in the foreground
-  void handleForegroundMessage() {
-    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      print('Got a message whilst in the foreground!');
-      print('Message data: ${message.data}');
-
-      if (message.notification != null) {
-        print('Message also contained a notification: ${message.notification}');
-      }
-    });
-  }
-
   // Handle notification when the app is opened from a terminated state
   void handleInitialMessage() {
     FirebaseMessaging.instance.getInitialMessage().then((RemoteMessage? message) {
@@ -96,4 +98,9 @@ class NotificationService {
       }
     });
   }
+}
+
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  debugPrint('Handling a background message: ${message.messageId}');
 } 

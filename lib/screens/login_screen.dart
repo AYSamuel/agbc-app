@@ -5,9 +5,19 @@ import 'package:agbc_app/screens/main_navigation_screen.dart';
 import 'package:agbc_app/widgets/login_form.dart';
 import 'package:agbc_app/utils/theme.dart';
 
-class LoginScreen extends StatelessWidget {
-  const LoginScreen({super.key});
+class LoginScreen extends StatefulWidget {
+  final bool isLoggingOut;
+  
+  const LoginScreen({
+    super.key,
+    this.isLoggingOut = false,
+  });
 
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -146,6 +156,7 @@ class LoginScreen extends StatelessWidget {
                               ),
                             );
                           },
+                          isLoggingOut: widget.isLoggingOut,
                         ),
                       ),
                       const SizedBox(height: 24),

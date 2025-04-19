@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart'; // Import Firebase Authentica
 import 'package:cloud_firestore/cloud_firestore.dart'; // Import Firestore for database access
 import 'package:flutter/foundation.dart';
 import '../models/user_model.dart'; // Import the UserModel
+import 'package:flutter/material.dart';
 
 /// Service class for handling user-related operations with Firebase.
 class UserService with ChangeNotifier {
@@ -13,18 +14,28 @@ class UserService with ChangeNotifier {
       FirebaseFirestore.instance; // Instance of Firestore for database access
 
   UserModel? _currentUser;
+  Map<String, dynamic>? _currentUserData;
   
   UserModel? get currentUser => _currentUser;
   
   UserService() {
-    _auth.authStateChanges().listen((User? user) async {
-      if (user != null) {
-        _currentUser = await getUserDetails(user.uid);
-      } else {
-        _currentUser = null;
-      }
-      notifyListeners();
-    });
+    initialize();
+  }
+
+  Future<void> initialize() async {
+    try {
+      // Listen to auth state changes
+      _auth.authStateChanges().listen((User? user) async {
+        if (user != null) {
+          _currentUser = await getUserDetails(user.uid);
+        } else {
+          _currentUser = null;
+        }
+        notifyListeners();
+      });
+    } catch (e) {
+      debugPrint('Error initializing UserService: $e');
+    }
   }
 
   /// Fetches user details from Firestore by user ID (UID).
@@ -86,4 +97,20 @@ class UserService with ChangeNotifier {
       return false; // Return false in case of an error
     }
   }
+
+  Future<void> loadUserData(String uid) async {
+    try {
+      DocumentSnapshot userDoc = await _firestore.collection('users').doc(uid).get();
+      if (userDoc.exists) {
+        _currentUserData = userDoc.data() as Map<String, dynamic>;
+        debugPrint('User data loaded successfully');
+      } else {
+        debugPrint('User document does not exist');
+      }
+    } catch (e) {
+      debugPrint('Error loading user data: $e');
+    }
+  }
+
+  Map<String, dynamic>? get currentUserData => _currentUserData;
 }

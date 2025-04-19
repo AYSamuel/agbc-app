@@ -4,6 +4,14 @@ import 'package:geocoding/geocoding.dart';
 import 'package:agbc_app/utils/theme.dart';
 
 class LocationService {
+  Future<void> initialize() async {
+    // Check and request location permissions
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+  }
+
   Future<String?> getCurrentLocation() async {
     try {
       // Check location permission

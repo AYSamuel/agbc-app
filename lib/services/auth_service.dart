@@ -78,11 +78,26 @@ class AuthService with ChangeNotifier {
       _authStateSubscription = _auth.authStateChanges().listen((User? user) async {
         if (user != null) {
           try {
+            // First, reload the user to get the latest data
+            await user.reload();
+            
+            // Get the user document from Firestore
             DocumentSnapshot userDoc = await _firestoreService.users.doc(user.uid).get();
             
             if (userDoc.exists && userDoc.data() != null) {
+              // If user document exists, load the data
               _currentUser = UserModel.fromJson(userDoc.data() as Map<String, dynamic>);
+              
+              // Update the user's last login time
+              _currentUser = _currentUser!.copyWith(
+                lastLogin: DateTime.now(),
+                emailVerified: user.emailVerified,
+              );
+              
+              // Save the updated user data
+              await _firestoreService.updateUser(_currentUser!);
             } else {
+              // If user document doesn't exist, create a new one
               _currentUser = UserModel(
                 uid: user.uid,
                 displayName: user.displayName ?? '',
@@ -102,6 +117,7 @@ class AuthService with ChangeNotifier {
               await _firestoreService.users.doc(user.uid).set(_currentUser!.toJson());
             }
           } catch (e) {
+            print('Error loading user data: $e');
             _currentUser = null;
           }
         } else {
@@ -110,6 +126,7 @@ class AuthService with ChangeNotifier {
         notifyListeners();
       });
     } catch (e) {
+      print('Error initializing auth service: $e');
       _currentUser = null;
       notifyListeners();
     }
@@ -190,11 +207,57 @@ class AuthService with ChangeNotifier {
   Future<UserCredential?> signInWithEmailAndPassword(
       String email, String password) async {
     try {
-      return await _auth.signInWithEmailAndPassword(
+      final userCredential = await _auth.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
+
+      if (userCredential.user != null) {
+        // Reload the user to get the latest data
+        await userCredential.user!.reload();
+        
+        // Get the user document from Firestore
+        DocumentSnapshot userDoc = await _firestoreService.users.doc(userCredential.user!.uid).get();
+        
+        if (userDoc.exists && userDoc.data() != null) {
+          // If user document exists, load the data
+          _currentUser = UserModel.fromJson(userDoc.data() as Map<String, dynamic>);
+          
+          // Update the user's last login time
+          _currentUser = _currentUser!.copyWith(
+            lastLogin: DateTime.now(),
+            emailVerified: userCredential.user!.emailVerified,
+          );
+          
+          // Save the updated user data
+          await _firestoreService.updateUser(_currentUser!);
+        } else {
+          // If user document doesn't exist, create a new one
+          _currentUser = UserModel(
+            uid: userCredential.user!.uid,
+            displayName: userCredential.user!.displayName ?? '',
+            email: userCredential.user!.email ?? '',
+            role: 'member',
+            createdAt: DateTime.now(),
+            lastLogin: DateTime.now(),
+            isActive: true,
+            emailVerified: userCredential.user!.emailVerified,
+            departments: [],
+            notificationSettings: {
+              'email': true,
+              'push': true,
+            },
+            phoneNumber: userCredential.user!.phoneNumber ?? '',
+          );
+          await _firestoreService.users.doc(userCredential.user!.uid).set(_currentUser!.toJson());
+        }
+        
+        notifyListeners();
+      }
+      
+      return userCredential;
     } catch (e) {
+      print('Error during sign in: $e');
       return null;
     }
   }
@@ -217,6 +280,9 @@ class AuthService with ChangeNotifier {
       if (userCredential.user != null) {
         // Update display name in Firebase Auth
         await userCredential.user!.updateDisplayName(name);
+        
+        // Send verification email
+        await userCredential.user!.sendEmailVerification();
 
         final user = UserModel(
           uid: userCredential.user!.uid,
@@ -420,7 +486,9 @@ class AuthService with ChangeNotifier {
   Future<void> deleteAccount() async {
     try {
       if (_auth.currentUser != null) {
+        // Delete the user document from Firestore
         await _firestoreService.users.doc(_auth.currentUser!.uid).delete();
+        // Delete the Firebase Auth account
         await _auth.currentUser!.delete();
         _currentUser = null;
         notifyListeners();

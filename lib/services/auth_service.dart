@@ -10,6 +10,7 @@ import '../services/firestore_service.dart';
 import '../services/permissions_service.dart';
 import 'package:flutter/material.dart';
 import 'package:agbc_app/providers/firestore_provider.dart';
+import '../services/preferences_service.dart';
 
 /// Exception for user-facing authentication errors.
 class AuthException implements Exception {
@@ -65,6 +66,14 @@ class AuthService with ChangeNotifier {
       // Cancel any existing subscription
       await _authStateSubscription?.cancel();
       
+      // Check if remember me is enabled
+      final isRememberMeEnabled = await PreferencesService.isRememberMeEnabled();
+      
+      // If remember me is not enabled, sign out any existing user
+      if (!isRememberMeEnabled) {
+        await _auth.signOut();
+      }
+      
       // Set up new auth state listener
       _authStateSubscription = _auth.authStateChanges().listen((User? user) async {
         if (user != null) {
@@ -111,13 +120,10 @@ class AuthService with ChangeNotifier {
   /// Set the remember me preference
   Future<void> setRememberMe(bool value) async {
     _rememberMe = value;
-    if (kIsWeb) {
-      // Only set persistence on web platforms
-      if (!value) {
-        await _auth.setPersistence(Persistence.NONE);
-      } else {
-        await _auth.setPersistence(Persistence.LOCAL);
-      }
+    if (!value) {
+      // If remember me is disabled, clear the auth state and saved credentials
+      await _auth.signOut();
+      await PreferencesService.clearLoginCredentials();
     }
   }
 
@@ -195,7 +201,6 @@ class AuthService with ChangeNotifier {
         if (userDoc.exists) {
           final userData = userDoc.data() as Map<String, dynamic>;
           _currentUser = UserModel.fromJson(userData);
-          print('User role: ${_currentUser?.role}');
           return _currentUser;
         } else {
           // Create new user document if it doesn't exist

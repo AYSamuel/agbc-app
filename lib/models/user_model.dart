@@ -1,5 +1,5 @@
 /// UserModel represents a church member or staff in the AGBC app.
-/// Handles user profile information, roles, permissions, and church departments.
+/// Handles user profile information, roles, and church departments.
 class UserModel {
   // Basic user information
   final String uid; // Firebase Auth User ID
@@ -12,19 +12,16 @@ class UserModel {
   final DateTime lastLogin; // Last login timestamp
 
   // Church affiliation
-  final String churchId; // Primary church branch ID
+  final String branchId; // Current branch ID
   final String location; // User's location/city
 
   // Department involvement
-  final List<String>
-      departments; // Church departments (choir, media, ushering, etc.)
-  final DateTime?
-      departmentJoinDate; // When they joined their current department
+  final List<String> departments; // Church departments (choir, media, ushering, etc.)
+  final DateTime? departmentJoinDate; // When they joined their current department
 
   // Account status
   final bool isActive; // Whether the account is active
   final bool emailVerified; // Whether email has been verified
-  final Map<String, bool> permissions; // Specific permissions
   final Map<String, dynamic> notificationSettings; // Notification preferences
 
   final DateTime? dateJoined; // When they joined the church
@@ -39,13 +36,12 @@ class UserModel {
     this.photoUrl,
     DateTime? createdAt,
     DateTime? lastLogin,
-    this.churchId = '',
+    this.branchId = '',
     this.location = '',
     this.departments = const [],
     this.departmentJoinDate,
     this.isActive = true,
     this.emailVerified = false,
-    this.permissions = const {},
     this.notificationSettings = const {},
     this.dateJoined,
   })  : createdAt = createdAt ?? DateTime.now(),
@@ -53,18 +49,20 @@ class UserModel {
 
   /// Creates a UserModel instance from JSON data
   factory UserModel.fromJson(Map<String, dynamic> json) {
+    final role = json['role'] ?? 'member';
+    
     return UserModel(
       uid: json['uid'] ?? '',
       displayName: json['displayName'] ?? '',
       email: json['email'] ?? '',
-      role: json['role'] ?? 'member',
+      role: role,
       phoneNumber: json['phoneNumber'],
       photoUrl: json['photoUrl'],
       createdAt:
           json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
       lastLogin:
           json['lastLogin'] != null ? DateTime.parse(json['lastLogin']) : null,
-      churchId: json['churchId'] ?? '',
+      branchId: json['branchId'] ?? '',
       location: json['location'] ?? '',
       departments: List<String>.from(json['departments'] ?? []),
       departmentJoinDate: json['departmentJoinDate'] != null
@@ -72,7 +70,6 @@ class UserModel {
           : null,
       isActive: json['isActive'] ?? true,
       emailVerified: json['emailVerified'] ?? false,
-      permissions: Map<String, bool>.from(json['permissions'] ?? {}),
       notificationSettings:
           Map<String, dynamic>.from(json['notificationSettings'] ?? {}),
       dateJoined: json['dateJoined'] != null
@@ -92,13 +89,12 @@ class UserModel {
       'photoUrl': photoUrl,
       'createdAt': createdAt.toIso8601String(),
       'lastLogin': lastLogin.toIso8601String(),
-      'churchId': churchId,
+      'branchId': branchId,
       'location': location,
       'departments': departments,
       'departmentJoinDate': departmentJoinDate?.toIso8601String(),
       'isActive': isActive,
       'emailVerified': emailVerified,
-      'permissions': permissions,
       'notificationSettings': notificationSettings,
       'dateJoined': dateJoined?.toIso8601String(),
     };
@@ -107,11 +103,6 @@ class UserModel {
   /// Checks if user is in a specific department
   bool isInDepartment(String department) {
     return departments.contains(department.toLowerCase());
-  }
-
-  /// Checks if user has a specific permission
-  bool hasPermission(String permission) {
-    return permissions[permission] ?? false;
   }
 
   /// Checks if user is an admin
@@ -130,13 +121,12 @@ class UserModel {
     String? photoUrl,
     DateTime? createdAt,
     DateTime? lastLogin,
-    String? churchId,
+    String? branchId,
     String? location,
     List<String>? departments,
     DateTime? departmentJoinDate,
     bool? isActive,
     bool? emailVerified,
-    Map<String, bool>? permissions,
     Map<String, dynamic>? notificationSettings,
     DateTime? dateJoined,
   }) {
@@ -149,26 +139,14 @@ class UserModel {
       photoUrl: photoUrl ?? this.photoUrl,
       createdAt: createdAt ?? this.createdAt,
       lastLogin: lastLogin ?? this.lastLogin,
-      churchId: churchId ?? this.churchId,
+      branchId: branchId ?? this.branchId,
       location: location ?? this.location,
       departments: departments ?? this.departments,
       departmentJoinDate: departmentJoinDate ?? this.departmentJoinDate,
       isActive: isActive ?? this.isActive,
       emailVerified: emailVerified ?? this.emailVerified,
-      permissions: permissions ?? this.permissions,
       notificationSettings: notificationSettings ?? this.notificationSettings,
       dateJoined: dateJoined ?? this.dateJoined,
     );
   }
-
-  /// Two users are considered equal if they have the same UID
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is UserModel &&
-          runtimeType == other.runtimeType &&
-          uid == other.uid;
-
-  @override
-  int get hashCode => uid.hashCode;
 }

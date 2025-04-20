@@ -368,23 +368,8 @@ class UserManagementScreen extends StatelessWidget {
                 Row(
                   children: [
                     Expanded(
-                      child: TextButton(
+                      child: CustomBackButton(
                         onPressed: () => Navigator.pop(context),
-                        style: TextButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            side: const BorderSide(color: Color(0xFF1A237E)),
-                          ),
-                        ),
-                        child: const Text(
-                          'Cancel',
-                          style: TextStyle(
-                            color: Color(0xFF1A237E),
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
                       ),
                     ),
                     const SizedBox(width: 16),

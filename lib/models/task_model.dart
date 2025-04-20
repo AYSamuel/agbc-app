@@ -12,7 +12,7 @@ class TaskModel {
   final String assignedTo; // ID of user responsible for the task
   final DateTime deadline; // When the task needs to be completed
   final DateTime? reminder; // Optional reminder time
-  final String? churchId; // Associated church branch (optional)
+  final String? branchId; // Associated branch (optional)
 
   // Task status and tracking
   final bool isAccepted; // Whether assignee has accepted the task
@@ -37,7 +37,7 @@ class TaskModel {
     required this.assignedTo,
     required this.createdBy,
     DateTime? createdAt,
-    this.churchId,
+    this.branchId,
     this.reminder,
     this.isAccepted = false,
     this.isCompleted = false,
@@ -60,7 +60,7 @@ class TaskModel {
       createdBy: json['createdBy'] ?? '',
       assignedTo: json['assignedTo'] ?? '',
       deadline: DateTime.parse(json['deadline']),
-      churchId: json['churchId'],
+      branchId: json['branchId'],
       reminder:
           json['reminder'] != null ? DateTime.parse(json['reminder']) : null,
       isAccepted: json['isAccepted'] ?? false,
@@ -86,7 +86,7 @@ class TaskModel {
       'createdBy': createdBy,
       'assignedTo': assignedTo,
       'deadline': deadline.toIso8601String(),
-      'churchId': churchId,
+      'branchId': branchId,
       'reminder': reminder?.toIso8601String(),
       'isAccepted': isAccepted,
       'isCompleted': isCompleted,
@@ -119,7 +119,7 @@ class TaskModel {
     String? createdBy,
     String? assignedTo,
     DateTime? deadline,
-    String? churchId,
+    String? branchId,
     DateTime? reminder,
     bool? isAccepted,
     bool? isCompleted,
@@ -138,7 +138,7 @@ class TaskModel {
       createdBy: createdBy ?? this.createdBy,
       assignedTo: assignedTo ?? this.assignedTo,
       deadline: deadline ?? this.deadline,
-      churchId: churchId ?? this.churchId,
+      branchId: branchId ?? this.branchId,
       reminder: reminder ?? this.reminder,
       isAccepted: isAccepted ?? this.isAccepted,
       isCompleted: isCompleted ?? this.isCompleted,

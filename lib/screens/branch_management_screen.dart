@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/firestore_provider.dart';
-import '../models/church_model.dart';
+import '../models/church_branch_model.dart';
+import '../models/user_model.dart';
+import '../services/auth_service.dart';
 import '../utils/theme.dart';
 import '../widgets/custom_back_button.dart';
+import 'add_branch_screen.dart';
 
 class BranchManagementScreen extends StatelessWidget {
   const BranchManagementScreen({super.key});
@@ -11,6 +14,8 @@ class BranchManagementScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final firestoreProvider = Provider.of<FirestoreProvider>(context);
+    final authService = Provider.of<AuthService>(context);
+    final user = authService.currentUser;
 
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
@@ -27,19 +32,32 @@ class BranchManagementScreen extends StatelessWidget {
                   ),
                   const SizedBox(width: 16),
                   const Text(
-                    'Church Branches',
+                    'Branches',
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
                       color: Color(0xFF1A237E),
                     ),
                   ),
+                  const Spacer(),
+                  if (user?.role == 'admin')
+                    IconButton(
+                      icon: const Icon(Icons.add),
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const AddBranchScreen(),
+                          fullscreenDialog: true,
+                        ),
+                      ),
+                      color: AppTheme.primaryColor,
+                    ),
                 ],
               ),
             ),
             // Branches List
             Expanded(
-              child: StreamBuilder<List<ChurchModel>>(
+              child: StreamBuilder<List<ChurchBranch>>(
                 stream: firestoreProvider.getAllBranches(),
                 builder: (context, snapshot) {
                   if (snapshot.hasError) {
@@ -71,7 +89,7 @@ class BranchManagementScreen extends StatelessWidget {
                           ),
                           SizedBox(height: 8),
                           Text(
-                            'There are currently no church branches in the system.',
+                            'There are currently no branches in the system.',
                             style: TextStyle(
                               fontSize: 16,
                               color: Colors.grey,
@@ -94,36 +112,39 @@ class BranchManagementScreen extends StatelessWidget {
                         margin: const EdgeInsets.only(bottom: 16),
                         color: AppTheme.cardColor,
                         child: ListTile(
-                          leading: Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: AppTheme.primaryColor.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Icon(
-                              Icons.church,
-                              color: AppTheme.primaryColor,
-                            ),
-                          ),
-                          title: Text(
-                            branch.name,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
+                          title: Text(branch.name),
                           subtitle: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(branch.location),
                               Text(branch.address),
-                              Text('Person in Charge: ${branch.personInCharge}'),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Pastor: ${branch.pastorId ?? 'Not assigned'}',
+                                style: const TextStyle(fontSize: 12),
+                              ),
+                              Text(
+                                'Members: ${branch.members.length}',
+                                style: const TextStyle(fontSize: 12),
+                              ),
                             ],
                           ),
-                          trailing: IconButton(
-                            icon: const Icon(Icons.edit),
-                            onPressed: () => _showEditBranchDialog(context, branch),
-                            color: AppTheme.primaryColor,
-                          ),
+                          trailing: user?.role == 'admin'
+                              ? Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(
+                                      icon: const Icon(Icons.edit),
+                                      onPressed: () => _showEditBranchDialog(context, branch),
+                                      color: AppTheme.primaryColor,
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(Icons.delete),
+                                      onPressed: () => _showDeleteBranchDialog(context, branch),
+                                      color: Colors.red,
+                                    ),
+                                  ],
+                                )
+                              : null,
                         ),
                       );
                     },
@@ -137,17 +158,44 @@ class BranchManagementScreen extends StatelessWidget {
     );
   }
 
-  void _showEditBranchDialog(BuildContext context, ChurchModel branch) {
-    // TODO: Implement branch editing dialog
+  void _showEditBranchDialog(BuildContext context, ChurchBranch branch) {
+    // TODO: Implement branch edit dialog
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Edit Branch'),
-        content: const Text('Branch editing dialog will be implemented here.'),
+        content: const Text('Branch edit dialog will be implemented here.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDeleteBranchDialog(BuildContext context, ChurchBranch branch) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Branch'),
+        content: Text('Are you sure you want to delete ${branch.name}?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Provider.of<FirestoreProvider>(context, listen: false)
+                  .deleteBranch(branch.id);
+              Navigator.pop(context);
+            },
+            child: const Text(
+              'Delete',
+              style: TextStyle(color: Colors.red),
+            ),
           ),
         ],
       ),

@@ -170,27 +170,25 @@ class ProfileScreen extends StatelessWidget {
                   ],
                 ),
 
-                // Church Information Section
+                // Branch Information Section
                 _buildSection(
                   context,
-                  title: 'Church Information',
+                  title: 'Branch Information',
                   children: [
                     _buildInfoCard(
                       context,
-                      title: 'Departments',
-                      value: user?.departments.isNotEmpty ?? false
-                          ? user!.departments.join(', ')
+                      title: 'Branch',
+                      value: user?.branchId?.isNotEmpty == true 
+                          ? 'AGBC ${user!.branchId.toUpperCase()}'
                           : 'Not assigned',
-                      icon: Icons.group,
+                      icon: Icons.church,
                     ),
                     const SizedBox(height: 12),
                     _buildInfoCard(
                       context,
-                      title: 'Member Since',
-                      value: user?.dateJoined != null
-                          ? '${user!.dateJoined!.day}/${user.dateJoined!.month}/${user.dateJoined!.year}'
-                          : 'Not set',
-                      icon: Icons.calendar_today,
+                      title: 'Location',
+                      value: user?.location ?? 'Not set',
+                      icon: Icons.location_on,
                     ),
                   ],
                 ),

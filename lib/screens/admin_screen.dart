@@ -6,6 +6,9 @@ import 'task_management_screen.dart';
 import 'meeting_management_screen.dart';
 import 'branch_management_screen.dart';
 import '../utils/theme.dart';
+import '../widgets/custom_back_button.dart';
+import 'main_navigation_state.dart';
+import 'main_navigation_screen.dart';
 
 class AdminScreen extends StatelessWidget {
   const AdminScreen({super.key});
@@ -15,54 +18,83 @@ class AdminScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       body: SafeArea(
-        child: GridView.count(
-          padding: const EdgeInsets.all(16),
-          crossAxisCount: 2,
-          mainAxisSpacing: 16,
-          crossAxisSpacing: 16,
+        child: Column(
           children: [
-            _buildAdminCard(
-              context,
-              icon: Icons.people,
-              title: 'Users',
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const UserManagementScreen(),
-                ),
+            // Header with Back button
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                children: [
+                  CustomBackButton(
+                    onPressed: () {
+                      // Navigate back to home screen
+                      MainNavigationScreen.navigateToTab(context, 0);
+                    },
+                  ),
+                  const SizedBox(width: 16),
+                  const Text(
+                    'Admin Dashboard',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1A237E),
+                    ),
+                  ),
+                ],
               ),
             ),
-            _buildAdminCard(
-              context,
-              icon: Icons.task,
-              title: 'Tasks',
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const TaskManagementScreen(),
-                ),
-              ),
-            ),
-            _buildAdminCard(
-              context,
-              icon: Icons.calendar_today,
-              title: 'Meetings',
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const MeetingManagementScreen(),
-                ),
-              ),
-            ),
-            _buildAdminCard(
-              context,
-              icon: Icons.church,
-              title: 'Branches',
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const BranchManagementScreen(),
-                ),
+            Expanded(
+              child: GridView.count(
+                padding: const EdgeInsets.all(16),
+                crossAxisCount: 2,
+                mainAxisSpacing: 16,
+                crossAxisSpacing: 16,
+                children: [
+                  _buildAdminCard(
+                    context,
+                    icon: Icons.people,
+                    title: 'Users',
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const UserManagementScreen(),
+                      ),
+                    ),
+                  ),
+                  _buildAdminCard(
+                    context,
+                    icon: Icons.task,
+                    title: 'Tasks',
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const TaskManagementScreen(),
+                      ),
+                    ),
+                  ),
+                  _buildAdminCard(
+                    context,
+                    icon: Icons.calendar_today,
+                    title: 'Meetings',
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const MeetingManagementScreen(),
+                      ),
+                    ),
+                  ),
+                  _buildAdminCard(
+                    context,
+                    icon: Icons.church,
+                    title: 'Branches',
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const BranchManagementScreen(),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],

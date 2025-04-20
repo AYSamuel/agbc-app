@@ -45,27 +45,20 @@ class AppInitializationService {
       // Check if remember me is enabled
       final isRememberMeEnabled = await PreferencesService.isRememberMeEnabled();
       
-      // If user is logged in or remember me is enabled, initialize user data
-      if (currentUser != null || isRememberMeEnabled) {
+      // If remember me is not enabled and there's a current user, sign them out
+      if (!isRememberMeEnabled && currentUser != null) {
+        await auth.signOut();
+        return false;
+      }
+      
+      // If user is logged in and remember me is enabled, initialize user data
+      if (currentUser != null && isRememberMeEnabled) {
         // Initialize user-specific services
-        if (currentUser != null) {
-          await userService.loadUserData(currentUser.uid);
-        } else if (isRememberMeEnabled) {
-          final savedEmail = await PreferencesService.getSavedEmail();
-          if (savedEmail != null) {
-            final user = await auth.signInWithEmailAndPassword(
-              email: savedEmail,
-              password: (await PreferencesService.getSavedPassword()) ?? '',
-            );
-            if (user.user != null) {
-              await userService.loadUserData(user.user!.uid);
-            }
-          }
-        }
+        await userService.loadUserData(currentUser.uid);
         return true;
       }
       
-      // If no user is logged in and remember me is not enabled, show login screen
+      // If no user is logged in or remember me is not enabled, show login screen
       return false;
     } catch (e) {
       // If there's any error during initialization, show login screen

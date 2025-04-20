@@ -61,6 +61,9 @@ class _LoginFormState extends State<LoginForm> with FormValidationMixin {
         // Auto-login if credentials are available
         _login();
       }
+    } else {
+      // Clear any saved credentials if remember me is not enabled
+      await PreferencesService.clearLoginCredentials();
     }
   }
 

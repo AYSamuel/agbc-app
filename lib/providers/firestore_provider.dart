@@ -3,10 +3,12 @@ import '../services/firestore_service.dart';
 import '../models/user_model.dart';
 import '../models/task_model.dart';
 import '../models/meeting_model.dart';
-import '../models/church_model.dart';
+import '../models/church_branch_model.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class FirestoreProvider with ChangeNotifier {
   final FirestoreService _firestoreService = FirestoreService();
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   
   // User Data
   UserModel? _currentUser;
@@ -20,19 +22,21 @@ class FirestoreProvider with ChangeNotifier {
   List<MeetingModel> _meetings = [];
   List<MeetingModel> get meetings => _meetings;
   
-  // Church Data
-  ChurchModel? _currentChurch;
-  ChurchModel? get currentChurch => _currentChurch;
+  // Branch Data
+  ChurchBranch? _currentBranch;
+  ChurchBranch? get currentBranch => _currentBranch;
   
   // Initialize user data
   Future<void> initializeUserData(String uid) async {
     _firestoreService.getUser(uid).listen((user) {
       _currentUser = user;
       if (user != null) {
-        _firestoreService.getChurch(user.churchId).listen((church) {
-          _currentChurch = church;
-          notifyListeners();
-        });
+        if (user.branchId != null) {
+          _firestoreService.getBranch(user.branchId!).listen((branch) {
+            _currentBranch = branch;
+            notifyListeners();
+          });
+        }
         _loadUserTasks(uid);
         _loadUserMeetings(uid);
       }
@@ -122,16 +126,55 @@ class FirestoreProvider with ChangeNotifier {
     notifyListeners();
   }
   
-  // Church Operations
-  Future<void> updateChurch(ChurchModel church) async {
-    await _firestoreService.updateChurch(church);
-    _currentChurch = church;
+  // Branch Operations
+  Stream<List<ChurchBranch>> getAllBranches() {
+    return _firestoreService.branches
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((doc) => ChurchBranch.fromJson({
+                  'id': doc.id,
+                  ...doc.data() as Map<String, dynamic>,
+                }))
+            .toList());
+  }
+
+  Future<void> createBranch(ChurchBranch branch) async {
+    await _firestoreService.createBranch(branch);
+    notifyListeners();
+  }
+
+  Future<void> updateBranch(String branchId, Map<String, dynamic> data) async {
+    await _firestoreService.updateBranch(branchId, data);
+    notifyListeners();
+  }
+
+  Future<void> deleteBranch(String branchId) async {
+    await _firestoreService.deleteBranch(branchId);
+    notifyListeners();
+  }
+
+  Future<void> assignPastorToBranch(String branchId, String pastorId) async {
+    await _firestoreService.updateBranch(branchId, {'pastorId': pastorId});
+    notifyListeners();
+  }
+
+  Future<void> addMemberToBranch(String branchId, String userId) async {
+    await _firestoreService.updateBranch(branchId, {
+      'members': FieldValue.arrayUnion([userId])
+    });
+    notifyListeners();
+  }
+
+  Future<void> removeMemberFromBranch(String branchId, String userId) async {
+    await _firestoreService.updateBranch(branchId, {
+      'members': FieldValue.arrayRemove([userId])
+    });
     notifyListeners();
   }
   
   // Department Operations
   List<String> getDepartments() {
-    return _currentChurch?.departments ?? [];
+    return _currentBranch?.departments ?? [];
   }
 
   // User operations
@@ -156,45 +199,26 @@ class FirestoreProvider with ChangeNotifier {
     return _firestoreService.getAllMeetings();
   }
 
-  Stream<List<ChurchModel>> getAllBranches() {
-    return _firestoreService.getAllBranches();
-  }
-
-  Stream<ChurchModel?> getChurch(String churchId) {
-    return _firestoreService.getChurch(churchId);
+  Stream<ChurchBranch?> getBranch(String branchId) {
+    return _firestoreService.getBranch(branchId);
   }
 
   Future<void> updateUserRole(String userId, String newRole) async {
     try {
-      final user = await _firestoreService.collection('users').doc(userId).get();
+      final user = await _firestore.collection('users').doc(userId).get();
       if (user.exists) {
         final data = user.data() as Map<String, dynamic>;
         data['role'] = newRole;
-        await _firestoreService.collection('users').doc(userId).update(data);
+        await _firestore.collection('users').doc(userId).update(data);
       }
     } catch (e) {
       throw Exception('Failed to update user role: $e');
     }
   }
 
-  Future<void> addBranch(ChurchModel branch) async {
-    await _firestoreService.addBranch(branch);
-    notifyListeners();
-  }
-
-  Future<void> updateBranch(ChurchModel branch) async {
-    await _firestoreService.updateBranch(branch);
-    notifyListeners();
-  }
-
-  Future<void> deleteBranch(String branchId) async {
-    await _firestoreService.deleteBranch(branchId);
-    notifyListeners();
-  }
-
   Future<List<UserModel>> getUsers() async {
     try {
-      final snapshot = await _firestoreService.collection('users').get();
+      final snapshot = await _firestore.collection('users').get();
       return snapshot.docs.map((doc) {
         final data = doc.data() as Map<String, dynamic>;
         data['uid'] = doc.id;
@@ -202,6 +226,15 @@ class FirestoreProvider with ChangeNotifier {
       }).toList();
     } catch (e) {
       throw Exception('Failed to fetch users: $e');
+    }
+  }
+
+  Future<void> createUser(UserModel user) async {
+    try {
+      await _firestore.collection('users').doc(user.uid).set(user.toJson());
+      notifyListeners();
+    } catch (e) {
+      throw Exception('Failed to create user: $e');
     }
   }
 } 

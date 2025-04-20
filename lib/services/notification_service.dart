@@ -1,55 +1,49 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class NotificationService {
   final FirebaseMessaging _messaging = FirebaseMessaging.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
   Future<void> initialize() async {
     try {
-      // Request permission for notifications
-      NotificationSettings settings = await _messaging.requestPermission(
+      // Request notification permissions
+      await _messaging.requestPermission(
         alert: true,
         badge: true,
         sound: true,
       );
 
-      if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-        // Get FCM token
-        String? token = await _messaging.getToken();
-        debugPrint('FCM Token: $token');
-
-        // Handle foreground messages
-        FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-          debugPrint('Got a message whilst in the foreground!');
-          debugPrint('Message data: ${message.data}');
-        });
-
-        // Handle background messages
-        FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-      }
-    } catch (e) {
-      debugPrint('Error initializing notifications: $e');
-    }
-  }
-
-  // Get FCM token and save it to Firestore
-  Future<void> saveFCMToken(String userId) async {
-    try {
-      String? token = await _messaging.getToken();
+      // Get and save FCM token
+      final token = await _messaging.getToken();
       if (token != null) {
-        await _firestore.collection('users').doc(userId).update({
-          'fcmToken': token,
-        });
-        print('FCM Token saved successfully');
+        await _saveFCMToken(token);
       }
+
+      // Handle token refresh
+      _messaging.onTokenRefresh.listen(_saveFCMToken);
     } catch (e) {
-      print('Error saving FCM token: $e');
+      // Handle error silently in production
     }
   }
 
-  // Send a notification to a specific user
+  Future<void> _saveFCMToken(String token) async {
+    try {
+      final user = _auth.currentUser;
+      if (user != null) {
+        await _firestore.collection('users').doc(user.uid).update({
+          'fcmToken': token,
+          'fcmTokenUpdatedAt': FieldValue.serverTimestamp(),
+        });
+      }
+    } catch (e) {
+      // Handle error silently in production
+    }
+  }
+
   Future<void> sendNotification({
     required String userId,
     required String title,
@@ -57,50 +51,52 @@ class NotificationService {
     Map<String, dynamic>? data,
   }) async {
     try {
-      // Get the user's FCM token
-      DocumentSnapshot userDoc = await _firestore.collection('users').doc(userId).get();
-      String? fcmToken = userDoc.get('fcmToken');
-
+      final userDoc = await _firestore.collection('users').doc(userId).get();
+      final fcmToken = userDoc.data()?['fcmToken'] as String?;
+      
       if (fcmToken != null) {
-        // Create the notification message
-        final message = {
-          'to': fcmToken,
-          'notification': {
+        await _messaging.sendMessage(
+          to: fcmToken,
+          data: {
             'title': title,
             'body': body,
+            ...?data,
           },
-          'data': data ?? {},
-        };
-
-        // Save the notification to Firestore
-        await _firestore.collection('notifications').add({
-          ...message,
-          'userId': userId,
-          'timestamp': FieldValue.serverTimestamp(),
-          'read': false,
-        });
-
-        print('Notification sent successfully');
-      } else {
-        print('No FCM token found for user');
+        );
       }
     } catch (e) {
-      print('Error sending notification: $e');
+      // Handle error silently in production
+    }
+  }
+
+  void _handleMessage(RemoteMessage message) {
+    // Handle the message appropriately
+    final data = message.data;
+    final notification = message.notification;
+    
+    if (notification != null) {
+      // Handle notification
+    }
+    
+    if (data.isNotEmpty) {
+      // Handle data payload
     }
   }
 
   // Handle notification when the app is opened from a terminated state
-  void handleInitialMessage() {
-    FirebaseMessaging.instance.getInitialMessage().then((RemoteMessage? message) {
-      if (message != null) {
-        print('App opened from terminated state with notification');
-        print('Message data: ${message.data}');
-      }
-    });
+  Future<void> handleInitialMessage() async {
+    final message = await _messaging.getInitialMessage();
+    if (message != null) {
+      _handleMessage(message);
+    }
+  }
+
+  Future<void> handleBackgroundMessage(RemoteMessage message) async {
+    _handleMessage(message);
   }
 }
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  debugPrint('Handling a background message: ${message.messageId}');
+  // Handle background message
 } 

@@ -169,19 +169,12 @@ class _VerificationScreenState extends State<VerificationScreen> {
                             ),
                     ),
                     const SizedBox(height: 16),
-                    TextButton(
+                    CustomBackButton(
                       onPressed: () {
                         Navigator.of(context).pushReplacement(
                           MaterialPageRoute(builder: (context) => const LoginScreen()),
                         );
                       },
-                      child: const Text(
-                        'Back to Login',
-                        style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: 16,
-                        ),
-                      ),
                     ),
                   ],
                 ),

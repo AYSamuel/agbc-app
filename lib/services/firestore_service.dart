@@ -187,11 +187,6 @@ class FirestoreService {
         userId: userId,
         title: 'Role Updated',
         body: 'Your role has been changed to ${newRole.toUpperCase()}',
-        data: {
-          'type': 'role_change',
-          'newRole': newRole,
-          'userName': userName,
-        },
       );
     } catch (e) {
       throw Exception('Failed to update user role: $e');

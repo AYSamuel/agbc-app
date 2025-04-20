@@ -4,6 +4,21 @@ import '../models/user_model.dart';
 
 /// Service class for handling role-based permissions
 class PermissionsService with ChangeNotifier {
+  late final Map<String, Map<String, bool>> _permissions;
+  late final Map<String, bool> _defaultPermissions;
+  late final Map<String, bool> _adminPermissions;
+
+  PermissionsService() {
+    _adminPermissions = _getAdminPermissions();
+    _defaultPermissions = _getMemberPermissions();
+    _permissions = {
+      'admin': _adminPermissions,
+      'pastor': _getPastorPermissions(),
+      'worker': _getWorkerPermissions(),
+      'member': _defaultPermissions,
+    };
+  }
+
   Future<void> initialize() async {
     // Initialize and request necessary permissions
     await Permission.location.request();
@@ -13,21 +28,16 @@ class PermissionsService with ChangeNotifier {
   }
 
   /// Get default permissions for a given role
-  static Map<String, bool> getPermissionsForRole(String role) {
-    print('Getting permissions for role: $role');
-    final permissions = switch (role.toLowerCase()) {
-      'admin' => getAdminPermissions(),
-      'pastor' => getPastorPermissions(),
-      'worker' => getWorkerPermissions(),
-      'member' => getMemberPermissions(),
-      _ => getMemberPermissions(),
-    };
-    print('Permissions for $role: $permissions');
-    return permissions;
+  Map<String, bool> getPermissionsForRole(String role) {
+    try {
+      return _permissions[role.toLowerCase()] ?? _defaultPermissions;
+    } catch (e) {
+      return _defaultPermissions;
+    }
   }
 
-  static Map<String, bool> getAdminPermissions() {
-    final permissions = {
+  Map<String, bool> _getAdminPermissions() {
+    return {
       // User Management
       'manage_users': true,
       'view_users': true,
@@ -65,11 +75,9 @@ class PermissionsService with ChangeNotifier {
       'view_settings': true,
       'edit_settings': true,
     };
-    print('Admin permissions: $permissions');
-    return permissions;
   }
 
-  static Map<String, bool> getPastorPermissions() {
+  static Map<String, bool> _getPastorPermissions() {
     return {
       // User Management
       'manage_users': false,
@@ -110,7 +118,7 @@ class PermissionsService with ChangeNotifier {
     };
   }
 
-  static Map<String, bool> getWorkerPermissions() {
+  static Map<String, bool> _getWorkerPermissions() {
     return {
       // User Management
       'manage_users': false,
@@ -151,7 +159,7 @@ class PermissionsService with ChangeNotifier {
     };
   }
 
-  static Map<String, bool> getMemberPermissions() {
+  static Map<String, bool> _getMemberPermissions() {
     return {
       // User Management
       'manage_users': false,

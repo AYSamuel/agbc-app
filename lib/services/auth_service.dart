@@ -143,8 +143,7 @@ class AuthService with ChangeNotifier {
       // Clear any cached data
       _loginAttempts.clear();
     } catch (e) {
-      debugPrint('Error during logout: $e');
-      throw AuthException('Failed to logout: $e');
+      // Handle error silently in production
     }
   }
 
@@ -394,8 +393,7 @@ class AuthService with ChangeNotifier {
       // Clear any cached data
       _loginAttempts.clear();
     } catch (e) {
-      debugPrint('Error during sign out: $e');
-      throw AuthException('Failed to sign out: $e');
+      // Handle error silently in production
     }
   }
 

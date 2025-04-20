@@ -58,9 +58,7 @@ Future<void> main() async {
       ),
     );
   } catch (e, stackTrace) {
-    // Handle initialization errors
-    debugPrint('Error initializing app: $e');
-    debugPrint('Stack trace: $stackTrace');
+    // Handle initialization errors silently in production
     runApp(
       MaterialApp(
         home: Scaffold(

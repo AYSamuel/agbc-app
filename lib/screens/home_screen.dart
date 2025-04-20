@@ -66,7 +66,6 @@ class HomeScreen extends StatelessWidget {
 
   void _showBranchCreationDialog(BuildContext context) {
     final user = Provider.of<AuthService>(context, listen: false).currentUser;
-    print('User role: ${user?.role}');
     
     if (user?.role != 'admin') {
       ScaffoldMessenger.of(context).showSnackBar(

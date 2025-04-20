@@ -13,6 +13,7 @@ import 'task_management_screen.dart';
 import 'meeting_management_screen.dart';
 import 'admin_screen.dart';
 import 'add_branch_screen.dart';
+import 'add_task_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -29,19 +30,9 @@ class HomeScreen extends StatelessWidget {
       return;
     }
 
-    // TODO: Implement task creation dialog
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Create Task'),
-        content: const Text('Task creation dialog will be implemented here.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const AddTaskScreen()),
     );
   }
 

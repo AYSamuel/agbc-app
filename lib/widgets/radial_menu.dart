@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:agbc_app/utils/theme.dart';
 
 class RadialMenu extends StatefulWidget {
@@ -99,7 +100,10 @@ class _RadialMenuState extends State<RadialMenu> with SingleTickerProviderStateM
           opacity: _opacityAnimation!,
           child: FloatingActionButton(
             heroTag: null,
-            onPressed: onTap,
+            onPressed: () async {
+              await HapticFeedback.lightImpact();
+              onTap();
+            },
             backgroundColor: Colors.white,
             elevation: 4,
             tooltip: label,

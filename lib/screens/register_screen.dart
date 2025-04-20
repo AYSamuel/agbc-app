@@ -175,9 +175,10 @@ class RegisterScreen extends StatelessWidget {
                               ),
                               child: RegisterForm(
                                 onRegisterSuccess: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(builder: (context) => const VerificationScreen()),
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (context) => const VerificationScreen(),
+                                    ),
                                   );
                                 },
                               ),

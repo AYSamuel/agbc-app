@@ -10,10 +10,21 @@ class NotificationService {
 
   Future<void> initialize() async {
     try {
+      // Request notification permissions
+      await _messaging.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+
+      // Get and save FCM token
       final token = await _messaging.getToken();
       if (token != null) {
         await _saveFCMToken(token);
       }
+
+      // Handle token refresh
+      _messaging.onTokenRefresh.listen(_saveFCMToken);
     } catch (e) {
       // Handle error silently in production
     }
@@ -25,6 +36,7 @@ class NotificationService {
       if (user != null) {
         await _firestore.collection('users').doc(user.uid).update({
           'fcmToken': token,
+          'fcmTokenUpdatedAt': FieldValue.serverTimestamp(),
         });
       }
     } catch (e) {
@@ -36,6 +48,7 @@ class NotificationService {
     required String userId,
     required String title,
     required String body,
+    Map<String, dynamic>? data,
   }) async {
     try {
       final userDoc = await _firestore.collection('users').doc(userId).get();
@@ -47,6 +60,7 @@ class NotificationService {
           data: {
             'title': title,
             'body': body,
+            ...?data,
           },
         );
       }
@@ -57,20 +71,32 @@ class NotificationService {
 
   void _handleMessage(RemoteMessage message) {
     // Handle the message appropriately
+    final data = message.data;
+    final notification = message.notification;
+    
+    if (notification != null) {
+      // Handle notification
+    }
+    
+    if (data.isNotEmpty) {
+      // Handle data payload
+    }
   }
 
   // Handle notification when the app is opened from a terminated state
-  void handleInitialMessage() {
-    FirebaseMessaging.instance.getInitialMessage().then((RemoteMessage? message) {
-      if (message != null) {
-        print('App opened from terminated state with notification');
-        print('Message data: ${message.data}');
-      }
-    });
+  Future<void> handleInitialMessage() async {
+    final message = await _messaging.getInitialMessage();
+    if (message != null) {
+      _handleMessage(message);
+    }
+  }
+
+  Future<void> handleBackgroundMessage(RemoteMessage message) async {
+    _handleMessage(message);
   }
 }
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  debugPrint('Handling a background message: ${message.messageId}');
+  // Handle background message
 } 

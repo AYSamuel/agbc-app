@@ -49,9 +49,7 @@ class UserModel {
 
   /// Creates a UserModel instance from JSON data
   factory UserModel.fromJson(Map<String, dynamic> json) {
-    print('Loading user from JSON: $json');
     final role = json['role'] ?? 'member';
-    print('User role: $role');
     
     return UserModel(
       uid: json['uid'] ?? '',

@@ -38,7 +38,6 @@ class _RegisterFormState extends State<RegisterForm> with LocationValidationMixi
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _isGettingLocation = false;
-  String? _selectedBranchId;
 
   @override
   void initState() {
@@ -129,7 +128,6 @@ class _RegisterFormState extends State<RegisterForm> with LocationValidationMixi
         _phoneController.text.trim(),
         _locationController.text.trim(),
         'member',
-        _selectedBranchId,
       );
 
       if (mounted) {
@@ -185,7 +183,7 @@ class _RegisterFormState extends State<RegisterForm> with LocationValidationMixi
             onSubmitted: (_) => FocusScope.of(context).nextFocus(),
             validator: validateName,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 10),
 
           // Email Field
           CustomInput(
@@ -198,7 +196,7 @@ class _RegisterFormState extends State<RegisterForm> with LocationValidationMixi
             onSubmitted: (_) => FocusScope.of(context).nextFocus(),
             validator: validateEmail,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 10),
 
           // Phone Field
           CustomInput(
@@ -209,7 +207,7 @@ class _RegisterFormState extends State<RegisterForm> with LocationValidationMixi
             keyboardType: TextInputType.phone,
             validator: validatePhone,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 10),
 
           // Location Field
           CustomInput(
@@ -237,54 +235,7 @@ class _RegisterFormState extends State<RegisterForm> with LocationValidationMixi
                   ),
             validator: validateLocation,
           ),
-          const SizedBox(height: 16),
-
-          // Branch Selection
-          StreamBuilder<List<ChurchBranch>>(
-            stream: Provider.of<FirestoreProvider>(context).getAllBranches(),
-            builder: (context, snapshot) {
-              if (snapshot.hasError) {
-                return Text('Error: ${snapshot.error}');
-              }
-
-              if (!snapshot.hasData) {
-                return const Center(child: CircularProgressIndicator());
-              }
-
-              final branches = snapshot.data!;
-              if (branches.isEmpty) {
-                return const Text('No branches available');
-              }
-
-              return Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey.shade300),
-                ),
-                child: DropdownButtonFormField<String>(
-                  value: _selectedBranchId ?? branches.first.id,
-                  decoration: const InputDecoration(
-                    labelText: 'Church Branch',
-                    border: InputBorder.none,
-                  ),
-                  items: branches.map((branch) {
-                    return DropdownMenuItem(
-                      value: branch.id,
-                      child: Text(branch.name),
-                    );
-                  }).toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedBranchId = value;
-                    });
-                  },
-                ),
-              );
-            },
-          ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 10),
 
           // Password Field
           CustomInput(
@@ -308,7 +259,7 @@ class _RegisterFormState extends State<RegisterForm> with LocationValidationMixi
             ),
             validator: validatePassword,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 10),
 
           // Confirm Password Field
           CustomInput(
@@ -337,7 +288,7 @@ class _RegisterFormState extends State<RegisterForm> with LocationValidationMixi
               return null;
             },
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 12),
 
           // Register Button
           CustomButton(

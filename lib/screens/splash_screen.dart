@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
+import '../services/app_initialization_service.dart';
 import '../config/theme.dart';
 import 'main_navigation_screen.dart';
 import 'login_screen.dart';
@@ -44,20 +45,10 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
   Future<void> _initializeApp() async {
     try {
-      // Start a timer to ensure minimum display time
-      final minimumDisplayTime = Future.delayed(const Duration(seconds: 3));
-      
-      // Wait for minimum display time
-      await minimumDisplayTime;
-
-      if (mounted) {
-        _navigateToNextScreen();
-      }
+      await AppInitializationService.initializeApp();
+      _navigateToNextScreen();
     } catch (e) {
-      debugPrint('Error during initialization: $e');
-      if (mounted) {
-        _navigateToNextScreen();
-      }
+      _navigateToNextScreen();
     }
   }
 

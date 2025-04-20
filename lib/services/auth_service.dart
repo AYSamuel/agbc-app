@@ -102,7 +102,6 @@ class AuthService with ChangeNotifier {
               await _firestoreService.users.doc(user.uid).set(_currentUser!.toJson());
             }
           } catch (e) {
-            debugPrint('Error getting user data: $e');
             _currentUser = null;
           }
         } else {
@@ -111,7 +110,6 @@ class AuthService with ChangeNotifier {
         notifyListeners();
       });
     } catch (e) {
-      debugPrint('Error initializing AuthService: $e');
       _currentUser = null;
       notifyListeners();
     }
@@ -189,36 +187,15 @@ class AuthService with ChangeNotifier {
   }
 
   /// Logs in a user with the provided email and password.
-  Future<UserModel?> signInWithEmailAndPassword(String email, String password) async {
+  Future<UserCredential?> signInWithEmailAndPassword(
+      String email, String password) async {
     try {
-      final userCredential = await _auth.signInWithEmailAndPassword(
+      return await _auth.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
-
-      if (userCredential.user != null) {
-        final userDoc = await _firestoreService.users.doc(userCredential.user!.uid).get();
-        if (userDoc.exists) {
-          final userData = userDoc.data() as Map<String, dynamic>;
-          _currentUser = UserModel.fromJson(userData);
-          return _currentUser;
-        } else {
-          // Create new user document if it doesn't exist
-          final newUser = UserModel(
-            uid: userCredential.user!.uid,
-            displayName: userCredential.user!.displayName ?? '',
-            email: userCredential.user!.email ?? '',
-            role: 'member',
-          );
-          await _firestoreService.users.doc(userCredential.user!.uid).set(newUser.toJson());
-          _currentUser = newUser;
-          return _currentUser;
-        }
-      }
-      return null;
     } catch (e) {
-      print('Error signing in: $e');
-      rethrow;
+      return null;
     }
   }
 
@@ -230,7 +207,6 @@ class AuthService with ChangeNotifier {
     String phone,
     String location,
     String role,
-    String? branchId,
   ) async {
     try {
       final userCredential = await _auth.createUserWithEmailAndPassword(
@@ -249,7 +225,6 @@ class AuthService with ChangeNotifier {
           phoneNumber: phone,
           location: location,
           role: role,
-          branchId: branchId ?? '',
           createdAt: DateTime.now(),
           lastLogin: DateTime.now(),
           isActive: true,
@@ -263,14 +238,6 @@ class AuthService with ChangeNotifier {
 
         await _firestoreProvider.createUser(user);
 
-        // If user is a pastor, update the branch's pastor field
-        if (role == 'pastor' && branchId != null) {
-          await _firestoreProvider.updateBranch(
-            branchId,
-            {'pastorId': user.uid},
-          );
-        }
-
         _currentUser = user;
         notifyListeners();
         return user;
@@ -282,18 +249,10 @@ class AuthService with ChangeNotifier {
   }
 
   /// Updates a user's role (only accessible by admins)
-  Future<void> updateUserRole(String userId, String newRole) async {
+  Future<void> updateUserRole(String uid, String newRole) async {
     try {
-      await _firestoreService.users.doc(userId).update({
-        'role': newRole,
-      });
-      
-      // Update current user if it's the same user
-      if (_currentUser?.uid == userId) {
-        _currentUser = _currentUser?.copyWith(role: newRole);
-      }
+      await _firestore.collection('users').doc(uid).update({'role': newRole});
     } catch (e) {
-      print('Error updating user role: $e');
       rethrow;
     }
   }
@@ -322,8 +281,7 @@ class AuthService with ChangeNotifier {
       }
       return false;
     } catch (e) {
-      print('Error in checkAuthentication: $e');
-      return false;
+      rethrow;
     }
   }
 

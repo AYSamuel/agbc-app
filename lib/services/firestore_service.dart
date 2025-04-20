@@ -165,7 +165,6 @@ class FirestoreService {
       }
       return [];
     } catch (e) {
-      print('Error getting departments: $e');
       return [];
     }
   }

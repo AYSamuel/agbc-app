@@ -50,7 +50,14 @@ class UserService with ChangeNotifier {
   /// [user] is the UserModel containing updated user information.
   Future<void> updateUser(UserModel user) async {
     try {
-      await _firestore.collection('users').doc(user.uid).update(user.toJson());
+      await _firestore.collection('users').doc(user.uid).update({
+        ...user.toJson(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+      if (user.uid == _currentUser?.uid) {
+        _currentUser = user;
+        notifyListeners();
+      }
     } catch (e) {
       rethrow; // Let the UI handle the error
     }
@@ -62,7 +69,11 @@ class UserService with ChangeNotifier {
   /// [password] is the user's password used for authentication.
   Future<void> createUser(UserModel user) async {
     try {
-      await _firestore.collection('users').doc(user.uid).set(user.toJson());
+      await _firestore.collection('users').doc(user.uid).set({
+        ...user.toJson(),
+        'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
     } catch (e) {
       rethrow; // Let the UI handle the error
     }
@@ -70,10 +81,13 @@ class UserService with ChangeNotifier {
 
   Future<void> _loadUserData() async {
     try {
-      final doc = await _firestore.collection('users').doc(_currentUser?.uid).get();
-      if (doc.exists) {
-        _currentUser = UserModel.fromJson(doc.data()!);
-        notifyListeners();
+      final user = _auth.currentUser;
+      if (user != null) {
+        final doc = await _firestore.collection('users').doc(user.uid).get();
+        if (doc.exists) {
+          _currentUser = UserModel.fromJson(doc.data()!);
+          notifyListeners();
+        }
       }
     } catch (e) {
       rethrow; // Let the UI handle the error
@@ -82,17 +96,27 @@ class UserService with ChangeNotifier {
 
   Future<void> loadUserData(String uid) async {
     try {
-      DocumentSnapshot userDoc = await _firestore.collection('users').doc(uid).get();
+      final userDoc = await _firestore.collection('users').doc(uid).get();
       if (userDoc.exists) {
         _currentUserData = userDoc.data() as Map<String, dynamic>;
-        debugPrint('User data loaded successfully');
-      } else {
-        debugPrint('User document does not exist');
+        notifyListeners();
       }
     } catch (e) {
-      debugPrint('Error loading user data: $e');
+      rethrow; // Let the UI handle the error
     }
   }
 
   Map<String, dynamic>? get currentUserData => _currentUserData;
+
+  Future<UserModel?> getUserData(String uid) async {
+    try {
+      final doc = await _firestore.collection('users').doc(uid).get();
+      if (doc.exists) {
+        return UserModel.fromJson(doc.data()!);
+      }
+      return null;
+    } catch (e) {
+      rethrow; // Let the UI handle the error
+    }
+  }
 }

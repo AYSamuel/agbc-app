@@ -13,12 +13,15 @@ class TaskStatusCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final taskCount = tasks.where((task) => task.status != 'completed').length;
+    final hasTasks = taskCount > 0;
     
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 24.0),
       padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
       decoration: BoxDecoration(
-        color: AppTheme.cardColor,
+        color: hasTasks 
+            ? AppTheme.primaryColor.withOpacity(0.1)
+            : AppTheme.cardColor,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -31,8 +34,8 @@ class TaskStatusCard extends StatelessWidget {
       child: Row(
         children: [
           Icon(
-            Icons.task_alt,
-            color: AppTheme.primaryColor,
+            hasTasks ? Icons.task : Icons.task_alt,
+            color: hasTasks ? AppTheme.primaryColor : Colors.grey,
             size: 24,
           ),
           const SizedBox(width: 12),
@@ -40,9 +43,10 @@ class TaskStatusCard extends StatelessWidget {
             taskCount == 0 
                 ? 'You currently have no tasks assigned to you'
                 : 'You currently have $taskCount ${taskCount == 1 ? 'task' : 'tasks'} assigned to you',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w500,
+              color: hasTasks ? AppTheme.primaryColor : Colors.grey,
             ),
           ),
         ],

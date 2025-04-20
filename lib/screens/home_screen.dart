@@ -7,7 +7,7 @@ import '../services/auth_service.dart';
 import '../providers/firestore_provider.dart';
 import '../models/task_model.dart';
 import '../models/meeting_model.dart';
-import '../models/church_model.dart';
+import '../models/church_branch_model.dart';
 import 'user_management_screen.dart';
 import 'task_management_screen.dart';
 import 'meeting_management_screen.dart';
@@ -20,7 +20,7 @@ class HomeScreen extends StatelessWidget {
 
   void _showTaskCreationDialog(BuildContext context) {
     final user = Provider.of<AuthService>(context, listen: false).currentUser;
-    if (!(user?.hasPermission('create_tasks') ?? false) || user?.role == 'member') {
+    if (user?.role == 'member') {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Only workers, pastors, and administrators can create tasks'),
@@ -38,10 +38,10 @@ class HomeScreen extends StatelessWidget {
 
   void _showMeetingCreationDialog(BuildContext context) {
     final user = Provider.of<AuthService>(context, listen: false).currentUser;
-    if (!(user?.hasPermission('create_meetings') ?? false)) {
+    if (user?.role != 'pastor' && user?.role != 'admin') {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('You do not have permission to create meetings'),
+          content: Text('Only pastors and administrators can create meetings'),
           backgroundColor: Colors.red,
         ),
       );
@@ -66,10 +66,12 @@ class HomeScreen extends StatelessWidget {
 
   void _showBranchCreationDialog(BuildContext context) {
     final user = Provider.of<AuthService>(context, listen: false).currentUser;
-    if (!(user?.hasPermission('manage_church') ?? false)) {
+    print('User role: ${user?.role}');
+    
+    if (user?.role != 'admin') {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Only administrators can create church branches'),
+          content: Text('Only administrators can create branches'),
           backgroundColor: Colors.red,
         ),
       );

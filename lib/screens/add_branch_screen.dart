@@ -1,15 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/firestore_provider.dart';
-import '../models/church_model.dart';
-import '../models/user_model.dart';
-import '../widgets/custom_input.dart';
-import '../widgets/custom_button.dart';
-import '../widgets/custom_back_button.dart';
-import '../widgets/custom_back_button.dart';
-import '../utils/theme.dart';
-import '../services/location_service.dart';
-import 'dart:async';
+import 'package:agbc_app/providers/firestore_provider.dart';
+import 'package:agbc_app/models/church_branch_model.dart';
+import 'package:agbc_app/widgets/custom_input.dart';
+import 'package:agbc_app/widgets/custom_button.dart';
+import 'package:agbc_app/utils/theme.dart';
+import 'package:uuid/uuid.dart';
+import 'package:agbc_app/widgets/custom_back_button.dart';
 
 class AddBranchScreen extends StatefulWidget {
   const AddBranchScreen({super.key});
@@ -21,158 +18,72 @@ class AddBranchScreen extends StatefulWidget {
 class _AddBranchScreenState extends State<AddBranchScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
+  final _locationController = TextEditingController();
   final _addressController = TextEditingController();
-  final _cityCountryController = TextEditingController();
-  final _phoneController = TextEditingController();
-  final _emailController = TextEditingController();
-  final _pastorController = TextEditingController();
-  final _serviceTimeController = TextEditingController();
-  final _departmentController = TextEditingController();
-  final _locationService = LocationService();
+  final _descriptionController = TextEditingController();
   
   // Focus nodes for keyboard navigation
   final _nameFocus = FocusNode();
+  final _locationFocus = FocusNode();
   final _addressFocus = FocusNode();
-  final _cityCountryFocus = FocusNode();
-  final _phoneFocus = FocusNode();
-  final _emailFocus = FocusNode();
-  final _pastorFocus = FocusNode();
+  final _descriptionFocus = FocusNode();
   
-  String? _selectedPastorId;
-  final List<String> _serviceTimes = [];
-  final List<String> _departments = [];
+  bool _isLoading = false;
 
   @override
   void dispose() {
     _nameController.dispose();
+    _locationController.dispose();
     _addressController.dispose();
-    _cityCountryController.dispose();
-    _phoneController.dispose();
-    _emailController.dispose();
-    _pastorController.dispose();
-    _serviceTimeController.dispose();
-    _departmentController.dispose();
+    _descriptionController.dispose();
     
     // Dispose focus nodes
     _nameFocus.dispose();
+    _locationFocus.dispose();
     _addressFocus.dispose();
-    _cityCountryFocus.dispose();
-    _phoneFocus.dispose();
-    _emailFocus.dispose();
-    _pastorFocus.dispose();
+    _descriptionFocus.dispose();
     
     super.dispose();
   }
 
-  void _addServiceTime() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Add Service Time'),
-        content: CustomInput(
-          label: 'Service Time',
-          controller: _serviceTimeController,
-          hint: 'e.g., Sunday 9:00 AM',
-          prefixIcon: const Icon(Icons.access_time, color: Colors.grey),
-          onSubmitted: (_) => _submitServiceTime(),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: _submitServiceTime,
-            child: const Text('Add'),
-          ),
-        ],
-      ),
-    );
-  }
+  Future<void> _addBranch() async {
+    if (!_formKey.currentState!.validate()) return;
 
-  void _submitServiceTime() {
-    if (_serviceTimeController.text.isNotEmpty) {
-      setState(() {
-        _serviceTimes.add(_serviceTimeController.text);
-        _serviceTimeController.clear();
-      });
-      Navigator.pop(context);
-    }
-  }
+    setState(() => _isLoading = true);
 
-  void _addDepartment() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Add Department'),
-        content: CustomInput(
-          label: 'Department Name',
-          controller: _departmentController,
-          hint: 'e.g., Youth Ministry',
-          prefixIcon: const Icon(Icons.group, color: Colors.grey),
-          onSubmitted: (_) => _submitDepartment(),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: _submitDepartment,
-            child: const Text('Add'),
-          ),
-        ],
-      ),
-    );
-  }
+    try {
+      final branch = ChurchBranch(
+        id: const Uuid().v4(),
+        name: _nameController.text.trim(),
+        location: _locationController.text.trim(),
+        address: _addressController.text.trim(),
+        description: _descriptionController.text.trim(),
+        createdBy: Provider.of<FirestoreProvider>(context, listen: false)
+            .currentUser
+            ?.uid ?? '',
+      );
 
-  void _submitDepartment() {
-    if (_departmentController.text.isNotEmpty) {
-      setState(() {
-        _departments.add(_departmentController.text);
-        _departmentController.clear();
-      });
-      Navigator.pop(context);
-    }
-  }
-
-  Future<void> _submitForm() async {
-    if (_formKey.currentState!.validate()) {
-      if (_selectedPastorId == null) {
+      await Provider.of<FirestoreProvider>(context, listen: false)
+          .createBranch(branch);
+          
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please select a pastor')),
+          const SnackBar(content: Text('Branch created successfully')),
         );
-        return;
+        Navigator.pop(context);
       }
-
-      try {
-        final branch = ChurchModel(
-          id: '', // Will be generated by Firestore
-          name: _nameController.text,
-          location: _addressController.text,
-          cityCountry: _cityCountryController.text,
-          personInCharge: _selectedPastorId!,
-          contactEmail: _emailController.text,
-          contactPhone: _phoneController.text,
-          address: _addressController.text,
-          serviceSchedule: _serviceTimes,
-          departments: _departments,
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to add branch: $e'),
+            backgroundColor: AppTheme.errorColor,
+          ),
         );
-
-        await context.read<FirestoreProvider>().addBranch(branch);
-        
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Branch added successfully')),
-          );
-          Navigator.pop(context);
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error adding branch: $e')),
-          );
-        }
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
       }
     }
   }
@@ -198,7 +109,7 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
                       ),
                       const SizedBox(width: 16),
                       const Text(
-                        'Add New Branch',
+                        'Create New Branch',
                         style: TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.bold,
@@ -227,7 +138,7 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
-                          'Basic Information',
+                          'Branch Details',
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
@@ -239,9 +150,9 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
                           label: 'Branch Name',
                           controller: _nameController,
                           hint: 'Enter branch name',
-                          prefixIcon: const Icon(Icons.church, color: Colors.grey),
+                          prefixIcon: Icon(Icons.church, color: AppTheme.neutralColor),
                           focusNode: _nameFocus,
-                          nextFocusNode: _addressFocus,
+                          nextFocusNode: _locationFocus,
                           validator: (value) {
                             if (value == null || value.isEmpty) {
                               return 'Please enter a branch name';
@@ -251,397 +162,42 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
                         ),
                         const SizedBox(height: 16),
                         CustomInput(
-                          label: 'Detailed Address',
+                          label: 'Location',
+                          controller: _locationController,
+                          hint: 'Enter branch location',
+                          prefixIcon: Icon(Icons.location_on, color: AppTheme.neutralColor),
+                          focusNode: _locationFocus,
+                          nextFocusNode: _addressFocus,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter a location';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        CustomInput(
+                          label: 'Address',
                           controller: _addressController,
-                          hint: 'Enter street address, building, etc.',
-                          prefixIcon: const Icon(Icons.location_on, color: Colors.grey),
+                          hint: 'Enter branch address',
+                          prefixIcon: Icon(Icons.home, color: AppTheme.neutralColor),
                           focusNode: _addressFocus,
-                          nextFocusNode: _cityCountryFocus,
+                          nextFocusNode: _descriptionFocus,
                           validator: (value) {
                             if (value == null || value.isEmpty) {
-                              return 'Please enter a detailed address';
+                              return 'Please enter an address';
                             }
                             return null;
                           },
                         ),
                         const SizedBox(height: 16),
                         CustomInput(
-                          label: 'City & Country',
-                          controller: _cityCountryController,
-                          hint: 'Enter city and country (e.g., Lagos, Nigeria)',
-                          prefixIcon: const Icon(Icons.public, color: Colors.grey),
-                          focusNode: _cityCountryFocus,
-                          nextFocusNode: _phoneFocus,
-                          isLocationField: true,
-                          locationService: _locationService,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter a city and country';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 16),
-                        CustomInput(
-                          label: 'Phone Number',
-                          controller: _phoneController,
-                          hint: 'Enter phone number',
-                          prefixIcon: const Icon(Icons.phone, color: Colors.grey),
-                          focusNode: _phoneFocus,
-                          nextFocusNode: _emailFocus,
-                          keyboardType: TextInputType.phone,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter a phone number';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 16),
-                        CustomInput(
-                          label: 'Email',
-                          controller: _emailController,
-                          hint: 'Enter email address',
-                          prefixIcon: const Icon(Icons.email, color: Colors.grey),
-                          focusNode: _emailFocus,
-                          keyboardType: TextInputType.emailAddress,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter an email address';
-                            }
-                            if (!value.contains('@')) {
-                              return 'Please enter a valid email address';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 16),
-                        CustomInput(
-                          label: 'Pastor',
-                          controller: _pastorController,
-                          hint: 'Select pastor',
-                          prefixIcon: const Icon(Icons.person, color: Colors.grey),
-                          focusNode: _pastorFocus,
-                          readOnly: true,
-                          onTap: () async {
-                            // Show dialog to select pastor
-                            final users = await context.read<FirestoreProvider>().getUsers();
-                            final pastors = users.where((user) => user.role == 'pastor').toList();
-                            if (!mounted) return;
-                            
-                            showDialog(
-                              context: context,
-                              builder: (context) => AlertDialog(
-                                title: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    const Text('Select Pastor'),
-                                    IconButton(
-                                      icon: const Icon(Icons.close),
-                                      onPressed: () => Navigator.pop(context),
-                                    ),
-                                  ],
-                                ),
-                                content: SizedBox(
-                                  width: double.maxFinite,
-                                  child: pastors.isEmpty
-                                      ? const Center(
-                                          child: Text('No pastors available'),
-                                        )
-                                      : ListView.builder(
-                                          shrinkWrap: true,
-                                          itemCount: pastors.length,
-                                          itemBuilder: (context, index) {
-                                            final pastor = pastors[index];
-                                            return ListTile(
-                                              title: Text(pastor.displayName),
-                                              subtitle: Text(pastor.email),
-                                              onTap: () {
-                                                setState(() {
-                                                  _selectedPastorId = pastor.uid;
-                                                  _pastorController.text = pastor.displayName;
-                                                });
-                                                Navigator.pop(context);
-                                              },
-                                            );
-                                          },
-                                        ),
-                                ),
-                              ),
-                            );
-                          },
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please select a pastor';
-                            }
-                            return null;
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Service Times Section
-                  Container(
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF1A237E).withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: const Icon(
-                                Icons.access_time,
-                                color: Color(0xFF1A237E),
-                                size: 24,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            const Text(
-                              'Service Times',
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF1A237E),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 24),
-                        if (_serviceTimes.isEmpty)
-                          Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF8F9FA),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: Colors.grey.shade200,
-                                width: 1,
-                              ),
-                            ),
-                            child: const Center(
-                              child: Text(
-                                'No service times added yet',
-                                style: TextStyle(
-                                  color: Colors.grey,
-                                  fontSize: 16,
-                                ),
-                              ),
-                            ),
-                          )
-                        else
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: _serviceTimes.map((time) => Container(
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF1A237E).withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(
-                                  color: const Color(0xFF1A237E).withOpacity(0.2),
-                                  width: 1,
-                                ),
-                              ),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 8,
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(
-                                      Icons.access_time,
-                                      size: 16,
-                                      color: Color(0xFF1A237E),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      time,
-                                      style: const TextStyle(
-                                        color: Color(0xFF1A237E),
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    GestureDetector(
-                                      onTap: () {
-                                        setState(() {
-                                          _serviceTimes.remove(time);
-                                        });
-                                      },
-                                      child: const Icon(
-                                        Icons.close,
-                                        size: 16,
-                                        color: Color(0xFF1A237E),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            )).toList(),
-                          ),
-                        const SizedBox(height: 16),
-                        CustomButton(
-                          onPressed: _addServiceTime,
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: const [
-                              Icon(Icons.add, size: 20),
-                              SizedBox(width: 8),
-                              Text('Add Service Time'),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Departments Section
-                  Container(
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF1A237E).withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: const Icon(
-                                Icons.group,
-                                color: Color(0xFF1A237E),
-                                size: 24,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            const Text(
-                              'Departments',
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF1A237E),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 24),
-                        if (_departments.isEmpty)
-                          Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF8F9FA),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: Colors.grey.shade200,
-                                width: 1,
-                              ),
-                            ),
-                            child: const Center(
-                              child: Text(
-                                'No departments added yet',
-                                style: TextStyle(
-                                  color: Colors.grey,
-                                  fontSize: 16,
-                                ),
-                              ),
-                            ),
-                          )
-                        else
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: _departments.map((dept) => Container(
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF1A237E).withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(
-                                  color: const Color(0xFF1A237E).withOpacity(0.2),
-                                  width: 1,
-                                ),
-                              ),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 8,
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(
-                                      Icons.group,
-                                      size: 16,
-                                      color: Color(0xFF1A237E),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      dept,
-                                      style: const TextStyle(
-                                        color: Color(0xFF1A237E),
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    GestureDetector(
-                                      onTap: () {
-                                        setState(() {
-                                          _departments.remove(dept);
-                                        });
-                                      },
-                                      child: const Icon(
-                                        Icons.close,
-                                        size: 16,
-                                        color: Color(0xFF1A237E),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            )).toList(),
-                          ),
-                        const SizedBox(height: 16),
-                        CustomButton(
-                          onPressed: _addDepartment,
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: const [
-                              Icon(Icons.add, size: 20),
-                              SizedBox(width: 8),
-                              Text('Add Department'),
-                            ],
-                          ),
+                          label: 'Description',
+                          controller: _descriptionController,
+                          hint: 'Enter branch description',
+                          prefixIcon: Icon(Icons.description, color: AppTheme.neutralColor),
+                          focusNode: _descriptionFocus,
+                          maxLines: 3,
                         ),
                       ],
                     ),
@@ -650,8 +206,18 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
 
                   // Submit Button
                   CustomButton(
-                    onPressed: _submitForm,
-                    child: const Text('Create Branch'),
+                    onPressed: _isLoading ? null : _addBranch,
+                    backgroundColor: AppTheme.accentColor,
+                    child: _isLoading
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : const Text(
+                            'Create Branch',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
                   ),
                 ],
               ),

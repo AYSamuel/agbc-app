@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:permission_handler/permission_handler.dart';
+import '../models/user_model.dart';
 
 /// Service class for handling role-based permissions
 class PermissionsService with ChangeNotifier {
@@ -12,133 +13,183 @@ class PermissionsService with ChangeNotifier {
   }
 
   /// Get default permissions for a given role
-  static Map<String, bool> getDefaultPermissions(String role) {
-    switch (role) {
-      case 'admin':
-        return {
-          // User Management
-          'manage_users': true,
-          'view_users': true,
-          'assign_roles': true,
+  static Map<String, bool> getPermissionsForRole(String role) {
+    print('Getting permissions for role: $role');
+    final permissions = switch (role.toLowerCase()) {
+      'admin' => getAdminPermissions(),
+      'pastor' => getPastorPermissions(),
+      'worker' => getWorkerPermissions(),
+      'member' => getMemberPermissions(),
+      _ => getMemberPermissions(),
+    };
+    print('Permissions for $role: $permissions');
+    return permissions;
+  }
 
-          // Church Management
-          'manage_church': true,
-          'manage_departments': true,
+  static Map<String, bool> getAdminPermissions() {
+    final permissions = {
+      // User Management
+      'manage_users': true,
+      'view_users': true,
+      'edit_users': true,
+      'delete_users': true,
 
-          // Task Management
-          'create_tasks': true,
-          'edit_tasks': true,
-          'delete_tasks': true,
-          'assign_tasks': true,
-          'view_all_tasks': true,
+      // Task Management
+      'create_tasks': true,
+      'assign_tasks': true,
+      'edit_tasks': true,
+      'delete_tasks': true,
+      'view_all_tasks': true,
 
-          // Meeting Management
-          'create_meetings': true,
-          'edit_meetings': true,
-          'delete_meetings': true,
-          'invite_to_meetings': true,
-          'view_all_meetings': true,
+      // Meeting Management
+      'create_meetings': true,
+      'edit_meetings': true,
+      'delete_meetings': true,
+      'view_all_meetings': true,
 
-          // Content Management
-          'create_content': true,
-          'edit_content': true,
-          'delete_content': true,
-        };
-      case 'pastor':
-        return {
-          // User Management
-          'manage_users': false,
-          'view_users': true,
-          'assign_roles': false,
+      // Branch Management
+      'manage_branch': true,
+      'create_branches': true,
+      'edit_branches': true,
+      'delete_branches': true,
+      'view_all_branches': true,
 
-          // Church Management
-          'manage_church': false,
-          'manage_departments': false,
+      // Department Management
+      'manage_departments': true,
+      'create_departments': true,
+      'edit_departments': true,
+      'delete_departments': true,
 
-          // Task Management
-          'create_tasks': true,
-          'edit_tasks': true,
-          'delete_tasks': true,
-          'assign_tasks': true,
-          'view_all_tasks': true,
+      // Settings
+      'manage_settings': true,
+      'view_settings': true,
+      'edit_settings': true,
+    };
+    print('Admin permissions: $permissions');
+    return permissions;
+  }
 
-          // Meeting Management
-          'create_meetings': true,
-          'edit_meetings': true,
-          'delete_meetings': true,
-          'invite_to_meetings': true,
-          'view_all_meetings': true,
+  static Map<String, bool> getPastorPermissions() {
+    return {
+      // User Management
+      'manage_users': false,
+      'view_users': true,
+      'edit_users': true,
+      'delete_users': false,
 
-          // Content Management
-          'create_content': true,
-          'edit_content': true,
-          'delete_content': false,
-        };
-      case 'worker':
-        return {
-          // User Management
-          'manage_users': false,
-          'view_users': true,
-          'assign_roles': false,
+      // Task Management
+      'create_tasks': true,
+      'assign_tasks': true,
+      'edit_tasks': true,
+      'delete_tasks': true,
+      'view_all_tasks': true,
 
-          // Church Management
-          'manage_church': false,
-          'manage_departments': false,
+      // Meeting Management
+      'create_meetings': true,
+      'edit_meetings': true,
+      'delete_meetings': true,
+      'view_all_meetings': true,
 
-          // Task Management
-          'create_tasks': true,
-          'edit_tasks': true,
-          'delete_tasks': true,
-          'assign_tasks': false,
-          'view_all_tasks': true,
+      // Branch Management
+      'manage_branch': false,
+      'create_branches': false,
+      'edit_branches': true,
+      'delete_branches': false,
+      'view_all_branches': true,
 
-          // Meeting Management
-          'create_meetings': false,
-          'edit_meetings': false,
-          'delete_meetings': false,
-          'invite_to_meetings': false,
-          'view_all_meetings': true,
+      // Department Management
+      'manage_departments': true,
+      'create_departments': true,
+      'edit_departments': true,
+      'delete_departments': true,
 
-          // Content Management
-          'create_content': true,
-          'edit_content': false,
-          'delete_content': false,
-        };
-      case 'member':
-      default:
-        return {
-          // User Management
-          'manage_users': false,
-          'view_users': false,
-          'assign_roles': false,
+      // Settings
+      'manage_settings': false,
+      'view_settings': true,
+      'edit_settings': false,
+    };
+  }
 
-          // Church Management
-          'manage_church': false,
-          'manage_departments': false,
+  static Map<String, bool> getWorkerPermissions() {
+    return {
+      // User Management
+      'manage_users': false,
+      'view_users': true,
+      'edit_users': false,
+      'delete_users': false,
 
-          // Task Management
-          'create_tasks': false,
-          'edit_tasks': false,
-          'delete_tasks': false,
-          'assign_tasks': false,
-          'view_all_tasks': false,
-          'view_assigned_tasks': true,
+      // Task Management
+      'create_tasks': true,
+      'assign_tasks': true,
+      'edit_tasks': true,
+      'delete_tasks': false,
+      'view_all_tasks': true,
 
-          // Meeting Management
-          'create_meetings': false,
-          'edit_meetings': false,
-          'delete_meetings': false,
-          'invite_to_meetings': false,
-          'view_all_meetings': false,
-          'view_invited_meetings': true,
+      // Meeting Management
+      'create_meetings': false,
+      'edit_meetings': false,
+      'delete_meetings': false,
+      'view_all_meetings': true,
 
-          // Content Management
-          'create_content': false,
-          'edit_content': false,
-          'delete_content': false,
-          'view_content': true,
-        };
-    }
+      // Branch Management
+      'manage_branch': false,
+      'create_branches': false,
+      'edit_branches': false,
+      'delete_branches': false,
+      'view_all_branches': true,
+
+      // Department Management
+      'manage_departments': false,
+      'create_departments': false,
+      'edit_departments': false,
+      'delete_departments': false,
+
+      // Settings
+      'manage_settings': false,
+      'view_settings': false,
+      'edit_settings': false,
+    };
+  }
+
+  static Map<String, bool> getMemberPermissions() {
+    return {
+      // User Management
+      'manage_users': false,
+      'view_users': true,
+      'edit_users': false,
+      'delete_users': false,
+
+      // Task Management
+      'create_tasks': false,
+      'assign_tasks': false,
+      'edit_tasks': false,
+      'delete_tasks': false,
+      'view_all_tasks': false,
+
+      // Meeting Management
+      'create_meetings': false,
+      'edit_meetings': false,
+      'delete_meetings': false,
+      'view_all_meetings': true,
+
+      // Branch Management
+      'manage_branch': false,
+      'create_branches': false,
+      'edit_branches': false,
+      'delete_branches': false,
+      'view_all_branches': true,
+
+      // Department Management
+      'manage_departments': false,
+      'create_departments': false,
+      'edit_departments': false,
+      'delete_departments': false,
+
+      // Settings
+      'manage_settings': false,
+      'view_settings': false,
+      'edit_settings': false,
+    };
   }
 
   /// Check if a user has a specific permission

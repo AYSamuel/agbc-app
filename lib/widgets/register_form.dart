@@ -10,6 +10,8 @@ import 'package:agbc_app/widgets/loading_indicator.dart';
 import 'package:agbc_app/utils/theme.dart';
 import 'package:agbc_app/widgets/mixins/location_validation_mixin.dart';
 import 'package:agbc_app/widgets/mixins/form_validation_mixin.dart';
+import 'package:agbc_app/providers/firestore_provider.dart';
+import 'package:agbc_app/models/church_branch_model.dart';
 
 class RegisterForm extends StatefulWidget {
   final VoidCallback onRegisterSuccess;
@@ -27,6 +29,7 @@ class _RegisterFormState extends State<RegisterForm> with LocationValidationMixi
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   final _locationController = TextEditingController();
@@ -35,7 +38,7 @@ class _RegisterFormState extends State<RegisterForm> with LocationValidationMixi
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _isGettingLocation = false;
-  String _selectedRole = 'user';
+  String? _selectedBranchId;
 
   @override
   void initState() {
@@ -50,6 +53,7 @@ class _RegisterFormState extends State<RegisterForm> with LocationValidationMixi
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
+    _phoneController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     _locationController.dispose();
@@ -122,7 +126,10 @@ class _RegisterFormState extends State<RegisterForm> with LocationValidationMixi
         _emailController.text.trim(),
         _passwordController.text,
         _nameController.text.trim(),
-        _selectedRole,
+        _phoneController.text.trim(),
+        _locationController.text.trim(),
+        'member',
+        _selectedBranchId,
       );
 
       if (mounted) {
@@ -176,15 +183,7 @@ class _RegisterFormState extends State<RegisterForm> with LocationValidationMixi
             prefixIcon: Icon(Icons.person, color: AppTheme.neutralColor),
             textInputAction: TextInputAction.next,
             onSubmitted: (_) => FocusScope.of(context).nextFocus(),
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Please enter your name';
-              }
-              if (value.length < 2) {
-                return 'Name must be at least 2 characters';
-              }
-              return null;
-            },
+            validator: validateName,
           ),
           const SizedBox(height: 16),
 
@@ -197,15 +196,18 @@ class _RegisterFormState extends State<RegisterForm> with LocationValidationMixi
             keyboardType: TextInputType.emailAddress,
             textInputAction: TextInputAction.next,
             onSubmitted: (_) => FocusScope.of(context).nextFocus(),
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Please enter your email';
-              }
-              if (!value.contains('@')) {
-                return 'Please enter a valid email';
-              }
-              return null;
-            },
+            validator: validateEmail,
+          ),
+          const SizedBox(height: 16),
+
+          // Phone Field
+          CustomInput(
+            label: 'Phone Number',
+            controller: _phoneController,
+            hint: 'Enter your phone number',
+            prefixIcon: Icon(Icons.phone, color: AppTheme.neutralColor),
+            keyboardType: TextInputType.phone,
+            validator: validatePhone,
           ),
           const SizedBox(height: 16),
 
@@ -233,14 +235,53 @@ class _RegisterFormState extends State<RegisterForm> with LocationValidationMixi
                     ),
                     onPressed: _getCurrentLocation,
                   ),
-            validator: (value) {
-              if (locationError != null) {
-                return locationError;
+            validator: validateLocation,
+          ),
+          const SizedBox(height: 16),
+
+          // Branch Selection
+          StreamBuilder<List<ChurchBranch>>(
+            stream: Provider.of<FirestoreProvider>(context).getAllBranches(),
+            builder: (context, snapshot) {
+              if (snapshot.hasError) {
+                return Text('Error: ${snapshot.error}');
               }
-              if (value == null || value.isEmpty) {
-                return 'Please enter your location';
+
+              if (!snapshot.hasData) {
+                return const Center(child: CircularProgressIndicator());
               }
-              return null;
+
+              final branches = snapshot.data!;
+              if (branches.isEmpty) {
+                return const Text('No branches available');
+              }
+
+              return Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey.shade300),
+                ),
+                child: DropdownButtonFormField<String>(
+                  value: _selectedBranchId ?? branches.first.id,
+                  decoration: const InputDecoration(
+                    labelText: 'Church Branch',
+                    border: InputBorder.none,
+                  ),
+                  items: branches.map((branch) {
+                    return DropdownMenuItem(
+                      value: branch.id,
+                      child: Text(branch.name),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedBranchId = value;
+                    });
+                  },
+                ),
+              );
             },
           ),
           const SizedBox(height: 16),
@@ -265,15 +306,7 @@ class _RegisterFormState extends State<RegisterForm> with LocationValidationMixi
                 });
               },
             ),
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Please enter your password';
-              }
-              if (value.length < 6) {
-                return 'Password must be at least 6 characters';
-              }
-              return null;
-            },
+            validator: validatePassword,
           ),
           const SizedBox(height: 16),
 
@@ -282,7 +315,7 @@ class _RegisterFormState extends State<RegisterForm> with LocationValidationMixi
             label: 'Confirm Password',
             controller: _confirmPasswordController,
             hint: 'Confirm your password',
-            prefixIcon: Icon(Icons.lock_outline, color: AppTheme.neutralColor),
+            prefixIcon: Icon(Icons.lock, color: AppTheme.neutralColor),
             obscureText: _obscureConfirmPassword,
             textInputAction: TextInputAction.done,
             onSubmitted: (_) => _register(),
@@ -298,9 +331,6 @@ class _RegisterFormState extends State<RegisterForm> with LocationValidationMixi
               },
             ),
             validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Please confirm your password';
-              }
               if (value != _passwordController.text) {
                 return 'Passwords do not match';
               }

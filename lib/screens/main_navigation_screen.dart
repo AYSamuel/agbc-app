@@ -11,6 +11,14 @@ class MainNavigationScreen extends StatefulWidget {
 
   @override
   State<MainNavigationScreen> createState() => _MainNavigationScreenState();
+
+  // Public method to navigate to a specific tab
+  static void navigateToTab(BuildContext context, int index) {
+    final state = context.findAncestorStateOfType<_MainNavigationScreenState>();
+    if (state != null) {
+      state._onItemTapped(index);
+    }
+  }
 }
 
 class _MainNavigationScreenState extends State<MainNavigationScreen> {

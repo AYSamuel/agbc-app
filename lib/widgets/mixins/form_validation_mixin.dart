@@ -47,4 +47,16 @@ mixin FormValidationMixin {
     }
     return null;
   }
+
+  String? validatePhone(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Please enter your phone number';
+    }
+    // Basic phone number validation - can be enhanced based on requirements
+    final phoneRegex = RegExp(r'^\+?[0-9]{10,}$');
+    if (!phoneRegex.hasMatch(value)) {
+      return 'Please enter a valid phone number';
+    }
+    return null;
+  }
 } 

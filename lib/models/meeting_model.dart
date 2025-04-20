@@ -11,8 +11,7 @@ class MeetingModel {
 
   // Meeting classification
   final String type; // Type of meeting: "global" or "local"
-  final String?
-      churchId; // Associated church branch ID (null for global meetings)
+  final String? branchId; // Associated branch ID (null for global meetings)
   final String
       category; // Category (e.g., "prayer", "bible_study", "leadership")
 
@@ -36,7 +35,7 @@ class MeetingModel {
     required this.description,
     required this.dateTime,
     required this.type,
-    this.churchId, // Optional for global meetings
+    this.branchId, // Optional for global meetings
     DateTime? createdAt, // Optional creation time
     this.endTime, // Optional end time
     this.category = 'general', // Default category
@@ -61,7 +60,7 @@ class MeetingModel {
           json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
       endTime: json['endTime'] != null ? DateTime.parse(json['endTime']) : null,
       type: json['type'] ?? 'local',
-      churchId: json['churchId'],
+      branchId: json['branchId'],
       category: json['category'] ?? 'general',
       organizer: json['organizer'] ?? '',
       location: json['location'] ?? '',
@@ -84,7 +83,7 @@ class MeetingModel {
       'createdAt': createdAt.toIso8601String(),
       'endTime': endTime?.toIso8601String(),
       'type': type,
-      'churchId': churchId,
+      'branchId': branchId,
       'category': category,
       'organizer': organizer,
       'location': location,
@@ -97,12 +96,12 @@ class MeetingModel {
     };
   }
 
-  /// Determines if a meeting should be visible to a user based on their church affiliation
-  bool shouldNotify(String? userChurchId) {
+  /// Determines if a meeting should be visible to a user based on their branch affiliation
+  bool shouldNotify(String? userBranchId) {
     if (isCancelled) return false; // Don't notify for cancelled meetings
     if (type == 'global') return true; // Global meetings visible to all
-    return userChurchId != null &&
-        userChurchId == churchId; // Local meeting check
+    return userBranchId != null &&
+        userBranchId == branchId; // Local meeting check
   }
 
   /// Checks if the meeting is currently ongoing
@@ -122,7 +121,7 @@ class MeetingModel {
     DateTime? createdAt,
     DateTime? endTime,
     String? type,
-    String? churchId,
+    String? branchId,
     String? category,
     String? organizer,
     String? location,
@@ -141,7 +140,7 @@ class MeetingModel {
       createdAt: createdAt ?? this.createdAt,
       endTime: endTime ?? this.endTime,
       type: type ?? this.type,
-      churchId: churchId ?? this.churchId,
+      branchId: branchId ?? this.branchId,
       category: category ?? this.category,
       organizer: organizer ?? this.organizer,
       location: location ?? this.location,

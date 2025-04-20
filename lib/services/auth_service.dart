@@ -9,6 +9,7 @@ import '../models/meeting_model.dart';
 import '../services/firestore_service.dart';
 import '../services/permissions_service.dart';
 import 'package:flutter/material.dart';
+import 'package:agbc_app/providers/firestore_provider.dart';
 
 /// Exception for user-facing authentication errors.
 class AuthException implements Exception {
@@ -26,6 +27,8 @@ class AuthService with ChangeNotifier {
   final FirebaseAuth _auth;
   final FirestoreService _firestoreService;
   final PermissionsService _permissionsService;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirestoreProvider _firestoreProvider = FirestoreProvider();
   bool _rememberMe = false;
 
   // Private variable to store the current user
@@ -66,7 +69,7 @@ class AuthService with ChangeNotifier {
       _authStateSubscription = _auth.authStateChanges().listen((User? user) async {
         if (user != null) {
           try {
-            DocumentSnapshot userDoc = await _firestoreService.collection('users').doc(user.uid).get();
+            DocumentSnapshot userDoc = await _firestoreService.users.doc(user.uid).get();
             
             if (userDoc.exists && userDoc.data() != null) {
               _currentUser = UserModel.fromJson(userDoc.data() as Map<String, dynamic>);
@@ -81,13 +84,13 @@ class AuthService with ChangeNotifier {
                 isActive: true,
                 emailVerified: user.emailVerified,
                 departments: [],
-                permissions: PermissionsService.getDefaultPermissions('member'),
                 notificationSettings: {
                   'email': true,
                   'push': true,
                 },
+                phoneNumber: user.phoneNumber ?? '',
               );
-              await _firestoreService.collection('users').doc(user.uid).set(_currentUser!.toJson());
+              await _firestoreService.users.doc(user.uid).set(_currentUser!.toJson());
             }
           } catch (e) {
             debugPrint('Error getting user data: $e');
@@ -181,66 +184,37 @@ class AuthService with ChangeNotifier {
   }
 
   /// Logs in a user with the provided email and password.
-  Future<UserModel?> signInWithEmailAndPassword(String email, String password, {String? ip}) async {
+  Future<UserModel?> signInWithEmailAndPassword(String email, String password) async {
     try {
-      // Check rate limiting if IP is provided
-      if (ip != null && isRateLimited(ip)) {
-        throw AuthException('Too many login attempts. Please try again later.');
-      }
-
       final userCredential = await _auth.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
 
-      if (ip != null) {
-        recordLoginAttempt(ip);
-      }
-
       if (userCredential.user != null) {
-        // Get the user document from Firestore
-        final userDoc = await _firestoreService.collection('users').doc(userCredential.user!.uid).get();
-        
+        final userDoc = await _firestoreService.users.doc(userCredential.user!.uid).get();
         if (userDoc.exists) {
-          // If the document exists, create the UserModel with the data
-          final data = userDoc.data() as Map<String, dynamic>;
-          data['uid'] = userCredential.user!.uid; // Ensure uid is set
-          _currentUser = UserModel.fromJson(data);
-          notifyListeners();
+          final userData = userDoc.data() as Map<String, dynamic>;
+          _currentUser = UserModel.fromJson(userData);
+          print('User role: ${_currentUser?.role}');
           return _currentUser;
         } else {
-          // If the document doesn't exist, create a basic user document
-          final user = UserModel(
+          // Create new user document if it doesn't exist
+          final newUser = UserModel(
             uid: userCredential.user!.uid,
             displayName: userCredential.user!.displayName ?? '',
-            email: userCredential.user!.email ?? email,
+            email: userCredential.user!.email ?? '',
             role: 'member',
-            createdAt: DateTime.now(),
-            lastLogin: DateTime.now(),
-            isActive: true,
-            emailVerified: userCredential.user!.emailVerified,
-            departments: [],
-            permissions: PermissionsService.getDefaultPermissions('member'),
-            notificationSettings: {
-              'email': true,
-              'push': true,
-            },
           );
-          
-          // Save the user document to Firestore
-          await _firestoreService.collection('users').doc(user.uid).set(user.toJson());
-          
-          _currentUser = user;
-          notifyListeners();
-          return user;
+          await _firestoreService.users.doc(userCredential.user!.uid).set(newUser.toJson());
+          _currentUser = newUser;
+          return _currentUser;
         }
       }
       return null;
     } catch (e) {
-      if (ip != null) {
-        recordLoginAttempt(ip);
-      }
-      throw AuthException(_handleAuthException(e as FirebaseAuthException));
+      print('Error signing in: $e');
+      rethrow;
     }
   }
 
@@ -248,8 +222,11 @@ class AuthService with ChangeNotifier {
   Future<UserModel?> registerWithEmailAndPassword(
     String email,
     String password,
-    String displayName,
+    String name,
+    String phone,
+    String location,
     String role,
+    String? branchId,
   ) async {
     try {
       final userCredential = await _auth.createUserWithEmailAndPassword(
@@ -259,26 +236,37 @@ class AuthService with ChangeNotifier {
 
       if (userCredential.user != null) {
         // Update display name in Firebase Auth
-        await userCredential.user!.updateDisplayName(displayName);
+        await userCredential.user!.updateDisplayName(name);
 
         final user = UserModel(
           uid: userCredential.user!.uid,
-          displayName: displayName,
+          displayName: name,
           email: email,
+          phoneNumber: phone,
+          location: location,
           role: role,
+          branchId: branchId ?? '',
           createdAt: DateTime.now(),
           lastLogin: DateTime.now(),
           isActive: true,
           emailVerified: false,
           departments: [],
-          permissions: PermissionsService.getDefaultPermissions(role),
           notificationSettings: {
             'email': true,
             'push': true,
           },
         );
 
-        await _firestoreService.collection('users').doc(user.uid).set(user.toJson());
+        await _firestoreProvider.createUser(user);
+
+        // If user is a pastor, update the branch's pastor field
+        if (role == 'pastor' && branchId != null) {
+          await _firestoreProvider.updateBranch(
+            branchId,
+            {'pastorId': user.uid},
+          );
+        }
+
         _currentUser = user;
         notifyListeners();
         return user;
@@ -290,48 +278,20 @@ class AuthService with ChangeNotifier {
   }
 
   /// Updates a user's role (only accessible by admins)
-  Future<void> updateUserRole({
-    required String userId,
-    required String newRole,
-  }) async {
-    // Check if current user is admin
-    if (_currentUser?.role != 'admin') {
-      throw 'Only administrators can update user roles';
-    }
-
-    // Validate the new role
-    if (!['member', 'worker', 'pastor', 'admin'].contains(newRole)) {
-      throw 'Invalid role specified';
-    }
-
+  Future<void> updateUserRole(String userId, String newRole) async {
     try {
-      // Update the user's role in Firestore
-      await _firestoreService.collection('users').doc(userId).update({
+      await _firestoreService.users.doc(userId).update({
         'role': newRole,
-        'permissions': PermissionsService.getDefaultPermissions(newRole),
       });
-
-      // If updating the current user's role, update the local state
-      if (userId == _currentUser?.uid) {
-        _currentUser = _currentUser?.copyWith(
-          role: newRole,
-          permissions: PermissionsService.getDefaultPermissions(newRole),
-        );
-        notifyListeners();
+      
+      // Update current user if it's the same user
+      if (_currentUser?.uid == userId) {
+        _currentUser = _currentUser?.copyWith(role: newRole);
       }
     } catch (e) {
-      throw 'Failed to update user role: $e';
+      print('Error updating user role: $e');
+      rethrow;
     }
-  }
-
-  /// Check if the current user has a specific permission
-  bool hasPermission(String permission) {
-    return _currentUser?.permissions[permission] ?? false;
-  }
-
-  /// Check if the current user can perform an action
-  bool canPerformAction(String action) {
-    return PermissionsService.canPerformAction(_currentUser?.permissions ?? {}, action);
   }
 
   /// Get tasks based on user's role and permissions
@@ -347,7 +307,7 @@ class AuthService with ChangeNotifier {
     try {
       User? user = _auth.currentUser;
       if (user != null) {
-        DocumentSnapshot userDoc = await _firestoreService.collection('users').doc(user.uid).get();
+        DocumentSnapshot userDoc = await _firestoreService.users.doc(user.uid).get();
         
         if (userDoc.exists && userDoc.data() != null) {
           _currentUser = UserModel.fromJson(userDoc.data() as Map<String, dynamic>);
@@ -499,7 +459,7 @@ class AuthService with ChangeNotifier {
   Future<void> deleteAccount() async {
     try {
       if (_auth.currentUser != null) {
-        await _firestoreService.collection('users').doc(_auth.currentUser!.uid).delete();
+        await _firestoreService.users.doc(_auth.currentUser!.uid).delete();
         await _auth.currentUser!.delete();
         _currentUser = null;
         notifyListeners();
@@ -511,25 +471,31 @@ class AuthService with ChangeNotifier {
     }
   }
 
-  /// Get meetings based on user's role and permissions
+  /// Get meetings based on user's role
   Stream<List<MeetingModel>> getMeetings() {
     if (_currentUser == null) {
       return Stream.value([]);
     }
 
-    if (hasPermission('view_all_meetings')) {
-      return _firestoreService.collection('meetings')
+    if (_currentUser!.role == 'admin' || _currentUser!.role == 'pastor') {
+      return _firestoreService.meetings
           .snapshots()
           .map((snapshot) => snapshot.docs
-              .map((doc) => MeetingModel.fromJson(doc.data()))
+              .map((doc) {
+                final data = doc.data() as Map<String, dynamic>?;
+                return MeetingModel.fromJson(data ?? {});
+              })
               .toList());
     } else {
       return _firestoreService
-          .collection('meetings')
+          .meetings
           .where('invitedUsers', arrayContains: _currentUser!.uid)
           .snapshots()
           .map((snapshot) => snapshot.docs
-              .map((doc) => MeetingModel.fromJson(doc.data()))
+              .map((doc) {
+                final data = doc.data() as Map<String, dynamic>?;
+                return MeetingModel.fromJson(data ?? {});
+              })
               .toList());
     }
   }

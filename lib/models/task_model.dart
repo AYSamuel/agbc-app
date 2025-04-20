@@ -23,10 +23,8 @@ class TaskModel {
   // Task classification
   final String priority; // Priority level (high, medium, low)
   final String category; // Category (e.g., "maintenance", "ministry", "event")
-  final List<String> tags; // Additional labels for organization
 
   // Collaboration
-  final List<String> watchers; // Users following this task
   final List<Map<String, dynamic>> comments; // Task-related comments/updates
   final List<String> attachments; // Links to related files/documents
 
@@ -47,8 +45,6 @@ class TaskModel {
     this.status = 'pending',
     this.priority = 'medium',
     this.category = 'general',
-    this.tags = const [],
-    this.watchers = const [],
     this.comments = const [],
     this.attachments = const [],
   }) : createdAt = createdAt ?? DateTime.now();
@@ -75,8 +71,6 @@ class TaskModel {
       status: json['status'] ?? 'pending',
       priority: json['priority'] ?? 'medium',
       category: json['category'] ?? 'general',
-      tags: List<String>.from(json['tags'] ?? []),
-      watchers: List<String>.from(json['watchers'] ?? []),
       comments: List<Map<String, dynamic>>.from(json['comments'] ?? []),
       attachments: List<String>.from(json['attachments'] ?? []),
     );
@@ -100,8 +94,6 @@ class TaskModel {
       'status': status,
       'priority': priority,
       'category': category,
-      'tags': tags,
-      'watchers': watchers,
       'comments': comments,
       'attachments': attachments,
     };
@@ -135,8 +127,6 @@ class TaskModel {
     String? status,
     String? priority,
     String? category,
-    List<String>? tags,
-    List<String>? watchers,
     List<Map<String, dynamic>>? comments,
     List<String>? attachments,
   }) {
@@ -156,8 +146,6 @@ class TaskModel {
       status: status ?? this.status,
       priority: priority ?? this.priority,
       category: category ?? this.category,
-      tags: tags ?? this.tags,
-      watchers: watchers ?? this.watchers,
       comments: comments ?? this.comments,
       attachments: attachments ?? this.attachments,
     );

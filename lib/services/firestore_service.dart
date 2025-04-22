@@ -27,6 +27,7 @@ class FirestoreService {
   Stream<List<UserModel>> getAllUsers() {
     return _firestore
         .collection('users')
+        .where('isActive', isEqualTo: true)
         .snapshots()
         .map((snapshot) => snapshot.docs
             .map((doc) => UserModel.fromJson(doc.data()!))

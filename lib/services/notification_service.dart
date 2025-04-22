@@ -1,102 +1,134 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:onesignal_flutter/onesignal_flutter.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class NotificationService {
-  final FirebaseMessaging _messaging = FirebaseMessaging.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  static final NotificationService _instance = NotificationService._internal();
+  factory NotificationService() => _instance;
+  NotificationService._internal();
 
-  Future<void> initialize() async {
-    try {
-      // Request notification permissions
-      await _messaging.requestPermission(
-        alert: true,
-        badge: true,
-        sound: true,
-      );
+  final _supabase = Supabase.instance.client;
+  bool _isInitialized = false;
 
-      // Get and save FCM token
-      final token = await _messaging.getToken();
-      if (token != null) {
-        await _saveFCMToken(token);
-      }
+Future<void> initialize() async {
+  if (_isInitialized) return;
 
-      // Handle token refresh
-      _messaging.onTokenRefresh.listen(_saveFCMToken);
-    } catch (e) {
-      // Handle error silently in production
-    }
+  try {
+    // Initialize OneSignal with our App ID (no await here)
+    OneSignal.initialize(dotenv.env['ONESIGNAL_APP_ID']!);
+
+    // Request permission for notifications
+    await OneSignal.Notifications.requestPermission(true);
+    // ... rest of your code
+  } catch (e) {
+    print('Error initializing OneSignal: $e');
+    rethrow;
   }
+}
 
-  Future<void> _saveFCMToken(String token) async {
+
+  Future<void> registerDevice(String userId) async {
+    if (!_isInitialized) {
+      await initialize();
+    }
+
     try {
-      final user = _auth.currentUser;
-      if (user != null) {
-        await _firestore.collection('users').doc(user.uid).update({
-          'fcmToken': token,
-          'fcmTokenUpdatedAt': FieldValue.serverTimestamp(),
+      // Get the OneSignal device ID
+      final deviceState = await OneSignal.User.pushSubscription;
+      final oneSignalUserId = deviceState?.id;
+
+      if (oneSignalUserId != null) {
+        // Associate the OneSignal user ID with the Supabase user
+        await OneSignal.User.addAlias('user_id', userId);
+        
+        // Store the OneSignal user ID in Supabase for reference
+        await _supabase.from('user_devices').upsert({
+          'user_id': userId,
+          'onesignal_user_id': oneSignalUserId,
+          'updated_at': DateTime.now().toIso8601String(),
         });
       }
     } catch (e) {
-      // Handle error silently in production
+      print('Error registering device: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> removeDevice(String userId) async {
+    if (!_isInitialized) return;
+
+    try {
+      // Remove the external user ID from OneSignal
+      await OneSignal.User.removeAlias('user_id');
+      
+      // Remove the device from Supabase
+      await _supabase.from('user_devices').delete().eq('user_id', userId);
+    } catch (e) {
+      print('Error removing device: $e');
+      rethrow;
+    }
+  }
+
+  Future<String?> getDeviceId() async {
+    try {
+      final deviceState = await OneSignal.User.pushSubscription;
+      return deviceState?.id;
+    } catch (e) {
+      print('Error getting device ID: $e');
+      return null;
     }
   }
 
   Future<void> sendNotification({
-    required String userId,
+    required List<String> userIds,
     required String title,
-    required String body,
+    required String message,
     Map<String, dynamic>? data,
   }) async {
     try {
-      final userDoc = await _firestore.collection('users').doc(userId).get();
-      final fcmToken = userDoc.data()?['fcmToken'] as String?;
-      
-      if (fcmToken != null) {
-        await _messaging.sendMessage(
-          to: fcmToken,
-          data: {
-            'title': title,
-            'body': body,
-            ...?data,
-          },
+      final response = await _supabase.functions.invoke('send-notification', body: {
+        'userIds': userIds,
+        'title': title,
+        'message': message,
+        'data': data,
+      });
+
+      if (response.status != 200) {
+        throw Exception('Failed to send notification: ${response.data}');
+      }
+    } catch (e) {
+      print('Error sending notification: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> sendBroadcastNotification({
+    required String title,
+    required String message,
+    Map<String, dynamic>? data,
+  }) async {
+    try {
+      // Get all user IDs from Supabase
+      final response = await _supabase
+          .from('user_devices')
+          .select('user_id')
+          .neq('onesignal_user_id', '');
+
+      if (response != null && response.isNotEmpty) {
+        final userIds = response.map((user) => user['user_id'] as String).toList();
+        await sendNotification(
+          userIds: userIds,
+          title: title,
+          message: message,
+          data: data,
         );
       }
     } catch (e) {
-      // Handle error silently in production
+      print('Error sending broadcast notification: $e');
+      rethrow;
     }
-  }
-
-  void _handleMessage(RemoteMessage message) {
-    // Handle the message appropriately
-    final data = message.data;
-    final notification = message.notification;
-    
-    if (notification != null) {
-      // Handle notification
-    }
-    
-    if (data.isNotEmpty) {
-      // Handle data payload
-    }
-  }
-
-  // Handle notification when the app is opened from a terminated state
-  Future<void> handleInitialMessage() async {
-    final message = await _messaging.getInitialMessage();
-    if (message != null) {
-      _handleMessage(message);
-    }
-  }
-
-  Future<void> handleBackgroundMessage(RemoteMessage message) async {
-    _handleMessage(message);
   }
 }
 
-@pragma('vm:entry-point')
-Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  // Handle background message
-} 
+final notificationService = NotificationService(); 

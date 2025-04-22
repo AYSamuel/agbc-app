@@ -22,6 +22,7 @@ class CustomInput extends StatefulWidget {
   final FocusNode? focusNode;
   final Color? backgroundColor;
   final Color? borderColor;
+  final Color? labelColor;
   final double borderRadius;
   final double elevation;
   final String? Function(String?)? validator;
@@ -53,6 +54,7 @@ class CustomInput extends StatefulWidget {
     this.focusNode,
     this.backgroundColor,
     this.borderColor,
+    this.labelColor,
     this.borderRadius = 12.0,
     this.elevation = 4.0,
     this.validator,
@@ -158,7 +160,8 @@ class _CustomInputState extends State<CustomInput> with SingleTickerProviderStat
               Text(
                 widget.label!,
                 style: theme.textTheme.labelLarge?.copyWith(
-                  color: theme.colorScheme.onSurface,
+                  color: widget.labelColor ?? theme.colorScheme.onSurface.withOpacity(0.95),
+                  fontWeight: FontWeight.w600,
                 ),
               ),
               const SizedBox(height: 8),

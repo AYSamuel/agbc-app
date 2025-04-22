@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/firestore_provider.dart';
+import '../providers/supabase_provider.dart';
 import '../models/church_branch_model.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
@@ -13,7 +13,7 @@ class BranchManagementScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final firestoreProvider = Provider.of<FirestoreProvider>(context);
+    final supabaseProvider = Provider.of<SupabaseProvider>(context);
     final authService = Provider.of<AuthService>(context);
     final user = authService.currentUser;
 
@@ -58,7 +58,7 @@ class BranchManagementScreen extends StatelessWidget {
             // Branches List
             Expanded(
               child: StreamBuilder<List<ChurchBranch>>(
-                stream: firestoreProvider.getAllBranches(),
+                stream: supabaseProvider.getAllBranches(),
                 builder: (context, snapshot) {
                   if (snapshot.hasError) {
                     return Center(child: Text('Error: ${snapshot.error}'));
@@ -188,7 +188,7 @@ class BranchManagementScreen extends StatelessWidget {
           ),
           TextButton(
             onPressed: () {
-              Provider.of<FirestoreProvider>(context, listen: false)
+              Provider.of<SupabaseProvider>(context, listen: false)
                   .deleteBranch(branch.id);
               Navigator.pop(context);
             },

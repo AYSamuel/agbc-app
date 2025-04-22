@@ -19,4 +19,24 @@ class AppTheme {
       ),
     );
   }
+
+  static ThemeData get darkTheme {
+    final ColorScheme colorScheme = ColorScheme.fromSeed(
+      seedColor: const Color.fromARGB(255, 98, 120, 246),
+      brightness: Brightness.dark,
+    );
+
+    return ThemeData(
+      useMaterial3: true,
+      colorScheme: colorScheme,
+      appBarTheme: AppBarTheme(
+        backgroundColor: colorScheme.primary,
+        foregroundColor: colorScheme.onPrimaryContainer,
+      ),
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: colorScheme.primaryContainer,
+        foregroundColor: colorScheme.onPrimaryContainer,
+      ),
+    );
+  }
 }

@@ -4,7 +4,7 @@ import 'package:agbc_app/widgets/radial_menu.dart';
 import 'package:agbc_app/widgets/task_status_card.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
-import '../providers/firestore_provider.dart';
+import '../providers/supabase_provider.dart';
 import '../models/task_model.dart';
 import '../models/meeting_model.dart';
 import '../models/church_branch_model.dart';
@@ -86,7 +86,7 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final authService = Provider.of<AuthService>(context, listen: true);
-    final firestoreProvider = Provider.of<FirestoreProvider>(context);
+    final supabaseProvider = Provider.of<SupabaseProvider>(context);
     final user = authService.currentUser;
 
     // Determine which options to show based on user role
@@ -111,21 +111,13 @@ class HomeScreen extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Welcome,',
-                          style: TextStyle(
-                            fontSize: 22,
-                            color: Colors.grey.shade500,
-                            fontWeight: FontWeight.w400,
-                          ),
+                          'Home',
+                          style: AppTheme.titleStyle,
                         ),
                         const SizedBox(height: 2),
                         Text(
                           user?.displayName ?? 'User',
-                          style: const TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF1A237E),
-                          ),
+                          style: AppTheme.titleStyle,
                         ),
                       ],
                     ),
@@ -159,7 +151,7 @@ class HomeScreen extends StatelessWidget {
             ),
             // Task Status Section
             StreamBuilder<List<TaskModel>>(
-              stream: firestoreProvider.getTasksForUser(user?.uid ?? ''),
+              stream: supabaseProvider.getTasksForUser(user?.id ?? ''),
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
                   return const SizedBox.shrink();
@@ -191,7 +183,7 @@ class HomeScreen extends StatelessWidget {
                         children: [
                           // Tasks Tab
                           StreamBuilder<List<TaskModel>>(
-                            stream: firestoreProvider.getTasksForUser(user?.uid ?? ''),
+                            stream: supabaseProvider.getTasksForUser(user?.id ?? ''),
                             builder: (context, snapshot) {
                               if (snapshot.hasError) {
                                 return Center(child: Text('Error: ${snapshot.error}'));
@@ -231,7 +223,7 @@ class HomeScreen extends StatelessWidget {
                           ),
                           // Meetings Tab
                           StreamBuilder<List<MeetingModel>>(
-                            stream: firestoreProvider.getMeetingsForUser(user?.uid ?? ''),
+                            stream: supabaseProvider.getMeetingsForUser(user?.id ?? ''),
                             builder: (context, snapshot) {
                               if (snapshot.hasError) {
                                 return Center(child: Text('Error: ${snapshot.error}'));

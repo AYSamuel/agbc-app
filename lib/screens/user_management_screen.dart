@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
-import '../providers/firestore_provider.dart';
+import '../providers/supabase_provider.dart';
 import '../models/user_model.dart';
 import '../utils/theme.dart';
 import '../widgets/custom_back_button.dart';
@@ -12,7 +12,7 @@ class UserManagementScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final authService = Provider.of<AuthService>(context);
-    final firestoreProvider = Provider.of<FirestoreProvider>(context);
+    final supabaseProvider = Provider.of<SupabaseProvider>(context);
 
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
@@ -42,7 +42,7 @@ class UserManagementScreen extends StatelessWidget {
             // Users List
             Expanded(
               child: StreamBuilder<List<UserModel>>(
-                stream: firestoreProvider.getAllUsers(),
+                stream: supabaseProvider.getAllUsers(),
                 builder: (context, snapshot) {
                   if (snapshot.hasError) {
                     return Center(child: Text('Error: ${snapshot.error}'));
@@ -163,7 +163,7 @@ class UserManagementScreen extends StatelessWidget {
 
   void _showEditUserDialog(BuildContext context, UserModel user) {
     String selectedRole = user.role;
-    final firestoreProvider = Provider.of<FirestoreProvider>(context, listen: false);
+    final supabaseProvider = Provider.of<SupabaseProvider>(context, listen: false);
 
     showDialog(
       context: context,
@@ -377,7 +377,7 @@ class UserManagementScreen extends StatelessWidget {
                       child: ElevatedButton(
                         onPressed: () async {
                           try {
-                            await firestoreProvider.updateUserRole(user.uid, selectedRole);
+                            await supabaseProvider.updateUserRole(user.id, selectedRole);
                             if (context.mounted) {
                               Navigator.pop(context);
                               ScaffoldMessenger.of(context).showSnackBar(

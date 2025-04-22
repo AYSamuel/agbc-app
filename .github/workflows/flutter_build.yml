@@ -1,89 +1,44 @@
-name: Flutter CI
+name: Flutter Build
 
 on:
   push:
-    branches: ['main']
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          channel: 'stable'
-          flutter-version: '3.27.1'
-      - run: flutter --version
-      - run: flutter pub get
-
-      - name: Install FlutterFire CLI
-        run: dart pub global activate flutterfire_cli
-
-      - name: Install Firebase CLI
-        run: npm install -g firebase-tools
-
-      - name: Add FlutterFire to PATH
-        run: echo "$HOME/.pub-cache/bin" >> $GITHUB_PATH
-
-      - name: Create .env file
-        run: |
-          echo "FIREBASE_API_KEY=${{ secrets.FIREBASE_API_KEY }}" >> .env
-          echo "FIREBASE_AUTH_DOMAIN=${{ secrets.FIREBASE_AUTH_DOMAIN }}" >> .env
-          echo "FIREBASE_PROJECT_ID=${{ secrets.FIREBASE_PROJECT_ID }}" >> .env
-          echo "FIREBASE_STORAGE_BUCKET=${{ secrets.FIREBASE_STORAGE_BUCKET }}" >> .env
-          echo "FIREBASE_MESSAGING_SENDER_ID=${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}" >> .env
-          echo "FIREBASE_IOS_APP_ID=${{ secrets.FIREBASE_IOS_APP_ID }}" >> .env
-          echo "FIREBASE_ANDROID_APP_ID=${{ secrets.FIREBASE_ANDROID_APP_ID }}" >> .env
-
-      - name: Verify .env file
-        run: |
-          if [ -f .env ]; then
-            echo ".env file exists"
-            echo "File contents (keys only):"
-            grep -v '^#' .env | cut -d '=' -f1
-          else
-            echo ".env file does not exist"
-            exit 1
-          fi
-
-      - name: Run Flutter tests
-        run: flutter test
-
-      - name: Authenticate to Google Cloud
-        uses: 'google-github-actions/auth@v2'
-        with:
-          credentials_json: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}'
-
-      - name: Create Firebase configuration files
-        run: |
-          echo "${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}" | base64 -d > android/app/google-services.json
-          echo "${{ secrets.GOOGLE_SERVICE_INFO_PLIST_BASE64 }}" | base64 -d > ios/Runner/GoogleService-Info.plist
-
-      - name: Verify Firebase configuration files
-        run: |
-          ls -l android/app/google-services.json
-          ls -l ios/Runner/GoogleService-Info.plist
-
-      - name: Get dependencies
-        run: flutter pub get
-
-      - name: Build for release (Android)
-        run: flutter build apk --release
-
-      # - name: Build for release (iOS)
-      #   run: flutter build ios --release --no-codesign
-
-      - name: Upload Android build artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: android-release
-          path: build/app/outputs/flutter-apk/app-release.apk
-
-      # - name: Upload iOS build artifact
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: ios-release
-      #     path: build/ios/iphoneos/Runner.app
+    - uses: actions/checkout@v2
+    
+    - name: Install Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.x'
+        channel: 'stable'
+    
+    - name: Install dependencies
+      run: flutter pub get
+    
+    - name: Set up environment variables
+      run: |
+        echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> .env
+        echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> .env
+    
+    - name: Verify environment variables
+      run: |
+        cat .env
+    
+    - name: Run tests
+      run: flutter test
+    
+    - name: Build APK
+      run: flutter build apk --release
+    
+    - name: Upload APK
+      uses: actions/upload-artifact@v2
+      with:
+        name: release-apk
+        path: build/app/outputs/flutter-apk/app-release.apk

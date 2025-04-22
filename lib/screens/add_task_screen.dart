@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
-import '../providers/firestore_provider.dart';
+import '../providers/supabase_provider.dart';
 import '../models/task_model.dart';
 import '../models/user_model.dart';
 import '../widgets/custom_input.dart';
@@ -114,13 +114,13 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
           description: _descriptionController.text,
           deadline: _selectedDeadline!,
           assignedTo: _selectedAssigneeId!,
-          createdBy: currentUser.uid,
+          createdBy: currentUser.id,
           reminder: _selectedReminder,
           priority: _selectedPriority,
           category: _selectedCategory,
         );
 
-        await context.read<FirestoreProvider>().createTask(task);
+        await context.read<SupabaseProvider>().createTask(task);
         
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -158,13 +158,9 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                         onPressed: () => Navigator.pop(context),
                       ),
                       const SizedBox(width: 16),
-                      const Text(
+                      Text(
                         'Create New Task',
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF1A237E),
-                        ),
+                        style: AppTheme.titleStyle,
                       ),
                     ],
                   ),
@@ -233,7 +229,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                           prefixIcon: const Icon(Icons.person, color: Colors.grey),
                           readOnly: true,
                           onTap: () async {
-                            final users = await context.read<FirestoreProvider>().getAllUsers().first;
+                            final users = await context.read<SupabaseProvider>().getAllUsers().first;
                             if (!mounted) return;
                             
                             showDialog(
@@ -261,7 +257,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                                         subtitle: Text(user.email),
                                         onTap: () {
                                           setState(() {
-                                            _selectedAssigneeId = user.uid;
+                                            _selectedAssigneeId = user.id;
                                           });
                                           Navigator.pop(context);
                                         },

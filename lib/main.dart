@@ -1,17 +1,18 @@
 import 'package:agbc_app/services/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:firebase_core/firebase_core.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
-import 'package:agbc_app/providers/firestore_provider.dart';
-import 'firebase_options.dart';
+import 'package:agbc_app/providers/supabase_provider.dart';
+import 'package:onesignal_flutter/onesignal_flutter.dart';
 import 'config/theme.dart';
 import 'screens/splash_screen.dart';
 import 'services/location_service.dart';
 import 'services/permissions_service.dart';
 import 'services/notification_service.dart';
 import 'services/user_service.dart';
+import 'services/supabase_service.dart';
 
 Future<void> main() async {
   try {
@@ -21,10 +22,10 @@ Future<void> main() async {
     // Load environment variables
     await dotenv.load(fileName: ".env");
 
-    // Initialize Firebase
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-      name: 'agbc app',
+    // Initialize Supabase
+    await Supabase.initialize(
+      url: dotenv.env['SUPABASE_URL']!,
+      anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
     );
 
     // Initialize services
@@ -32,7 +33,11 @@ Future<void> main() async {
     final permissionsService = PermissionsService();
     final notificationService = NotificationService();
     final userService = UserService();
-    final authService = AuthService();
+    final supabaseService = SupabaseService();
+    final authService = AuthService(
+      supabaseService: supabaseService,
+      permissionsService: permissionsService,
+    );
 
     // Initialize services in sequence
     await permissionsService.initialize();
@@ -44,66 +49,67 @@ Future<void> main() async {
     // Configure system UI
     _configureSystemUI();
 
-    runApp(
-      MultiProvider(
-        providers: [
-          ChangeNotifierProvider(create: (context) => authService),
-          ChangeNotifierProvider(create: (context) => FirestoreProvider()),
-          Provider(create: (context) => locationService),
-          Provider(create: (context) => permissionsService),
-          Provider(create: (context) => notificationService),
-          Provider(create: (context) => userService),
-        ],
-        child: const MyApp(),
-      ),
-    );
-  } catch (e, stackTrace) {
-    // Handle initialization errors silently in production
-    runApp(
-      MaterialApp(
-        home: Scaffold(
-          body: Center(
-            child: Text('Error initializing app: $e'),
-          ),
-        ),
-      ),
-    );
+    runApp(MyApp(
+      authService: authService,
+      supabaseProvider: SupabaseProvider(),
+    ));
+  } catch (e) {
+    print('Error initializing app: $e');
   }
 }
 
 void _configureSystemUI() {
-  // Set system UI overlay style
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
       statusBarIconBrightness: Brightness.dark,
-      statusBarBrightness: Brightness.light,
-      systemNavigationBarColor: Colors.white,
-      systemNavigationBarIconBrightness: Brightness.dark,
     ),
-  );
-
-  // Disable edge-to-edge mode
-  SystemChrome.setEnabledSystemUIMode(
-    SystemUiMode.manual,
-    overlays: SystemUiOverlay.values,
   );
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class MyApp extends StatefulWidget {
+  final AuthService authService;
+  final SupabaseProvider supabaseProvider;
+
+  const MyApp({
+    Key? key,
+    required this.authService,
+    required this.supabaseProvider,
+  }) : super(key: key);
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  @override
+  void initState() {
+    super.initState();
+    _initializeApp();
+  }
+
+  Future<void> _initializeApp() async {
+    try {
+      await widget.authService.checkAuthState();
+    } catch (e) {
+      print('Error initializing auth state: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'AGBC App',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme.copyWith(
-        appBarTheme: const AppBarTheme(
-          systemOverlayStyle: SystemUiOverlayStyle.dark,
-        ),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(value: widget.authService),
+        ChangeNotifierProvider.value(value: widget.supabaseProvider),
+      ],
+      child: MaterialApp(
+        title: 'AGBC App',
+        theme: AppTheme.lightTheme,
+        darkTheme: AppTheme.darkTheme,
+        themeMode: ThemeMode.system,
+        home: const SplashScreen(),
       ),
-      home: const SplashScreen(),
     );
   }
 }

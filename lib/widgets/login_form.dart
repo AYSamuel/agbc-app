@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:agbc_app/services/auth_service.dart';
+import '../services/auth_service.dart';
+import '../providers/supabase_provider.dart';
 import 'package:agbc_app/services/preferences_service.dart';
 import 'package:agbc_app/widgets/custom_input.dart';
 import 'package:agbc_app/widgets/custom_button.dart';
 import 'package:agbc_app/widgets/loading_indicator.dart';
 import 'package:agbc_app/utils/theme.dart';
 import 'package:agbc_app/widgets/mixins/form_validation_mixin.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide AuthException;
 
 class LoginForm extends StatefulWidget {
   final VoidCallback onLoginSuccess;
@@ -132,17 +133,23 @@ class _LoginFormState extends State<LoginForm> with FormValidationMixin {
       // Set remember me preference before login
       await authService.setRememberMe(_rememberMe);
       
-      await authService.signInWithEmailAndPassword(
+      final user = await authService.signInWithEmailAndPassword(
         _emailController.text.trim(),
         _passwordController.text,
       );
 
+      if (user == null) {
+        throw AuthException('Invalid email or password');
+      }
+
       // Save credentials if remember me is enabled
-      await PreferencesService.saveLoginCredentials(
-        email: _emailController.text.trim(),
-        password: _passwordController.text,
-        rememberMe: _rememberMe,
-      );
+      if (_rememberMe) {
+        await PreferencesService.saveLoginCredentials(
+          email: _emailController.text.trim(),
+          password: _passwordController.text,
+          rememberMe: _rememberMe,
+        );
+      }
 
       if (mounted) {
         widget.onLoginSuccess();
@@ -151,26 +158,10 @@ class _LoginFormState extends State<LoginForm> with FormValidationMixin {
       if (mounted) {
         String errorMessage;
         
-        if (e is FirebaseAuthException) {
-          switch (e.code) {
-            case 'user-not-found':
-              errorMessage = 'No account found with this email. Please register first.';
-              break;
-            case 'wrong-password':
-              errorMessage = 'Incorrect password. Please try again.';
-              break;
-            case 'invalid-email':
-              errorMessage = 'The email address is invalid.';
-              break;
-            case 'user-disabled':
-              errorMessage = 'This account has been disabled.';
-              break;
-            case 'too-many-requests':
-              errorMessage = 'Too many failed login attempts. Please try again later.';
-              break;
-            default:
-              errorMessage = 'An error occurred during login. Please try again.';
-          }
+        if (e is PostgrestException) {
+          errorMessage = 'Database error: ${e.message}';
+        } else if (e is AuthException) {
+          errorMessage = 'Authentication error: ${e.message}';
         } else {
           errorMessage = 'An unexpected error occurred. Please try again.';
         }
@@ -206,6 +197,9 @@ class _LoginFormState extends State<LoginForm> with FormValidationMixin {
             },
             validator: validateEmail,
             autofillHints: const [AutofillHints.email],
+            backgroundColor: Colors.white,
+            elevation: 2,
+            labelColor: Colors.black87,
           ),
           const SizedBox(height: 16),
 
@@ -232,46 +226,67 @@ class _LoginFormState extends State<LoginForm> with FormValidationMixin {
             ),
             validator: validatePassword,
             autofillHints: const [AutofillHints.password],
+            backgroundColor: Colors.white,
+            elevation: 2,
+            labelColor: Colors.black87,
           ),
           const SizedBox(height: 16),
 
           // Remember Me Checkbox
-          Row(
-            children: [
-              Checkbox(
-                value: _rememberMe,
-                onChanged: (value) {
-                  setState(() {
-                    _rememberMe = value ?? false;
-                  });
-                },
-                activeColor: AppTheme.primaryColor,
-              ),
-              const Text(
-                'Remember Me',
-                style: TextStyle(
-                  color: Colors.black54,
-                  fontSize: 14,
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
                 ),
-              ),
-            ],
+              ],
+            ),
+            child: Row(
+              children: [
+                Checkbox(
+                  value: _rememberMe,
+                  onChanged: (value) {
+                    setState(() {
+                      _rememberMe = value ?? false;
+                    });
+                  },
+                  activeColor: AppTheme.primaryColor,
+                ),
+                Text(
+                  'Remember Me',
+                  style: TextStyle(
+                    color: AppTheme.neutralColor,
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 24),
 
           // Login Button
-          CustomButton(
-            onPressed: _isLoading ? null : _login,
-            backgroundColor: AppTheme.accentColor,
-            child: _isLoading
-                ? const LoadingIndicator()
-                : const Text(
-                    'Login',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+          Material(
+            elevation: 4,
+            borderRadius: BorderRadius.circular(8),
+            child: CustomButton(
+              onPressed: _isLoading ? null : _login,
+              backgroundColor: AppTheme.accentColor,
+              child: _isLoading
+                  ? const LoadingIndicator()
+                  : const Text(
+                      'Login',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
                     ),
-                  ),
+            ),
           ),
         ],
       ),

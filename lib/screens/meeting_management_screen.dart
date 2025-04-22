@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/firestore_provider.dart';
+import '../providers/supabase_provider.dart';
 import '../models/meeting_model.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
@@ -12,7 +12,7 @@ class MeetingManagementScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final firestoreProvider = Provider.of<FirestoreProvider>(context);
+    final supabaseProvider = Provider.of<SupabaseProvider>(context);
 
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
@@ -42,7 +42,7 @@ class MeetingManagementScreen extends StatelessWidget {
             // Meetings List
             Expanded(
               child: StreamBuilder<List<MeetingModel>>(
-                stream: firestoreProvider.getAllMeetings(),
+                stream: supabaseProvider.getAllMeetings(),
                 builder: (context, snapshot) {
                   if (snapshot.hasError) {
                     return Center(child: Text('Error: ${snapshot.error}'));

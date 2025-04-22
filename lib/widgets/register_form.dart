@@ -1,17 +1,17 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:agbc_app/services/auth_service.dart';
-import 'package:agbc_app/services/location_service.dart';
-import 'package:agbc_app/widgets/custom_input.dart';
-import 'package:agbc_app/widgets/custom_button.dart';
-import 'package:agbc_app/widgets/loading_indicator.dart';
-import 'package:agbc_app/utils/theme.dart';
-import 'package:agbc_app/widgets/mixins/location_validation_mixin.dart';
-import 'package:agbc_app/widgets/mixins/form_validation_mixin.dart';
-import 'package:agbc_app/providers/firestore_provider.dart';
-import 'package:agbc_app/models/church_branch_model.dart';
+import '../services/auth_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide AuthException;
+import '../services/location_service.dart';
+import '../widgets/custom_input.dart';
+import '../widgets/custom_button.dart';
+import '../widgets/loading_indicator.dart';
+import '../utils/theme.dart';
+import '../widgets/mixins/location_validation_mixin.dart';
+import '../widgets/mixins/form_validation_mixin.dart';
+import '../providers/supabase_provider.dart';
+import '../models/church_branch_model.dart';
 
 class RegisterForm extends StatefulWidget {
   final VoidCallback onRegisterSuccess;
@@ -38,6 +38,7 @@ class _RegisterFormState extends State<RegisterForm> with LocationValidationMixi
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _isGettingLocation = false;
+  String? _selectedBranchId;
 
   @override
   void initState() {
@@ -116,6 +117,12 @@ class _RegisterFormState extends State<RegisterForm> with LocationValidationMixi
       return;
     }
 
+    // Validate branch selection
+    if (_selectedBranchId == null) {
+      _showErrorSnackBar('Please select a branch');
+      return;
+    }
+
     setState(() => _isLoading = true);
 
     try {
@@ -128,6 +135,7 @@ class _RegisterFormState extends State<RegisterForm> with LocationValidationMixi
         _phoneController.text.trim(),
         _locationController.text.trim(),
         'member',
+        _selectedBranchId,
       );
 
       if (mounted) {
@@ -136,7 +144,7 @@ class _RegisterFormState extends State<RegisterForm> with LocationValidationMixi
     } catch (e) {
       if (mounted) {
         String errorMessage;
-        if (e is FirebaseAuthException) {
+        if (e is AuthException) {
           switch (e.code) {
             case 'email-already-in-use':
               errorMessage = 'This email is already registered. Please login instead.';
@@ -182,8 +190,11 @@ class _RegisterFormState extends State<RegisterForm> with LocationValidationMixi
             textInputAction: TextInputAction.next,
             onSubmitted: (_) => FocusScope.of(context).nextFocus(),
             validator: validateName,
+            backgroundColor: Colors.white,
+            elevation: 2,
+            labelColor: Colors.black87,
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 16),
 
           // Email Field
           CustomInput(
@@ -195,8 +206,11 @@ class _RegisterFormState extends State<RegisterForm> with LocationValidationMixi
             textInputAction: TextInputAction.next,
             onSubmitted: (_) => FocusScope.of(context).nextFocus(),
             validator: validateEmail,
+            backgroundColor: Colors.white,
+            elevation: 2,
+            labelColor: Colors.black87,
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 16),
 
           // Phone Field
           CustomInput(
@@ -206,8 +220,11 @@ class _RegisterFormState extends State<RegisterForm> with LocationValidationMixi
             prefixIcon: Icon(Icons.phone, color: AppTheme.neutralColor),
             keyboardType: TextInputType.phone,
             validator: validatePhone,
+            backgroundColor: Colors.white,
+            elevation: 2,
+            labelColor: Colors.black87,
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 16),
 
           // Location Field
           CustomInput(
@@ -234,8 +251,103 @@ class _RegisterFormState extends State<RegisterForm> with LocationValidationMixi
                     onPressed: _getCurrentLocation,
                   ),
             validator: validateLocation,
+            backgroundColor: Colors.white,
+            elevation: 2,
+            labelColor: Colors.black87,
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 16),
+
+          // Branch Selection
+          StreamBuilder<List<ChurchBranch>>(
+            stream: Provider.of<SupabaseProvider>(context).getAllBranches(),
+            builder: (context, snapshot) {
+              if (snapshot.hasError) {
+                return Text('Error: ${snapshot.error}');
+              }
+              if (!snapshot.hasData) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              final branches = snapshot.data!;
+              
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Select Branch',
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      color: Colors.black87,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Theme.of(context).shadowColor.withOpacity(0.1),
+                          blurRadius: 2,
+                          offset: const Offset(0, 1),
+                        ),
+                      ],
+                    ),
+                    child: DropdownButtonFormField<String>(
+                      value: _selectedBranchId,
+                      decoration: InputDecoration(
+                        hintText: 'Select a branch',
+                        prefixIcon: Icon(Icons.church, color: AppTheme.neutralColor),
+                        filled: true,
+                        fillColor: Colors.white,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(
+                            color: Theme.of(context).colorScheme.outline.withOpacity(0.5),
+                          ),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(
+                            color: Theme.of(context).colorScheme.outline.withOpacity(0.5),
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(
+                            color: Theme.of(context).colorScheme.primary,
+                            width: 2,
+                          ),
+                        ),
+                        errorBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(
+                            color: Theme.of(context).colorScheme.error,
+                          ),
+                        ),
+                      ),
+                      items: branches.map((branch) {
+                        return DropdownMenuItem<String>(
+                          value: branch.id,
+                          child: Text(branch.name),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedBranchId = value;
+                        });
+                      },
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please select a branch';
+                        }
+                        return null;
+                      },
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+          const SizedBox(height: 16),
 
           // Password Field
           CustomInput(
@@ -258,8 +370,11 @@ class _RegisterFormState extends State<RegisterForm> with LocationValidationMixi
               },
             ),
             validator: validatePassword,
+            backgroundColor: Colors.white,
+            elevation: 2,
+            labelColor: Colors.black87,
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 16),
 
           // Confirm Password Field
           CustomInput(
@@ -287,23 +402,30 @@ class _RegisterFormState extends State<RegisterForm> with LocationValidationMixi
               }
               return null;
             },
+            backgroundColor: Colors.white,
+            elevation: 2,
+            labelColor: Colors.black87,
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 24),
 
           // Register Button
-          CustomButton(
-            onPressed: _isLoading ? null : _register,
-            backgroundColor: AppTheme.accentColor,
-            child: _isLoading
-                ? const LoadingIndicator()
-                : const Text(
-                    'Register',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+          Material(
+            elevation: 4,
+            borderRadius: BorderRadius.circular(8),
+            child: CustomButton(
+              onPressed: _isLoading ? null : _register,
+              backgroundColor: AppTheme.accentColor,
+              child: _isLoading
+                  ? const LoadingIndicator()
+                  : const Text(
+                      'Register',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
                     ),
-                  ),
+            ),
           ),
         ],
       ),

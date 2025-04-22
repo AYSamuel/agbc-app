@@ -92,24 +92,62 @@ class AppTheme {
           fontWeight: FontWeight.bold,
         ),
       ),
-      textTheme: GoogleFonts.interTextTheme().copyWith(
-        displayLarge: GoogleFonts.inter(
-          color: darkNeutralColor,
+      textTheme: TextTheme(
+        displayLarge: const TextStyle(
           fontSize: 32,
           fontWeight: FontWeight.bold,
+          color: Colors.white,
         ),
-        displayMedium: GoogleFonts.inter(
-          color: darkNeutralColor,
+        displayMedium: const TextStyle(
+          fontSize: 28,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        ),
+        displaySmall: const TextStyle(
           fontSize: 24,
           fontWeight: FontWeight.bold,
+          color: Colors.white,
         ),
-        bodyLarge: GoogleFonts.inter(
-          color: darkNeutralColor,
+        headlineMedium: const TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        ),
+        headlineSmall: const TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        ),
+        titleLarge: const TextStyle(
           fontSize: 16,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
         ),
-        bodyMedium: GoogleFonts.inter(
-          color: darkNeutralColor,
+        bodyLarge: const TextStyle(
+          fontSize: 16,
+          color: Colors.white,
+        ),
+        bodyMedium: const TextStyle(
           fontSize: 14,
+          color: Colors.white,
+        ),
+        labelLarge: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+          color: secondaryColor,
+          letterSpacing: 0.1,
+        ),
+        labelMedium: TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.bold,
+          color: secondaryColor,
+          letterSpacing: 0.1,
+        ),
+        labelSmall: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+          color: secondaryColor,
+          letterSpacing: 0.1,
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(

@@ -1,94 +1,124 @@
-# AGBC App - Project Documentation
+# AGBC App Architecture
 
-## Overview
-AGBC App is a Flutter application designed for Amazing Grace Bible Church, providing features for user authentication, profile management, and church-related activities.
+## Backend Integration
+- **Authentication**: Supabase Auth for user management
+- **Database**: Supabase PostgreSQL for data storage
+- **Real-time Updates**: Supabase Realtime for live data synchronization
+- **Storage**: Supabase Storage for media files
+- **Configuration**: Environment variables for Supabase setup
 
-## Project Structure
-```
-lib/
-├── config/          # Configuration files
-├── models/          # Data models
-├── screens/         # UI screens
-│   ├── home_screen.dart
-│   ├── login_screen.dart
-│   ├── profile_screen.dart
-│   ├── register_screen.dart
-│   ├── verification_screen.dart
-│   └── main_navigation_screen.dart
-├── services/        # Business logic and API services
-│   ├── auth_service.dart
-│   └── user_service.dart
-├── utils/           # Utility classes and constants
-│   └── theme.dart
-└── widgets/         # Reusable UI components
-```
+## Core Services
+1. **AuthService**
+   - Handles user authentication and authorization
+   - Manages user sessions and tokens
+   - Implements role-based access control
+   - Rate limiting for security
 
-## Key Features
-- **Authentication**: Email/password login and registration with email verification.
-- **User Profile**: Profile management with logout functionality.
-- **Navigation**: Bottom navigation with Home and Profile tabs.
-- **Modern UI**: Clean, modern design with consistent theming and typography.
+2. **SupabaseService**
+   - Manages all database operations
+   - Handles CRUD operations for:
+     - Users
+     - Tasks
+     - Meetings
+     - Church Branches
+   - Implements real-time subscriptions
 
-## Core Components
-### Authentication Flow
-1. User registration with email verification
-2. Email verification check
-3. Login with verified credentials
-4. Session management and logout
+3. **NotificationService**
+   - Placeholder for push notification implementation
+   - Will integrate with third-party service (e.g., OneSignal)
+   - Manages notification tokens and preferences
 
-### State Management
-- **Provider Pattern**: Used for authentication state
-- **AuthService**: Manages user authentication state
-- **UserModel**: Represents user data structure
+4. **UserService**
+   - Manages user profile data
+   - Handles user preferences and settings
+   - Implements user role management
 
-### Firebase Integration
-- **Authentication**: Firebase Auth for user management
-- **Database**: Firestore for user data storage
-- **Configuration**: Environment variables for Firebase setup
+## Data Models
+1. **UserModel**
+   - User profile information
+   - Role and permissions
+   - Department assignments
+   - Notification preferences
 
-## Design Patterns
-### UI Patterns
-- **No AppBar**: Screens use custom headers instead of AppBar
-- **Bottom Navigation**: Consistent navigation across main screens
-- **Custom Back Buttons**: Platform-specific navigation handling
+2. **TaskModel**
+   - Task details and assignments
+   - Status tracking
+   - Comments and updates
 
-### Code Patterns
-- **Service Layer**: Business logic separated in service classes
-- **Widget Composition**: Reusable UI components in widgets directory
-- **Theme Consistency**: Centralized theming through AppTheme
+3. **MeetingModel**
+   - Meeting scheduling
+   - Attendee management
+   - Location and time details
 
-## Implementation Details
-### Theme System
-- Uses Google Fonts (Inter) for typography
-- Custom color palette in AppTheme
-- Consistent spacing and sizing constants
+4. **ChurchBranch**
+   - Branch information
+   - Location details
+   - Department structure
 
-### Navigation
-- MainNavigationScreen manages bottom tabs
-- Custom back buttons for iOS compatibility
-- Route management for authentication flow
+## State Management
+- Provider pattern for state management
+- SupabaseProvider for real-time data
+- AuthService for authentication state
 
-### Authentication
-- Email verification required for login
-- Secure password handling
-- Session persistence
+## Dependencies
+- supabase_flutter: ^2.3.4
+- flutter_dotenv: ^5.1.0
+- provider: ^6.1.1
+- intl: ^0.19.0
+- geolocator: ^10.1.0
+- permission_handler: ^11.3.0
+
+## Security Considerations
+1. **Authentication**
+   - Email/password authentication
+   - Session management
+   - Rate limiting
+   - Password reset functionality
+
+2. **Authorization**
+   - Role-based access control
+   - Department-level permissions
+   - Admin privileges
+
+3. **Data Protection**
+   - Row Level Security (RLS) in Supabase
+   - Encrypted storage for sensitive data
+   - Secure token management
+
+## Development Workflow
+1. **Local Development**
+   - Set up Supabase project
+   - Configure environment variables
+   - Run migrations
+   - Test locally
+
+2. **Testing**
+   - Unit tests for services
+   - Widget tests for UI components
+   - Integration tests for features
+
+3. **Deployment**
+   - GitHub Actions for CI/CD
+   - Environment variable management
+   - Build and release process
 
 ## Future Enhancements
-- Task and meeting management features
-- Additional profile customization options
-- Enhanced church-specific functionalities
+1. **Push Notifications**
+   - Implement OneSignal integration
+   - Custom notification handling
+   - Background message processing
 
-## Notes for AI Assistance
-- All screens should follow the no-AppBar pattern
-- Use AppTheme for consistent styling
-- Maintain platform-specific navigation patterns
-- Follow the established file structure for new features
-- Use Provider for state management
-- Implement Firebase services for data persistence
+2. **Analytics**
+   - User engagement tracking
+   - Feature usage metrics
+   - Performance monitoring
 
-## Key Dependencies
-- firebase_core: ^3.13.0
-- firebase_auth: ^5.5.2
-- cloud_firestore: ^5.6.6
-- provider: ^6.1.1
-- google_fonts: ^6.1.0 
+3. **Offline Support**
+   - Local data caching
+   - Sync management
+   - Conflict resolution
+
+4. **Multi-language Support**
+   - Internationalization setup
+   - Language preferences
+   - Dynamic content translation 

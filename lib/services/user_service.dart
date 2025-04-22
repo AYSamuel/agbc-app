@@ -1,17 +1,15 @@
 // lib/services/user_service.dart
 
-import 'package:firebase_auth/firebase_auth.dart'; // Import Firebase Authentication
-import 'package:cloud_firestore/cloud_firestore.dart'; // Import Firestore for database access
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/foundation.dart';
 import '../models/user_model.dart'; // Import the UserModel
 import 'package:flutter/material.dart';
+import 'supabase_service.dart';
 
-/// Service class for handling user-related operations with Firebase.
+/// Service class for handling user-related operations with Supabase.
 class UserService with ChangeNotifier {
-  final FirebaseAuth _auth =
-      FirebaseAuth.instance; // Instance of FirebaseAuth for authentication
-  final FirebaseFirestore _firestore =
-      FirebaseFirestore.instance; // Instance of Firestore for database access
+  final SupabaseClient _supabase = Supabase.instance.client;
+  late final SupabaseService _supabaseService;
 
   UserModel? _currentUser;
   Map<String, dynamic>? _currentUserData;
@@ -19,6 +17,7 @@ class UserService with ChangeNotifier {
   UserModel? get currentUser => _currentUser;
   
   UserService() {
+    _supabaseService = SupabaseService();
     initialize();
   }
 
@@ -30,14 +29,14 @@ class UserService with ChangeNotifier {
     }
   }
 
-  /// Fetches user details from Firestore by user ID (UID).
+  /// Fetches user details from Supabase by user ID.
   ///
-  /// [uid] is the unique identifier of the user.
+  /// [id] is the unique identifier of the user.
   Future<UserModel?> getUserDetails(String userId) async {
     try {
-      final doc = await _firestore.collection('users').doc(userId).get();
-      if (doc.exists) {
-        return UserModel.fromJson(doc.data()!);
+      final data = await _supabase.from('users').select().eq('id', userId).single();
+      if (data != null) {
+        return UserModel.fromJson(data);
       }
       return null;
     } catch (e) {
@@ -45,16 +44,13 @@ class UserService with ChangeNotifier {
     }
   }
 
-  /// Updates user information in Firestore.
+  /// Updates user information in Supabase.
   ///
   /// [user] is the UserModel containing updated user information.
   Future<void> updateUser(UserModel user) async {
     try {
-      await _firestore.collection('users').doc(user.uid).update({
-        ...user.toJson(),
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
-      if (user.uid == _currentUser?.uid) {
+      await _supabase.from('users').update(user.toJson()).eq('id', user.id);
+      if (user.id == _currentUser?.id) {
         _currentUser = user;
         notifyListeners();
       }
@@ -63,17 +59,12 @@ class UserService with ChangeNotifier {
     }
   }
 
-  /// Creates a new user in Firebase Authentication and Firestore.
+  /// Creates a new user in Supabase.
   ///
   /// [user] is the UserModel containing user information.
-  /// [password] is the user's password used for authentication.
   Future<void> createUser(UserModel user) async {
     try {
-      await _firestore.collection('users').doc(user.uid).set({
-        ...user.toJson(),
-        'createdAt': FieldValue.serverTimestamp(),
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
+      await _supabase.from('users').insert(user.toJson());
     } catch (e) {
       rethrow; // Let the UI handle the error
     }
@@ -81,11 +72,11 @@ class UserService with ChangeNotifier {
 
   Future<void> _loadUserData() async {
     try {
-      final user = _auth.currentUser;
+      final user = _supabase.auth.currentUser;
       if (user != null) {
-        final doc = await _firestore.collection('users').doc(user.uid).get();
-        if (doc.exists) {
-          _currentUser = UserModel.fromJson(doc.data()!);
+        final data = await _supabase.from('users').select().eq('id', user.id).single();
+        if (data != null) {
+          _currentUser = UserModel.fromJson(data);
           notifyListeners();
         }
       }
@@ -94,11 +85,11 @@ class UserService with ChangeNotifier {
     }
   }
 
-  Future<void> loadUserData(String uid) async {
+  Future<void> loadUserData(String id) async {
     try {
-      final userDoc = await _firestore.collection('users').doc(uid).get();
-      if (userDoc.exists) {
-        _currentUserData = userDoc.data() as Map<String, dynamic>;
+      final userDoc = await _supabase.from('users').select().eq('id', id).single();
+      if (userDoc != null) {
+        _currentUserData = userDoc;
         notifyListeners();
       }
     } catch (e) {
@@ -108,11 +99,11 @@ class UserService with ChangeNotifier {
 
   Map<String, dynamic>? get currentUserData => _currentUserData;
 
-  Future<UserModel?> getUserData(String uid) async {
+  Future<UserModel?> getUserData(String id) async {
     try {
-      final doc = await _firestore.collection('users').doc(uid).get();
-      if (doc.exists) {
-        return UserModel.fromJson(doc.data()!);
+      final doc = await _supabase.from('users').select().eq('id', id).single();
+      if (doc != null) {
+        return UserModel.fromJson(doc);
       }
       return null;
     } catch (e) {

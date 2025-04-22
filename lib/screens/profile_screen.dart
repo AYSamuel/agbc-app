@@ -179,7 +179,7 @@ class ProfileScreen extends StatelessWidget {
                       context,
                       title: 'Branch',
                       value: user?.branchId?.isNotEmpty == true 
-                          ? 'AGBC ${user!.branchId.toUpperCase()}'
+                          ? 'AGBC ${user!.branchId?.toUpperCase() ?? ''}'
                           : 'Not assigned',
                       icon: Icons.church,
                     ),

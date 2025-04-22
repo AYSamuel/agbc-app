@@ -1,21 +1,23 @@
 import 'package:flutter/foundation.dart'; // Import for ChangeNotifier
-import 'package:firebase_auth/firebase_auth.dart'; // Import Firebase Authentication
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:async'; // Import for StreamSubscription
 import 'package:flutter/foundation.dart' show kIsWeb;
 import '../models/user_model.dart'; // Import our custom UserModel
 import '../models/task_model.dart';
 import '../models/meeting_model.dart';
-import '../services/firestore_service.dart';
+import '../services/supabase_service.dart';
 import '../services/permissions_service.dart';
 import 'package:flutter/material.dart';
-import 'package:agbc_app/providers/firestore_provider.dart';
+import 'package:agbc_app/providers/supabase_provider.dart';
 import '../services/preferences_service.dart';
+import 'package:agbc_app/services/notification_service.dart';
 
 /// Exception for user-facing authentication errors.
 class AuthException implements Exception {
   final String message;
-  AuthException(this.message);
+  final String? code;
+
+  AuthException(this.message, {this.code});
 
   @override
   String toString() => message;
@@ -23,19 +25,15 @@ class AuthException implements Exception {
 
 /// Service class for handling authentication-related operations.
 class AuthService with ChangeNotifier {
-  // Instance of FirebaseAuth for authentication operations
-  @visibleForTesting
-  final FirebaseAuth _auth;
-  final FirestoreService _firestoreService;
+  final SupabaseClient _supabase = Supabase.instance.client;
+  final SupabaseService _supabaseService;
   final PermissionsService _permissionsService;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirestoreProvider _firestoreProvider = FirestoreProvider();
+  final SupabaseProvider _supabaseProvider = SupabaseProvider();
   bool _rememberMe = false;
 
   // Private variable to store the current user
-  @visibleForTesting
   UserModel? _currentUser;
-  StreamSubscription<User?>? _authStateSubscription;
+  StreamSubscription<AuthState>? _authStateSubscription;
 
   // Getter to access the current user
   UserModel? get currentUser => _currentUser;
@@ -56,65 +54,53 @@ class AuthService with ChangeNotifier {
   @visibleForTesting
   static const Duration _lockoutDuration = Duration(minutes: 30);
 
-  AuthService({FirebaseAuth? auth}) 
-      : _auth = auth ?? FirebaseAuth.instance,
-        _firestoreService = FirestoreService(),
-        _permissionsService = PermissionsService();
+  final NotificationService _notificationService = NotificationService();
+
+  AuthService({
+    required SupabaseService supabaseService,
+    required PermissionsService permissionsService,
+  })  : _supabaseService = supabaseService,
+        _permissionsService = permissionsService {
+    initialize();
+  }
 
   Future<void> initialize() async {
     try {
-      // Cancel any existing subscription
-      await _authStateSubscription?.cancel();
-      
-      // Check if remember me is enabled
-      final isRememberMeEnabled = await PreferencesService.isRememberMeEnabled();
-      
-      // If remember me is not enabled, sign out any existing user
-      if (!isRememberMeEnabled) {
-        await _auth.signOut();
-      }
-      
-      // Set up new auth state listener
-      _authStateSubscription = _auth.authStateChanges().listen((User? user) async {
-        if (user != null) {
+      await _permissionsService.initialize();
+      _authStateSubscription = _supabase.auth.onAuthStateChange.listen((data) async {
+        final session = data.session;
+        if (session != null) {
           try {
-            // First, reload the user to get the latest data
-            await user.reload();
-            
-            // Get the user document from Firestore
-            DocumentSnapshot userDoc = await _firestoreService.users.doc(user.uid).get();
-            
-            if (userDoc.exists && userDoc.data() != null) {
-              // If user document exists, load the data
-              _currentUser = UserModel.fromJson(userDoc.data() as Map<String, dynamic>);
-              
-              // Update the user's last login time
+            final user = await _supabaseService.getUser(session.user.id).first;
+            if (user != null) {
+              _currentUser = user;
               _currentUser = _currentUser!.copyWith(
                 lastLogin: DateTime.now(),
-                emailVerified: user.emailVerified,
+                emailVerified: session.user.emailConfirmedAt != null,
               );
-              
-              // Save the updated user data
-              await _firestoreService.updateUser(_currentUser!);
+              await _supabaseService.updateUser(_currentUser!);
+              // Register device for notifications
+              await _notificationService.registerDevice(session.user.id);
             } else {
-              // If user document doesn't exist, create a new one
               _currentUser = UserModel(
-                uid: user.uid,
-                displayName: user.displayName ?? '',
-                email: user.email ?? '',
+                id: session.user.id,
+                displayName: session.user.userMetadata?['full_name'] ?? '',
+                email: session.user.email ?? '',
                 role: 'member',
                 createdAt: DateTime.now(),
                 lastLogin: DateTime.now(),
                 isActive: true,
-                emailVerified: user.emailVerified,
+                emailVerified: session.user.emailConfirmedAt != null,
                 departments: [],
                 notificationSettings: {
                   'email': true,
                   'push': true,
                 },
-                phoneNumber: user.phoneNumber ?? '',
+                phoneNumber: session.user.phone ?? '',
               );
-              await _firestoreService.users.doc(user.uid).set(_currentUser!.toJson());
+              await _supabaseService.updateUser(_currentUser!);
+              // Register device for notifications
+              await _notificationService.registerDevice(session.user.id);
             }
           } catch (e) {
             print('Error loading user data: $e');
@@ -127,8 +113,6 @@ class AuthService with ChangeNotifier {
       });
     } catch (e) {
       print('Error initializing auth service: $e');
-      _currentUser = null;
-      notifyListeners();
     }
   }
 
@@ -137,7 +121,7 @@ class AuthService with ChangeNotifier {
     _rememberMe = value;
     if (!value) {
       // If remember me is disabled, clear the auth state and saved credentials
-      await _auth.signOut();
+      await _supabase.auth.signOut();
       await PreferencesService.clearLoginCredentials();
     }
   }
@@ -149,17 +133,19 @@ class AuthService with ChangeNotifier {
       await _authStateSubscription?.cancel();
       _authStateSubscription = null;
 
+      // Remove device registration
+      if (_currentUser != null) {
+        await _notificationService.removeDevice(_currentUser!.id);
+      }
+
       // Clear the current user
       _currentUser = null;
       notifyListeners();
 
-      // Clear Firebase persistence (web only)
+      // Clear platform-specific persistence (web only)
       if (kIsWeb) {
-        await _auth.setPersistence(Persistence.NONE);
+        await _supabase.auth.signOut();
       }
-
-      // Sign out from Firebase
-      await _auth.signOut();
 
       // Clear any cached data
       _loginAttempts.clear();
@@ -204,58 +190,28 @@ class AuthService with ChangeNotifier {
   }
 
   /// Logs in a user with the provided email and password.
-  Future<UserCredential?> signInWithEmailAndPassword(
-      String email, String password) async {
+  Future<UserModel?> signInWithEmailAndPassword(String email, String password) async {
     try {
-      final userCredential = await _auth.signInWithEmailAndPassword(
+      final response = await _supabase.auth.signInWithPassword(
         email: email,
         password: password,
       );
-
-      if (userCredential.user != null) {
-        // Reload the user to get the latest data
-        await userCredential.user!.reload();
-        
-        // Get the user document from Firestore
-        DocumentSnapshot userDoc = await _firestoreService.users.doc(userCredential.user!.uid).get();
-        
-        if (userDoc.exists && userDoc.data() != null) {
-          // If user document exists, load the data
-          _currentUser = UserModel.fromJson(userDoc.data() as Map<String, dynamic>);
-          
-          // Update the user's last login time
+      
+      if (response.user != null) {
+        final user = await _supabaseService.getUser(response.user!.id).first;
+        if (user != null) {
+          _currentUser = user;
           _currentUser = _currentUser!.copyWith(
             lastLogin: DateTime.now(),
-            emailVerified: userCredential.user!.emailVerified,
+            emailVerified: response.user!.emailConfirmedAt != null,
           );
-          
-          // Save the updated user data
-          await _firestoreService.updateUser(_currentUser!);
-        } else {
-          // If user document doesn't exist, create a new one
-          _currentUser = UserModel(
-            uid: userCredential.user!.uid,
-            displayName: userCredential.user!.displayName ?? '',
-            email: userCredential.user!.email ?? '',
-            role: 'member',
-            createdAt: DateTime.now(),
-            lastLogin: DateTime.now(),
-            isActive: true,
-            emailVerified: userCredential.user!.emailVerified,
-            departments: [],
-            notificationSettings: {
-              'email': true,
-              'push': true,
-            },
-            phoneNumber: userCredential.user!.phoneNumber ?? '',
-          );
-          await _firestoreService.users.doc(userCredential.user!.uid).set(_currentUser!.toJson());
+          await _supabaseService.updateUser(_currentUser!);
+          // Register device for notifications
+          await _notificationService.registerDevice(response.user!.id);
+          return _currentUser;
         }
-        
-        notifyListeners();
       }
-      
-      return userCredential;
+      return null;
     } catch (e) {
       print('Error during sign in: $e');
       return null;
@@ -270,26 +226,26 @@ class AuthService with ChangeNotifier {
     String phone,
     String location,
     String role,
+    String? branch,
   ) async {
     try {
-      final userCredential = await _auth.createUserWithEmailAndPassword(
+      final response = await _supabase.auth.signUp(
         email: email,
         password: password,
+        data: {
+          'full_name': name,
+          'phone': phone,
+          'location': location,
+          'role': role,
+          'branch': branch,
+        },
       );
 
-      if (userCredential.user != null) {
-        // Update display name in Firebase Auth
-        await userCredential.user!.updateDisplayName(name);
-        
-        // Send verification email
-        await userCredential.user!.sendEmailVerification();
-
+      if (response.user != null) {
         final user = UserModel(
-          uid: userCredential.user!.uid,
+          id: response.user!.id,
           displayName: name,
           email: email,
-          phoneNumber: phone,
-          location: location,
           role: role,
           createdAt: DateTime.now(),
           lastLogin: DateTime.now(),
@@ -300,24 +256,27 @@ class AuthService with ChangeNotifier {
             'email': true,
             'push': true,
           },
+          phoneNumber: phone,
+          location: location,
+          branchId: branch,
         );
-
-        await _firestoreProvider.createUser(user);
-
+        
+        await _supabaseService.updateUser(user);
         _currentUser = user;
         notifyListeners();
         return user;
       }
       return null;
     } catch (e) {
-      throw Exception('Failed to register: $e');
+      print('Error during registration: $e');
+      return null;
     }
   }
 
   /// Updates a user's role (only accessible by admins)
-  Future<void> updateUserRole(String uid, String newRole) async {
+  Future<void> updateUserRole(String id, String newRole) async {
     try {
-      await _firestore.collection('users').doc(uid).update({'role': newRole});
+      await _supabase.from('users').update({'role': newRole}).eq('id', id);
     } catch (e) {
       rethrow;
     }
@@ -326,7 +285,7 @@ class AuthService with ChangeNotifier {
   /// Get tasks based on user's role and permissions
   Stream<List<TaskModel>> getTasksForCurrentUser() {
     if (_currentUser != null) {
-      return _firestoreService.getTasksForUser(_currentUser!.uid);
+      return _supabaseService.getTasksForUser(_currentUser!.id);
     }
     return Stream.value([]);
   }
@@ -334,16 +293,28 @@ class AuthService with ChangeNotifier {
   /// Checks if there's a currently authenticated user.
   Future<bool> checkAuthentication() async {
     try {
-      User? user = _auth.currentUser;
+      User? user = _supabase.auth.currentUser;
       if (user != null) {
-        DocumentSnapshot userDoc = await _firestoreService.users.doc(user.uid).get();
-        
-        if (userDoc.exists && userDoc.data() != null) {
-          _currentUser = UserModel.fromJson(userDoc.data() as Map<String, dynamic>);
-          notifyListeners();
-          return true;
-        }
-        return false;
+        await _supabase.auth.refreshSession();
+        _currentUser = UserModel(
+          id: user.id,
+          displayName: user.userMetadata?['full_name'] ?? '',
+          email: user.email ?? '',
+          role: user.userMetadata?['role'] ?? 'member',
+          phoneNumber: user.phone,
+          photoUrl: user.userMetadata?['photo_url'],
+          createdAt: DateTime.parse(user.createdAt),
+          lastLogin: DateTime.now(),
+          isActive: true,
+          emailVerified: user.emailConfirmedAt != null,
+          departments: [],
+          notificationSettings: {
+            'email': true,
+            'push': true,
+          },
+        );
+        notifyListeners();
+        return true;
       }
       return false;
     } catch (e) {
@@ -354,9 +325,12 @@ class AuthService with ChangeNotifier {
   /// Sends a verification email to the current user
   Future<void> sendVerificationEmail() async {
     try {
-      final user = _auth.currentUser;
+      final user = _supabase.auth.currentUser;
       if (user != null) {
-        await user.sendEmailVerification();
+        await _supabase.auth.resend(
+          type: OtpType.signup,
+          email: user.email!,
+        );
       } else {
         throw AuthException('No authenticated user found');
       }
@@ -368,10 +342,11 @@ class AuthService with ChangeNotifier {
   /// Checks if the current user's email is verified
   Future<bool> isEmailVerified() async {
     try {
-      final user = _auth.currentUser;
+      final user = _supabase.auth.currentUser;
       if (user != null) {
-        await user.reload();
-        return user.emailVerified;
+        // Refresh the session to get the latest user data
+        await _supabase.auth.refreshSession();
+        return user.emailConfirmedAt != null;
       }
       return false;
     } catch (e) {
@@ -379,45 +354,30 @@ class AuthService with ChangeNotifier {
     }
   }
 
-  String _handleAuthException(FirebaseAuthException e) {
-    print(
-        'FirebaseAuthException code: [33m${e.code}[0m, message: [36m${e.message}[0m');
-    switch (e.code) {
-      case 'wrong-password':
-        return 'Incorrect password. Please try again.';
-      case 'email-already-in-use':
-        return 'An account already exists with this email.';
-      case 'weak-password':
-        return 'The password provided is too weak.';
-      case 'invalid-email':
-        return 'The email address is not valid.';
-      case 'operation-not-allowed':
-        return 'Email & Password accounts are not enabled.';
-      case 'user-disabled':
-        return 'This user account has been disabled.';
-      case 'user-not-found':
-        return 'This email is not registered. Please create an account first.';
-      case 'too-many-requests':
-        return 'Too many attempts. Please try again later.';
-      case 'network-request-failed':
-        return 'Network error. Please check your internet connection.';
-      case 'invalid-credential':
-        return 'Incorrect email or password. Please register if you don\'t have an account.';
-      default:
-        // Return the actual Firebase error message if available, otherwise a generic message
-        return e.message ?? 'An error occurred. Please try again.';
+  String _handleAuthException(dynamic e) {
+    if (e is AuthException) {
+      return e.message;
+    } else if (e is PostgrestException) {
+      return 'Database error: ${e.message}';
+    } else if (e is AuthException) {
+      return 'Authentication error: ${e.message}';
+    } else {
+      return 'An unexpected error occurred. Please try again.';
     }
   }
 
   /// Signs out the user and clears all auth state
   Future<void> signOut() async {
     try {
+      // Remove device registration
+      if (_currentUser != null) {
+        await _notificationService.removeDevice(_currentUser!.id);
+      }
+      await _supabase.auth.signOut();
+
       // Clear the current user first
       _currentUser = null;
       notifyListeners();
-
-      // Sign out from Firebase
-      await _auth.signOut();
 
       // Clear any cached data
       _loginAttempts.clear();
@@ -428,51 +388,62 @@ class AuthService with ChangeNotifier {
 
   Future<void> resetPassword(String email) async {
     try {
-      await _auth.sendPasswordResetEmail(email: email);
+      await _supabase.auth.resetPasswordForEmail(email);
     } catch (e) {
-      throw AuthException(_handleAuthException(e as FirebaseAuthException));
+      throw AuthException(_handleAuthException(e));
     }
   }
 
   Future<void> updatePassword(String newPassword) async {
     try {
-      if (_auth.currentUser != null) {
-        await _auth.currentUser!.updatePassword(newPassword);
+      if (_supabase.auth.currentUser != null) {
+        await _supabase.auth.updateUser(
+          UserAttributes(password: newPassword),
+        );
       } else {
         throw AuthException('No authenticated user found');
       }
     } catch (e) {
-      throw AuthException(_handleAuthException(e as FirebaseAuthException));
+      throw AuthException(_handleAuthException(e));
     }
   }
 
   Future<void> updateEmail(String newEmail) async {
     try {
-      if (_auth.currentUser != null) {
-        await _auth.currentUser!.updateEmail(newEmail);
+      if (_supabase.auth.currentUser != null) {
+        await _supabase.auth.updateUser(
+          UserAttributes(email: newEmail),
+        );
         if (_currentUser != null) {
           _currentUser = _currentUser!.copyWith(email: newEmail);
-          await _firestoreService.updateUser(_currentUser!);
+          await _supabaseService.updateUser(_currentUser!);
           notifyListeners();
         }
       } else {
         throw AuthException('No authenticated user found');
       }
     } catch (e) {
-      throw AuthException(_handleAuthException(e as FirebaseAuthException));
+      throw AuthException(_handleAuthException(e));
     }
   }
 
   Future<void> updateProfile(String name, String? photoUrl) async {
     try {
-      if (_auth.currentUser != null) {
-        await _auth.currentUser!.updateDisplayName(name);
+      if (_supabase.auth.currentUser != null) {
+        await _supabase.auth.updateUser(
+          UserAttributes(
+            data: {
+              'full_name': name,
+              'photo_url': photoUrl,
+            },
+          ),
+        );
         if (_currentUser != null) {
           _currentUser = _currentUser!.copyWith(
             displayName: name,
             photoUrl: photoUrl,
           );
-          await _firestoreService.updateUser(_currentUser!);
+          await _supabaseService.updateUser(_currentUser!);
           notifyListeners();
         }
       } else {
@@ -485,11 +456,9 @@ class AuthService with ChangeNotifier {
 
   Future<void> deleteAccount() async {
     try {
-      if (_auth.currentUser != null) {
-        // Delete the user document from Firestore
-        await _firestoreService.users.doc(_auth.currentUser!.uid).delete();
-        // Delete the Firebase Auth account
-        await _auth.currentUser!.delete();
+      if (_supabase.auth.currentUser != null) {
+        await _supabaseService.updateUser(_currentUser!.copyWith(isActive: false));
+        await _supabase.auth.signOut();
         _currentUser = null;
         notifyListeners();
       } else {
@@ -507,25 +476,36 @@ class AuthService with ChangeNotifier {
     }
 
     if (_currentUser!.role == 'admin' || _currentUser!.role == 'pastor') {
-      return _firestoreService.meetings
-          .snapshots()
-          .map((snapshot) => snapshot.docs
-              .map((doc) {
-                final data = doc.data() as Map<String, dynamic>?;
-                return MeetingModel.fromJson(data ?? {});
-              })
-              .toList());
+      return _supabaseService.getAllMeetings();
     } else {
-      return _firestoreService
-          .meetings
-          .where('invitedUsers', arrayContains: _currentUser!.uid)
-          .snapshots()
-          .map((snapshot) => snapshot.docs
-              .map((doc) {
-                final data = doc.data() as Map<String, dynamic>?;
-                return MeetingModel.fromJson(data ?? {});
-              })
-              .toList());
+      return _supabaseService.getMeetingsForUser(_currentUser!.id);
+    }
+  }
+
+  /// Checks the current authentication state and updates the user accordingly
+  Future<void> checkAuthState() async {
+    try {
+      final session = _supabase.auth.currentSession;
+      if (session != null) {
+        final user = await _supabaseService.getUser(session.user.id).first;
+        if (user != null) {
+          _currentUser = user;
+          _currentUser = _currentUser!.copyWith(
+            lastLogin: DateTime.now(),
+            emailVerified: session.user.emailConfirmedAt != null,
+          );
+          await _supabaseService.updateUser(_currentUser!);
+          // Register device for notifications
+          await _notificationService.registerDevice(session.user.id);
+        }
+      } else {
+        _currentUser = null;
+      }
+      notifyListeners();
+    } catch (e) {
+      print('Error checking auth state: $e');
+      _currentUser = null;
+      notifyListeners();
     }
   }
 }

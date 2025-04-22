@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:agbc_app/providers/firestore_provider.dart';
+import '../providers/supabase_provider.dart';
 import 'package:agbc_app/models/church_branch_model.dart';
 import 'package:agbc_app/widgets/custom_input.dart';
 import 'package:agbc_app/widgets/custom_button.dart';
@@ -58,12 +58,15 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
         location: _locationController.text.trim(),
         address: _addressController.text.trim(),
         description: _descriptionController.text.trim(),
-        createdBy: Provider.of<FirestoreProvider>(context, listen: false)
+        pastorId: Provider.of<SupabaseProvider>(context, listen: false)
             .currentUser
-            ?.uid ?? '',
+            ?.id ?? '',
+        createdBy: Provider.of<SupabaseProvider>(context, listen: false)
+            .currentUser
+            ?.id ?? '',
       );
 
-      await Provider.of<FirestoreProvider>(context, listen: false)
+      await Provider.of<SupabaseProvider>(context, listen: false)
           .createBranch(branch);
           
       if (mounted) {

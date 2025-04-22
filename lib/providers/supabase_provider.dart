@@ -1,14 +1,12 @@
 import 'package:flutter/foundation.dart';
-import '../services/firestore_service.dart';
+import '../services/supabase_service.dart';
 import '../models/user_model.dart';
 import '../models/task_model.dart';
 import '../models/meeting_model.dart';
 import '../models/church_branch_model.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
-class FirestoreProvider with ChangeNotifier {
-  final FirestoreService _firestoreService = FirestoreService();
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+class SupabaseProvider with ChangeNotifier {
+  final SupabaseService _supabaseService = SupabaseService();
   
   // User Data
   UserModel? _currentUser;
@@ -27,18 +25,18 @@ class FirestoreProvider with ChangeNotifier {
   ChurchBranch? get currentBranch => _currentBranch;
   
   // Initialize user data
-  Future<void> initializeUserData(String uid) async {
-    _firestoreService.getUser(uid).listen((user) {
+  Future<void> initializeUserData(String id) async {
+    _supabaseService.getUser(id).listen((user) {
       _currentUser = user;
       if (user != null) {
         if (user.branchId != null) {
-          _firestoreService.getBranch(user.branchId!).listen((branch) {
+          _supabaseService.getBranch(user.branchId!).listen((branch) {
             _currentBranch = branch;
             notifyListeners();
           });
         }
-        _loadUserTasks(uid);
-        _loadUserMeetings(uid);
+        _loadUserTasks(id);
+        _loadUserMeetings(id);
       }
       notifyListeners();
     });
@@ -46,7 +44,7 @@ class FirestoreProvider with ChangeNotifier {
   
   // Load user tasks
   void _loadUserTasks(String userId) {
-    _firestoreService.getTasksForUser(userId).listen((tasks) {
+    _supabaseService.getTasksForUser(userId).listen((tasks) {
       _tasks = tasks;
       notifyListeners();
     });
@@ -54,62 +52,60 @@ class FirestoreProvider with ChangeNotifier {
   
   // Load user meetings
   void _loadUserMeetings(String userId) {
-    _firestoreService.getMeetingsForUser(userId).listen((meetings) {
+    _supabaseService.getMeetingsForUser(userId).listen((meetings) {
       _meetings = meetings;
       notifyListeners();
     });
   }
 
-  // Expose FirestoreService streams
+  // Expose SupabaseService streams
   Stream<List<TaskModel>> getTasksForUser(String userId) {
-    return _firestoreService.getTasksForUser(userId);
+    return _supabaseService.getTasksForUser(userId);
   }
 
   Stream<List<MeetingModel>> getMeetingsForUser(String userId) {
-    return _firestoreService.getMeetingsForUser(userId);
+    return _supabaseService.getMeetingsForUser(userId);
   }
   
   // Task Operations
   Future<void> createTask(TaskModel task) async {
-    await _firestoreService.createTask(task);
+    await _supabaseService.createTask(task);
     notifyListeners();
   }
   
   Future<void> updateTask(TaskModel task) async {
-    await _firestoreService.updateTask(task);
+    await _supabaseService.updateTask(task);
     notifyListeners();
   }
   
   Future<void> deleteTask(String taskId) async {
-    await _firestoreService.deleteTask(taskId);
+    await _supabaseService.deleteTask(taskId);
     notifyListeners();
   }
   
-  Future<void> addTaskComment(String taskId, String comment) async {
-    if (_currentUser != null) {
-      await _firestoreService.addCommentToTask(taskId, _currentUser!.uid, comment);
-    }
+  Future<void> addCommentToTask(String taskId, String comment) async {
+    await _supabaseService.addCommentToTask(taskId, _currentUser!.id, comment);
     notifyListeners();
   }
   
   Future<void> updateTaskStatus(String taskId, String status) async {
-    await _firestoreService.updateTaskStatus(taskId, status);
+    await _supabaseService.updateTaskStatus(taskId, status);
     notifyListeners();
   }
   
   // Meeting Operations
   Future<void> createMeeting(MeetingModel meeting) async {
-    await _firestoreService.createMeeting(meeting);
+    await _supabaseService.createMeeting(meeting);
     notifyListeners();
   }
   
   Future<void> updateMeeting(MeetingModel meeting) async {
-    await _firestoreService.updateMeeting(meeting);
+    await _supabaseService.updateMeeting(meeting);
     notifyListeners();
   }
   
   Future<void> deleteMeeting(String meetingId) async {
-    await _firestoreService.deleteMeeting(meetingId);
+    await _supabaseService.deleteMeeting(meetingId);
     notifyListeners();
   }
   
@@ -118,7 +114,7 @@ class FirestoreProvider with ChangeNotifier {
     String userId,
     bool isAttending,
   ) async {
-    await _firestoreService.updateMeetingAttendance(
+    await _supabaseService.updateMeetingAttendance(
       meetingId,
       userId,
       isAttending,
@@ -128,46 +124,39 @@ class FirestoreProvider with ChangeNotifier {
   
   // Branch Operations
   Stream<List<ChurchBranch>> getAllBranches() {
-    return _firestoreService.branches
-        .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => ChurchBranch.fromJson({
-                  'id': doc.id,
-                  ...doc.data() as Map<String, dynamic>,
-                }))
-            .toList());
+    return _supabaseService.getAllBranches();
   }
 
   Future<void> createBranch(ChurchBranch branch) async {
-    await _firestoreService.createBranch(branch);
+    await _supabaseService.createBranch(branch);
     notifyListeners();
   }
 
   Future<void> updateBranch(String branchId, Map<String, dynamic> data) async {
-    await _firestoreService.updateBranch(branchId, data);
+    await _supabaseService.updateBranch(branchId, data);
     notifyListeners();
   }
 
   Future<void> deleteBranch(String branchId) async {
-    await _firestoreService.deleteBranch(branchId);
+    await _supabaseService.deleteBranch(branchId);
     notifyListeners();
   }
 
   Future<void> assignPastorToBranch(String branchId, String pastorId) async {
-    await _firestoreService.updateBranch(branchId, {'pastorId': pastorId});
+    await _supabaseService.updateBranch(branchId, {'pastorId': pastorId});
     notifyListeners();
   }
 
   Future<void> addMemberToBranch(String branchId, String userId) async {
-    await _firestoreService.updateBranch(branchId, {
-      'members': FieldValue.arrayUnion([userId])
+    await _supabaseService.updateBranch(branchId, {
+      'members': [userId]
     });
     notifyListeners();
   }
 
   Future<void> removeMemberFromBranch(String branchId, String userId) async {
-    await _firestoreService.updateBranch(branchId, {
-      'members': FieldValue.arrayRemove([userId])
+    await _supabaseService.updateBranch(branchId, {
+      'members': [userId]
     });
     notifyListeners();
   }
@@ -178,39 +167,34 @@ class FirestoreProvider with ChangeNotifier {
   }
 
   // User operations
-  Stream<UserModel?> getUser(String uid) {
-    return _firestoreService.getUser(uid);
+  Stream<UserModel?> getUser(String id) {
+    return _supabaseService.getUser(id);
   }
 
   Future<void> updateUser(UserModel user) async {
-    await _firestoreService.updateUser(user);
+    await _supabaseService.updateUser(user);
     notifyListeners();
   }
 
   Stream<List<UserModel>> getAllUsers() {
-    return _firestoreService.getAllUsers();
+    return _supabaseService.getAllUsers();
   }
 
   Stream<List<TaskModel>> getAllTasks() {
-    return _firestoreService.getAllTasks();
+    return _supabaseService.getAllTasks();
   }
 
   Stream<List<MeetingModel>> getAllMeetings() {
-    return _firestoreService.getAllMeetings();
+    return _supabaseService.getAllMeetings();
   }
 
   Stream<ChurchBranch?> getBranch(String branchId) {
-    return _firestoreService.getBranch(branchId);
+    return _supabaseService.getBranch(branchId);
   }
 
   Future<void> updateUserRole(String userId, String newRole) async {
     try {
-      final user = await _firestore.collection('users').doc(userId).get();
-      if (user.exists) {
-        final data = user.data() as Map<String, dynamic>;
-        data['role'] = newRole;
-        await _firestore.collection('users').doc(userId).update(data);
-      }
+      await _supabaseService.updateUserRole(userId, newRole);
     } catch (e) {
       throw Exception('Failed to update user role: $e');
     }
@@ -218,12 +202,8 @@ class FirestoreProvider with ChangeNotifier {
 
   Future<List<UserModel>> getUsers() async {
     try {
-      final snapshot = await _firestore.collection('users').get();
-      return snapshot.docs.map((doc) {
-        final data = doc.data() as Map<String, dynamic>;
-        data['uid'] = doc.id;
-        return UserModel.fromJson(data);
-      }).toList();
+      final users = await _supabaseService.getAllUsers().first;
+      return users;
     } catch (e) {
       throw Exception('Failed to fetch users: $e');
     }
@@ -231,7 +211,7 @@ class FirestoreProvider with ChangeNotifier {
 
   Future<void> createUser(UserModel user) async {
     try {
-      await _firestore.collection('users').doc(user.uid).set(user.toJson());
+      await _supabaseService.updateUser(user);
       notifyListeners();
     } catch (e) {
       throw Exception('Failed to create user: $e');

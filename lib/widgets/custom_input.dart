@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/location_service.dart';
 import 'mixins/location_validation_mixin.dart';
+import '../utils/theme.dart';
 
 /// A customizable input field widget with support for various features including
 /// location validation, focus management, and custom styling.
@@ -24,7 +25,6 @@ class CustomInput extends StatefulWidget {
   final Color? borderColor;
   final Color? labelColor;
   final double borderRadius;
-  final double elevation;
   final String? Function(String?)? validator;
   final TextInputAction? textInputAction;
   final bool autofocus;
@@ -56,7 +56,6 @@ class CustomInput extends StatefulWidget {
     this.borderColor,
     this.labelColor,
     this.borderRadius = 12.0,
-    this.elevation = 4.0,
     this.validator,
     this.textInputAction,
     this.autofocus = false,
@@ -73,8 +72,6 @@ class CustomInput extends StatefulWidget {
 }
 
 class _CustomInputState extends State<CustomInput> with SingleTickerProviderStateMixin, LocationValidationMixin {
-  late final AnimationController _animationController;
-  late final Animation<double> _elevationAnimation;
   late final FocusNode _focusNode;
   bool _isFocused = false;
 
@@ -82,7 +79,6 @@ class _CustomInputState extends State<CustomInput> with SingleTickerProviderStat
   void initState() {
     super.initState();
     _focusNode = widget.focusNode ?? FocusNode();
-    _setupAnimations();
     _setupListeners();
     
     if (widget.isLocationField) {
@@ -93,17 +89,6 @@ class _CustomInputState extends State<CustomInput> with SingleTickerProviderStat
     }
   }
 
-  void _setupAnimations() {
-    _animationController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 200),
-    );
-    _elevationAnimation = Tween<double>(
-      begin: widget.elevation,
-      end: widget.elevation * 1.5,
-    ).animate(_animationController);
-  }
-
   void _setupListeners() {
     _focusNode.addListener(_handleFocusChange);
   }
@@ -111,7 +96,6 @@ class _CustomInputState extends State<CustomInput> with SingleTickerProviderStat
   @override
   void dispose() {
     _cleanupListeners();
-    _animationController.dispose();
     if (widget.isLocationField) {
       disposeLocationValidation();
     }
@@ -128,11 +112,6 @@ class _CustomInputState extends State<CustomInput> with SingleTickerProviderStat
   void _handleFocusChange() {
     setState(() {
       _isFocused = _focusNode.hasFocus;
-      if (_isFocused) {
-        _animationController.forward();
-      } else {
-        _animationController.reverse();
-      }
     });
   }
 
@@ -141,8 +120,6 @@ class _CustomInputState extends State<CustomInput> with SingleTickerProviderStat
     
     if (widget.nextFocusNode != null) {
       widget.nextFocusNode!.requestFocus();
-    } else {
-      _focusNode.unfocus();
     }
   }
 
@@ -150,93 +127,110 @@ class _CustomInputState extends State<CustomInput> with SingleTickerProviderStat
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     
-    return AnimatedBuilder(
-      animation: _elevationAnimation,
-      builder: (context, child) {
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (widget.showLabel && widget.label != null) ...[
-              Text(
-                widget.label!,
-                style: theme.textTheme.labelLarge?.copyWith(
-                  color: widget.labelColor ?? theme.colorScheme.onSurface.withOpacity(0.95),
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 8),
-            ],
-            _buildInputField(theme),
-          ],
-        );
-      },
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (widget.showLabel && widget.label != null) ...[
+          Text(
+            widget.label!,
+            style: theme.textTheme.labelLarge?.copyWith(
+              color: widget.labelColor ?? AppTheme.neutralColor,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.2,
+            ),
+          ),
+          const SizedBox(height: 8),
+        ],
+        _buildInputField(theme),
+      ],
     );
   }
 
   Widget _buildInputField(ThemeData theme) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(widget.borderRadius),
-        boxShadow: [
-          BoxShadow(
-            color: theme.shadowColor.withOpacity(0.1),
-            blurRadius: _elevationAnimation.value,
-            offset: Offset(0, _elevationAnimation.value / 2),
-          ),
-        ],
+    return TextFormField(
+      controller: widget.controller,
+      focusNode: _focusNode,
+      onChanged: widget.onChanged,
+      onFieldSubmitted: _handleSubmitted,
+      onTap: widget.onTap,
+      keyboardType: widget.keyboardType,
+      obscureText: widget.obscureText,
+      enabled: widget.enabled,
+      maxLines: widget.maxLines,
+      maxLength: widget.maxLength,
+      validator: _buildValidator,
+      textInputAction: widget.nextFocusNode != null 
+          ? TextInputAction.next 
+          : TextInputAction.done,
+      autofocus: widget.autofocus,
+      style: theme.textTheme.bodyLarge?.copyWith(
+        color: widget.enabled ? AppTheme.neutralColor : AppTheme.neutralColor.withOpacity(0.5),
+        fontWeight: FontWeight.w500,
+        fontSize: 16,
+        letterSpacing: 0.2,
       ),
-      child: TextFormField(
-        controller: widget.controller,
-        focusNode: _focusNode,
-        onChanged: widget.onChanged,
-        onFieldSubmitted: _handleSubmitted,
-        onTap: widget.onTap,
-        keyboardType: widget.keyboardType,
-        obscureText: widget.obscureText,
-        enabled: widget.enabled,
-        maxLines: widget.maxLines,
-        maxLength: widget.maxLength,
-        validator: _buildValidator,
-        textInputAction: widget.nextFocusNode != null 
-            ? TextInputAction.next 
-            : TextInputAction.done,
-        autofocus: widget.autofocus,
-        style: theme.textTheme.bodyLarge,
-        readOnly: widget.readOnly,
-        autofillHints: widget.autofillHints,
-        decoration: InputDecoration(
-          hintText: widget.hint,
-          errorText: widget.errorText,
-          prefixIcon: widget.prefixIcon,
-          suffixIcon: _buildSuffixIcon(),
-          filled: true,
-          fillColor: widget.backgroundColor ?? theme.colorScheme.surface,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(widget.borderRadius),
-            borderSide: BorderSide(
-              color: widget.borderColor ?? theme.colorScheme.outline.withOpacity(0.5),
-            ),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(widget.borderRadius),
-            borderSide: BorderSide(
-              color: widget.borderColor ?? theme.colorScheme.outline.withOpacity(0.5),
-            ),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(widget.borderRadius),
-            borderSide: BorderSide(
-              color: widget.borderColor ?? theme.colorScheme.primary,
-              width: 2,
-            ),
-          ),
-          errorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(widget.borderRadius),
-            borderSide: BorderSide(
-              color: theme.colorScheme.error,
-            ),
+      readOnly: widget.readOnly,
+      autofillHints: widget.autofillHints,
+      decoration: InputDecoration(
+        hintText: widget.hint,
+        hintStyle: TextStyle(
+          color: AppTheme.neutralColor.withOpacity(0.6),
+          fontWeight: FontWeight.w400,
+          fontSize: 15,
+          letterSpacing: 0.2,
+        ),
+        errorText: widget.errorText,
+        errorStyle: TextStyle(
+          color: AppTheme.errorColor,
+          fontWeight: FontWeight.w500,
+          fontSize: 13,
+          letterSpacing: 0.2,
+        ),
+        prefixIcon: widget.prefixIcon != null
+            ? Padding(
+                padding: const EdgeInsets.only(left: 12, right: 8),
+                child: IconTheme(
+                  data: IconThemeData(
+                    color: _isFocused ? AppTheme.accentColor : AppTheme.neutralColor.withOpacity(0.6),
+                    size: 20,
+                  ),
+                  child: widget.prefixIcon!,
+                ),
+              )
+            : null,
+        suffixIcon: _buildSuffixIcon(),
+        filled: true,
+        fillColor: widget.enabled ? Colors.white : Colors.grey[100],
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(widget.borderRadius),
+          borderSide: BorderSide(
+            color: AppTheme.neutralColor.withOpacity(0.15),
+            width: 1.5,
           ),
         ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(widget.borderRadius),
+          borderSide: BorderSide(
+            color: AppTheme.neutralColor.withOpacity(0.15),
+            width: 1.5,
+          ),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(widget.borderRadius),
+          borderSide: BorderSide(
+            color: AppTheme.accentColor,
+            width: 2,
+          ),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(widget.borderRadius),
+          borderSide: BorderSide(
+            color: AppTheme.errorColor,
+            width: 1.5,
+          ),
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        isDense: true,
       ),
     );
   }
@@ -260,11 +254,18 @@ class _CustomInputState extends State<CustomInput> with SingleTickerProviderStat
             height: 20,
             child: CircularProgressIndicator(
               strokeWidth: 2,
+              valueColor: AlwaysStoppedAnimation<Color>(AppTheme.neutralColor),
             ),
           ),
         if (widget.controller.text.isNotEmpty && !widget.obscureText)
           IconButton(
-            icon: const Icon(Icons.clear),
+            icon: Icon(
+              Icons.clear,
+              color: AppTheme.neutralColor,
+              size: 20,
+            ),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
             onPressed: () {
               widget.controller.clear();
               if (widget.onChanged != null) {

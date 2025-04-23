@@ -6,8 +6,12 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 import 'package:agbc_app/providers/supabase_provider.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
+import 'package:uni_links/uni_links.dart';
 import 'config/theme.dart';
 import 'screens/splash_screen.dart';
+import 'screens/login_screen.dart';
+import 'screens/register_screen.dart';
+import 'screens/email_verification_success_screen.dart';
 import 'services/location_service.dart';
 import 'services/permissions_service.dart';
 import 'services/notification_service.dart';
@@ -22,10 +26,11 @@ Future<void> main() async {
     // Load environment variables
     await dotenv.load(fileName: ".env");
 
-    // Initialize Supabase
+    // Initialize Supabase with custom redirect URL
     await Supabase.initialize(
       url: dotenv.env['SUPABASE_URL']!,
       anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
+      authCallbackUrlHostname: 'agbcapp', // This matches the scheme in AndroidManifest.xml
     );
 
     // Initialize services
@@ -49,10 +54,7 @@ Future<void> main() async {
     // Configure system UI
     _configureSystemUI();
 
-    runApp(MyApp(
-      authService: authService,
-      supabaseProvider: SupabaseProvider(),
-    ));
+    runApp(const MyApp());
   } catch (e) {
     print('Error initializing app: $e');
   }
@@ -68,14 +70,7 @@ void _configureSystemUI() {
 }
 
 class MyApp extends StatefulWidget {
-  final AuthService authService;
-  final SupabaseProvider supabaseProvider;
-
-  const MyApp({
-    Key? key,
-    required this.authService,
-    required this.supabaseProvider,
-  }) : super(key: key);
+  const MyApp({super.key});
 
   @override
   State<MyApp> createState() => _MyAppState();
@@ -85,31 +80,56 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
-    _initializeApp();
+    _handleIncomingLinks();
   }
 
-  Future<void> _initializeApp() async {
-    try {
-      await widget.authService.checkAuthState();
-    } catch (e) {
-      print('Error initializing auth state: $e');
+  void _handleIncomingLinks() {
+    // Handle incoming links when app is running
+    uriLinkStream.listen((Uri? uri) {
+      if (uri != null) {
+        _handleDeepLink(uri);
+      }
+    }, onError: (err) {
+      print('Error handling incoming links: $err');
+    });
+
+    // Handle links that opened the app
+    getInitialUri().then((Uri? uri) {
+      if (uri != null) {
+        _handleDeepLink(uri);
+      }
+    });
+  }
+
+  void _handleDeepLink(Uri uri) {
+    if (uri.path.contains('callback')) {
+      // This is a Supabase auth callback
+      final client = Supabase.instance.client;
+      client.auth.getSessionFromUrl(uri).then((_) {
+        // Navigate to success screen
+        Navigator.of(context).pushReplacementNamed('/email-verification-success');
+      }).catchError((error) {
+        print('Error handling auth callback: $error');
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: [
-        ChangeNotifierProvider.value(value: widget.authService),
-        ChangeNotifierProvider.value(value: widget.supabaseProvider),
-      ],
-      child: MaterialApp(
-        title: 'AGBC App',
-        theme: AppTheme.lightTheme,
-        darkTheme: AppTheme.darkTheme,
-        themeMode: ThemeMode.system,
-        home: const SplashScreen(),
+    return MaterialApp(
+      title: 'AGBC App',
+      theme: ThemeData(
+        primaryColor: AppTheme.primaryColor,
+        colorScheme: ColorScheme.fromSeed(seedColor: AppTheme.primaryColor),
+        useMaterial3: true,
       ),
+      initialRoute: '/',
+      routes: {
+        '/': (context) => const SplashScreen(),
+        '/login': (context) => const LoginScreen(),
+        '/register': (context) => const RegisterScreen(),
+        '/email-verification-success': (context) => const EmailVerificationSuccessScreen(),
+      },
     );
   }
 }

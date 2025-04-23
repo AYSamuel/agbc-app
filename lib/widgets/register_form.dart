@@ -12,6 +12,7 @@ import '../widgets/mixins/location_validation_mixin.dart';
 import '../widgets/mixins/form_validation_mixin.dart';
 import '../providers/supabase_provider.dart';
 import '../models/church_branch_model.dart';
+import '../widgets/custom_dropdown.dart';
 
 class RegisterForm extends StatefulWidget {
   final VoidCallback onRegisterSuccess;
@@ -191,7 +192,6 @@ class _RegisterFormState extends State<RegisterForm> with LocationValidationMixi
             onSubmitted: (_) => FocusScope.of(context).nextFocus(),
             validator: validateName,
             backgroundColor: Colors.white,
-            elevation: 2,
             labelColor: Colors.black87,
           ),
           const SizedBox(height: 16),
@@ -207,7 +207,6 @@ class _RegisterFormState extends State<RegisterForm> with LocationValidationMixi
             onSubmitted: (_) => FocusScope.of(context).nextFocus(),
             validator: validateEmail,
             backgroundColor: Colors.white,
-            elevation: 2,
             labelColor: Colors.black87,
           ),
           const SizedBox(height: 16),
@@ -221,7 +220,6 @@ class _RegisterFormState extends State<RegisterForm> with LocationValidationMixi
             keyboardType: TextInputType.phone,
             validator: validatePhone,
             backgroundColor: Colors.white,
-            elevation: 2,
             labelColor: Colors.black87,
           ),
           const SizedBox(height: 16),
@@ -252,7 +250,6 @@ class _RegisterFormState extends State<RegisterForm> with LocationValidationMixi
                   ),
             validator: validateLocation,
             backgroundColor: Colors.white,
-            elevation: 2,
             labelColor: Colors.black87,
           ),
           const SizedBox(height: 16),
@@ -269,81 +266,28 @@ class _RegisterFormState extends State<RegisterForm> with LocationValidationMixi
               }
               final branches = snapshot.data!;
               
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Select Branch',
-                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      color: Colors.black87,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Theme.of(context).shadowColor.withOpacity(0.1),
-                          blurRadius: 2,
-                          offset: const Offset(0, 1),
-                        ),
-                      ],
-                    ),
-                    child: DropdownButtonFormField<String>(
-                      value: _selectedBranchId,
-                      decoration: InputDecoration(
-                        hintText: 'Select a branch',
-                        prefixIcon: Icon(Icons.church, color: AppTheme.neutralColor),
-                        filled: true,
-                        fillColor: Colors.white,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: Theme.of(context).colorScheme.outline.withOpacity(0.5),
-                          ),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: Theme.of(context).colorScheme.outline.withOpacity(0.5),
-                          ),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: Theme.of(context).colorScheme.primary,
-                            width: 2,
-                          ),
-                        ),
-                        errorBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: Theme.of(context).colorScheme.error,
-                          ),
-                        ),
-                      ),
-                      items: branches.map((branch) {
-                        return DropdownMenuItem<String>(
-                          value: branch.id,
-                          child: Text(branch.name),
-                        );
-                      }).toList(),
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedBranchId = value;
-                        });
-                      },
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please select a branch';
-                        }
-                        return null;
-                      },
-                    ),
-                  ),
-                ],
+              return CustomDropdown<String>(
+                value: _selectedBranchId,
+                label: 'Select Branch',
+                hint: 'Select a branch',
+                prefixIcon: Icons.church,
+                items: branches.map((branch) {
+                  return DropdownMenuItem<String>(
+                    value: branch.id,
+                    child: Text(branch.name),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedBranchId = value;
+                  });
+                },
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please select a branch';
+                  }
+                  return null;
+                },
               );
             },
           ),
@@ -371,7 +315,6 @@ class _RegisterFormState extends State<RegisterForm> with LocationValidationMixi
             ),
             validator: validatePassword,
             backgroundColor: Colors.white,
-            elevation: 2,
             labelColor: Colors.black87,
           ),
           const SizedBox(height: 16),
@@ -403,7 +346,6 @@ class _RegisterFormState extends State<RegisterForm> with LocationValidationMixi
               return null;
             },
             backgroundColor: Colors.white,
-            elevation: 2,
             labelColor: Colors.black87,
           ),
           const SizedBox(height: 24),

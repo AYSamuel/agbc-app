@@ -508,4 +508,41 @@ class AuthService with ChangeNotifier {
       notifyListeners();
     }
   }
+
+  /// Checks if an email exists in the system
+  Future<UserModel?> checkEmailExists(String email) async {
+    try {
+      print('Checking email in database: $email'); // Debug log
+      
+      // Check in public.users table
+      final response = await _supabase
+          .from('users')
+          .select()
+          .eq('email', email.toLowerCase().trim())
+          .maybeSingle();
+      
+      print('Database response: $response'); // Debug log
+      
+      if (response != null) {
+        print('User found in database'); // Debug log
+        return UserModel.fromJson(response);
+      }
+      
+      print('No user found in database'); // Debug log
+      return null;
+    } catch (e) {
+      print('Error checking email: $e'); // Debug log
+      
+      if (e is PostgrestException) {
+        print('Postgrest error code: ${e.code}'); // Debug log
+        if (e.code == 'PGRST116') {
+          // No rows returned
+          return null;
+        }
+      }
+      
+      // If we get here, it's an unexpected error
+      throw AuthException('An error occurred while verifying your email. Please try again.');
+    }
+  }
 }

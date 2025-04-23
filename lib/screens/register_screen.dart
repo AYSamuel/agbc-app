@@ -158,27 +158,21 @@ class RegisterScreen extends StatelessWidget {
 
                               // Register Form
                               Container(
-                                width: double.infinity,
-                                margin: const EdgeInsets.symmetric(horizontal: 16),
-                                padding: const EdgeInsets.all(20),
+                                padding: const EdgeInsets.all(32),
                                 decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.9),
+                                  color: Colors.white,
                                   borderRadius: BorderRadius.circular(24),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black.withOpacity(0.2),
+                                      color: Colors.black.withOpacity(0.08),
                                       blurRadius: 20,
                                       offset: const Offset(0, 10),
                                     ),
                                   ],
-                                  border: Border.all(
-                                    color: Colors.white.withOpacity(0.5),
-                                    width: 1,
-                                  ),
                                 ),
                                 child: RegisterForm(
                                   onRegisterSuccess: () {
-                                    Navigator.of(context).push(
+                                    Navigator.of(context).pushReplacement(
                                       MaterialPageRoute(
                                         builder: (context) => const VerificationScreen(),
                                       ),

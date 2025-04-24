@@ -4,10 +4,7 @@ import '../services/auth_service.dart';
 import '../widgets/custom_button.dart';
 import '../widgets/loading_indicator.dart';
 import '../utils/theme.dart';
-import 'login_screen.dart';
-import 'package:agbc_app/widgets/custom_back_button.dart';
-import 'package:agbc_app/screens/main_navigation_screen.dart';
-import 'package:supabase_flutter/supabase_flutter.dart' hide AuthException;
+import 'dart:async';
 
 class VerificationScreen extends StatefulWidget {
   const VerificationScreen({super.key});
@@ -18,91 +15,105 @@ class VerificationScreen extends StatefulWidget {
 
 class _VerificationScreenState extends State<VerificationScreen> {
   bool _isLoading = false;
-  bool _isResending = false;
-  int _retryCount = 0;
-  static const int maxRetries = 5;
-  static const Duration retryDelay = Duration(seconds: 2);
+  bool _isVerified = false;
+  int _countdownSeconds = 60;
+  bool _canResend = false;
+  Timer? _countdownTimer;
 
-  Future<void> _checkVerification() async {
-    if (_isLoading) return;
-    
-    setState(() {
-      _isLoading = true;
-      _retryCount = 0;
-    });
-
-    await _checkVerificationWithRetry();
+  @override
+  void initState() {
+    super.initState();
+    _startCountdown();
+    _checkVerificationStatus();
   }
 
-  Future<void> _checkVerificationWithRetry() async {
+  @override
+  void dispose() {
+    _countdownTimer?.cancel();
+    super.dispose();
+  }
+
+  void _startCountdown() {
+    setState(() {
+      _canResend = false;
+      _countdownSeconds = 60;
+    });
+
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      setState(() {
+        if (_countdownSeconds > 0) {
+          _countdownSeconds--;
+        } else {
+          _canResend = true;
+          timer.cancel();
+        }
+      });
+    });
+  }
+
+  Future<void> _checkVerificationStatus() async {
     try {
+      setState(() => _isLoading = true);
+
       final authService = Provider.of<AuthService>(context, listen: false);
       final isVerified = await authService.isEmailVerified();
-      
-      if (isVerified && mounted) {
-        // Navigate to main app screen since user is already logged in
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (context) => const MainNavigationScreen()),
-          (route) => false,
-        );
-      } else if (_retryCount < maxRetries && mounted) {
-        // If not verified and haven't exceeded max retries, try again after delay
-        _retryCount++;
-        await Future.delayed(retryDelay);
+
+      if (isVerified) {
+        setState(() {
+          _isVerified = true;
+          _isLoading = false;
+        });
+
         if (mounted) {
-          await _checkVerificationWithRetry();
+          Navigator.of(context).pushReplacementNamed('/home');
         }
-      } else if (mounted) {
+      } else {
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Email not verified yet. Please check your inbox.')),
-        );
       }
     } catch (e) {
       if (mounted) {
-        setState(() => _isLoading = false);
-        String errorMessage = 'An error occurred while checking verification status.';
-        if (e is PostgrestException) {
-          errorMessage = 'Database error: ${e.message}';
-        } else if (e is AuthException) {
-          errorMessage = 'Authentication error: ${e.message}';
-        } else {
-          errorMessage = 'An unexpected error occurred. Please try again.';
-        }
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(errorMessage)),
+          SnackBar(
+            content: Text(e.toString()),
+            backgroundColor: Colors.red,
+          ),
         );
       }
+      setState(() => _isLoading = false);
     }
   }
 
-  Future<void> _resendVerification() async {
-    setState(() => _isResending = true);
+  Future<void> _resendVerificationEmail() async {
+    if (!_canResend) return;
+
     try {
+      setState(() => _isLoading = true);
+
       final authService = Provider.of<AuthService>(context, listen: false);
       await authService.sendVerificationEmail();
+
+      _startCountdown();
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Verification email sent. Please check your inbox.')),
+          const SnackBar(
+            content: Text('Verification email sent successfully'),
+            backgroundColor: Colors.green,
+          ),
         );
       }
     } catch (e) {
       if (mounted) {
-        String errorMessage = 'Failed to resend verification email.';
-        if (e is PostgrestException) {
-          errorMessage = 'Database error: ${e.message}';
-        } else if (e is AuthException) {
-          errorMessage = 'Authentication error: ${e.message}';
-        } else {
-          errorMessage = 'An unexpected error occurred. Please try again.';
-        }
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(errorMessage)),
+          SnackBar(
+            content: Text(e.toString()),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     } finally {
       if (mounted) {
-        setState(() => _isResending = false);
+        setState(() => _isLoading = false);
       }
     }
   }
@@ -111,58 +122,97 @@ class _VerificationScreenState extends State<VerificationScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(
-                Icons.email_outlined,
-                size: 80,
-                color: AppTheme.primaryColor,
-              ),
-              const SizedBox(height: 24),
-              const Text(
-                'Verify Your Email',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.primaryColor,
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(
+                  Icons.mark_email_unread,
+                  size: 100,
+                  color: AppTheme.accentColor,
                 ),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'We have sent a verification email to your inbox. Please check your email and click the verification link to continue.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.grey,
+                const SizedBox(height: 24),
+                const Text(
+                  'Verify Your Email',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 32),
-              CustomButton(
-                onPressed: _checkVerification,
-                isLoading: _isLoading,
-                child: const Text('Check Verification Status'),
-              ),
-              const SizedBox(height: 16),
-              TextButton(
-                onPressed: _isResending ? null : _resendVerification,
-                child: _isResending
-                    ? const LoadingIndicator()
-                    : const Text('Resend Verification Email'),
-              ),
-              const SizedBox(height: 16),
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pushAndRemoveUntil(
-                    MaterialPageRoute(builder: (context) => const LoginScreen()),
-                    (route) => false,
-                  );
-                },
-                child: const Text('Back to Login'),
-              ),
-            ],
+                const SizedBox(height: 16),
+                const Text(
+                  'We\'ve sent a verification email to your inbox. Please check your email and click the verification link to continue.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey,
+                  ),
+                ),
+                const SizedBox(height: 32),
+                if (_isLoading)
+                  const LoadingIndicator()
+                else if (_isVerified)
+                  Column(
+                    children: [
+                      const Icon(
+                        Icons.check_circle,
+                        color: Colors.green,
+                        size: 48,
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Email Verified!',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.green,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      CustomButton(
+                        onPressed: () {
+                          Navigator.of(context).pushReplacementNamed('/home');
+                        },
+                        child: const Text('Continue to App'),
+                      ),
+                    ],
+                  )
+                else
+                  Column(
+                    children: [
+                      CustomButton(
+                        onPressed: _checkVerificationStatus,
+                        child: const Text('Check Verification Status'),
+                      ),
+                      const SizedBox(height: 16),
+                      CustomButton(
+                        onPressed: _canResend ? _resendVerificationEmail : null,
+                        child: Text(
+                          _canResend
+                              ? 'Resend Verification Email'
+                              : 'Resend in $_countdownSeconds seconds',
+                        ),
+                      ),
+                    ],
+                  ),
+                const Spacer(),
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pushReplacementNamed('/login');
+                  },
+                  child: const Text(
+                    'Back to Login',
+                    style: TextStyle(
+                      color: AppTheme.accentColor,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+            ),
           ),
         ),
       ),

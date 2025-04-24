@@ -5,6 +5,7 @@ import 'package:agbc_app/screens/admin_screen.dart';
 import 'package:agbc_app/utils/theme.dart';
 import 'package:provider/provider.dart';
 import 'package:agbc_app/services/auth_service.dart';
+import '../widgets/verification_banner.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
@@ -111,9 +112,16 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     }
     
     return Scaffold(
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: _screens,
+      body: Column(
+        children: [
+          const VerificationBanner(),
+          Expanded(
+            child: IndexedStack(
+              index: _selectedIndex,
+              children: _screens,
+            ),
+          ),
+        ],
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,

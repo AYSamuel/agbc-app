@@ -24,12 +24,14 @@ class AuthException implements Exception {
 }
 
 /// Service class for handling authentication-related operations.
-class AuthService with ChangeNotifier {
-  final SupabaseClient _supabase = Supabase.instance.client;
+class AuthService extends ChangeNotifier {
+  final SupabaseClient _supabase;
   final SupabaseService _supabaseService;
+  final NotificationService _notificationService;
   final PermissionsService _permissionsService;
   final SupabaseProvider _supabaseProvider = SupabaseProvider();
   bool _rememberMe = false;
+  bool _isLoading = false;
 
   // Private variable to store the current user
   UserModel? _currentUser;
@@ -54,65 +56,66 @@ class AuthService with ChangeNotifier {
   @visibleForTesting
   static const Duration _lockoutDuration = Duration(minutes: 30);
 
-  final NotificationService _notificationService = NotificationService();
-
   AuthService({
+    required SupabaseClient supabase,
     required SupabaseService supabaseService,
+    required NotificationService notificationService,
     required PermissionsService permissionsService,
-  })  : _supabaseService = supabaseService,
+  })  : _supabase = supabase,
+        _supabaseService = supabaseService,
+        _notificationService = notificationService,
         _permissionsService = permissionsService {
-    initialize();
+    _initialize();
   }
 
-  Future<void> initialize() async {
+  Future<void> _initialize() async {
     try {
+      // Initialize permissions service
       await _permissionsService.initialize();
+      
+      // Listen to auth state changes
       _authStateSubscription = _supabase.auth.onAuthStateChange.listen((data) async {
         final session = data.session;
         if (session != null) {
-          try {
-            final user = await _supabaseService.getUser(session.user.id).first;
-            if (user != null) {
-              _currentUser = user;
-              _currentUser = _currentUser!.copyWith(
-                lastLogin: DateTime.now(),
-                emailVerified: session.user.emailConfirmedAt != null,
-              );
-              await _supabaseService.updateUser(_currentUser!);
-              // Register device for notifications
-              await _notificationService.registerDevice(session.user.id);
-            } else {
-              _currentUser = UserModel(
-                id: session.user.id,
-                displayName: session.user.userMetadata?['full_name'] ?? '',
-                email: session.user.email ?? '',
-                role: 'member',
-                createdAt: DateTime.now(),
-                lastLogin: DateTime.now(),
-                isActive: true,
-                emailVerified: session.user.emailConfirmedAt != null,
-                departments: [],
-                notificationSettings: {
-                  'email': true,
-                  'push': true,
-                },
-                phoneNumber: session.user.phone ?? '',
-              );
-              await _supabaseService.updateUser(_currentUser!);
-              // Register device for notifications
-              await _notificationService.registerDevice(session.user.id);
-            }
-          } catch (e) {
-            print('Error loading user data: $e');
-            _currentUser = null;
-          }
+          await _handleAuthStateChange(session);
         } else {
           _currentUser = null;
+          notifyListeners();
         }
-        notifyListeners();
       });
+      
+      // Check initial auth state
+      await _checkCurrentSession();
     } catch (e) {
       print('Error initializing auth service: $e');
+    }
+  }
+
+  Future<void> _checkCurrentSession() async {
+    try {
+      final session = _supabase.auth.currentSession;
+      if (session != null) {
+        await _handleAuthStateChange(session);
+      }
+    } catch (e) {
+      print('Error checking current session: $e');
+    }
+  }
+
+  Future<void> _handleAuthStateChange(Session session) async {
+    try {
+      // Get user data from our database
+      final user = await _supabaseService.getUser(session.user.id).first;
+      if (user != null) {
+        _currentUser = user;
+        // Register device for notifications
+        await _notificationService.registerDevice(session.user.id);
+      }
+      notifyListeners();
+    } catch (e) {
+      print('Error handling auth state change: $e');
+      _currentUser = null;
+      notifyListeners();
     }
   }
 
@@ -219,16 +222,19 @@ class AuthService with ChangeNotifier {
   }
 
   /// Registers a new user with the provided email and password.
-  Future<UserModel?> registerWithEmailAndPassword(
+  Future<UserModel> registerWithEmailAndPassword(
     String email,
     String password,
     String name,
     String phone,
     String location,
     String role,
-    String? branch,
+    String? branchId,
   ) async {
     try {
+      print('Starting registration process...');
+      
+      // 1. Sign up with Supabase Auth
       final response = await _supabase.auth.signUp(
         email: email,
         password: password,
@@ -237,39 +243,83 @@ class AuthService with ChangeNotifier {
           'phone': phone,
           'location': location,
           'role': role,
-          'branch': branch,
+          'branch': branchId,
         },
       );
 
-      if (response.user != null) {
-        final user = UserModel(
-          id: response.user!.id,
-          displayName: name,
-          email: email,
-          role: role,
-          createdAt: DateTime.now(),
-          lastLogin: DateTime.now(),
-          isActive: true,
-          emailVerified: false,
-          departments: [],
-          notificationSettings: {
-            'email': true,
-            'push': true,
-          },
-          phoneNumber: phone,
-          location: location,
-          branchId: branch,
-        );
-        
-        await _supabaseService.updateUser(user);
-        _currentUser = user;
-        notifyListeners();
-        return user;
+      print('Sign up response: ${response.user != null}');
+      print('Session: ${response.session != null}');
+
+      if (response.user == null) {
+        throw AuthException('Registration failed. Please try again.');
       }
-      return null;
+
+      // 2. Create user in our database
+      final user = UserModel(
+        id: response.user!.id,
+        displayName: name,
+        email: email,
+        role: role,
+        createdAt: DateTime.now(),
+        lastLogin: DateTime.now(),
+        isActive: true,
+        emailVerified: false,
+        departments: [],
+        notificationSettings: {
+          'email': true,
+          'push': true,
+        },
+        phoneNumber: phone,
+        location: location,
+        branchId: branchId,
+      );
+
+      // 3. Save user to database
+      await _supabaseService.updateUser(user);
+
+      // 4. If we have a session, set it and sign in
+      if (response.session != null) {
+        try {
+          // Set the session
+          await _supabase.auth.setSession(response.session!.accessToken);
+          print('Session set after registration');
+
+          // Force a session refresh to get latest user info
+          await _supabase.auth.refreshSession();
+          print('Session refreshed after registration');
+
+          // Register device for notifications
+          await _notificationService.registerDevice(response.user!.id);
+        } catch (e) {
+          print('Error setting session after registration: $e');
+          // Try to sign in with the credentials
+          try {
+            final signInResponse = await _supabase.auth.signInWithPassword(
+              email: email,
+              password: password,
+            );
+            if (signInResponse.session != null) {
+              await _supabase.auth.setSession(signInResponse.session!.accessToken);
+              print('Successfully signed in after registration');
+            }
+          } catch (signInError) {
+            print('Error signing in after registration: $signInError');
+          }
+        }
+      }
+
+      // 5. Set current user
+      _currentUser = user;
+      notifyListeners();
+
+      return user;
     } catch (e) {
       print('Error during registration: $e');
-      return null;
+      if (e is AuthException) rethrow;
+      if (e is PostgrestException) {
+        throw AuthException('Database error: ${e.message}');
+      }
+      throw AuthException('An unexpected error occurred during registration.');
     }
   }
 
@@ -326,16 +376,15 @@ class AuthService with ChangeNotifier {
   Future<void> sendVerificationEmail() async {
     try {
       final user = _supabase.auth.currentUser;
-      if (user != null) {
-        await _supabase.auth.resend(
-          type: OtpType.signup,
-          email: user.email!,
-        );
-      } else {
-        throw AuthException('No authenticated user found');
+      if (user == null) {
+        throw AuthException('No authenticated user found.');
       }
+      await _supabase.auth.resend(
+        type: OtpType.signup,
+        email: user.email!,
+      );
     } catch (e) {
-      throw AuthException('Failed to send verification email: $e');
+      throw AuthException('Failed to send verification email.');
     }
   }
 
@@ -343,14 +392,25 @@ class AuthService with ChangeNotifier {
   Future<bool> isEmailVerified() async {
     try {
       final user = _supabase.auth.currentUser;
-      if (user != null) {
-        // Refresh the session to get the latest user data
-        await _supabase.auth.refreshSession();
-        return user.emailConfirmedAt != null;
+      if (user == null) return false;
+
+      // Refresh session to get latest user info
+      await _supabase.auth.refreshSession();
+      
+      // Check auth state
+      if (user.emailConfirmedAt != null) {
+        // Update database if verified
+        if (_currentUser != null) {
+          _currentUser = _currentUser!.copyWith(emailVerified: true);
+          await _supabaseService.updateUser(_currentUser!);
+        }
+        return true;
       }
+
       return false;
     } catch (e) {
-      throw AuthException('Failed to check email verification status: $e');
+      print('Error checking email verification: $e');
+      return false;
     }
   }
 
@@ -485,25 +545,48 @@ class AuthService with ChangeNotifier {
   /// Checks the current authentication state and updates the user accordingly
   Future<void> checkAuthState() async {
     try {
+      print('=== Checking Auth State ===');
       final session = _supabase.auth.currentSession;
+      print('Current session: ${session != null}'); // Debug log
+      
       if (session != null) {
+        print('Session user ID: ${session.user.id}'); // Debug log
+        print('Session user email: ${session.user.email}'); // Debug log
+        print('Session user emailConfirmedAt: ${session.user.emailConfirmedAt}'); // Debug log
+        
+        // Force a session refresh first
+        print('Attempting to refresh session...'); // Debug log
+        await _supabase.auth.refreshSession();
+        print('Session refreshed successfully'); // Debug log
+        
+        // Get the latest user data after refresh
+        final currentUser = _supabase.auth.currentUser;
+        print('Current user after refresh: ${currentUser?.email}'); // Debug log
+        print('Email confirmed at: ${currentUser?.emailConfirmedAt}'); // Debug log
+        print('User metadata: ${currentUser?.userMetadata}'); // Debug log
+        
         final user = await _supabaseService.getUser(session.user.id).first;
         if (user != null) {
+          print('Found user in database: ${user.email}'); // Debug log
           _currentUser = user;
           _currentUser = _currentUser!.copyWith(
             lastLogin: DateTime.now(),
-            emailVerified: session.user.emailConfirmedAt != null,
+            emailVerified: currentUser?.emailConfirmedAt != null,
           );
+          print('Updated user verification status: ${_currentUser!.emailVerified}'); // Debug log
           await _supabaseService.updateUser(_currentUser!);
           // Register device for notifications
           await _notificationService.registerDevice(session.user.id);
+        } else {
+          print('No user found in database'); // Debug log
         }
       } else {
+        print('No session found, clearing current user'); // Debug log
         _currentUser = null;
       }
       notifyListeners();
     } catch (e) {
-      print('Error checking auth state: $e');
+      print('Error checking auth state: $e'); // Debug log
       _currentUser = null;
       notifyListeners();
     }
@@ -528,8 +611,32 @@ class AuthService with ChangeNotifier {
         return UserModel.fromJson(response);
       }
       
-      print('No user found in database'); // Debug log
-      return null;
+      // If not found in users table, try to sign in to check if it exists in auth
+      try {
+        await _supabase.auth.signInWithOtp(
+          email: email,
+          shouldCreateUser: false,
+        );
+        print('Email exists in auth system'); // Debug log
+        return UserModel(
+          id: 'pending',
+          email: email,
+          displayName: '',
+          role: 'member',
+          createdAt: DateTime.now(),
+          lastLogin: DateTime.now(),
+          isActive: true,
+          emailVerified: false,
+          departments: [],
+          notificationSettings: {
+            'email': true,
+            'push': true,
+          },
+        );
+      } catch (e) {
+        print('Email not found in auth system'); // Debug log
+        return null;
+      }
     } catch (e) {
       print('Error checking email: $e'); // Debug log
       
@@ -543,6 +650,124 @@ class AuthService with ChangeNotifier {
       
       // If we get here, it's an unexpected error
       throw AuthException('An error occurred while verifying your email. Please try again.');
+    }
+  }
+
+  /// Register a new user
+  Future<UserModel> register({
+    required String email,
+    required String password,
+    required String name,
+    String? location,
+    String role = 'member',
+    String? branchId,
+  }) async {
+    try {
+      _isLoading = true;
+      notifyListeners();
+
+      // 1. Sign up with Supabase Auth
+      final response = await _supabase.auth.signUp(
+        email: email,
+        password: password,
+        data: {
+          'full_name': name,
+          'location': location,
+          'role': role,
+          'branch': branchId,
+        },
+      );
+
+      if (response.user == null) {
+        throw AuthException('Registration failed. Please try again.');
+      }
+
+      // 2. Create user in database
+      final user = UserModel(
+        id: response.user!.id,
+        displayName: name,
+        email: email,
+        role: role,
+        createdAt: DateTime.now(),
+        lastLogin: DateTime.now(),
+        isActive: true,
+        emailVerified: false,
+        departments: [],
+        notificationSettings: {
+          'email': true,
+          'push': true,
+        },
+        location: location,
+        branchId: branchId,
+      );
+
+      // 3. Save user to database
+      await _supabaseService.updateUser(user);
+
+      // 4. Set session if available
+      if (response.session != null) {
+        await _supabase.auth.setSession(response.session!.accessToken);
+        await _handleSession(response.session!);
+      }
+
+      return user;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Handle a new session
+  Future<void> _handleSession(Session session) async {
+    try {
+      final user = await _supabaseService.getUser(session.user.id).first;
+      if (user != null) {
+        _currentUser = user.copyWith(
+          lastLogin: DateTime.now(),
+          emailVerified: session.user.emailConfirmedAt != null,
+        );
+        await _supabaseService.updateUser(_currentUser!);
+        await _notificationService.registerDevice(session.user.id);
+      }
+    } catch (e) {
+      print('Error handling session: $e');
+      _currentUser = null;
+    }
+  }
+
+  /// Sign in with email and password
+  Future<UserModel> signIn({
+    required String email,
+    required String password,
+    bool rememberMe = false,
+  }) async {
+    try {
+      _isLoading = true;
+      notifyListeners();
+
+      final response = await _supabase.auth.signInWithPassword(
+        email: email,
+        password: password,
+      );
+
+      if (response.user == null) {
+        throw AuthException('Invalid email or password');
+      }
+
+      await _handleSession(response.session!);
+
+      if (rememberMe) {
+        await PreferencesService.saveLoginCredentials(
+          email: email,
+          password: password,
+          rememberMe: true,
+        );
+      }
+
+      return _currentUser!;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
   }
 }

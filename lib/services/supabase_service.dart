@@ -33,7 +33,7 @@ class SupabaseService {
     return _supabase
         .from('tasks')
         .stream(primaryKey: ['id'])
-        .eq('assignedTo', userId)
+        .eq('assigned_to', userId)
         .map((data) => data.map((doc) => TaskModel.fromJson(doc)).toList());
   }
 
@@ -45,11 +45,15 @@ class SupabaseService {
   }
 
   Future<void> createTask(TaskModel task) async {
-    await _supabase.from('tasks').insert(task.toJson());
+    final taskData = task.toJson();
+    taskData['assigned_to'] = taskData.remove('assignedTo');
+    await _supabase.from('tasks').insert(taskData);
   }
 
   Future<void> updateTask(TaskModel task) async {
-    await _supabase.from('tasks').update(task.toJson()).eq('id', task.id);
+    final taskData = task.toJson();
+    taskData['assigned_to'] = taskData.remove('assignedTo');
+    await _supabase.from('tasks').update(taskData).eq('id', task.id);
   }
 
   Future<void> deleteTask(String taskId) async {
@@ -158,6 +162,22 @@ class SupabaseService {
       await _supabase.from('users').update({'role': newRole}).eq('id', userId);
     } catch (e) {
       throw Exception('Failed to update user role: $e');
+    }
+  }
+
+  Future<void> updateEmailVerificationStatus(String userId, bool isVerified) async {
+    try {
+      print('Updating email verification status for user $userId to $isVerified');
+      final result = await _supabase
+          .from('users')
+          .update({'email_verified': isVerified})
+          .eq('id', userId)
+          .select()
+          .single();
+      print('Update result: $result');
+    } catch (e) {
+      print('Failed to update email verification status: $e');
+      throw Exception('Failed to update email verification status: $e');
     }
   }
 } 

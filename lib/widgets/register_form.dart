@@ -110,7 +110,10 @@ class _RegisterFormState extends State<RegisterForm> with LocationValidationMixi
   }
 
   Future<void> _register() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) {
+      _showErrorSnackBar('Please fill in all required fields correctly');
+      return;
+    }
 
     // Validate location
     if (locationError != null) {
@@ -129,7 +132,7 @@ class _RegisterFormState extends State<RegisterForm> with LocationValidationMixi
     try {
       final authService = Provider.of<AuthService>(context, listen: false);
       
-      await authService.registerWithEmailAndPassword(
+      final user = await authService.registerWithEmailAndPassword(
         _emailController.text.trim(),
         _passwordController.text,
         _nameController.text.trim(),
@@ -140,28 +143,47 @@ class _RegisterFormState extends State<RegisterForm> with LocationValidationMixi
       );
 
       if (mounted) {
-        widget.onRegisterSuccess();
+        // Show a snackbar about the verification email
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.mark_email_unread, color: Colors.white),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Verification email sent to ${_emailController.text.trim()}',
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.blue,
+            duration: const Duration(seconds: 5),
+            action: SnackBarAction(
+              label: 'Resend',
+              textColor: Colors.white,
+              onPressed: () {
+                authService.sendVerificationEmail();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Verification email resent'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              },
+            ),
+          ),
+        );
+
+        // Navigate to home screen
+        Navigator.of(context).pushReplacementNamed('/home');
       }
     } catch (e) {
       if (mounted) {
         String errorMessage;
         if (e is AuthException) {
-          switch (e.code) {
-            case 'email-already-in-use':
-              errorMessage = 'This email is already registered. Please login instead.';
-              break;
-            case 'invalid-email':
-              errorMessage = 'The email address is invalid.';
-              break;
-            case 'operation-not-allowed':
-              errorMessage = 'Email/password accounts are not enabled.';
-              break;
-            case 'weak-password':
-              errorMessage = 'The password is too weak.';
-              break;
-            default:
-              errorMessage = 'An error occurred during registration. Please try again.';
-          }
+          errorMessage = e.message;
         } else {
           errorMessage = 'An unexpected error occurred. Please try again.';
         }

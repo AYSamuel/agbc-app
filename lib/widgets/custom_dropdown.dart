@@ -38,7 +38,7 @@ class CustomDropdown<T> extends StatelessWidget {
           Text(
             label!,
             style: theme.textTheme.labelLarge?.copyWith(
-              color: Colors.black87,
+              color: AppTheme.darkNeutralColor,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -51,12 +51,12 @@ class CustomDropdown<T> extends StatelessWidget {
           decoration: InputDecoration(
             hintText: hint,
             hintStyle: TextStyle(
-              color: Colors.grey[600],
+              color: AppTheme.neutralColor.withOpacity(0.6),
               fontWeight: FontWeight.w400,
               fontSize: 15,
             ),
             errorStyle: TextStyle(
-              color: Colors.red[700],
+              color: AppTheme.errorColor,
               fontWeight: FontWeight.w500,
               fontSize: 13,
             ),
@@ -77,32 +77,32 @@ class CustomDropdown<T> extends StatelessWidget {
                   )
                 : null,
             filled: true,
-            fillColor: Colors.white,
+            fillColor: AppTheme.cardColor,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(borderRadius),
               borderSide: BorderSide(
-                color: theme.colorScheme.outline.withOpacity(0.3),
+                color: AppTheme.neutralColor.withOpacity(0.15),
                 width: 1.5,
               ),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(borderRadius),
               borderSide: BorderSide(
-                color: theme.colorScheme.outline.withOpacity(0.3),
+                color: AppTheme.neutralColor.withOpacity(0.15),
                 width: 1.5,
               ),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(borderRadius),
               borderSide: BorderSide(
-                color: Colors.blue[700]!,
+                color: AppTheme.primaryColor,
                 width: 2,
               ),
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(borderRadius),
               borderSide: BorderSide(
-                color: Colors.red[700]!,
+                color: AppTheme.errorColor,
                 width: 1.5,
               ),
             ),
@@ -110,12 +110,12 @@ class CustomDropdown<T> extends StatelessWidget {
             isDense: true,
           ),
           style: theme.textTheme.bodyLarge?.copyWith(
-            color: Colors.black87,
+            color: AppTheme.darkNeutralColor,
             fontWeight: FontWeight.w500,
             fontSize: 16,
           ),
           validator: validator,
-          dropdownColor: Colors.white,
+          dropdownColor: AppTheme.cardColor,
           icon: Icon(
             Icons.arrow_drop_down,
             color: AppTheme.neutralColor,

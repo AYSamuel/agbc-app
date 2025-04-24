@@ -116,7 +116,7 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
                         style: TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF1A237E),
+                          color: AppTheme.primaryColor,
                         ),
                       ),
                     ],
@@ -127,11 +127,11 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
                   Container(
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: AppTheme.cardColor,
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
+                          color: AppTheme.darkNeutralColor.withOpacity(0.05),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
@@ -145,7 +145,7 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF1A237E),
+                            color: AppTheme.primaryColor,
                           ),
                         ),
                         const SizedBox(height: 24),

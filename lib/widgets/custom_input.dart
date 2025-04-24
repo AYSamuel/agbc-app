@@ -164,7 +164,7 @@ class _CustomInputState extends State<CustomInput> with SingleTickerProviderStat
           : TextInputAction.done,
       autofocus: widget.autofocus,
       style: theme.textTheme.bodyLarge?.copyWith(
-        color: widget.enabled ? AppTheme.neutralColor : AppTheme.neutralColor.withOpacity(0.5),
+        color: widget.enabled ? AppTheme.darkNeutralColor : AppTheme.neutralColor.withOpacity(0.5),
         fontWeight: FontWeight.w500,
         fontSize: 16,
         letterSpacing: 0.2,
@@ -191,7 +191,7 @@ class _CustomInputState extends State<CustomInput> with SingleTickerProviderStat
                 padding: const EdgeInsets.only(left: 12, right: 8),
                 child: IconTheme(
                   data: IconThemeData(
-                    color: _isFocused ? AppTheme.accentColor : AppTheme.neutralColor.withOpacity(0.6),
+                    color: _isFocused ? AppTheme.primaryColor : AppTheme.neutralColor.withOpacity(0.6),
                     size: 20,
                   ),
                   child: widget.prefixIcon!,
@@ -200,7 +200,7 @@ class _CustomInputState extends State<CustomInput> with SingleTickerProviderStat
             : null,
         suffixIcon: _buildSuffixIcon(),
         filled: true,
-        fillColor: widget.enabled ? Colors.white : Colors.grey[100],
+        fillColor: widget.enabled ? AppTheme.cardColor : AppTheme.cardColor.withOpacity(0.5),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(widget.borderRadius),
           borderSide: BorderSide(
@@ -218,7 +218,7 @@ class _CustomInputState extends State<CustomInput> with SingleTickerProviderStat
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(widget.borderRadius),
           borderSide: BorderSide(
-            color: AppTheme.accentColor,
+            color: AppTheme.primaryColor,
             width: 2,
           ),
         ),

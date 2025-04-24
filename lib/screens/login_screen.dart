@@ -43,41 +43,176 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       if (mounted) {
-        // Check if email is verified
-        final isVerified = await authService.isEmailVerified();
-        
-        if (!isVerified) {
-          // Show verification dialog
+        Navigator.of(context).pushReplacementNamed('/home');
+      }
+    } catch (e) {
+      if (mounted) {
+        if (e is AuthException) {
+          if (e.code == 'email_not_verified') {
+            // Show verification dialog
+            showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (context) => AlertDialog(
+                title: const Text('Email Verification Required'),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.mark_email_unread,
+                      size: 64,
+                      color: Colors.orange,
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'We need to verify your email address before you can log in.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      _emailController.text.trim(),
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.primaryColor,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'We sent a verification link to your email when you registered. Please check your inbox and click the link to verify your email address.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.grey,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'If you haven\'t received the email or the link has expired, you can request a new one.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ],
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                    child: const Text('Close'),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      Provider.of<AuthService>(context, listen: false).sendVerificationEmail();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('A new verification email has been sent to your inbox'),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+                    },
+                    child: const Text('Resend Email'),
+                  ),
+                ],
+              ),
+            );
+          } else if (e.code == 'invalid_credentials') {
+            // Show invalid credentials dialog
+            showDialog(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: const Text('Invalid Login'),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.lock_outline,
+                      size: 64,
+                      color: Colors.red,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      e.message,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                    child: const Text('OK'),
+                  ),
+                ],
+              ),
+            );
+          } else {
+            // Show other error dialog
+            showDialog(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: const Text('Login Error'),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.error_outline,
+                      size: 64,
+                      color: Colors.red,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      e.message,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                    child: const Text('OK'),
+                  ),
+                ],
+              ),
+            );
+          }
+        } else {
+          // Show generic error dialog
           showDialog(
             context: context,
-            barrierDismissible: false,
             builder: (context) => AlertDialog(
-              title: const Text('Email Not Verified'),
+              title: const Text('Error'),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   const Icon(
-                    Icons.mark_email_unread,
+                    Icons.error_outline,
                     size: 64,
-                    color: Colors.orange,
+                    color: Colors.red,
                   ),
                   const SizedBox(height: 16),
                   const Text(
-                    'Your email is not verified yet.',
+                    'An unexpected error occurred. Please try again.',
                     textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    _emailController.text.trim(),
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
+                    style: TextStyle(
+                      fontSize: 16,
                     ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Please check your email and click the verification link to continue.',
-                    textAlign: TextAlign.center,
                   ),
                 ],
               ),
@@ -85,38 +220,13 @@ class _LoginScreenState extends State<LoginScreen> {
                 TextButton(
                   onPressed: () {
                     Navigator.of(context).pop();
-                    authService.sendVerificationEmail();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Verification email sent'),
-                        backgroundColor: Colors.green,
-                      ),
-                    );
                   },
-                  child: const Text('Resend Email'),
-                ),
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                    Navigator.of(context).pushReplacementNamed('/home');
-                  },
-                  child: const Text('Continue Anyway'),
+                  child: const Text('OK'),
                 ),
               ],
             ),
           );
-        } else {
-          Navigator.of(context).pushReplacementNamed('/home');
         }
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.toString()),
-            backgroundColor: Colors.red,
-          ),
-        );
       }
     } finally {
       if (mounted) {
@@ -131,37 +241,35 @@ class _LoginScreenState extends State<LoginScreen> {
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
-            padding: const EdgeInsets.all(24.0),
+            padding: const EdgeInsets.all(16.0),
             child: Form(
               key: _formKey,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 20),
                   const Text(
-                    'Welcome Back!',
+                    'Welcome Back',
                     style: TextStyle(
-                      fontSize: 32,
+                      fontSize: 24,
                       fontWeight: FontWeight.bold,
                     ),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 8),
                   const Text(
-                    'Sign in to continue',
+                    'Login to your account',
                     style: TextStyle(
                       fontSize: 16,
-                      color: Colors.grey,
                     ),
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 32),
-                  // Email Field
+                  const SizedBox(height: 24),
                   CustomInput(
                     label: 'Email',
                     controller: _emailController,
                     hint: 'Enter your email',
-                    prefixIcon: Icon(Icons.email, color: AppTheme.neutralColor),
+                    prefixIcon: const Icon(Icons.email),
                     keyboardType: TextInputType.emailAddress,
                     textInputAction: TextInputAction.next,
                     onSubmitted: (_) => FocusScope.of(context).nextFocus(),
@@ -176,19 +284,17 @@ class _LoginScreenState extends State<LoginScreen> {
                     },
                   ),
                   const SizedBox(height: 16),
-                  // Password Field
                   CustomInput(
                     label: 'Password',
                     controller: _passwordController,
                     hint: 'Enter your password',
-                    prefixIcon: Icon(Icons.lock, color: AppTheme.neutralColor),
+                    prefixIcon: const Icon(Icons.lock),
                     obscureText: _obscurePassword,
                     textInputAction: TextInputAction.done,
                     onSubmitted: (_) => _login(),
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscurePassword ? Icons.visibility_off : Icons.visibility,
-                        color: AppTheme.neutralColor,
                       ),
                       onPressed: () {
                         setState(() {
@@ -204,7 +310,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     },
                   ),
                   const SizedBox(height: 16),
-                  // Remember Me Checkbox
                   Row(
                     children: [
                       Checkbox(
@@ -215,63 +320,33 @@ class _LoginScreenState extends State<LoginScreen> {
                           });
                         },
                       ),
-                      const Text(
-                        'Remember me',
-                        style: TextStyle(
-                          color: Colors.grey,
-                        ),
-                      ),
+                      const Text('Remember me'),
                       const Spacer(),
                       TextButton(
                         onPressed: () {
                           // TODO: Implement forgot password
                         },
-                        child: const Text(
-                          'Forgot Password?',
-                          style: TextStyle(
-                            color: AppTheme.accentColor,
-                          ),
-                        ),
+                        child: const Text('Forgot Password?'),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 32),
-                  // Login Button
-                  CustomButton(
+                  const SizedBox(height: 24),
+                  ElevatedButton(
                     onPressed: _isLoading ? null : _login,
                     child: _isLoading
                         ? const LoadingIndicator()
-                        : const Text(
-                            'Sign In',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
+                        : const Text('LOGIN'),
                   ),
                   const SizedBox(height: 16),
-                  // Register Link
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Text(
-                        'Don\'t have an account?',
-                        style: TextStyle(
-                          color: Colors.grey,
-                        ),
-                      ),
+                      const Text('Don\'t have an account?'),
                       TextButton(
                         onPressed: () {
                           Navigator.of(context).pushReplacementNamed('/register');
                         },
-                        child: const Text(
-                          'Register',
-                          style: TextStyle(
-                            color: AppTheme.accentColor,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                        child: const Text('Sign up'),
                       ),
                     ],
                   ),

@@ -33,7 +33,7 @@ class TaskManagementScreen extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF1A237E),
+                      color: AppTheme.primaryColor,
                     ),
                   ),
                 ],
@@ -60,7 +60,7 @@ class TaskManagementScreen extends StatelessWidget {
                           Icon(
                             Icons.task_alt,
                             size: 64,
-                            color: Color(0xFF1A237E),
+                            color: AppTheme.primaryColor,
                           ),
                           SizedBox(height: 16),
                           Text(
@@ -68,7 +68,7 @@ class TaskManagementScreen extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
-                              color: Color(0xFF1A237E),
+                              color: AppTheme.primaryColor,
                             ),
                           ),
                           SizedBox(height: 8),
@@ -76,7 +76,7 @@ class TaskManagementScreen extends StatelessWidget {
                             'There are currently no tasks in the system.',
                             style: TextStyle(
                               fontSize: 16,
-                              color: Colors.grey,
+                              color: AppTheme.neutralColor,
                             ),
                           ),
                         ],
@@ -160,12 +160,12 @@ class TaskManagementScreen extends StatelessWidget {
   Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
       case 'completed':
-        return Colors.green;
+        return AppTheme.successColor;
       case 'in progress':
-        return Colors.orange;
+        return AppTheme.warningColor;
       case 'pending':
       default:
-        return Colors.grey;
+        return AppTheme.neutralColor;
     }
   }
 } 

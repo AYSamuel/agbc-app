@@ -164,20 +164,4 @@ class SupabaseService {
       throw Exception('Failed to update user role: $e');
     }
   }
-
-  Future<void> updateEmailVerificationStatus(String userId, bool isVerified) async {
-    try {
-      print('Updating email verification status for user $userId to $isVerified');
-      final result = await _supabase
-          .from('users')
-          .update({'email_verified': isVerified})
-          .eq('id', userId)
-          .select()
-          .single();
-      print('Update result: $result');
-    } catch (e) {
-      print('Failed to update email verification status: $e');
-      throw Exception('Failed to update email verification status: $e');
-    }
-  }
 } 

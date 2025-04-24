@@ -220,10 +220,10 @@ class _LoginFormState extends State<LoginForm> with FormValidationMixin {
             // Continue Button
             Material(
               elevation: 4,
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(12),
               child: CustomButton(
                 onPressed: _isLoading ? null : _verifyEmail,
-                backgroundColor: AppTheme.accentColor,
+                backgroundColor: AppTheme.primaryColor,
                 child: _isLoading
                     ? const LoadingIndicator()
                     : const Text(
@@ -242,14 +242,14 @@ class _LoginFormState extends State<LoginForm> with FormValidationMixin {
               label: 'Password',
               controller: _passwordController,
               hint: 'Enter your password',
-              prefixIcon: Icon(Icons.lock, color: AppTheme.neutralColor),
+              prefixIcon: Icon(Icons.lock, color: AppTheme.primaryColor),
               obscureText: _obscurePassword,
               textInputAction: TextInputAction.done,
               onSubmitted: (_) => _login(),
               suffixIcon: IconButton(
                 icon: Icon(
                   _obscurePassword ? Icons.visibility_off : Icons.visibility,
-                  color: AppTheme.neutralColor,
+                  color: AppTheme.primaryColor,
                 ),
                 onPressed: () {
                   setState(() {
@@ -258,8 +258,8 @@ class _LoginFormState extends State<LoginForm> with FormValidationMixin {
                 },
               ),
               validator: validatePassword,
-              backgroundColor: Colors.white,
-              labelColor: Colors.black87,
+              backgroundColor: AppTheme.cardColor,
+              labelColor: AppTheme.darkNeutralColor,
             ),
             const SizedBox(height: 16),
 
@@ -299,22 +299,42 @@ class _LoginFormState extends State<LoginForm> with FormValidationMixin {
             const SizedBox(height: 24),
 
             // Login Button
-            Material(
-              elevation: 4,
-              borderRadius: BorderRadius.circular(8),
-              child: CustomButton(
-                onPressed: _isLoading ? null : _login,
-                backgroundColor: AppTheme.accentColor,
-                child: _isLoading
-                    ? const LoadingIndicator()
-                    : const Text(
-                        'Login',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
+            Container(
+              height: 56,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    AppTheme.primaryColor,
+                    AppTheme.primaryColor.withOpacity(0.8),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(28),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppTheme.primaryColor.withOpacity(0.3),
+                    blurRadius: 15,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(28),
+                  onTap: _isLoading ? null : _login,
+                  child: Center(
+                    child: _isLoading
+                        ? const LoadingIndicator()
+                        : const Text(
+                            'Sign In',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                  ),
+                ),
               ),
             ),
           ],

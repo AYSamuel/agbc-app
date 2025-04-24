@@ -99,16 +99,9 @@ class _MyAppState extends State<MyApp> {
   Future<void> _handleUri(Uri uri) async {
     try {
       if (uri.path == '/verify-email') {
-        final token = uri.queryParameters['token'];
-        final type = uri.queryParameters['type'];
-
-        if (token != null && type == 'signup') {
-          final authService = Provider.of<AuthService>(context, listen: false);
-          await authService.isEmailVerified();
-
-          if (mounted) {
-            Navigator.of(context).pushReplacementNamed('/email-verification-success');
-          }
+        // Simply redirect to login screen
+        if (mounted) {
+          Navigator.of(context).pushReplacementNamed('/login');
         }
       }
     } catch (e) {

@@ -201,12 +201,20 @@ class AuthService extends ChangeNotifier {
       );
       
       if (response.user != null) {
+        // Check if email is verified
+        if (response.user!.emailConfirmedAt == null) {
+          throw AuthException(
+            'Your email address has not been verified yet. Please check your inbox for the verification link we sent you.',
+            code: 'email_not_verified',
+          );
+        }
+
         final user = await _supabaseService.getUser(response.user!.id).first;
         if (user != null) {
           _currentUser = user;
           _currentUser = _currentUser!.copyWith(
             lastLogin: DateTime.now(),
-            emailVerified: response.user!.emailConfirmedAt != null,
+            emailVerified: true,
           );
           await _supabaseService.updateUser(_currentUser!);
           // Register device for notifications
@@ -217,7 +225,41 @@ class AuthService extends ChangeNotifier {
       return null;
     } catch (e) {
       print('Error during sign in: $e');
-      return null;
+      if (e is AuthException) {
+        rethrow;
+      }
+      // Transform Supabase errors into user-friendly messages
+      final errorMessage = e.toString().toLowerCase();
+      if (errorMessage.contains('email not confirmed') || 
+          errorMessage.contains('email not verified')) {
+        throw AuthException(
+          'Your email address has not been verified yet. Please check your inbox for the verification link we sent you.',
+          code: 'email_not_verified',
+        );
+      }
+      if (errorMessage.contains('invalid login credentials') || 
+          errorMessage.contains('invalid email or password')) {
+        throw AuthException(
+          'The email or password you entered is incorrect. Please try again.',
+          code: 'invalid_credentials',
+        );
+      }
+      if (errorMessage.contains('rate limit')) {
+        throw AuthException(
+          'Too many login attempts. Please try again in a few minutes.',
+          code: 'rate_limit',
+        );
+      }
+      if (errorMessage.contains('network')) {
+        throw AuthException(
+          'Network error. Please check your internet connection and try again.',
+          code: 'network_error',
+        );
+      }
+      throw AuthException(
+        'An error occurred while trying to log in. Please try again.',
+        code: 'unknown_error',
+      );
     }
   }
 
@@ -754,6 +796,14 @@ class AuthService extends ChangeNotifier {
         throw AuthException('Invalid email or password');
       }
 
+      // Check if email is verified
+      if (response.user!.emailConfirmedAt == null) {
+        throw AuthException(
+          'Your email address has not been verified yet. Please check your inbox for the verification link we sent you.',
+          code: 'email_not_verified',
+        );
+      }
+
       await _handleSession(response.session!);
 
       if (rememberMe) {
@@ -765,6 +815,43 @@ class AuthService extends ChangeNotifier {
       }
 
       return _currentUser!;
+    } catch (e) {
+      print('Error during sign in: $e');
+      if (e is AuthException) {
+        rethrow;
+      }
+      // Transform Supabase errors into user-friendly messages
+      final errorMessage = e.toString().toLowerCase();
+      if (errorMessage.contains('email not confirmed') || 
+          errorMessage.contains('email not verified')) {
+        throw AuthException(
+          'Your email address has not been verified yet. Please check your inbox for the verification link we sent you.',
+          code: 'email_not_verified',
+        );
+      }
+      if (errorMessage.contains('invalid login credentials') || 
+          errorMessage.contains('invalid email or password')) {
+        throw AuthException(
+          'The email or password you entered is incorrect. Please try again.',
+          code: 'invalid_credentials',
+        );
+      }
+      if (errorMessage.contains('rate limit')) {
+        throw AuthException(
+          'Too many login attempts. Please try again in a few minutes.',
+          code: 'rate_limit',
+        );
+      }
+      if (errorMessage.contains('network')) {
+        throw AuthException(
+          'Network error. Please check your internet connection and try again.',
+          code: 'network_error',
+        );
+      }
+      throw AuthException(
+        'An error occurred while trying to log in. Please try again.',
+        code: 'unknown_error',
+      );
     } finally {
       _isLoading = false;
       notifyListeners();

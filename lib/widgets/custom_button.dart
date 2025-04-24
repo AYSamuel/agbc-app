@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:agbc_app/widgets/loading_indicator.dart';
+import 'package:agbc_app/utils/theme.dart';
 
 /// A customizable button widget with loading state, animations, and disabled state styling.
 /// 
@@ -71,11 +72,11 @@ class _CustomButtonState extends State<CustomButton> with SingleTickerProviderSt
   Widget build(BuildContext context) {
     final isDisabled = widget.onPressed == null || widget.isLoading;
     final backgroundColor = isDisabled
-        ? (widget.backgroundColor ?? Colors.white).withOpacity(0.5)
-        : widget.backgroundColor ?? Colors.white;
+        ? (widget.backgroundColor ?? AppTheme.primaryColor).withOpacity(0.5)
+        : widget.backgroundColor ?? AppTheme.primaryColor;
     final foregroundColor = isDisabled
-        ? (widget.foregroundColor ?? Colors.black).withOpacity(0.5)
-        : widget.foregroundColor ?? Colors.black;
+        ? (widget.foregroundColor ?? Colors.white).withOpacity(0.5)
+        : widget.foregroundColor ?? Colors.white;
 
     return ScaleTransition(
       scale: _scaleAnimation,

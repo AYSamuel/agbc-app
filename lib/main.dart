@@ -99,14 +99,48 @@ class _MyAppState extends State<MyApp> {
   Future<void> _handleUri(Uri uri) async {
     try {
       if (uri.path == '/verify-email') {
-        // Simply redirect to login screen
-        if (mounted) {
-          Navigator.of(context).pushReplacementNamed('/login');
+        // Check for both token and token_hash parameters
+        final token = uri.queryParameters['token'] ?? uri.queryParameters['token_hash'];
+        if (token != null) {
+          // Get the auth service instance
+          final authService = Provider.of<AuthService>(context, listen: false);
+          
+          // Verify the email
+          await authService.verifyEmail(token);
+          
+          if (mounted) {
+            // Show success message
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Email verified successfully! You can now log in.'),
+                backgroundColor: Colors.green,
+              ),
+            );
+            
+            // Redirect to login screen
+            Navigator.of(context).pushReplacementNamed('/login');
+          }
+        } else {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Invalid verification link'),
+                backgroundColor: Colors.red,
+              ),
+            );
+            Navigator.of(context).pushReplacementNamed('/login');
+          }
         }
       }
     } catch (e) {
       print('Error handling URI: $e');
       if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error verifying email: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
         Navigator.of(context).pushReplacementNamed('/login');
       }
     }

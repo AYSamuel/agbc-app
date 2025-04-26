@@ -24,7 +24,6 @@ class SupabaseService {
     return _supabase
         .from('users')
         .stream(primaryKey: ['id'])
-        .eq('isActive', true)
         .map((data) => data.map((doc) => UserModel.fromJson(doc)).toList());
   }
 
@@ -45,15 +44,11 @@ class SupabaseService {
   }
 
   Future<void> createTask(TaskModel task) async {
-    final taskData = task.toJson();
-    taskData['assigned_to'] = taskData.remove('assignedTo');
-    await _supabase.from('tasks').insert(taskData);
+    await _supabase.from('tasks').insert(task.toJson());
   }
 
   Future<void> updateTask(TaskModel task) async {
-    final taskData = task.toJson();
-    taskData['assigned_to'] = taskData.remove('assignedTo');
-    await _supabase.from('tasks').update(taskData).eq('id', task.id);
+    await _supabase.from('tasks').update(task.toJson()).eq('id', task.id);
   }
 
   Future<void> deleteTask(String taskId) async {
@@ -64,8 +59,8 @@ class SupabaseService {
     await _supabase.from('tasks').update({
       'comments': [
         {
-          'userId': userId,
-          'comment': comment,
+          'user_id': userId,
+          'content': comment,
           'timestamp': DateTime.now().toIso8601String(),
         }
       ]
@@ -75,7 +70,7 @@ class SupabaseService {
   Future<void> updateTaskStatus(String taskId, String status) async {
     await _supabase.from('tasks').update({
       'status': status,
-      'updatedAt': DateTime.now().toIso8601String(),
+      'updated_at': DateTime.now().toIso8601String(),
     }).eq('id', taskId);
   }
 
@@ -85,7 +80,7 @@ class SupabaseService {
         .from('meetings')
         .stream(primaryKey: ['id'])
         .map((data) => data
-            .where((doc) => (doc['invitedUsers'] as List).contains(userId))
+            .where((doc) => (doc['invited_users'] as List).contains(userId))
             .map((doc) => MeetingModel.fromJson(doc))
             .toList());
   }
@@ -115,7 +110,8 @@ class SupabaseService {
     bool isAttending,
   ) async {
     await _supabase.from('meetings').update({
-      'attendance': [userId]
+      'attendance': [userId],
+      'updated_at': DateTime.now().toIso8601String(),
     }).eq('id', meetingId);
   }
 
@@ -132,6 +128,7 @@ class SupabaseService {
   }
 
   Future<void> updateBranch(String branchId, Map<String, dynamic> data) async {
+    data['updated_at'] = DateTime.now().toIso8601String();
     await _supabase.from('branches').update(data).eq('id', branchId);
   }
 
@@ -159,7 +156,10 @@ class SupabaseService {
 
   Future<void> updateUserRole(String userId, String newRole) async {
     try {
-      await _supabase.from('users').update({'role': newRole}).eq('id', userId);
+      await _supabase.from('users').update({
+        'role': newRole,
+        'updated_at': DateTime.now().toIso8601String(),
+      }).eq('id', userId);
     } catch (e) {
       throw Exception('Failed to update user role: $e');
     }

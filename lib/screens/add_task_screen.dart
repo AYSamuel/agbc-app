@@ -113,7 +113,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
           title: _titleController.text,
           description: _descriptionController.text,
           deadline: _selectedDeadline!,
-          assignedTo: _selectedAssigneeId!,
+          assigned_to: _selectedAssigneeId!,
           createdBy: currentUser.id,
           reminder: _selectedReminder,
           priority: _selectedPriority,

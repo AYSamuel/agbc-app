@@ -18,13 +18,13 @@ class MeetingModel {
   // Organizational details
   final String organizer; // Person responsible for the meeting
   final String location; // Physical or virtual meeting location
-  final bool isVirtual; // Whether this is an online meeting
-  final String? meetingLink; // Link for virtual meetings
-  final int expectedAttendance; // Expected number of attendees
+  final bool is_virtual; // Whether this is an online meeting
+  final String? meeting_link; // Link for virtual meetings
+  final int expected_attendance; // Expected number of attendees
   final List<String> attendees; // List of user IDs who plan to attend
 
   // Meeting status tracking
-  final bool isCancelled; // Whether the meeting has been cancelled
+  final bool is_cancelled; // Whether the meeting has been cancelled
   final String
       status; // Current status (scheduled, ongoing, completed, cancelled)
 
@@ -41,11 +41,11 @@ class MeetingModel {
     this.category = 'general', // Default category
     required this.organizer,
     required this.location,
-    this.isVirtual = false, // Default to physical meeting
-    this.meetingLink, // Optional virtual meeting link
-    this.expectedAttendance = 0,
+    this.is_virtual = false, // Default to physical meeting
+    this.meeting_link, // Optional virtual meeting link
+    this.expected_attendance = 0,
     this.attendees = const [], // Default to empty list
-    this.isCancelled = false, // Default to not cancelled
+    this.is_cancelled = false, // Default to not cancelled
     this.status = 'scheduled', // Default status
   }) : createdAt = createdAt ?? DateTime.now();
 
@@ -64,11 +64,11 @@ class MeetingModel {
       category: json['category'] ?? 'general',
       organizer: json['organizer'] ?? '',
       location: json['location'] ?? '',
-      isVirtual: json['isVirtual'] ?? false,
-      meetingLink: json['meetingLink'],
-      expectedAttendance: json['expectedAttendance'] ?? 0,
+      is_virtual: json['is_virtual'] ?? false,
+      meeting_link: json['meeting_link'],
+      expected_attendance: json['expected_attendance'] ?? 0,
       attendees: List<String>.from(json['attendees'] ?? []),
-      isCancelled: json['isCancelled'] ?? false,
+      is_cancelled: json['is_cancelled'] ?? false,
       status: json['status'] ?? 'scheduled',
     );
   }
@@ -87,18 +87,18 @@ class MeetingModel {
       'category': category,
       'organizer': organizer,
       'location': location,
-      'isVirtual': isVirtual,
-      'meetingLink': meetingLink,
-      'expectedAttendance': expectedAttendance,
+      'is_virtual': is_virtual,
+      'meeting_link': meeting_link,
+      'expected_attendance': expected_attendance,
       'attendees': attendees,
-      'isCancelled': isCancelled,
+      'is_cancelled': is_cancelled,
       'status': status,
     };
   }
 
   /// Determines if a meeting should be visible to a user based on their branch affiliation
   bool shouldNotify(String? userBranchId) {
-    if (isCancelled) return false; // Don't notify for cancelled meetings
+    if (is_cancelled) return false; // Don't notify for cancelled meetings
     if (type == 'global') return true; // Global meetings visible to all
     return userBranchId != null &&
         userBranchId == branchId; // Local meeting check
@@ -109,7 +109,7 @@ class MeetingModel {
     final now = DateTime.now();
     return now.isAfter(dateTime) &&
         (endTime == null || now.isBefore(endTime!)) &&
-        !isCancelled;
+        !is_cancelled;
   }
 
   /// Creates a copy of the meeting with updated fields
@@ -125,11 +125,11 @@ class MeetingModel {
     String? category,
     String? organizer,
     String? location,
-    bool? isVirtual,
-    String? meetingLink,
-    int? expectedAttendance,
+    bool? is_virtual,
+    String? meeting_link,
+    int? expected_attendance,
     List<String>? attendees,
-    bool? isCancelled,
+    bool? is_cancelled,
     String? status,
   }) {
     return MeetingModel(
@@ -144,11 +144,11 @@ class MeetingModel {
       category: category ?? this.category,
       organizer: organizer ?? this.organizer,
       location: location ?? this.location,
-      isVirtual: isVirtual ?? this.isVirtual,
-      meetingLink: meetingLink ?? this.meetingLink,
-      expectedAttendance: expectedAttendance ?? this.expectedAttendance,
+      is_virtual: is_virtual ?? this.is_virtual,
+      meeting_link: meeting_link ?? this.meeting_link,
+      expected_attendance: expected_attendance ?? this.expected_attendance,
       attendees: attendees ?? this.attendees,
-      isCancelled: isCancelled ?? this.isCancelled,
+      is_cancelled: is_cancelled ?? this.is_cancelled,
       status: status ?? this.status,
     );
   }

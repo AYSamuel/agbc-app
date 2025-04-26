@@ -9,7 +9,7 @@ class ChurchBranch {
   final List<String> members;
   final DateTime createdAt;
   final String createdBy;
-  final bool isActive;
+  final bool is_active;
 
   ChurchBranch({
     required this.id,
@@ -22,7 +22,7 @@ class ChurchBranch {
     List<String>? departments,
     List<String>? members,
     DateTime? createdAt,
-    this.isActive = true,
+    this.is_active = true,
   }) : departments = departments ?? [],
        members = members ?? [],
        createdAt = createdAt ?? DateTime.now();
@@ -39,7 +39,7 @@ class ChurchBranch {
       members: (json['members'] as List<dynamic>?)?.cast<String>() ?? [],
       createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
       createdBy: json['createdBy'] ?? '',
-      isActive: json['isActive'] ?? true,
+      is_active: json['is_active'] ?? true,
     );
   }
 
@@ -55,7 +55,7 @@ class ChurchBranch {
       'members': members,
       'createdAt': createdAt.toIso8601String(),
       'createdBy': createdBy,
-      'isActive': isActive,
+      'is_active': is_active,
     };
   }
 
@@ -70,7 +70,7 @@ class ChurchBranch {
     List<String>? members,
     DateTime? createdAt,
     String? createdBy,
-    bool? isActive,
+    bool? is_active,
   }) {
     return ChurchBranch(
       id: id ?? this.id,
@@ -83,7 +83,7 @@ class ChurchBranch {
       members: members ?? this.members,
       createdAt: createdAt ?? this.createdAt,
       createdBy: createdBy ?? this.createdBy,
-      isActive: isActive ?? this.isActive,
+      is_active: is_active ?? this.is_active,
     );
   }
 } 

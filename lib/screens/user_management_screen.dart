@@ -104,8 +104,45 @@ class UserManagementScreen extends StatelessWidget {
                                 ? const Icon(Icons.person)
                                 : null,
                           ),
-                          title: Text(user.displayName),
-                          subtitle: Text(user.email),
+                          title: Row(
+                            children: [
+                              Text(user.displayName),
+                              const SizedBox(width: 8),
+                              if (user.is_active)
+                                Container(
+                                  width: 8,
+                                  height: 8,
+                                  decoration: const BoxDecoration(
+                                    color: Colors.green,
+                                    shape: BoxShape.circle,
+                                  ),
+                                )
+                              else
+                                Container(
+                                  width: 8,
+                                  height: 8,
+                                  decoration: const BoxDecoration(
+                                    color: Colors.red,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                            ],
+                          ),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(user.email),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Location: ${user.location ?? 'Not set'}',
+                                style: const TextStyle(fontSize: 12),
+                              ),
+                              Text(
+                                'Branch: ${user.branchId ?? 'Not assigned'}',
+                                style: const TextStyle(fontSize: 12),
+                              ),
+                            ],
+                          ),
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [

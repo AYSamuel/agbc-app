@@ -322,12 +322,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const Text('Remember me'),
                       const Spacer(),
-                      TextButton(
-                        onPressed: () {
-                          // TODO: Implement forgot password
-                        },
-                        child: const Text('Forgot Password?'),
-                      ),
                     ],
                   ),
                   const SizedBox(height: 24),

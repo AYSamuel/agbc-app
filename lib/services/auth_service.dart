@@ -1,41 +1,41 @@
 import 'package:flutter/foundation.dart'; // Import for ChangeNotifier
-import 'package:firebase_auth/firebase_auth.dart'; // Import Firebase Authentication
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:async'; // Import for StreamSubscription
 import 'package:flutter/foundation.dart' show kIsWeb;
 import '../models/user_model.dart'; // Import our custom UserModel
 import '../models/task_model.dart';
 import '../models/meeting_model.dart';
-import '../services/firestore_service.dart';
+import '../services/supabase_service.dart';
 import '../services/permissions_service.dart';
 import 'package:flutter/material.dart';
-import 'package:agbc_app/providers/firestore_provider.dart';
+import 'package:agbc_app/providers/supabase_provider.dart';
 import '../services/preferences_service.dart';
+import 'package:agbc_app/services/notification_service.dart';
 
 /// Exception for user-facing authentication errors.
 class AuthException implements Exception {
   final String message;
-  AuthException(this.message);
+  final String? code;
+
+  AuthException(this.message, {this.code});
 
   @override
   String toString() => message;
 }
 
 /// Service class for handling authentication-related operations.
-class AuthService with ChangeNotifier {
-  // Instance of FirebaseAuth for authentication operations
-  @visibleForTesting
-  final FirebaseAuth _auth;
-  final FirestoreService _firestoreService;
+class AuthService extends ChangeNotifier {
+  final SupabaseClient _supabase;
+  final SupabaseService _supabaseService;
+  final NotificationService _notificationService;
   final PermissionsService _permissionsService;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirestoreProvider _firestoreProvider = FirestoreProvider();
+  final SupabaseProvider _supabaseProvider = SupabaseProvider();
   bool _rememberMe = false;
+  bool _isLoading = false;
 
   // Private variable to store the current user
-  @visibleForTesting
   UserModel? _currentUser;
-  StreamSubscription<User?>? _authStateSubscription;
+  StreamSubscription<AuthState>? _authStateSubscription;
 
   // Getter to access the current user
   UserModel? get currentUser => _currentUser;
@@ -56,77 +56,64 @@ class AuthService with ChangeNotifier {
   @visibleForTesting
   static const Duration _lockoutDuration = Duration(minutes: 30);
 
-  AuthService({FirebaseAuth? auth}) 
-      : _auth = auth ?? FirebaseAuth.instance,
-        _firestoreService = FirestoreService(),
-        _permissionsService = PermissionsService();
+  AuthService({
+    required SupabaseClient supabase,
+    required SupabaseService supabaseService,
+    required NotificationService notificationService,
+    required PermissionsService permissionsService,
+  })  : _supabase = supabase,
+        _supabaseService = supabaseService,
+        _notificationService = notificationService,
+        _permissionsService = permissionsService {
+    _initialize();
+  }
 
-  Future<void> initialize() async {
+  Future<void> _initialize() async {
     try {
-      // Cancel any existing subscription
-      await _authStateSubscription?.cancel();
+      // Initialize permissions service
+      await _permissionsService.initialize();
       
-      // Check if remember me is enabled
-      final isRememberMeEnabled = await PreferencesService.isRememberMeEnabled();
-      
-      // If remember me is not enabled, sign out any existing user
-      if (!isRememberMeEnabled) {
-        await _auth.signOut();
-      }
-      
-      // Set up new auth state listener
-      _authStateSubscription = _auth.authStateChanges().listen((User? user) async {
-        if (user != null) {
-          try {
-            // First, reload the user to get the latest data
-            await user.reload();
-            
-            // Get the user document from Firestore
-            DocumentSnapshot userDoc = await _firestoreService.users.doc(user.uid).get();
-            
-            if (userDoc.exists && userDoc.data() != null) {
-              // If user document exists, load the data
-              _currentUser = UserModel.fromJson(userDoc.data() as Map<String, dynamic>);
-              
-              // Update the user's last login time
-              _currentUser = _currentUser!.copyWith(
-                lastLogin: DateTime.now(),
-                emailVerified: user.emailVerified,
-              );
-              
-              // Save the updated user data
-              await _firestoreService.updateUser(_currentUser!);
-            } else {
-              // If user document doesn't exist, create a new one
-              _currentUser = UserModel(
-                uid: user.uid,
-                displayName: user.displayName ?? '',
-                email: user.email ?? '',
-                role: 'member',
-                createdAt: DateTime.now(),
-                lastLogin: DateTime.now(),
-                isActive: true,
-                emailVerified: user.emailVerified,
-                departments: [],
-                notificationSettings: {
-                  'email': true,
-                  'push': true,
-                },
-                phoneNumber: user.phoneNumber ?? '',
-              );
-              await _firestoreService.users.doc(user.uid).set(_currentUser!.toJson());
-            }
-          } catch (e) {
-            print('Error loading user data: $e');
-            _currentUser = null;
-          }
+      // Listen to auth state changes
+      _authStateSubscription = _supabase.auth.onAuthStateChange.listen((data) async {
+        final session = data.session;
+        if (session != null) {
+          await _handleAuthStateChange(session);
         } else {
           _currentUser = null;
+          notifyListeners();
         }
-        notifyListeners();
       });
+      
+      // Check initial auth state
+      await _checkCurrentSession();
     } catch (e) {
       print('Error initializing auth service: $e');
+    }
+  }
+
+  Future<void> _checkCurrentSession() async {
+    try {
+      final session = _supabase.auth.currentSession;
+      if (session != null) {
+        await _handleAuthStateChange(session);
+      }
+    } catch (e) {
+      print('Error checking current session: $e');
+    }
+  }
+
+  Future<void> _handleAuthStateChange(Session session) async {
+    try {
+      // Get user data from our database
+      final user = await _supabaseService.getUser(session.user.id).first;
+      if (user != null) {
+        _currentUser = user;
+        // Register device for notifications
+        await _notificationService.registerDevice(session.user.id);
+      }
+      notifyListeners();
+    } catch (e) {
+      print('Error handling auth state change: $e');
       _currentUser = null;
       notifyListeners();
     }
@@ -137,7 +124,7 @@ class AuthService with ChangeNotifier {
     _rememberMe = value;
     if (!value) {
       // If remember me is disabled, clear the auth state and saved credentials
-      await _auth.signOut();
+      await _supabase.auth.signOut();
       await PreferencesService.clearLoginCredentials();
     }
   }
@@ -149,17 +136,19 @@ class AuthService with ChangeNotifier {
       await _authStateSubscription?.cancel();
       _authStateSubscription = null;
 
+      // Remove device registration
+      if (_currentUser != null) {
+        await _notificationService.removeDevice(_currentUser!.id);
+      }
+
       // Clear the current user
       _currentUser = null;
       notifyListeners();
 
-      // Clear Firebase persistence (web only)
+      // Clear platform-specific persistence (web only)
       if (kIsWeb) {
-        await _auth.setPersistence(Persistence.NONE);
+        await _supabase.auth.signOut();
       }
-
-      // Sign out from Firebase
-      await _auth.signOut();
 
       // Clear any cached data
       _loginAttempts.clear();
@@ -204,120 +193,182 @@ class AuthService with ChangeNotifier {
   }
 
   /// Logs in a user with the provided email and password.
-  Future<UserCredential?> signInWithEmailAndPassword(
-      String email, String password) async {
+  Future<UserModel?> signInWithEmailAndPassword(String email, String password) async {
     try {
-      final userCredential = await _auth.signInWithEmailAndPassword(
+      final response = await _supabase.auth.signInWithPassword(
         email: email,
         password: password,
       );
+      
+      if (response.user != null) {
+        // Check if email is verified
+        if (response.user!.emailConfirmedAt == null) {
+          throw AuthException(
+            'Your email address has not been verified yet. Please check your inbox for the verification link we sent you.',
+            code: 'email_not_verified',
+          );
+        }
 
-      if (userCredential.user != null) {
-        // Reload the user to get the latest data
-        await userCredential.user!.reload();
-        
-        // Get the user document from Firestore
-        DocumentSnapshot userDoc = await _firestoreService.users.doc(userCredential.user!.uid).get();
-        
-        if (userDoc.exists && userDoc.data() != null) {
-          // If user document exists, load the data
-          _currentUser = UserModel.fromJson(userDoc.data() as Map<String, dynamic>);
-          
-          // Update the user's last login time
+        final user = await _supabaseService.getUser(response.user!.id).first;
+        if (user != null) {
+          _currentUser = user;
           _currentUser = _currentUser!.copyWith(
             lastLogin: DateTime.now(),
-            emailVerified: userCredential.user!.emailVerified,
+            email_verified: true,
           );
-          
-          // Save the updated user data
-          await _firestoreService.updateUser(_currentUser!);
-        } else {
-          // If user document doesn't exist, create a new one
-          _currentUser = UserModel(
-            uid: userCredential.user!.uid,
-            displayName: userCredential.user!.displayName ?? '',
-            email: userCredential.user!.email ?? '',
-            role: 'member',
-            createdAt: DateTime.now(),
-            lastLogin: DateTime.now(),
-            isActive: true,
-            emailVerified: userCredential.user!.emailVerified,
-            departments: [],
-            notificationSettings: {
-              'email': true,
-              'push': true,
-            },
-            phoneNumber: userCredential.user!.phoneNumber ?? '',
-          );
-          await _firestoreService.users.doc(userCredential.user!.uid).set(_currentUser!.toJson());
+          await _supabaseService.updateUser(_currentUser!);
+          // Register device for notifications
+          await _notificationService.registerDevice(response.user!.id);
+          return _currentUser;
         }
-        
-        notifyListeners();
       }
-      
-      return userCredential;
+      return null;
     } catch (e) {
       print('Error during sign in: $e');
-      return null;
+      if (e is AuthException) {
+        rethrow;
+      }
+      // Transform Supabase errors into user-friendly messages
+      final errorMessage = e.toString().toLowerCase();
+      if (errorMessage.contains('email not confirmed') || 
+          errorMessage.contains('email not verified')) {
+        throw AuthException(
+          'Your email address has not been verified yet. Please check your inbox for the verification link we sent you.',
+          code: 'email_not_verified',
+        );
+      }
+      if (errorMessage.contains('invalid login credentials') || 
+          errorMessage.contains('invalid email or password')) {
+        throw AuthException(
+          'The email or password you entered is incorrect. Please try again.',
+          code: 'invalid_credentials',
+        );
+      }
+      if (errorMessage.contains('rate limit')) {
+        throw AuthException(
+          'Too many login attempts. Please try again in a few minutes.',
+          code: 'rate_limit',
+        );
+      }
+      if (errorMessage.contains('network')) {
+        throw AuthException(
+          'Network error. Please check your internet connection and try again.',
+          code: 'network_error',
+        );
+      }
+      throw AuthException(
+        'An error occurred while trying to log in. Please try again.',
+        code: 'unknown_error',
+      );
     }
   }
 
   /// Registers a new user with the provided email and password.
-  Future<UserModel?> registerWithEmailAndPassword(
+  Future<UserModel> registerWithEmailAndPassword(
     String email,
     String password,
     String name,
     String phone,
     String location,
     String role,
+    String? branchId,
   ) async {
     try {
-      final userCredential = await _auth.createUserWithEmailAndPassword(
+      print('Starting registration process...');
+      
+      // 1. Sign up with Supabase Auth
+      final response = await _supabase.auth.signUp(
         email: email,
         password: password,
+        data: {
+          'full_name': name,
+          'phone': phone,
+          'location': location,
+          'role': role,
+          'branch': branchId,
+        },
       );
 
-      if (userCredential.user != null) {
-        // Update display name in Firebase Auth
-        await userCredential.user!.updateDisplayName(name);
-        
-        // Send verification email
-        await userCredential.user!.sendEmailVerification();
+      print('Sign up response: ${response.user != null}');
+      print('Session: ${response.session != null}');
 
-        final user = UserModel(
-          uid: userCredential.user!.uid,
-          displayName: name,
-          email: email,
-          phoneNumber: phone,
-          location: location,
-          role: role,
-          createdAt: DateTime.now(),
-          lastLogin: DateTime.now(),
-          isActive: true,
-          emailVerified: false,
-          departments: [],
-          notificationSettings: {
-            'email': true,
-            'push': true,
-          },
-        );
-
-        await _firestoreProvider.createUser(user);
-
-        _currentUser = user;
-        notifyListeners();
-        return user;
+      if (response.user == null) {
+        throw AuthException('Registration failed. Please try again.');
       }
-      return null;
+
+      // 2. Create user in our database
+      final user = UserModel(
+        id: response.user!.id,
+        displayName: name,
+        email: email,
+        role: role,
+        createdAt: DateTime.now(),
+        lastLogin: DateTime.now(),
+        is_active: true,
+        email_verified: false,
+        departments: [],
+        notificationSettings: {
+          'email': true,
+          'push': true,
+        },
+        phoneNumber: phone,
+        location: location,
+        branchId: branchId,
+      );
+
+      // 3. Save user to database
+      await _supabaseService.updateUser(user);
+
+      // 4. If we have a session, set it and sign in
+      if (response.session != null) {
+        try {
+          // Set the session
+          await _supabase.auth.setSession(response.session!.accessToken);
+          print('Session set after registration');
+
+          // Force a session refresh to get latest user info
+          await _supabase.auth.refreshSession();
+          print('Session refreshed after registration');
+
+          // Register device for notifications
+          await _notificationService.registerDevice(response.user!.id);
+        } catch (e) {
+          print('Error setting session after registration: $e');
+          // Try to sign in with the credentials
+          try {
+            final signInResponse = await _supabase.auth.signInWithPassword(
+              email: email,
+              password: password,
+            );
+            if (signInResponse.session != null) {
+              await _supabase.auth.setSession(signInResponse.session!.accessToken);
+              print('Successfully signed in after registration');
+            }
+          } catch (signInError) {
+            print('Error signing in after registration: $signInError');
+          }
+        }
+      }
+
+      // 5. Set current user
+      _currentUser = user;
+      notifyListeners();
+
+      return user;
     } catch (e) {
-      throw Exception('Failed to register: $e');
+      print('Error during registration: $e');
+      if (e is AuthException) rethrow;
+      if (e is PostgrestException) {
+        throw AuthException('Database error: ${e.message}');
+      }
+      throw AuthException('An unexpected error occurred during registration.');
     }
   }
 
   /// Updates a user's role (only accessible by admins)
-  Future<void> updateUserRole(String uid, String newRole) async {
+  Future<void> updateUserRole(String id, String newRole) async {
     try {
-      await _firestore.collection('users').doc(uid).update({'role': newRole});
+      await _supabase.from('users').update({'role': newRole}).eq('id', id);
     } catch (e) {
       rethrow;
     }
@@ -326,7 +377,7 @@ class AuthService with ChangeNotifier {
   /// Get tasks based on user's role and permissions
   Stream<List<TaskModel>> getTasksForCurrentUser() {
     if (_currentUser != null) {
-      return _firestoreService.getTasksForUser(_currentUser!.uid);
+      return _supabaseService.getTasksForUser(_currentUser!.id);
     }
     return Stream.value([]);
   }
@@ -334,16 +385,28 @@ class AuthService with ChangeNotifier {
   /// Checks if there's a currently authenticated user.
   Future<bool> checkAuthentication() async {
     try {
-      User? user = _auth.currentUser;
+      User? user = _supabase.auth.currentUser;
       if (user != null) {
-        DocumentSnapshot userDoc = await _firestoreService.users.doc(user.uid).get();
-        
-        if (userDoc.exists && userDoc.data() != null) {
-          _currentUser = UserModel.fromJson(userDoc.data() as Map<String, dynamic>);
-          notifyListeners();
-          return true;
-        }
-        return false;
+        await _supabase.auth.refreshSession();
+        _currentUser = UserModel(
+          id: user.id,
+          displayName: user.userMetadata?['full_name'] ?? '',
+          email: user.email ?? '',
+          role: user.userMetadata?['role'] ?? 'member',
+          phoneNumber: user.phone,
+          photoUrl: user.userMetadata?['photo_url'],
+          createdAt: DateTime.parse(user.createdAt),
+          lastLogin: DateTime.now(),
+          is_active: true,
+          email_verified: user.emailConfirmedAt != null,
+          departments: [],
+          notificationSettings: {
+            'email': true,
+            'push': true,
+          },
+        );
+        notifyListeners();
+        return true;
       }
       return false;
     } catch (e) {
@@ -354,70 +417,69 @@ class AuthService with ChangeNotifier {
   /// Sends a verification email to the current user
   Future<void> sendVerificationEmail() async {
     try {
-      final user = _auth.currentUser;
-      if (user != null) {
-        await user.sendEmailVerification();
-      } else {
-        throw AuthException('No authenticated user found');
+      final user = _supabase.auth.currentUser;
+      if (user == null) {
+        throw AuthException('No authenticated user found.');
       }
+      await _supabase.auth.resend(
+        type: OtpType.signup,
+        email: user.email!,
+      );
     } catch (e) {
-      throw AuthException('Failed to send verification email: $e');
+      throw AuthException('Failed to send verification email.');
     }
   }
 
   /// Checks if the current user's email is verified
   Future<bool> isEmailVerified() async {
     try {
-      final user = _auth.currentUser;
-      if (user != null) {
-        await user.reload();
-        return user.emailVerified;
+      final user = _supabase.auth.currentUser;
+      if (user == null) return false;
+
+      // Refresh session to get latest user info
+      await _supabase.auth.refreshSession();
+      
+      // Check auth state
+      if (user.emailConfirmedAt != null) {
+        // Update database if verified
+        if (_currentUser != null) {
+          _currentUser = _currentUser!.copyWith(email_verified: true);
+          await _supabaseService.updateUser(_currentUser!);
+        }
+        return true;
       }
+
       return false;
     } catch (e) {
-      throw AuthException('Failed to check email verification status: $e');
+      print('Error checking email verification: $e');
+      return false;
     }
   }
 
-  String _handleAuthException(FirebaseAuthException e) {
-    print(
-        'FirebaseAuthException code: [33m${e.code}[0m, message: [36m${e.message}[0m');
-    switch (e.code) {
-      case 'wrong-password':
-        return 'Incorrect password. Please try again.';
-      case 'email-already-in-use':
-        return 'An account already exists with this email.';
-      case 'weak-password':
-        return 'The password provided is too weak.';
-      case 'invalid-email':
-        return 'The email address is not valid.';
-      case 'operation-not-allowed':
-        return 'Email & Password accounts are not enabled.';
-      case 'user-disabled':
-        return 'This user account has been disabled.';
-      case 'user-not-found':
-        return 'This email is not registered. Please create an account first.';
-      case 'too-many-requests':
-        return 'Too many attempts. Please try again later.';
-      case 'network-request-failed':
-        return 'Network error. Please check your internet connection.';
-      case 'invalid-credential':
-        return 'Incorrect email or password. Please register if you don\'t have an account.';
-      default:
-        // Return the actual Firebase error message if available, otherwise a generic message
-        return e.message ?? 'An error occurred. Please try again.';
+  String _handleAuthException(dynamic e) {
+    if (e is AuthException) {
+      return e.message;
+    } else if (e is PostgrestException) {
+      return 'Database error: ${e.message}';
+    } else if (e is AuthException) {
+      return 'Authentication error: ${e.message}';
+    } else {
+      return 'An unexpected error occurred. Please try again.';
     }
   }
 
   /// Signs out the user and clears all auth state
   Future<void> signOut() async {
     try {
+      // Remove device registration
+      if (_currentUser != null) {
+        await _notificationService.removeDevice(_currentUser!.id);
+      }
+      await _supabase.auth.signOut();
+
       // Clear the current user first
       _currentUser = null;
       notifyListeners();
-
-      // Sign out from Firebase
-      await _auth.signOut();
 
       // Clear any cached data
       _loginAttempts.clear();
@@ -428,51 +490,62 @@ class AuthService with ChangeNotifier {
 
   Future<void> resetPassword(String email) async {
     try {
-      await _auth.sendPasswordResetEmail(email: email);
+      await _supabase.auth.resetPasswordForEmail(email);
     } catch (e) {
-      throw AuthException(_handleAuthException(e as FirebaseAuthException));
+      throw AuthException(_handleAuthException(e));
     }
   }
 
   Future<void> updatePassword(String newPassword) async {
     try {
-      if (_auth.currentUser != null) {
-        await _auth.currentUser!.updatePassword(newPassword);
+      if (_supabase.auth.currentUser != null) {
+        await _supabase.auth.updateUser(
+          UserAttributes(password: newPassword),
+        );
       } else {
         throw AuthException('No authenticated user found');
       }
     } catch (e) {
-      throw AuthException(_handleAuthException(e as FirebaseAuthException));
+      throw AuthException(_handleAuthException(e));
     }
   }
 
   Future<void> updateEmail(String newEmail) async {
     try {
-      if (_auth.currentUser != null) {
-        await _auth.currentUser!.updateEmail(newEmail);
+      if (_supabase.auth.currentUser != null) {
+        await _supabase.auth.updateUser(
+          UserAttributes(email: newEmail),
+        );
         if (_currentUser != null) {
           _currentUser = _currentUser!.copyWith(email: newEmail);
-          await _firestoreService.updateUser(_currentUser!);
+          await _supabaseService.updateUser(_currentUser!);
           notifyListeners();
         }
       } else {
         throw AuthException('No authenticated user found');
       }
     } catch (e) {
-      throw AuthException(_handleAuthException(e as FirebaseAuthException));
+      throw AuthException(_handleAuthException(e));
     }
   }
 
   Future<void> updateProfile(String name, String? photoUrl) async {
     try {
-      if (_auth.currentUser != null) {
-        await _auth.currentUser!.updateDisplayName(name);
+      if (_supabase.auth.currentUser != null) {
+        await _supabase.auth.updateUser(
+          UserAttributes(
+            data: {
+              'full_name': name,
+              'photo_url': photoUrl,
+            },
+          ),
+        );
         if (_currentUser != null) {
           _currentUser = _currentUser!.copyWith(
             displayName: name,
             photoUrl: photoUrl,
           );
-          await _firestoreService.updateUser(_currentUser!);
+          await _supabaseService.updateUser(_currentUser!);
           notifyListeners();
         }
       } else {
@@ -485,11 +558,9 @@ class AuthService with ChangeNotifier {
 
   Future<void> deleteAccount() async {
     try {
-      if (_auth.currentUser != null) {
-        // Delete the user document from Firestore
-        await _firestoreService.users.doc(_auth.currentUser!.uid).delete();
-        // Delete the Firebase Auth account
-        await _auth.currentUser!.delete();
+      if (_supabase.auth.currentUser != null) {
+        await _supabaseService.updateUser(_currentUser!.copyWith(is_active: false));
+        await _supabase.auth.signOut();
         _currentUser = null;
         notifyListeners();
       } else {
@@ -507,25 +578,330 @@ class AuthService with ChangeNotifier {
     }
 
     if (_currentUser!.role == 'admin' || _currentUser!.role == 'pastor') {
-      return _firestoreService.meetings
-          .snapshots()
-          .map((snapshot) => snapshot.docs
-              .map((doc) {
-                final data = doc.data() as Map<String, dynamic>?;
-                return MeetingModel.fromJson(data ?? {});
-              })
-              .toList());
+      return _supabaseService.getAllMeetings();
     } else {
-      return _firestoreService
-          .meetings
-          .where('invitedUsers', arrayContains: _currentUser!.uid)
-          .snapshots()
-          .map((snapshot) => snapshot.docs
-              .map((doc) {
-                final data = doc.data() as Map<String, dynamic>?;
-                return MeetingModel.fromJson(data ?? {});
-              })
-              .toList());
+      return _supabaseService.getMeetingsForUser(_currentUser!.id);
+    }
+  }
+
+  /// Checks the current authentication state and updates the user accordingly
+  Future<void> checkAuthState() async {
+    try {
+      print('=== Checking Auth State ===');
+      final session = _supabase.auth.currentSession;
+      print('Current session: ${session != null}'); // Debug log
+      
+      if (session != null) {
+        print('Session user ID: ${session.user.id}'); // Debug log
+        print('Session user email: ${session.user.email}'); // Debug log
+        print('Session user emailConfirmedAt: ${session.user.emailConfirmedAt}'); // Debug log
+        
+        // Force a session refresh first
+        print('Attempting to refresh session...'); // Debug log
+        await _supabase.auth.refreshSession();
+        print('Session refreshed successfully'); // Debug log
+        
+        // Get the latest user data after refresh
+        final currentUser = _supabase.auth.currentUser;
+        print('Current user after refresh: ${currentUser?.email}'); // Debug log
+        print('Email confirmed at: ${currentUser?.emailConfirmedAt}'); // Debug log
+        print('User metadata: ${currentUser?.userMetadata}'); // Debug log
+        
+        final user = await _supabaseService.getUser(session.user.id).first;
+        if (user != null) {
+          print('Found user in database: ${user.email}'); // Debug log
+          _currentUser = user;
+          _currentUser = _currentUser!.copyWith(
+            lastLogin: DateTime.now(),
+            email_verified: currentUser?.emailConfirmedAt != null,
+          );
+          print('Updated user verification status: ${_currentUser!.email_verified}'); // Debug log
+          await _supabaseService.updateUser(_currentUser!);
+          // Register device for notifications
+          await _notificationService.registerDevice(session.user.id);
+        } else {
+          print('No user found in database'); // Debug log
+        }
+      } else {
+        print('No session found, clearing current user'); // Debug log
+        _currentUser = null;
+      }
+      notifyListeners();
+    } catch (e) {
+      print('Error checking auth state: $e'); // Debug log
+      _currentUser = null;
+      notifyListeners();
+    }
+  }
+
+  /// Checks if an email exists in the system
+  Future<UserModel?> checkEmailExists(String email) async {
+    try {
+      print('Checking email in database: $email'); // Debug log
+      
+      // Check in public.users table
+      final response = await _supabase
+          .from('users')
+          .select()
+          .eq('email', email.toLowerCase().trim())
+          .maybeSingle();
+      
+      print('Database response: $response'); // Debug log
+      
+      if (response != null) {
+        print('User found in database'); // Debug log
+        return UserModel.fromJson(response);
+      }
+      
+      // If not found in users table, try to sign in to check if it exists in auth
+      try {
+        await _supabase.auth.signInWithOtp(
+          email: email,
+          shouldCreateUser: false,
+        );
+        print('Email exists in auth system'); // Debug log
+        return UserModel(
+          id: 'pending',
+          email: email,
+          displayName: '',
+          role: 'member',
+          createdAt: DateTime.now(),
+          lastLogin: DateTime.now(),
+          is_active: true,
+          email_verified: false,
+          departments: [],
+          notificationSettings: {
+            'email': true,
+            'push': true,
+          },
+        );
+      } catch (e) {
+        print('Email not found in auth system'); // Debug log
+        return null;
+      }
+    } catch (e) {
+      print('Error checking email: $e'); // Debug log
+      
+      if (e is PostgrestException) {
+        print('Postgrest error code: ${e.code}'); // Debug log
+        if (e.code == 'PGRST116') {
+          // No rows returned
+          return null;
+        }
+      }
+      
+      // If we get here, it's an unexpected error
+      throw AuthException('An error occurred while verifying your email. Please try again.');
+    }
+  }
+
+  /// Register a new user
+  Future<UserModel> register({
+    required String email,
+    required String password,
+    required String name,
+    String? location,
+    String role = 'member',
+    String? branchId,
+  }) async {
+    try {
+      _isLoading = true;
+      notifyListeners();
+
+      // 1. Sign up with Supabase Auth
+      final response = await _supabase.auth.signUp(
+        email: email,
+        password: password,
+        data: {
+          'full_name': name,
+          'location': location,
+          'role': role,
+          'branch': branchId,
+        },
+      );
+
+      if (response.user == null) {
+        throw AuthException('Registration failed. Please try again.');
+      }
+
+      // 2. Create user in database
+      final user = UserModel(
+        id: response.user!.id,
+        displayName: name,
+        email: email,
+        role: role,
+        createdAt: DateTime.now(),
+        lastLogin: DateTime.now(),
+        is_active: true,
+        email_verified: false,
+        departments: [],
+        notificationSettings: {
+          'email': true,
+          'push': true,
+        },
+        location: location,
+        branchId: branchId,
+      );
+
+      // 3. Save user to database
+      await _supabaseService.updateUser(user);
+
+      // 4. Set session if available
+      if (response.session != null) {
+        await _supabase.auth.setSession(response.session!.accessToken);
+        await _handleSession(response.session!);
+      }
+
+      return user;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Handle a new session
+  Future<void> _handleSession(Session session) async {
+    try {
+      final user = await _supabaseService.getUser(session.user.id).first;
+      if (user != null) {
+        _currentUser = user.copyWith(
+          lastLogin: DateTime.now(),
+          email_verified: session.user.emailConfirmedAt != null,
+        );
+        await _supabaseService.updateUser(_currentUser!);
+        await _notificationService.registerDevice(session.user.id);
+      }
+    } catch (e) {
+      print('Error handling session: $e');
+      _currentUser = null;
+    }
+  }
+
+  /// Sign in with email and password
+  Future<UserModel> signIn({
+    required String email,
+    required String password,
+    bool rememberMe = false,
+  }) async {
+    try {
+      _isLoading = true;
+      notifyListeners();
+
+      final response = await _supabase.auth.signInWithPassword(
+        email: email,
+        password: password,
+      );
+
+      if (response.user == null) {
+        throw AuthException('Invalid email or password');
+      }
+
+      // Check if email is verified
+      if (response.user!.emailConfirmedAt == null) {
+        throw AuthException(
+          'Your email address has not been verified yet. Please check your inbox for the verification link we sent you.',
+          code: 'email_not_verified',
+        );
+      }
+
+      await _handleSession(response.session!);
+
+      if (rememberMe) {
+        await PreferencesService.saveLoginCredentials(
+          email: email,
+          password: password,
+          rememberMe: true,
+        );
+      }
+
+      return _currentUser!;
+    } catch (e) {
+      print('Error during sign in: $e');
+      if (e is AuthException) {
+        rethrow;
+      }
+      // Transform Supabase errors into user-friendly messages
+      final errorMessage = e.toString().toLowerCase();
+      if (errorMessage.contains('email not confirmed') || 
+          errorMessage.contains('email not verified')) {
+        throw AuthException(
+          'Your email address has not been verified yet. Please check your inbox for the verification link we sent you.',
+          code: 'email_not_verified',
+        );
+      }
+      if (errorMessage.contains('invalid login credentials') || 
+          errorMessage.contains('invalid email or password')) {
+        throw AuthException(
+          'The email or password you entered is incorrect. Please try again.',
+          code: 'invalid_credentials',
+        );
+      }
+      if (errorMessage.contains('rate limit')) {
+        throw AuthException(
+          'Too many login attempts. Please try again in a few minutes.',
+          code: 'rate_limit',
+        );
+      }
+      if (errorMessage.contains('network')) {
+        throw AuthException(
+          'Network error. Please check your internet connection and try again.',
+          code: 'network_error',
+        );
+      }
+      throw AuthException(
+        'An error occurred while trying to log in. Please try again.',
+        code: 'unknown_error',
+      );
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Verifies a user's email using the provided token
+  Future<void> verifyEmail(String token) async {
+    try {
+      print('Starting email verification with token: $token'); // Debug log
+      
+      // Verify the email using Supabase
+      final response = await _supabase.auth.verifyOTP(
+        type: OtpType.signup,
+        token: token,
+      );
+      
+      print('OTP verification response: ${response.user != null}'); // Debug log
+      
+      // Refresh the session to get updated user info
+      await _supabase.auth.refreshSession();
+      
+      // Get the current user from Supabase
+      final user = _supabase.auth.currentUser;
+      print('Current user after verification: ${user?.email}'); // Debug log
+      print('Email confirmed at: ${user?.emailConfirmedAt}'); // Debug log
+      
+      if (user != null) {
+        // Get the user from our database
+        final dbUser = await _supabaseService.getUser(user.id).first;
+        if (dbUser != null) {
+          // Update the user's verification status in the database
+          final updatedUser = dbUser.copyWith(email_verified: true);
+          await _supabaseService.updateUser(updatedUser);
+          print('Updated user verification status in database'); // Debug log
+          
+          // Update local state if we have a current user
+          if (_currentUser != null) {
+            _currentUser = updatedUser;
+            notifyListeners();
+          }
+        } else {
+          print('User not found in database'); // Debug log
+        }
+      } else {
+        print('No user found after verification'); // Debug log
+      }
+    } catch (e) {
+      print('Error verifying email: $e'); // Debug log
+      throw AuthException('Failed to verify email. Please try again.');
     }
   }
 }

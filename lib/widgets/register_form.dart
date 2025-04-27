@@ -1,17 +1,18 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:agbc_app/services/auth_service.dart';
-import 'package:agbc_app/services/location_service.dart';
-import 'package:agbc_app/widgets/custom_input.dart';
-import 'package:agbc_app/widgets/custom_button.dart';
-import 'package:agbc_app/widgets/loading_indicator.dart';
-import 'package:agbc_app/utils/theme.dart';
-import 'package:agbc_app/widgets/mixins/location_validation_mixin.dart';
-import 'package:agbc_app/widgets/mixins/form_validation_mixin.dart';
-import 'package:agbc_app/providers/firestore_provider.dart';
-import 'package:agbc_app/models/church_branch_model.dart';
+import '../services/auth_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide AuthException;
+import '../services/location_service.dart';
+import '../widgets/custom_input.dart';
+import '../widgets/custom_button.dart';
+import '../widgets/loading_indicator.dart';
+import '../utils/theme.dart';
+import '../widgets/mixins/location_validation_mixin.dart';
+import '../widgets/mixins/form_validation_mixin.dart';
+import '../providers/supabase_provider.dart';
+import '../models/church_branch_model.dart';
+import '../widgets/custom_dropdown.dart';
 
 class RegisterForm extends StatefulWidget {
   final VoidCallback onRegisterSuccess;
@@ -38,6 +39,7 @@ class _RegisterFormState extends State<RegisterForm> with LocationValidationMixi
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _isGettingLocation = false;
+  String? _selectedBranchId;
 
   @override
   void initState() {
@@ -108,11 +110,20 @@ class _RegisterFormState extends State<RegisterForm> with LocationValidationMixi
   }
 
   Future<void> _register() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) {
+      _showErrorSnackBar('Please fill in all required fields correctly');
+      return;
+    }
 
     // Validate location
     if (locationError != null) {
       _showErrorSnackBar(locationError!);
+      return;
+    }
+
+    // Validate branch selection
+    if (_selectedBranchId == null) {
+      _showErrorSnackBar('Please select a branch');
       return;
     }
 
@@ -121,38 +132,58 @@ class _RegisterFormState extends State<RegisterForm> with LocationValidationMixi
     try {
       final authService = Provider.of<AuthService>(context, listen: false);
       
-      await authService.registerWithEmailAndPassword(
+      final user = await authService.registerWithEmailAndPassword(
         _emailController.text.trim(),
         _passwordController.text,
         _nameController.text.trim(),
         _phoneController.text.trim(),
         _locationController.text.trim(),
         'member',
+        _selectedBranchId,
       );
 
       if (mounted) {
-        widget.onRegisterSuccess();
+        // Show a snackbar about the verification email
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.mark_email_unread, color: Colors.white),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Verification email sent to ${_emailController.text.trim()}',
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.blue,
+            duration: const Duration(seconds: 5),
+            action: SnackBarAction(
+              label: 'Resend',
+              textColor: Colors.white,
+              onPressed: () {
+                authService.sendVerificationEmail();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Verification email resent'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              },
+            ),
+          ),
+        );
+
+        // Navigate to home screen
+        Navigator.of(context).pushReplacementNamed('/home');
       }
     } catch (e) {
       if (mounted) {
         String errorMessage;
-        if (e is FirebaseAuthException) {
-          switch (e.code) {
-            case 'email-already-in-use':
-              errorMessage = 'This email is already registered. Please login instead.';
-              break;
-            case 'invalid-email':
-              errorMessage = 'The email address is invalid.';
-              break;
-            case 'operation-not-allowed':
-              errorMessage = 'Email/password accounts are not enabled.';
-              break;
-            case 'weak-password':
-              errorMessage = 'The password is too weak.';
-              break;
-            default:
-              errorMessage = 'An error occurred during registration. Please try again.';
-          }
+        if (e is AuthException) {
+          errorMessage = e.message;
         } else {
           errorMessage = 'An unexpected error occurred. Please try again.';
         }
@@ -182,8 +213,10 @@ class _RegisterFormState extends State<RegisterForm> with LocationValidationMixi
             textInputAction: TextInputAction.next,
             onSubmitted: (_) => FocusScope.of(context).nextFocus(),
             validator: validateName,
+            backgroundColor: Colors.white,
+            labelColor: Colors.black87,
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 16),
 
           // Email Field
           CustomInput(
@@ -195,8 +228,10 @@ class _RegisterFormState extends State<RegisterForm> with LocationValidationMixi
             textInputAction: TextInputAction.next,
             onSubmitted: (_) => FocusScope.of(context).nextFocus(),
             validator: validateEmail,
+            backgroundColor: Colors.white,
+            labelColor: Colors.black87,
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 16),
 
           // Phone Field
           CustomInput(
@@ -206,8 +241,10 @@ class _RegisterFormState extends State<RegisterForm> with LocationValidationMixi
             prefixIcon: Icon(Icons.phone, color: AppTheme.neutralColor),
             keyboardType: TextInputType.phone,
             validator: validatePhone,
+            backgroundColor: Colors.white,
+            labelColor: Colors.black87,
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 16),
 
           // Location Field
           CustomInput(
@@ -234,8 +271,49 @@ class _RegisterFormState extends State<RegisterForm> with LocationValidationMixi
                     onPressed: _getCurrentLocation,
                   ),
             validator: validateLocation,
+            backgroundColor: Colors.white,
+            labelColor: Colors.black87,
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 16),
+
+          // Branch Selection
+          StreamBuilder<List<ChurchBranch>>(
+            stream: Provider.of<SupabaseProvider>(context).getAllBranches(),
+            builder: (context, snapshot) {
+              if (snapshot.hasError) {
+                return Text('Error: ${snapshot.error}');
+              }
+              if (!snapshot.hasData) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              final branches = snapshot.data!;
+              
+              return CustomDropdown<String>(
+                value: _selectedBranchId,
+                label: 'Select Branch',
+                hint: 'Select a branch',
+                prefixIcon: Icons.church,
+                items: branches.map((branch) {
+                  return DropdownMenuItem<String>(
+                    value: branch.id,
+                    child: Text(branch.name),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedBranchId = value;
+                  });
+                },
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please select a branch';
+                  }
+                  return null;
+                },
+              );
+            },
+          ),
+          const SizedBox(height: 16),
 
           // Password Field
           CustomInput(
@@ -258,8 +336,10 @@ class _RegisterFormState extends State<RegisterForm> with LocationValidationMixi
               },
             ),
             validator: validatePassword,
+            backgroundColor: Colors.white,
+            labelColor: Colors.black87,
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 16),
 
           // Confirm Password Field
           CustomInput(
@@ -287,23 +367,29 @@ class _RegisterFormState extends State<RegisterForm> with LocationValidationMixi
               }
               return null;
             },
+            backgroundColor: Colors.white,
+            labelColor: Colors.black87,
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 24),
 
           // Register Button
-          CustomButton(
-            onPressed: _isLoading ? null : _register,
-            backgroundColor: AppTheme.accentColor,
-            child: _isLoading
-                ? const LoadingIndicator()
-                : const Text(
-                    'Register',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+          Material(
+            elevation: 4,
+            borderRadius: BorderRadius.circular(8),
+            child: CustomButton(
+              onPressed: _isLoading ? null : _register,
+              backgroundColor: AppTheme.accentColor,
+              child: _isLoading
+                  ? const LoadingIndicator()
+                  : const Text(
+                      'Register',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
                     ),
-                  ),
+            ),
           ),
         ],
       ),

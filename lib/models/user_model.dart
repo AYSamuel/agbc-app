@@ -2,78 +2,68 @@
 /// Handles user profile information, roles, and church departments.
 class UserModel {
   // Basic user information
-  final String uid; // Firebase Auth User ID
+  final String id; // User ID from Supabase Auth
   final String displayName;
   final String email;
   final String role;
   final String? phoneNumber; // User's contact number
   final String? photoUrl; // URL to user's profile photo
   final DateTime createdAt; // When the account was created
-  final DateTime lastLogin; // Last login timestamp
+  final DateTime? lastLogin;
 
   // Church affiliation
-  final String branchId; // Current branch ID
-  final String location; // User's location/city
+  final String? branchId; // Current branch ID (nullable)
+  final String? location; // User's location/city
 
   // Department involvement
   final List<String> departments; // Church departments (choir, media, ushering, etc.)
-  final DateTime? departmentJoinDate; // When they joined their current department
-
-  // Account status
-  final bool isActive; // Whether the account is active
-  final bool emailVerified; // Whether email has been verified
-  final Map<String, dynamic> notificationSettings; // Notification preferences
-
-  final DateTime? dateJoined; // When they joined the church
+  final bool is_active; // Whether the account is active
+  final bool email_verified; // Whether email has been verified
+  final Map<String, bool> notificationSettings; // Notification preferences
+  final String? notification_token;
+  final DateTime? notification_token_updated_at;
 
   /// Constructor for creating a new UserModel instance
   UserModel({
-    required this.uid,
+    required this.id,
     required this.displayName,
     required this.email,
     required this.role,
+    required this.createdAt,
+    this.lastLogin,
+    required this.is_active,
+    required this.email_verified,
+    required this.departments,
+    required this.notificationSettings,
+    this.location,
+    this.branchId,
     this.phoneNumber,
     this.photoUrl,
-    DateTime? createdAt,
-    DateTime? lastLogin,
-    this.branchId = '',
-    this.location = '',
-    this.departments = const [],
-    this.departmentJoinDate,
-    this.isActive = true,
-    this.emailVerified = false,
-    this.notificationSettings = const {},
-    this.dateJoined,
-  })  : createdAt = createdAt ?? DateTime.now(),
-        lastLogin = lastLogin ?? DateTime.now();
+    this.notification_token,
+    this.notification_token_updated_at,
+  });
 
   /// Creates a UserModel instance from JSON data
   factory UserModel.fromJson(Map<String, dynamic> json) {
-    final role = json['role'] ?? 'member';
-    
+    print('Creating UserModel from JSON: $json');
     return UserModel(
-      uid: json['uid'] ?? '',
-      displayName: json['displayName'] ?? '',
-      email: json['email'] ?? '',
-      role: role,
-      phoneNumber: json['phoneNumber'],
-      photoUrl: json['photoUrl'],
-      createdAt:
-          json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
-      lastLogin:
-          json['lastLogin'] != null ? DateTime.parse(json['lastLogin']) : null,
-      branchId: json['branchId'] ?? '',
-      location: json['location'] ?? '',
-      departments: List<String>.from(json['departments'] ?? []),
-      departmentJoinDate: json['departmentJoinDate'] != null
-          ? DateTime.parse(json['departmentJoinDate'])
-          : null,
-      isActive: json['isActive'] ?? true,
-      emailVerified: json['emailVerified'] ?? false,
-      notificationSettings:
-          Map<String, dynamic>.from(json['notificationSettings'] ?? {}),
-      dateJoined: json['dateJoined'] != null
-          ? DateTime.parse(json['dateJoined'])
+      id: json['id'] as String,
+      displayName: json['display_name'] as String,
+      email: json['email'] as String,
+      role: json['role'] as String,
+      createdAt: DateTime.parse(json['created_at'] as String),
+      lastLogin: json['last_login'] != null ? DateTime.parse(json['last_login'] as String) : null,
+      is_active: json['is_active'] as bool,
+      email_verified: json['email_verified'] as bool,
+      departments: List<String>.from(json['departments'] as List),
+      notificationSettings: Map<String, bool>.from(json['notification_settings'] as Map),
+      location: json['location'] as String?,
+      branchId: json['branch_id'] as String?,
+      phoneNumber: json['phone_number'] as String?,
+      photoUrl: json['photo_url'] as String?,
+      notification_token: json['notification_token'],
+      notification_token_updated_at: json['notification_token_updated_at'] != null 
+          ? DateTime.parse(json['notification_token_updated_at'] as String) 
           : null,
     );
   }
@@ -81,22 +71,22 @@ class UserModel {
   /// Converts the UserModel instance to JSON format
   Map<String, dynamic> toJson() {
     return {
-      'uid': uid,
-      'displayName': displayName,
+      'id': id,
+      'display_name': displayName,
       'email': email,
       'role': role,
-      'phoneNumber': phoneNumber,
-      'photoUrl': photoUrl,
-      'createdAt': createdAt.toIso8601String(),
-      'lastLogin': lastLogin.toIso8601String(),
-      'branchId': branchId,
-      'location': location,
+      'created_at': createdAt.toIso8601String(),
+      'last_login': lastLogin?.toIso8601String(),
+      'is_active': is_active,
+      'email_verified': email_verified,
       'departments': departments,
-      'departmentJoinDate': departmentJoinDate?.toIso8601String(),
-      'isActive': isActive,
-      'emailVerified': emailVerified,
-      'notificationSettings': notificationSettings,
-      'dateJoined': dateJoined?.toIso8601String(),
+      'notification_settings': notificationSettings,
+      'location': location,
+      'branch_id': branchId,
+      'phone_number': phoneNumber,
+      'photo_url': photoUrl,
+      'notification_token': notification_token,
+      'notification_token_updated_at': notification_token_updated_at?.toIso8601String(),
     };
   }
 
@@ -113,40 +103,40 @@ class UserModel {
 
   /// Creates a copy of the user with updated fields
   UserModel copyWith({
-    String? uid,
+    String? id,
     String? displayName,
     String? email,
     String? role,
-    String? phoneNumber,
-    String? photoUrl,
     DateTime? createdAt,
     DateTime? lastLogin,
-    String? branchId,
-    String? location,
+    bool? is_active,
+    bool? email_verified,
     List<String>? departments,
-    DateTime? departmentJoinDate,
-    bool? isActive,
-    bool? emailVerified,
-    Map<String, dynamic>? notificationSettings,
-    DateTime? dateJoined,
+    Map<String, bool>? notificationSettings,
+    String? location,
+    String? branchId,
+    String? phoneNumber,
+    String? photoUrl,
+    String? notification_token,
+    DateTime? notification_token_updated_at,
   }) {
     return UserModel(
-      uid: uid ?? this.uid,
+      id: id ?? this.id,
       displayName: displayName ?? this.displayName,
       email: email ?? this.email,
       role: role ?? this.role,
-      phoneNumber: phoneNumber ?? this.phoneNumber,
-      photoUrl: photoUrl ?? this.photoUrl,
       createdAt: createdAt ?? this.createdAt,
       lastLogin: lastLogin ?? this.lastLogin,
-      branchId: branchId ?? this.branchId,
-      location: location ?? this.location,
+      is_active: is_active ?? this.is_active,
+      email_verified: email_verified ?? this.email_verified,
       departments: departments ?? this.departments,
-      departmentJoinDate: departmentJoinDate ?? this.departmentJoinDate,
-      isActive: isActive ?? this.isActive,
-      emailVerified: emailVerified ?? this.emailVerified,
       notificationSettings: notificationSettings ?? this.notificationSettings,
-      dateJoined: dateJoined ?? this.dateJoined,
+      location: location ?? this.location,
+      branchId: branchId ?? this.branchId,
+      phoneNumber: phoneNumber ?? this.phoneNumber,
+      photoUrl: photoUrl ?? this.photoUrl,
+      notification_token: notification_token ?? this.notification_token,
+      notification_token_updated_at: notification_token_updated_at ?? this.notification_token_updated_at,
     );
   }
 }

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/firestore_provider.dart';
+import '../providers/supabase_provider.dart';
 import 'user_management_screen.dart';
 import 'task_management_screen.dart';
 import 'meeting_management_screen.dart';
@@ -15,6 +15,7 @@ class AdminScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final supabaseProvider = Provider.of<SupabaseProvider>(context);
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       body: SafeArea(

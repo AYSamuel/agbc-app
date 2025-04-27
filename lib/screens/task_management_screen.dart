@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/firestore_provider.dart';
+import '../providers/supabase_provider.dart';
 import '../models/task_model.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
@@ -12,7 +12,7 @@ class TaskManagementScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final firestoreProvider = Provider.of<FirestoreProvider>(context);
+    final supabaseProvider = Provider.of<SupabaseProvider>(context);
 
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
@@ -33,7 +33,7 @@ class TaskManagementScreen extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF1A237E),
+                      color: AppTheme.primaryColor,
                     ),
                   ),
                 ],
@@ -42,7 +42,7 @@ class TaskManagementScreen extends StatelessWidget {
             // Tasks List
             Expanded(
               child: StreamBuilder<List<TaskModel>>(
-                stream: firestoreProvider.getAllTasks(),
+                stream: supabaseProvider.getAllTasks(),
                 builder: (context, snapshot) {
                   if (snapshot.hasError) {
                     return Center(child: Text('Error: ${snapshot.error}'));
@@ -60,7 +60,7 @@ class TaskManagementScreen extends StatelessWidget {
                           Icon(
                             Icons.task_alt,
                             size: 64,
-                            color: Color(0xFF1A237E),
+                            color: AppTheme.primaryColor,
                           ),
                           SizedBox(height: 16),
                           Text(
@@ -68,7 +68,7 @@ class TaskManagementScreen extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
-                              color: Color(0xFF1A237E),
+                              color: AppTheme.primaryColor,
                             ),
                           ),
                           SizedBox(height: 8),
@@ -76,7 +76,7 @@ class TaskManagementScreen extends StatelessWidget {
                             'There are currently no tasks in the system.',
                             style: TextStyle(
                               fontSize: 16,
-                              color: Colors.grey,
+                              color: AppTheme.neutralColor,
                             ),
                           ),
                         ],
@@ -103,7 +103,7 @@ class TaskManagementScreen extends StatelessWidget {
                               Text(task.description),
                               const SizedBox(height: 4),
                               Text(
-                                'Assigned to: ${task.assignedTo}',
+                                'Assigned to: ${task.assigned_to}',
                                 style: const TextStyle(fontSize: 12),
                               ),
                               Text(
@@ -160,12 +160,12 @@ class TaskManagementScreen extends StatelessWidget {
   Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
       case 'completed':
-        return Colors.green;
+        return AppTheme.successColor;
       case 'in progress':
-        return Colors.orange;
+        return AppTheme.warningColor;
       case 'pending':
       default:
-        return Colors.grey;
+        return AppTheme.neutralColor;
     }
   }
 } 

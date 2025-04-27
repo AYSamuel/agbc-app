@@ -4,7 +4,7 @@ import 'package:agbc_app/widgets/radial_menu.dart';
 import 'package:agbc_app/widgets/task_status_card.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
-import '../providers/firestore_provider.dart';
+import '../providers/supabase_provider.dart';
 import '../models/task_model.dart';
 import '../models/meeting_model.dart';
 import '../models/church_branch_model.dart';
@@ -14,10 +14,17 @@ import 'meeting_management_screen.dart';
 import 'admin_screen.dart';
 import 'add_branch_screen.dart';
 import 'add_task_screen.dart';
+import 'profile_screen.dart';
+import 'package:google_fonts/google_fonts.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
   void _showTaskCreationDialog(BuildContext context) {
     final user = Provider.of<AuthService>(context, listen: false).currentUser;
     if (user?.role == 'member') {
@@ -86,7 +93,7 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final authService = Provider.of<AuthService>(context, listen: true);
-    final firestoreProvider = Provider.of<FirestoreProvider>(context);
+    final supabaseProvider = Provider.of<SupabaseProvider>(context);
     final user = authService.currentUser;
 
     // Determine which options to show based on user role
@@ -112,19 +119,19 @@ class HomeScreen extends StatelessWidget {
                       children: [
                         Text(
                           'Welcome,',
-                          style: TextStyle(
-                            fontSize: 22,
-                            color: Colors.grey.shade500,
-                            fontWeight: FontWeight.w400,
+                          style: GoogleFonts.inter(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w500,
+                            color: AppTheme.neutralColor,
                           ),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           user?.displayName ?? 'User',
-                          style: const TextStyle(
+                          style: GoogleFonts.inter(
                             fontSize: 28,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF1A237E),
+                            color: AppTheme.secondaryColor,
                           ),
                         ),
                       ],
@@ -134,10 +141,10 @@ class HomeScreen extends StatelessWidget {
                   Container(
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 4),
+                      border: Border.all(color: AppTheme.primaryColor, width: 3),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.10),
+                          color: AppTheme.primaryColor.withOpacity(0.2),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
@@ -145,12 +152,12 @@ class HomeScreen extends StatelessWidget {
                     ),
                     child: CircleAvatar(
                       radius: 36,
-                      backgroundColor: Colors.transparent,
+                      backgroundColor: AppTheme.cardColor,
                       backgroundImage: (user != null && user.photoUrl != null && user.photoUrl!.isNotEmpty)
                           ? NetworkImage(user.photoUrl!)
                           : null,
                       child: (user == null || user.photoUrl == null || user.photoUrl!.isEmpty)
-                          ? const Icon(Icons.person, size: 40, color: Color(0xFFB0BEC5))
+                          ? Icon(Icons.person, size: 40, color: AppTheme.primaryColor)
                           : null,
                     ),
                   ),
@@ -159,7 +166,7 @@ class HomeScreen extends StatelessWidget {
             ),
             // Task Status Section
             StreamBuilder<List<TaskModel>>(
-              stream: firestoreProvider.getTasksForUser(user?.uid ?? ''),
+              stream: supabaseProvider.getTasksForUser(user?.id ?? ''),
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
                   return const SizedBox.shrink();
@@ -179,7 +186,7 @@ class HomeScreen extends StatelessWidget {
                   children: [
                     TabBar(
                       labelColor: AppTheme.primaryColor,
-                      unselectedLabelColor: Colors.grey,
+                      unselectedLabelColor: AppTheme.neutralColor,
                       indicatorColor: AppTheme.primaryColor,
                       tabs: const [
                         Tab(text: 'Tasks'),
@@ -191,7 +198,7 @@ class HomeScreen extends StatelessWidget {
                         children: [
                           // Tasks Tab
                           StreamBuilder<List<TaskModel>>(
-                            stream: firestoreProvider.getTasksForUser(user?.uid ?? ''),
+                            stream: supabaseProvider.getTasksForUser(user?.id ?? ''),
                             builder: (context, snapshot) {
                               if (snapshot.hasError) {
                                 return Center(child: Text('Error: ${snapshot.error}'));
@@ -201,8 +208,34 @@ class HomeScreen extends StatelessWidget {
                               }
                               final tasks = snapshot.data!;
                               if (tasks.isEmpty) {
-                                return const Center(
-                                  child: Text('No tasks assigned'),
+                                return Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.task_alt,
+                                        size: 64,
+                                        color: AppTheme.neutralColor,
+                                      ),
+                                      const SizedBox(height: 16),
+                                      Text(
+                                        'No Tasks',
+                                        style: GoogleFonts.inter(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold,
+                                          color: AppTheme.secondaryColor,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        'You have no tasks assigned',
+                                        style: GoogleFonts.inter(
+                                          fontSize: 16,
+                                          color: AppTheme.neutralColor,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 );
                               }
                               return ListView.builder(
@@ -212,15 +245,40 @@ class HomeScreen extends StatelessWidget {
                                   final task = tasks[index];
                                   return Card(
                                     margin: const EdgeInsets.only(bottom: 16),
+                                    color: AppTheme.cardColor,
                                     child: ListTile(
-                                      title: Text(task.title),
-                                      subtitle: Text(task.description),
-                                      trailing: Text(
-                                        task.status,
-                                        style: TextStyle(
-                                          color: task.status == 'completed'
-                                              ? Colors.green
-                                              : Colors.orange,
+                                      title: Text(
+                                        task.title,
+                                        style: GoogleFonts.inter(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
+                                          color: AppTheme.darkNeutralColor,
+                                        ),
+                                      ),
+                                      subtitle: Text(
+                                        task.description,
+                                        style: GoogleFonts.inter(
+                                          fontSize: 14,
+                                          color: AppTheme.neutralColor,
+                                        ),
+                                      ),
+                                      trailing: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                        decoration: BoxDecoration(
+                                          color: task.status == 'completed' 
+                                              ? AppTheme.successColor.withOpacity(0.1)
+                                              : AppTheme.warningColor.withOpacity(0.1),
+                                          borderRadius: BorderRadius.circular(20),
+                                        ),
+                                        child: Text(
+                                          task.status,
+                                          style: GoogleFonts.inter(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                            color: task.status == 'completed'
+                                                ? AppTheme.successColor
+                                                : AppTheme.warningColor,
+                                          ),
                                         ),
                                       ),
                                     ),
@@ -231,7 +289,7 @@ class HomeScreen extends StatelessWidget {
                           ),
                           // Meetings Tab
                           StreamBuilder<List<MeetingModel>>(
-                            stream: firestoreProvider.getMeetingsForUser(user?.uid ?? ''),
+                            stream: supabaseProvider.getMeetingsForUser(user?.id ?? ''),
                             builder: (context, snapshot) {
                               if (snapshot.hasError) {
                                 return Center(child: Text('Error: ${snapshot.error}'));
@@ -241,8 +299,34 @@ class HomeScreen extends StatelessWidget {
                               }
                               final meetings = snapshot.data!;
                               if (meetings.isEmpty) {
-                                return const Center(
-                                  child: Text('No meetings scheduled'),
+                                return Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.calendar_today,
+                                        size: 64,
+                                        color: AppTheme.neutralColor,
+                                      ),
+                                      const SizedBox(height: 16),
+                                      Text(
+                                        'No Meetings',
+                                        style: GoogleFonts.inter(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold,
+                                          color: AppTheme.secondaryColor,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        'You have no meetings scheduled',
+                                        style: GoogleFonts.inter(
+                                          fontSize: 16,
+                                          color: AppTheme.neutralColor,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 );
                               }
                               return ListView.builder(
@@ -252,17 +336,40 @@ class HomeScreen extends StatelessWidget {
                                   final meeting = meetings[index];
                                   return Card(
                                     margin: const EdgeInsets.only(bottom: 16),
+                                    color: AppTheme.cardColor,
                                     child: ListTile(
-                                      title: Text(meeting.title),
+                                      title: Text(
+                                        meeting.title,
+                                        style: GoogleFonts.inter(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
+                                          color: AppTheme.secondaryColor,
+                                        ),
+                                      ),
                                       subtitle: Text(
                                         '${meeting.dateTime.toString()} - ${meeting.location}',
+                                        style: GoogleFonts.inter(
+                                          fontSize: 14,
+                                          color: AppTheme.neutralColor,
+                                        ),
                                       ),
-                                      trailing: Text(
-                                        meeting.status,
-                                        style: TextStyle(
+                                      trailing: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                        decoration: BoxDecoration(
                                           color: meeting.status == 'completed'
-                                              ? Colors.green
-                                              : Colors.blue,
+                                              ? AppTheme.successColor.withOpacity(0.1)
+                                              : AppTheme.primaryColor.withOpacity(0.1),
+                                          borderRadius: BorderRadius.circular(20),
+                                        ),
+                                        child: Text(
+                                          meeting.status,
+                                          style: GoogleFonts.inter(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                            color: meeting.status == 'completed'
+                                                ? AppTheme.successColor
+                                                : AppTheme.primaryColor,
+                                          ),
                                         ),
                                       ),
                                     ),
@@ -281,15 +388,13 @@ class HomeScreen extends StatelessWidget {
           ],
         ),
       ),
-      floatingActionButton: user?.role != 'member' 
-          ? RadialMenu(
-              onTaskPressed: () => _showTaskCreationDialog(context),
-              onMeetingPressed: showMeetings ? () => _showMeetingCreationDialog(context) : null,
-              onBranchPressed: showBranches ? () => _showBranchCreationDialog(context) : null,
-              showBranchOption: showBranches,
-              showMeetingOption: showMeetings,
-            )
-          : null,
+      floatingActionButton: RadialMenu(
+        onTaskPressed: () => _showTaskCreationDialog(context),
+        onMeetingPressed: showMeetings ? () => _showMeetingCreationDialog(context) : null,
+        onBranchPressed: showBranches ? () => _showBranchCreationDialog(context) : null,
+        showBranchOption: showBranches,
+        showMeetingOption: showMeetings,
+      ),
     );
   }
 

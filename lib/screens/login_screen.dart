@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 import '../widgets/custom_input.dart';
-import '../widgets/custom_button.dart';
 import '../widgets/loading_indicator.dart';
 import '../utils/theme.dart';
 
@@ -35,7 +34,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       final authService = Provider.of<AuthService>(context, listen: false);
-      
+
       await authService.signIn(
         email: _emailController.text.trim(),
         password: _passwordController.text,
@@ -110,10 +109,12 @@ class _LoginScreenState extends State<LoginScreen> {
                   TextButton(
                     onPressed: () {
                       Navigator.of(context).pop();
-                      Provider.of<AuthService>(context, listen: false).sendVerificationEmail();
+                      Provider.of<AuthService>(context, listen: false)
+                          .sendVerificationEmail();
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text('A new verification email has been sent to your inbox'),
+                          content: Text(
+                              'A new verification email has been sent to your inbox'),
                           backgroundColor: Colors.green,
                         ),
                       );
@@ -294,7 +295,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     onSubmitted: (_) => _login(),
                     suffixIcon: IconButton(
                       icon: Icon(
-                        _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                        _obscurePassword
+                            ? Icons.visibility_off
+                            : Icons.visibility,
                       ),
                       onPressed: () {
                         setState(() {
@@ -338,7 +341,8 @@ class _LoginScreenState extends State<LoginScreen> {
                       const Text('Don\'t have an account?'),
                       TextButton(
                         onPressed: () {
-                          Navigator.of(context).pushReplacementNamed('/register');
+                          Navigator.of(context)
+                              .pushReplacementNamed('/register');
                         },
                         child: const Text('Sign up'),
                       ),

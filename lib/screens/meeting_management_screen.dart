@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/supabase_provider.dart';
 import '../models/meeting_model.dart';
-import '../models/user_model.dart';
-import '../services/auth_service.dart';
 import '../utils/theme.dart';
 import '../widgets/custom_back_button.dart';
 
@@ -51,7 +49,7 @@ class MeetingManagementScreen extends StatelessWidget {
                     return const Center(child: CircularProgressIndicator());
                   }
                   final meetings = snapshot.data!;
-                  
+
                   if (meetings.isEmpty) {
                     return const Center(
                       child: Column(
@@ -139,7 +137,8 @@ class MeetingManagementScreen extends StatelessWidget {
                               ),
                               IconButton(
                                 icon: const Icon(Icons.edit),
-                                onPressed: () => _showEditMeetingDialog(context, meeting),
+                                onPressed: () =>
+                                    _showEditMeetingDialog(context, meeting),
                                 color: AppTheme.primaryColor,
                               ),
                             ],
@@ -172,4 +171,4 @@ class MeetingManagementScreen extends StatelessWidget {
         return Colors.blue;
     }
   }
-} 
+}

@@ -8,7 +8,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
-import 'package:agbc_app/main.dart';
 import 'package:agbc_app/services/auth_service.dart';
 import 'package:agbc_app/services/supabase_service.dart';
 import 'package:agbc_app/services/permissions_service.dart';
@@ -22,10 +21,10 @@ void main() {
   setUpAll(() async {
     // Initialize test environment
     await initializeTestEnvironment();
-    
+
     // Ensure Flutter bindings are initialized
     WidgetsFlutterBinding.ensureInitialized();
-    
+
     // Load environment variables
     await dotenv.load(fileName: ".env");
 
@@ -61,7 +60,8 @@ void main() {
     // Verify that the login screen is displayed
     expect(find.text('Welcome Back'), findsOneWidget);
     expect(find.text('Login to your account'), findsOneWidget);
-    expect(find.byType(TextFormField), findsNWidgets(2)); // Email and password fields
+    expect(find.byType(TextFormField),
+        findsNWidgets(2)); // Email and password fields
     expect(find.text('LOGIN'), findsOneWidget);
     expect(find.text('Remember me'), findsOneWidget);
   });

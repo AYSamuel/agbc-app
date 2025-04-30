@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
-import 'package:supabase_flutter/supabase_flutter.dart' hide AuthException;
 import '../services/location_service.dart';
 import '../widgets/custom_input.dart';
 import '../widgets/custom_button.dart';
@@ -26,7 +25,8 @@ class RegisterForm extends StatefulWidget {
   State<RegisterForm> createState() => _RegisterFormState();
 }
 
-class _RegisterFormState extends State<RegisterForm> with LocationValidationMixin, FormValidationMixin {
+class _RegisterFormState extends State<RegisterForm>
+    with LocationValidationMixin, FormValidationMixin {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
@@ -131,8 +131,8 @@ class _RegisterFormState extends State<RegisterForm> with LocationValidationMixi
 
     try {
       final authService = Provider.of<AuthService>(context, listen: false);
-      
-      final user = await authService.registerWithEmailAndPassword(
+
+      await authService.registerWithEmailAndPassword(
         _emailController.text.trim(),
         _passwordController.text,
         _nameController.text.trim(),
@@ -260,7 +260,8 @@ class _RegisterFormState extends State<RegisterForm> with LocationValidationMixi
                     height: 20,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(AppTheme.neutralColor),
+                      valueColor:
+                          AlwaysStoppedAnimation<Color>(AppTheme.neutralColor),
                     ),
                   )
                 : IconButton(
@@ -287,7 +288,7 @@ class _RegisterFormState extends State<RegisterForm> with LocationValidationMixi
                 return const Center(child: CircularProgressIndicator());
               }
               final branches = snapshot.data!;
-              
+
               return CustomDropdown<String>(
                 value: _selectedBranchId,
                 label: 'Select Branch',
@@ -352,7 +353,9 @@ class _RegisterFormState extends State<RegisterForm> with LocationValidationMixi
             onSubmitted: (_) => _register(),
             suffixIcon: IconButton(
               icon: Icon(
-                _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
+                _obscureConfirmPassword
+                    ? Icons.visibility_off
+                    : Icons.visibility,
                 color: AppTheme.neutralColor,
               ),
               onPressed: () {
@@ -395,4 +398,4 @@ class _RegisterFormState extends State<RegisterForm> with LocationValidationMixi
       ),
     );
   }
-} 
+}

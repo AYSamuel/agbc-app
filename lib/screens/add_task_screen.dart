@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import '../providers/supabase_provider.dart';
 import '../models/task_model.dart';
-import '../models/user_model.dart';
 import '../widgets/custom_input.dart';
 import '../widgets/custom_button.dart';
 import '../widgets/custom_back_button.dart';
@@ -23,13 +22,13 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   final _descriptionController = TextEditingController();
   final _deadlineController = TextEditingController();
   final _reminderController = TextEditingController();
-  
+
   // Focus nodes for keyboard navigation
   final _titleFocus = FocusNode();
   final _descriptionFocus = FocusNode();
   final _deadlineFocus = FocusNode();
   final _reminderFocus = FocusNode();
-  
+
   String? _selectedAssigneeId;
   String _selectedPriority = 'medium';
   String _selectedCategory = 'general';
@@ -42,30 +41,31 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     _descriptionController.dispose();
     _deadlineController.dispose();
     _reminderController.dispose();
-    
+
     // Dispose focus nodes
     _titleFocus.dispose();
     _descriptionFocus.dispose();
     _deadlineFocus.dispose();
     _reminderFocus.dispose();
-    
+
     super.dispose();
   }
 
-  Future<void> _selectDate(TextEditingController controller, FocusNode focusNode, bool isDeadline) async {
+  Future<void> _selectDate(TextEditingController controller,
+      FocusNode focusNode, bool isDeadline) async {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365)),
     );
-    
+
     if (picked != null) {
       final TimeOfDay? time = await showTimePicker(
         context: context,
         initialTime: TimeOfDay.now(),
       );
-      
+
       if (time != null) {
         final DateTime selectedDateTime = DateTime(
           picked.year,
@@ -74,14 +74,16 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
           time.hour,
           time.minute,
         );
-        
+
         setState(() {
           if (isDeadline) {
             _selectedDeadline = selectedDateTime;
-            controller.text = '${picked.day}/${picked.month}/${picked.year} ${time.format(context)}';
+            controller.text =
+                '${picked.day}/${picked.month}/${picked.year} ${time.format(context)}';
           } else {
             _selectedReminder = selectedDateTime;
-            controller.text = '${picked.day}/${picked.month}/${picked.year} ${time.format(context)}';
+            controller.text =
+                '${picked.day}/${picked.month}/${picked.year} ${time.format(context)}';
           }
         });
       }
@@ -121,7 +123,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
         );
 
         await context.read<SupabaseProvider>().createTask(task);
-        
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Task created successfully')),
@@ -196,7 +198,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                           label: 'Title',
                           controller: _titleController,
                           hint: 'Enter task title',
-                          prefixIcon: const Icon(Icons.title, color: Colors.grey),
+                          prefixIcon:
+                              const Icon(Icons.title, color: Colors.grey),
                           focusNode: _titleFocus,
                           nextFocusNode: _descriptionFocus,
                           validator: (value) {
@@ -211,7 +214,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                           label: 'Description',
                           controller: _descriptionController,
                           hint: 'Enter task description',
-                          prefixIcon: const Icon(Icons.description, color: Colors.grey),
+                          prefixIcon:
+                              const Icon(Icons.description, color: Colors.grey),
                           focusNode: _descriptionFocus,
                           maxLines: 3,
                           validator: (value) {
@@ -226,17 +230,22 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                           label: 'Assignee',
                           controller: TextEditingController(),
                           hint: 'Select assignee',
-                          prefixIcon: const Icon(Icons.person, color: Colors.grey),
+                          prefixIcon:
+                              const Icon(Icons.person, color: Colors.grey),
                           readOnly: true,
                           onTap: () async {
-                            final users = await context.read<SupabaseProvider>().getAllUsers().first;
+                            final users = await context
+                                .read<SupabaseProvider>()
+                                .getAllUsers()
+                                .first;
                             if (!mounted) return;
-                            
+
                             showDialog(
                               context: context,
                               builder: (context) => AlertDialog(
                                 title: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     const Text('Select Assignee'),
                                     IconButton(
@@ -280,10 +289,12 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                           label: 'Deadline',
                           controller: _deadlineController,
                           hint: 'Select deadline',
-                          prefixIcon: const Icon(Icons.calendar_today, color: Colors.grey),
+                          prefixIcon: const Icon(Icons.calendar_today,
+                              color: Colors.grey),
                           focusNode: _deadlineFocus,
                           readOnly: true,
-                          onTap: () => _selectDate(_deadlineController, _deadlineFocus, true),
+                          onTap: () => _selectDate(
+                              _deadlineController, _deadlineFocus, true),
                           validator: (value) {
                             if (_selectedDeadline == null) {
                               return 'Please select a deadline';
@@ -296,10 +307,12 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                           label: 'Reminder (Optional)',
                           controller: _reminderController,
                           hint: 'Select reminder time',
-                          prefixIcon: const Icon(Icons.notifications, color: Colors.grey),
+                          prefixIcon: const Icon(Icons.notifications,
+                              color: Colors.grey),
                           focusNode: _reminderFocus,
                           readOnly: true,
-                          onTap: () => _selectDate(_reminderController, _reminderFocus, false),
+                          onTap: () => _selectDate(
+                              _reminderController, _reminderFocus, false),
                         ),
                         const SizedBox(height: 16),
                         Row(
@@ -309,14 +322,19 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                                 value: _selectedPriority,
                                 decoration: const InputDecoration(
                                   labelText: 'Priority',
-                                  prefixIcon: Icon(Icons.priority_high, color: Colors.grey),
-                                  contentPadding: EdgeInsets.symmetric(horizontal: 12),
+                                  prefixIcon: Icon(Icons.priority_high,
+                                      color: Colors.grey),
+                                  contentPadding:
+                                      EdgeInsets.symmetric(horizontal: 12),
                                 ),
                                 isExpanded: true,
                                 items: const [
-                                  DropdownMenuItem(value: 'low', child: Text('Low')),
-                                  DropdownMenuItem(value: 'medium', child: Text('Medium')),
-                                  DropdownMenuItem(value: 'high', child: Text('High')),
+                                  DropdownMenuItem(
+                                      value: 'low', child: Text('Low')),
+                                  DropdownMenuItem(
+                                      value: 'medium', child: Text('Medium')),
+                                  DropdownMenuItem(
+                                      value: 'high', child: Text('High')),
                                 ],
                                 onChanged: (value) {
                                   setState(() {
@@ -331,15 +349,23 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                                 value: _selectedCategory,
                                 decoration: const InputDecoration(
                                   labelText: 'Category',
-                                  prefixIcon: Icon(Icons.category, color: Colors.grey),
-                                  contentPadding: EdgeInsets.symmetric(horizontal: 12),
+                                  prefixIcon:
+                                      Icon(Icons.category, color: Colors.grey),
+                                  contentPadding:
+                                      EdgeInsets.symmetric(horizontal: 12),
                                 ),
                                 isExpanded: true,
                                 items: const [
-                                  DropdownMenuItem(value: 'general', child: Text('General')),
-                                  DropdownMenuItem(value: 'ministry', child: Text('Ministry')),
-                                  DropdownMenuItem(value: 'event', child: Text('Event')),
-                                  DropdownMenuItem(value: 'maintenance', child: Text('Maintenance')),
+                                  DropdownMenuItem(
+                                      value: 'general', child: Text('General')),
+                                  DropdownMenuItem(
+                                      value: 'ministry',
+                                      child: Text('Ministry')),
+                                  DropdownMenuItem(
+                                      value: 'event', child: Text('Event')),
+                                  DropdownMenuItem(
+                                      value: 'maintenance',
+                                      child: Text('Maintenance')),
                                 ],
                                 onChanged: (value) {
                                   setState(() {
@@ -368,4 +394,4 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
       ),
     );
   }
-} 
+}

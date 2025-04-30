@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:agbc_app/utils/theme.dart';
 import 'package:provider/provider.dart';
 import 'package:agbc_app/services/auth_service.dart';
-import 'package:agbc_app/models/user_model.dart';
 import 'login_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -40,7 +39,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     final authService = Provider.of<AuthService>(context);
     final user = authService.currentUser;
-    
+
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       body: CustomScrollView(
@@ -55,7 +54,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 color: AppTheme.backgroundColor,
                 child: SafeArea(
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 24, vertical: 16),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
@@ -73,7 +73,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 ),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: AppTheme.primaryColor.withOpacity(0.2),
+                                    color:
+                                        AppTheme.primaryColor.withOpacity(0.2),
                                     blurRadius: 15,
                                     offset: const Offset(0, 4),
                                   ),
@@ -82,11 +83,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               child: CircleAvatar(
                                 radius: 60,
                                 backgroundColor: Colors.transparent,
-                                backgroundImage: (user?.photoUrl != null && user!.photoUrl!.isNotEmpty)
+                                backgroundImage: (user?.photoUrl != null &&
+                                        user!.photoUrl!.isNotEmpty)
                                     ? NetworkImage(user.photoUrl!)
                                     : null,
-                                child: (user?.photoUrl == null || user!.photoUrl!.isEmpty)
-                                    ? const Icon(Icons.person, size: 50, color: Color(0xFF1A237E))
+                                child: (user?.photoUrl == null ||
+                                        user!.photoUrl!.isEmpty)
+                                    ? const Icon(Icons.person,
+                                        size: 50, color: Color(0xFF1A237E))
                                     : null,
                               ),
                             ),
@@ -100,7 +104,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   shape: BoxShape.circle,
                                   boxShadow: [
                                     BoxShadow(
-                                      color: AppTheme.primaryColor.withOpacity(0.3),
+                                      color: AppTheme.primaryColor
+                                          .withOpacity(0.3),
                                       blurRadius: 8,
                                       offset: const Offset(0, 2),
                                     ),
@@ -127,13 +132,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                         const SizedBox(height: 8),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 8),
                           decoration: BoxDecoration(
                             color: _getRoleColor(user?.role ?? 'member'),
                             borderRadius: BorderRadius.circular(25),
                             boxShadow: [
                               BoxShadow(
-                                color: _getRoleColor(user?.role ?? 'member').withOpacity(0.3),
+                                color: _getRoleColor(user?.role ?? 'member')
+                                    .withOpacity(0.3),
                                 blurRadius: 8,
                                 offset: const Offset(0, 2),
                               ),
@@ -165,7 +172,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
           ),
-          
+
           // Content
           SliverToBoxAdapter(
             child: Column(
@@ -206,7 +213,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     _buildInfoCard(
                       context,
                       title: 'Branch',
-                      value: user?.branchId?.isNotEmpty == true 
+                      value: user?.branchId?.isNotEmpty == true
                           ? 'AGBC ${user!.branchId?.toUpperCase() ?? ''}'
                           : 'Not assigned',
                       icon: Icons.church,
@@ -298,7 +305,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildSection(BuildContext context, {
+  Widget _buildSection(
+    BuildContext context, {
     required String title,
     required List<Widget> children,
   }) {
@@ -322,7 +330,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildInfoCard(BuildContext context, {
+  Widget _buildInfoCard(
+    BuildContext context, {
     required String title,
     required String value,
     required IconData icon,
@@ -403,4 +412,4 @@ class _ProfileScreenState extends State<ProfileScreen> {
         return Colors.green;
     }
   }
-} 
+}

@@ -29,6 +29,7 @@ Future<void> main() async {
     await Supabase.initialize(
       url: dotenv.env['SUPABASE_URL']!,
       anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
+      debug: true, // Enable debug logs to help troubleshoot auth issues
     );
 
     // Initialize services
@@ -53,13 +54,13 @@ Future<void> main() async {
           ChangeNotifierProvider(create: (_) => authService),
           ChangeNotifierProvider(create: (_) => SupabaseProvider()),
           Provider.value(value: supabaseService),
-          Provider.value(value: notificationService),
+          ChangeNotifierProvider(create: (_) => notificationService),
         ],
         child: const MyApp(),
       ),
     );
   } catch (e) {
-    print('Error initializing app: $e');
+    debugPrint('Error initializing app: $e');
   }
 }
 
@@ -92,7 +93,7 @@ class _MyAppState extends State<MyApp> {
         _handleUri(uri);
       });
     } catch (e) {
-      print('Error handling deep link: $e');
+      debugPrint('Error handling deep link: $e');
     }
   }
 
@@ -133,7 +134,7 @@ class _MyAppState extends State<MyApp> {
         }
       }
     } catch (e) {
-      print('Error handling URI: $e');
+      debugPrint('Error handling URI: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

@@ -1,6 +1,5 @@
 import 'package:flutter/foundation.dart';
 import 'package:permission_handler/permission_handler.dart';
-import '../models/user_model.dart';
 
 /// Service class for handling role-based permissions
 class PermissionsService with ChangeNotifier {
@@ -222,4 +221,4 @@ class PermissionsService with ChangeNotifier {
         return false;
     }
   }
-} 
+}

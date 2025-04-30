@@ -1,5 +1,8 @@
+import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:agbc_app/services/notification_service.dart';
 
+/// Utility class for sending notifications
 class NotificationUtils {
   static final NotificationUtils _instance = NotificationUtils._internal();
   factory NotificationUtils() => _instance;
@@ -15,6 +18,11 @@ class NotificationUtils {
     Map<String, dynamic>? data,
   }) async {
     try {
+      if (userIds.isEmpty) {
+        debugPrint('No users to send notification to');
+        return;
+      }
+
       await _notificationService.sendNotification(
         userIds: userIds,
         title: title,
@@ -22,7 +30,8 @@ class NotificationUtils {
         data: data,
       );
     } catch (e) {
-      print('Error sending notification: $e');
+      debugPrint('Error sending notification: $e');
+      await _notificationService.logError('send_notification_util', e.toString());
       rethrow;
     }
   }
@@ -34,24 +43,34 @@ class NotificationUtils {
     Map<String, dynamic>? data,
   }) async {
     try {
-      // Get all user IDs from Supabase
       final response = await Supabase.instance.client
           .from('user_devices')
           .select('user_id')
           .neq('onesignal_user_id', '');
 
-      if (response != null && response.isNotEmpty) {
-        final userIds = response.map((user) => user['user_id'] as String).toList();
-        await sendNotification(
-          userIds: userIds,
-          title: title,
-          message: message,
-          data: data,
-        );
+      if (response.isNotEmpty) {
+        final userIds = response
+            .map((user) => user['user_id'] as String)
+            .where((id) => id.isNotEmpty)
+            .toList();
+
+        if (userIds.isNotEmpty) {
+          await sendNotification(
+            userIds: userIds,
+            title: title,
+            message: message,
+            data: data,
+          );
+        } else {
+          debugPrint('No valid user IDs found for broadcast notification');
+        }
+      } else {
+        debugPrint('No devices registered for notifications');
       }
     } catch (e) {
-      print('Error sending broadcast notification: $e');
+      debugPrint('Error sending broadcast notification: $e');
+      await _notificationService.logError('send_broadcast_notification_util', e.toString());
       rethrow;
     }
   }
-} 
+}

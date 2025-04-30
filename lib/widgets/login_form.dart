@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
-import '../providers/supabase_provider.dart';
 import 'package:agbc_app/services/preferences_service.dart';
 import 'package:agbc_app/widgets/custom_input.dart';
 import 'package:agbc_app/widgets/custom_button.dart';
@@ -56,7 +55,7 @@ class _LoginFormState extends State<LoginForm> with FormValidationMixin {
     if (isRememberMeEnabled) {
       final savedEmail = await PreferencesService.getSavedEmail();
       final savedPassword = await PreferencesService.getSavedPassword();
-      
+
       if (savedEmail != null && savedPassword != null) {
         setState(() {
           _rememberMe = true;
@@ -109,14 +108,14 @@ class _LoginFormState extends State<LoginForm> with FormValidationMixin {
     try {
       final authService = Provider.of<AuthService>(context, listen: false);
       final email = _emailController.text.trim();
-      
+
       print('Checking email: $email'); // Debug log
-      
+
       // Check if email exists in the system
       final user = await authService.checkEmailExists(email);
-      
+
       print('User found: ${user != null}'); // Debug log
-      
+
       if (user != null) {
         setState(() {
           _emailVerified = true;
@@ -134,7 +133,8 @@ class _LoginFormState extends State<LoginForm> with FormValidationMixin {
         if (e is AuthException) {
           _emailError = e.message;
         } else {
-          _emailError = 'An error occurred while verifying your email. Please try again.';
+          _emailError =
+              'An error occurred while verifying your email. Please try again.';
         }
         _isLoading = false;
       });
@@ -148,9 +148,9 @@ class _LoginFormState extends State<LoginForm> with FormValidationMixin {
 
     try {
       final authService = Provider.of<AuthService>(context, listen: false);
-      
+
       await authService.setRememberMe(_rememberMe);
-      
+
       final user = await authService.signInWithEmailAndPassword(
         _emailController.text.trim(),
         _passwordController.text,
@@ -174,7 +174,7 @@ class _LoginFormState extends State<LoginForm> with FormValidationMixin {
     } catch (e) {
       if (mounted) {
         String errorMessage;
-        
+
         if (e is PostgrestException) {
           errorMessage = 'Database error: ${e.message}';
         } else if (e is AuthException) {
@@ -342,4 +342,4 @@ class _LoginFormState extends State<LoginForm> with FormValidationMixin {
       ),
     );
   }
-} 
+}

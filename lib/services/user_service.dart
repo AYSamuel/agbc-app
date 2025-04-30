@@ -13,9 +13,9 @@ class UserService with ChangeNotifier {
 
   UserModel? _currentUser;
   Map<String, dynamic>? _currentUserData;
-  
+
   UserModel? get currentUser => _currentUser;
-  
+
   UserService() {
     _supabaseService = SupabaseService();
     initialize();
@@ -34,11 +34,12 @@ class UserService with ChangeNotifier {
   /// [id] is the unique identifier of the user.
   Future<UserModel?> getUserDetails(String userId) async {
     try {
-      final data = await _supabase.from('users').select().eq('id', userId).single();
-      if (data != null) {
-        return UserModel.fromJson(data);
-      }
-      return null;
+      final data = await _supabaseService.supabase
+          .from('users')
+          .select()
+          .eq('id', userId)
+          .single();
+      return UserModel.fromJson(data);
     } catch (e) {
       rethrow; // Let the UI handle the error
     }
@@ -49,7 +50,10 @@ class UserService with ChangeNotifier {
   /// [user] is the UserModel containing updated user information.
   Future<void> updateUser(UserModel user) async {
     try {
-      await _supabase.from('users').update(user.toJson()).eq('id', user.id);
+      await _supabaseService.supabase
+          .from('users')
+          .update(user.toJson())
+          .eq('id', user.id);
       if (user.id == _currentUser?.id) {
         _currentUser = user;
         notifyListeners();
@@ -73,13 +77,10 @@ class UserService with ChangeNotifier {
   Future<void> _loadUserData() async {
     try {
       final user = _supabase.auth.currentUser;
-      if (user != null) {
-        final data = await _supabase.from('users').select().eq('id', user.id).single();
-        if (data != null) {
-          _currentUser = UserModel.fromJson(data);
-          notifyListeners();
-        }
-      }
+      final data =
+          await _supabase.from('users').select().eq('id', user!.id).single();
+      _currentUser = UserModel.fromJson(data);
+      notifyListeners();
     } catch (e) {
       rethrow; // Let the UI handle the error
     }
@@ -87,11 +88,10 @@ class UserService with ChangeNotifier {
 
   Future<void> loadUserData(String id) async {
     try {
-      final userDoc = await _supabase.from('users').select().eq('id', id).single();
-      if (userDoc != null) {
-        _currentUserData = userDoc;
-        notifyListeners();
-      }
+      final userDoc =
+          await _supabase.from('users').select().eq('id', id).single();
+      _currentUserData = userDoc;
+      notifyListeners();
     } catch (e) {
       rethrow; // Let the UI handle the error
     }
@@ -102,12 +102,9 @@ class UserService with ChangeNotifier {
   Future<UserModel?> getUserData(String id) async {
     try {
       final doc = await _supabase.from('users').select().eq('id', id).single();
-      if (doc != null) {
-        return UserModel.fromJson(doc);
-      }
-      return null;
+      return UserModel.fromJson(doc);
     } catch (e) {
-      rethrow; // Let the UI handle the error
+      rethrow;
     }
   }
 }

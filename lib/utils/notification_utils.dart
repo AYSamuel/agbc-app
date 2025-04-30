@@ -1,4 +1,5 @@
 import 'package:agbc_app/services/notification_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class NotificationUtils {
   static final NotificationUtils _instance = NotificationUtils._internal();
@@ -22,7 +23,6 @@ class NotificationUtils {
         data: data,
       );
     } catch (e) {
-      print('Error sending notification: $e');
       rethrow;
     }
   }
@@ -40,8 +40,9 @@ class NotificationUtils {
           .select('user_id')
           .neq('onesignal_user_id', '');
 
-      if (response != null && response.isNotEmpty) {
-        final userIds = response.map((user) => user['user_id'] as String).toList();
+      if (response.isNotEmpty) {
+        final userIds =
+            response.map((user) => user['user_id'] as String).toList();
         await sendNotification(
           userIds: userIds,
           title: title,
@@ -50,8 +51,7 @@ class NotificationUtils {
         );
       }
     } catch (e) {
-      print('Error sending broadcast notification: $e');
       rethrow;
     }
   }
-} 
+}

@@ -1,5 +1,3 @@
-import 'package:flutter/material.dart';
-
 mixin FormValidationMixin {
   String? validateEmail(String? value) {
     if (value == null || value.isEmpty) {
@@ -59,4 +57,4 @@ mixin FormValidationMixin {
     }
     return null;
   }
-} 
+}

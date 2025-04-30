@@ -7,6 +7,8 @@ import '../models/church_branch_model.dart';
 class SupabaseService {
   final SupabaseClient _supabase = Supabase.instance.client;
 
+  SupabaseClient get supabase => _supabase;
+
   // User operations
   Stream<UserModel?> getUser(String id) {
     return _supabase

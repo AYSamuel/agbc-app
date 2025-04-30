@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/supabase_provider.dart';
 import '../models/church_branch_model.dart';
-import '../models/user_model.dart';
 import '../services/auth_service.dart';
 import '../utils/theme.dart';
 import '../widgets/custom_back_button.dart';
@@ -67,7 +66,7 @@ class BranchManagementScreen extends StatelessWidget {
                     return const Center(child: CircularProgressIndicator());
                   }
                   final branches = snapshot.data!;
-                  
+
                   if (branches.isEmpty) {
                     return const Center(
                       child: Column(
@@ -134,12 +133,14 @@ class BranchManagementScreen extends StatelessWidget {
                                   children: [
                                     IconButton(
                                       icon: const Icon(Icons.edit),
-                                      onPressed: () => _showEditBranchDialog(context, branch),
+                                      onPressed: () => _showEditBranchDialog(
+                                          context, branch),
                                       color: AppTheme.primaryColor,
                                     ),
                                     IconButton(
                                       icon: const Icon(Icons.delete),
-                                      onPressed: () => _showDeleteBranchDialog(context, branch),
+                                      onPressed: () => _showDeleteBranchDialog(
+                                          context, branch),
                                       color: Colors.red,
                                     ),
                                   ],
@@ -201,4 +202,4 @@ class BranchManagementScreen extends StatelessWidget {
       ),
     );
   }
-} 
+}

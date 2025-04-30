@@ -94,7 +94,6 @@ class _HomeScreenState extends State<HomeScreen> {
     final user = authService.currentUser;
 
     // Determine which options to show based on user role
-    final bool showTasks = user?.role != 'member';
     final bool showMeetings = user?.role == 'pastor' || user?.role == 'admin';
     final bool showBranches = user?.role == 'admin';
 
@@ -416,19 +415,5 @@ class _HomeScreenState extends State<HomeScreen> {
         showMeetingOption: showMeetings,
       ),
     );
-  }
-
-  Color _getRoleColor(String role) {
-    switch (role.toLowerCase()) {
-      case 'admin':
-        return Colors.red;
-      case 'pastor':
-        return Colors.purple;
-      case 'worker':
-        return Colors.blue;
-      case 'member':
-      default:
-        return Colors.green;
-    }
   }
 }

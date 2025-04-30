@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/supabase_provider.dart';
 import '../models/task_model.dart';
-import '../models/user_model.dart';
-import '../services/auth_service.dart';
 import '../utils/theme.dart';
 import '../widgets/custom_back_button.dart';
 
@@ -51,7 +49,7 @@ class TaskManagementScreen extends StatelessWidget {
                     return const Center(child: CircularProgressIndicator());
                   }
                   final tasks = snapshot.data!;
-                  
+
                   if (tasks.isEmpty) {
                     return const Center(
                       child: Column(
@@ -135,7 +133,8 @@ class TaskManagementScreen extends StatelessWidget {
                               ),
                               IconButton(
                                 icon: const Icon(Icons.edit),
-                                onPressed: () => _showEditTaskDialog(context, task),
+                                onPressed: () =>
+                                    _showEditTaskDialog(context, task),
                                 color: AppTheme.primaryColor,
                               ),
                             ],
@@ -168,4 +167,4 @@ class TaskManagementScreen extends StatelessWidget {
         return AppTheme.neutralColor;
     }
   }
-} 
+}

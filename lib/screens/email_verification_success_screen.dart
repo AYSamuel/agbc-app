@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../widgets/custom_button.dart';
-import '../utils/theme.dart';
 
 class EmailVerificationSuccessScreen extends StatelessWidget {
   const EmailVerificationSuccessScreen({super.key});
@@ -58,4 +57,4 @@ class EmailVerificationSuccessScreen extends StatelessWidget {
       ),
     );
   }
-} 
+}

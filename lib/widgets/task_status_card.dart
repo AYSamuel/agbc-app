@@ -16,11 +16,11 @@ class TaskStatusCard extends StatefulWidget {
   State<TaskStatusCard> createState() => _TaskStatusCardState();
 }
 
-class _TaskStatusCardState extends State<TaskStatusCard> with SingleTickerProviderStateMixin {
+class _TaskStatusCardState extends State<TaskStatusCard>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
-  late Animation<Color?> _colorAnimation;
-  
+
   @override
   void initState() {
     super.initState();
@@ -28,18 +28,13 @@ class _TaskStatusCardState extends State<TaskStatusCard> with SingleTickerProvid
       duration: const Duration(milliseconds: 300),
       vsync: this,
     );
-    
+
     _scaleAnimation = Tween<double>(begin: 1.0, end: 1.05).animate(
       CurvedAnimation(
         parent: _controller,
         curve: Curves.easeInOut,
       ),
     );
-    
-    _colorAnimation = ColorTween(
-      begin: AppTheme.cardColor,
-      end: AppTheme.accentColor.withOpacity(0.15),
-    ).animate(_controller);
   }
 
   @override
@@ -59,14 +54,15 @@ class _TaskStatusCardState extends State<TaskStatusCard> with SingleTickerProvid
   @override
   Widget build(BuildContext context) {
     final user = Provider.of<AuthService>(context).currentUser;
-    final taskCount = widget.tasks.where((task) => task.status != 'completed').length;
+    final taskCount =
+        widget.tasks.where((task) => task.status != 'completed').length;
     final hasTasks = taskCount > 0;
-    
+
     // For members, only show the card if they have active tasks
     if (user?.role == 'member' && !hasTasks) {
       return const SizedBox.shrink();
     }
-    
+
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, child) {
@@ -74,15 +70,16 @@ class _TaskStatusCardState extends State<TaskStatusCard> with SingleTickerProvid
           scale: _scaleAnimation.value,
           child: Container(
             margin: const EdgeInsets.symmetric(horizontal: 24.0),
-            padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
+            padding:
+                const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
             decoration: BoxDecoration(
-              color: hasTasks 
+              color: hasTasks
                   ? AppTheme.accentColor.withOpacity(0.15)
                   : AppTheme.cardColor,
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: hasTasks 
+                  color: hasTasks
                       ? AppTheme.accentColor.withOpacity(0.1)
                       : Colors.black.withOpacity(0.05),
                   blurRadius: 10,
@@ -123,4 +120,4 @@ class _TaskStatusCardState extends State<TaskStatusCard> with SingleTickerProvid
       },
     );
   }
-} 
+}

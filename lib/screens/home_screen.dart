@@ -7,6 +7,7 @@ import '../services/auth_service.dart';
 import '../providers/supabase_provider.dart';
 import '../models/task_model.dart';
 import '../models/meeting_model.dart';
+
 import 'add_branch_screen.dart';
 import 'add_task_screen.dart';
 import 'package:google_fonts/google_fonts.dart';

@@ -7,14 +7,9 @@ import '../services/auth_service.dart';
 import '../providers/supabase_provider.dart';
 import '../models/task_model.dart';
 import '../models/meeting_model.dart';
-import '../models/church_branch_model.dart';
-import 'user_management_screen.dart';
-import 'task_management_screen.dart';
-import 'meeting_management_screen.dart';
-import 'admin_screen.dart';
+
 import 'add_branch_screen.dart';
 import 'add_task_screen.dart';
-import 'profile_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -30,7 +25,8 @@ class _HomeScreenState extends State<HomeScreen> {
     if (user?.role == 'member') {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Only workers, pastors, and administrators can create tasks'),
+          content: Text(
+              'Only workers, pastors, and administrators can create tasks'),
           backgroundColor: Colors.red,
         ),
       );
@@ -60,7 +56,8 @@ class _HomeScreenState extends State<HomeScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Create Meeting'),
-        content: const Text('Meeting creation dialog will be implemented here.'),
+        content:
+            const Text('Meeting creation dialog will be implemented here.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -73,7 +70,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _showBranchCreationDialog(BuildContext context) {
     final user = Provider.of<AuthService>(context, listen: false).currentUser;
-    
+
     if (user?.role != 'admin') {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -108,7 +105,8 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             // Welcome and profile section
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: 32.0, horizontal: 24.0),
+              padding:
+                  const EdgeInsets.symmetric(vertical: 32.0, horizontal: 24.0),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
@@ -141,7 +139,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   Container(
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      border: Border.all(color: AppTheme.primaryColor, width: 3),
+                      border:
+                          Border.all(color: AppTheme.primaryColor, width: 3),
                       boxShadow: [
                         BoxShadow(
                           color: AppTheme.primaryColor.withOpacity(0.2),
@@ -153,11 +152,16 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: CircleAvatar(
                       radius: 36,
                       backgroundColor: AppTheme.cardColor,
-                      backgroundImage: (user != null && user.photoUrl != null && user.photoUrl!.isNotEmpty)
+                      backgroundImage: (user != null &&
+                              user.photoUrl != null &&
+                              user.photoUrl!.isNotEmpty)
                           ? NetworkImage(user.photoUrl!)
                           : null,
-                      child: (user == null || user.photoUrl == null || user.photoUrl!.isEmpty)
-                          ? Icon(Icons.person, size: 40, color: AppTheme.primaryColor)
+                      child: (user == null ||
+                              user.photoUrl == null ||
+                              user.photoUrl!.isEmpty)
+                          ? Icon(Icons.person,
+                              size: 40, color: AppTheme.primaryColor)
                           : null,
                     ),
                   ),
@@ -198,13 +202,16 @@ class _HomeScreenState extends State<HomeScreen> {
                         children: [
                           // Tasks Tab
                           StreamBuilder<List<TaskModel>>(
-                            stream: supabaseProvider.getTasksForUser(user?.id ?? ''),
+                            stream: supabaseProvider
+                                .getTasksForUser(user?.id ?? ''),
                             builder: (context, snapshot) {
                               if (snapshot.hasError) {
-                                return Center(child: Text('Error: ${snapshot.error}'));
+                                return Center(
+                                    child: Text('Error: ${snapshot.error}'));
                               }
                               if (!snapshot.hasData) {
-                                return const Center(child: CircularProgressIndicator());
+                                return const Center(
+                                    child: CircularProgressIndicator());
                               }
                               final tasks = snapshot.data!;
                               if (tasks.isEmpty) {
@@ -263,12 +270,16 @@ class _HomeScreenState extends State<HomeScreen> {
                                         ),
                                       ),
                                       trailing: Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 12, vertical: 6),
                                         decoration: BoxDecoration(
-                                          color: task.status == 'completed' 
-                                              ? AppTheme.successColor.withOpacity(0.1)
-                                              : AppTheme.warningColor.withOpacity(0.1),
-                                          borderRadius: BorderRadius.circular(20),
+                                          color: task.status == 'completed'
+                                              ? AppTheme.successColor
+                                                  .withOpacity(0.1)
+                                              : AppTheme.warningColor
+                                                  .withOpacity(0.1),
+                                          borderRadius:
+                                              BorderRadius.circular(20),
                                         ),
                                         child: Text(
                                           task.status,
@@ -289,13 +300,16 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           // Meetings Tab
                           StreamBuilder<List<MeetingModel>>(
-                            stream: supabaseProvider.getMeetingsForUser(user?.id ?? ''),
+                            stream: supabaseProvider
+                                .getMeetingsForUser(user?.id ?? ''),
                             builder: (context, snapshot) {
                               if (snapshot.hasError) {
-                                return Center(child: Text('Error: ${snapshot.error}'));
+                                return Center(
+                                    child: Text('Error: ${snapshot.error}'));
                               }
                               if (!snapshot.hasData) {
-                                return const Center(child: CircularProgressIndicator());
+                                return const Center(
+                                    child: CircularProgressIndicator());
                               }
                               final meetings = snapshot.data!;
                               if (meetings.isEmpty) {
@@ -354,12 +368,16 @@ class _HomeScreenState extends State<HomeScreen> {
                                         ),
                                       ),
                                       trailing: Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 12, vertical: 6),
                                         decoration: BoxDecoration(
                                           color: meeting.status == 'completed'
-                                              ? AppTheme.successColor.withOpacity(0.1)
-                                              : AppTheme.primaryColor.withOpacity(0.1),
-                                          borderRadius: BorderRadius.circular(20),
+                                              ? AppTheme.successColor
+                                                  .withOpacity(0.1)
+                                              : AppTheme.primaryColor
+                                                  .withOpacity(0.1),
+                                          borderRadius:
+                                              BorderRadius.circular(20),
                                         ),
                                         child: Text(
                                           meeting.status,
@@ -390,8 +408,10 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       floatingActionButton: RadialMenu(
         onTaskPressed: () => _showTaskCreationDialog(context),
-        onMeetingPressed: showMeetings ? () => _showMeetingCreationDialog(context) : null,
-        onBranchPressed: showBranches ? () => _showBranchCreationDialog(context) : null,
+        onMeetingPressed:
+            showMeetings ? () => _showMeetingCreationDialog(context) : null,
+        onBranchPressed:
+            showBranches ? () => _showBranchCreationDialog(context) : null,
         showBranchOption: showBranches,
         showMeetingOption: showMeetings,
       ),

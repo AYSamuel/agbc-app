@@ -51,7 +51,7 @@ class CustomDropdown<T> extends StatelessWidget {
           decoration: InputDecoration(
             hintText: hint,
             hintStyle: TextStyle(
-              color: AppTheme.neutralColor.withOpacity(0.6),
+              color: AppTheme.neutralColor.withAlpha((0.6 * 255).toInt()),
               fontWeight: FontWeight.w400,
               fontSize: 15,
             ),
@@ -81,14 +81,14 @@ class CustomDropdown<T> extends StatelessWidget {
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(borderRadius),
               borderSide: BorderSide(
-                color: AppTheme.neutralColor.withOpacity(0.15),
+                color: AppTheme.neutralColor.withAlpha((0.15 * 255).toInt()),
                 width: 1.5,
               ),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(borderRadius),
               borderSide: BorderSide(
-                color: AppTheme.neutralColor.withOpacity(0.15),
+                color: AppTheme.neutralColor.withAlpha((0.15 * 255).toInt()),
                 width: 1.5,
               ),
             ),

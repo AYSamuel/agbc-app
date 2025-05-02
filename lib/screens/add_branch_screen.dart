@@ -21,13 +21,13 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
   final _locationController = TextEditingController();
   final _addressController = TextEditingController();
   final _descriptionController = TextEditingController();
-  
+
   // Focus nodes for keyboard navigation
   final _nameFocus = FocusNode();
   final _locationFocus = FocusNode();
   final _addressFocus = FocusNode();
   final _descriptionFocus = FocusNode();
-  
+
   bool _isLoading = false;
 
   @override
@@ -36,13 +36,13 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
     _locationController.dispose();
     _addressController.dispose();
     _descriptionController.dispose();
-    
+
     // Dispose focus nodes
     _nameFocus.dispose();
     _locationFocus.dispose();
     _addressFocus.dispose();
     _descriptionFocus.dispose();
-    
+
     super.dispose();
   }
 
@@ -59,16 +59,18 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
         address: _addressController.text.trim(),
         description: _descriptionController.text.trim(),
         pastorId: Provider.of<SupabaseProvider>(context, listen: false)
-            .currentUser
-            ?.id ?? '',
+                .currentUser
+                ?.id ??
+            '',
         createdBy: Provider.of<SupabaseProvider>(context, listen: false)
-            .currentUser
-            ?.id ?? '',
+                .currentUser
+                ?.id ??
+            '',
       );
 
       await Provider.of<SupabaseProvider>(context, listen: false)
           .createBranch(branch);
-          
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Branch created successfully')),
@@ -131,7 +133,8 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: AppTheme.darkNeutralColor.withOpacity(0.05),
+                          color:
+                              AppTheme.darkNeutralColor.withValues(alpha: 0.05),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
@@ -153,7 +156,8 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
                           label: 'Branch Name',
                           controller: _nameController,
                           hint: 'Enter branch name',
-                          prefixIcon: Icon(Icons.church, color: AppTheme.neutralColor),
+                          prefixIcon:
+                              Icon(Icons.church, color: AppTheme.neutralColor),
                           focusNode: _nameFocus,
                           nextFocusNode: _locationFocus,
                           validator: (value) {
@@ -168,7 +172,8 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
                           label: 'Location',
                           controller: _locationController,
                           hint: 'Enter branch location',
-                          prefixIcon: Icon(Icons.location_on, color: AppTheme.neutralColor),
+                          prefixIcon: Icon(Icons.location_on,
+                              color: AppTheme.neutralColor),
                           focusNode: _locationFocus,
                           nextFocusNode: _addressFocus,
                           validator: (value) {
@@ -183,7 +188,8 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
                           label: 'Address',
                           controller: _addressController,
                           hint: 'Enter branch address',
-                          prefixIcon: Icon(Icons.home, color: AppTheme.neutralColor),
+                          prefixIcon:
+                              Icon(Icons.home, color: AppTheme.neutralColor),
                           focusNode: _addressFocus,
                           nextFocusNode: _descriptionFocus,
                           validator: (value) {
@@ -198,7 +204,8 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
                           label: 'Description',
                           controller: _descriptionController,
                           hint: 'Enter branch description',
-                          prefixIcon: Icon(Icons.description, color: AppTheme.neutralColor),
+                          prefixIcon: Icon(Icons.description,
+                              color: AppTheme.neutralColor),
                           focusNode: _descriptionFocus,
                           maxLines: 3,
                         ),
@@ -230,4 +237,4 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
       ),
     );
   }
-} 
+}

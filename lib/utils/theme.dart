@@ -33,39 +33,39 @@ class AppTheme {
   static const double smallIconSize = 20.0;
 
   static TextStyle get titleStyle => GoogleFonts.inter(
-    fontSize: 24,
-    fontWeight: FontWeight.bold,
-    color: secondaryColor,
-    letterSpacing: 0.2,
-  );
+        fontSize: 24,
+        fontWeight: FontWeight.bold,
+        color: secondaryColor,
+        letterSpacing: 0.2,
+      );
 
   static TextStyle get subtitleStyle => GoogleFonts.inter(
-    fontSize: 16,
-    color: neutralColor,
-    fontWeight: FontWeight.w500,
-    letterSpacing: 0.1,
-  );
+        fontSize: 16,
+        color: neutralColor,
+        fontWeight: FontWeight.w500,
+        letterSpacing: 0.1,
+      );
 
   static TextStyle get welcomeStyle => GoogleFonts.inter(
-    fontSize: 18,
-    color: neutralColor,
-    fontWeight: FontWeight.w400,
-  );
+        fontSize: 18,
+        color: neutralColor,
+        fontWeight: FontWeight.w400,
+      );
 
   static TextStyle get linkStyle => GoogleFonts.inter(
-    color: primaryColor,
-    fontSize: 14,
-    fontWeight: FontWeight.w600,
-    decoration: TextDecoration.underline,
-    decorationColor: primaryColor,
-    decorationThickness: 1.5,
-  );
+        color: primaryColor,
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        decoration: TextDecoration.underline,
+        decorationColor: primaryColor,
+        decorationThickness: 1.5,
+      );
 
   static TextStyle get regularTextStyle => GoogleFonts.inter(
-    color: neutralColor,
-    fontSize: 14,
-    fontWeight: FontWeight.w400,
-  );
+        color: neutralColor,
+        fontSize: 14,
+        fontWeight: FontWeight.w400,
+      );
 
   static ThemeData get lightTheme {
     return ThemeData(
@@ -74,11 +74,9 @@ class AppTheme {
         primary: primaryColor,
         secondary: secondaryColor,
         error: errorColor,
-        background: backgroundColor,
         surface: cardColor,
         onPrimary: Colors.white,
         onSecondary: darkNeutralColor,
-        onBackground: darkNeutralColor,
         onSurface: darkNeutralColor,
       ),
       scaffoldBackgroundColor: backgroundColor,
@@ -183,7 +181,8 @@ class AppTheme {
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: errorColor, width: 2),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       ),
       cardTheme: CardTheme(
         color: cardColor,
@@ -315,7 +314,8 @@ class AppTheme {
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: errorColor, width: 2),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       ),
       cardTheme: CardTheme(
         color: secondaryColor,
@@ -330,4 +330,4 @@ class AppTheme {
       ),
     );
   }
-} 
+}

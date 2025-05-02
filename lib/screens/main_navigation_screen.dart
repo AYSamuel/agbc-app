@@ -38,7 +38,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       HomeScreen(),
       ProfileScreen(),
     ];
-    
+
     // Initialize with default navigation items
     _navItems = [
       _buildNavItem(Icons.home, 'Home', 0, 0),
@@ -46,19 +46,22 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     ];
   }
 
-  BottomNavigationBarItem _buildNavItem(IconData icon, String label, int index, int currentIndex) {
+  BottomNavigationBarItem _buildNavItem(
+      IconData icon, String label, int index, int currentIndex) {
     return BottomNavigationBarItem(
       icon: Container(
         decoration: currentIndex == index
             ? BoxDecoration(
-                color: AppTheme.primaryColor.withOpacity(0.12),
+                color: AppTheme.primaryColor.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(16),
               )
             : null,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         child: Icon(
           icon,
-          color: currentIndex == index ? AppTheme.primaryColor : AppTheme.neutralColor,
+          color: currentIndex == index
+              ? AppTheme.primaryColor
+              : AppTheme.neutralColor,
         ),
       ),
       label: label,
@@ -79,7 +82,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     setState(() {
       if (hasAdminAccess && _screens.length == 2) {
         _screens = [..._screens, const AdminScreen()];
-        _navItems = [..._navItems, _buildNavItem(Icons.admin_panel_settings, 'Admin', 2, _selectedIndex)];
+        _navItems = [
+          ..._navItems,
+          _buildNavItem(Icons.admin_panel_settings, 'Admin', 2, _selectedIndex)
+        ];
       } else if (!hasAdminAccess && _screens.length > 2) {
         _screens = _screens.sublist(0, 2);
         _navItems = _navItems.sublist(0, 2);
@@ -94,22 +100,23 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   Widget build(BuildContext context) {
     final user = Provider.of<AuthService>(context).currentUser;
     final hasAdminAccess = user?.isAdmin ?? false;
-    
+
     // Update admin access if needed
-    if ((hasAdminAccess && _screens.length == 2) || 
+    if ((hasAdminAccess && _screens.length == 2) ||
         (!hasAdminAccess && _screens.length > 2)) {
       _updateAdminAccess(hasAdminAccess);
     }
-    
+
     // Rebuild nav items with current selected index
     _navItems = [
       _buildNavItem(Icons.home, 'Home', 0, _selectedIndex),
       _buildNavItem(Icons.person, 'Profile', 1, _selectedIndex),
     ];
     if (hasAdminAccess) {
-      _navItems.add(_buildNavItem(Icons.admin_panel_settings, 'Admin', 2, _selectedIndex));
+      _navItems.add(_buildNavItem(
+          Icons.admin_panel_settings, 'Admin', 2, _selectedIndex));
     }
-    
+
     return Scaffold(
       body: SafeArea(
         child: Column(
@@ -126,14 +133,16 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
-        backgroundColor: AppTheme.cardColor.withOpacity(0.75),
+        backgroundColor: AppTheme.cardColor.withValues(alpha: 0.75),
         selectedItemColor: AppTheme.primaryColor,
         unselectedItemColor: AppTheme.neutralColor,
-        selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-        unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
+        selectedLabelStyle:
+            const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+        unselectedLabelStyle:
+            const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
         type: BottomNavigationBarType.fixed,
         items: _navItems,
       ),
     );
   }
-} 
+}

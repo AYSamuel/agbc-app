@@ -71,7 +71,8 @@ class CustomInput extends StatefulWidget {
   State<CustomInput> createState() => _CustomInputState();
 }
 
-class _CustomInputState extends State<CustomInput> with SingleTickerProviderStateMixin, LocationValidationMixin {
+class _CustomInputState extends State<CustomInput>
+    with SingleTickerProviderStateMixin, LocationValidationMixin {
   late final FocusNode _focusNode;
   bool _isFocused = false;
 
@@ -80,7 +81,7 @@ class _CustomInputState extends State<CustomInput> with SingleTickerProviderStat
     super.initState();
     _focusNode = widget.focusNode ?? FocusNode();
     _setupListeners();
-    
+
     if (widget.isLocationField) {
       initializeLocationValidation(
         controller: widget.controller,
@@ -117,7 +118,7 @@ class _CustomInputState extends State<CustomInput> with SingleTickerProviderStat
 
   void _handleSubmitted(String value) {
     widget.onSubmitted?.call(value);
-    
+
     if (widget.nextFocusNode != null) {
       widget.nextFocusNode!.requestFocus();
     }
@@ -126,7 +127,7 @@ class _CustomInputState extends State<CustomInput> with SingleTickerProviderStat
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -159,12 +160,14 @@ class _CustomInputState extends State<CustomInput> with SingleTickerProviderStat
       maxLines: widget.maxLines,
       maxLength: widget.maxLength,
       validator: _buildValidator,
-      textInputAction: widget.nextFocusNode != null 
-          ? TextInputAction.next 
+      textInputAction: widget.nextFocusNode != null
+          ? TextInputAction.next
           : TextInputAction.done,
       autofocus: widget.autofocus,
       style: theme.textTheme.bodyLarge?.copyWith(
-        color: widget.enabled ? AppTheme.darkNeutralColor : AppTheme.neutralColor.withOpacity(0.5),
+        color: widget.enabled
+            ? AppTheme.darkNeutralColor
+            : AppTheme.neutralColor.withValues(alpha: 0.5),
         fontWeight: FontWeight.w500,
         fontSize: 16,
         letterSpacing: 0.2,
@@ -174,7 +177,7 @@ class _CustomInputState extends State<CustomInput> with SingleTickerProviderStat
       decoration: InputDecoration(
         hintText: widget.hint,
         hintStyle: TextStyle(
-          color: AppTheme.neutralColor.withOpacity(0.6),
+          color: AppTheme.neutralColor.withValues(alpha: 0.6),
           fontWeight: FontWeight.w400,
           fontSize: 15,
           letterSpacing: 0.2,
@@ -191,7 +194,9 @@ class _CustomInputState extends State<CustomInput> with SingleTickerProviderStat
                 padding: const EdgeInsets.only(left: 12, right: 8),
                 child: IconTheme(
                   data: IconThemeData(
-                    color: _isFocused ? AppTheme.primaryColor : AppTheme.neutralColor.withOpacity(0.6),
+                    color: _isFocused
+                        ? AppTheme.primaryColor
+                        : AppTheme.neutralColor.withValues(alpha: 0.6),
                     size: 20,
                   ),
                   child: widget.prefixIcon!,
@@ -200,18 +205,20 @@ class _CustomInputState extends State<CustomInput> with SingleTickerProviderStat
             : null,
         suffixIcon: _buildSuffixIcon(),
         filled: true,
-        fillColor: widget.enabled ? AppTheme.cardColor : AppTheme.cardColor.withOpacity(0.5),
+        fillColor: widget.enabled
+            ? AppTheme.cardColor
+            : AppTheme.cardColor.withValues(alpha: 0.5),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(widget.borderRadius),
           borderSide: BorderSide(
-            color: AppTheme.neutralColor.withOpacity(0.15),
+            color: AppTheme.neutralColor.withValues(alpha: 0.15),
             width: 1.5,
           ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(widget.borderRadius),
           borderSide: BorderSide(
-            color: AppTheme.neutralColor.withOpacity(0.15),
+            color: AppTheme.neutralColor.withValues(alpha: 0.15),
             width: 1.5,
           ),
         ),
@@ -229,7 +236,8 @@ class _CustomInputState extends State<CustomInput> with SingleTickerProviderStat
             width: 1.5,
           ),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         isDense: true,
       ),
     );
@@ -244,7 +252,7 @@ class _CustomInputState extends State<CustomInput> with SingleTickerProviderStat
 
   Widget? _buildSuffixIcon() {
     if (widget.suffixIcon != null) return widget.suffixIcon;
-    
+
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -276,4 +284,4 @@ class _CustomInputState extends State<CustomInput> with SingleTickerProviderStat
       ],
     );
   }
-} 
+}

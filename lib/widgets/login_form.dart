@@ -280,7 +280,7 @@ class _LoginFormState extends State<LoginForm> with FormValidationMixin {
                       borderRadius: BorderRadius.circular(4),
                     ),
                     side: BorderSide(
-                      color: AppTheme.neutralColor.withOpacity(0.5),
+                      color: AppTheme.neutralColor.withValues(alpha: 0.5),
                       width: 1.5,
                     ),
                   ),
@@ -305,13 +305,13 @@ class _LoginFormState extends State<LoginForm> with FormValidationMixin {
                 gradient: LinearGradient(
                   colors: [
                     AppTheme.primaryColor,
-                    AppTheme.primaryColor.withOpacity(0.8),
+                    AppTheme.primaryColor.withValues(alpha: 0.8),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(28),
                 boxShadow: [
                   BoxShadow(
-                    color: AppTheme.primaryColor.withOpacity(0.3),
+                    color: AppTheme.primaryColor.withValues(alpha: 0.3),
                     blurRadius: 15,
                     offset: const Offset(0, 8),
                   ),

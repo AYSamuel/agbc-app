@@ -7,11 +7,9 @@ class AppTheme {
       primary: const Color(0xFF8B2E3C), // Deep Burgundy
       secondary: const Color(0xFFD4AF37), // Warm Gold
       error: const Color(0xFFC62828), // Soft Red
-      background: const Color(0xFFF5F5F0), // Soft Cream
       surface: const Color(0xFFF0EDE6), // Light Beige
       onPrimary: Colors.white,
       onSecondary: const Color(0xFF2C2C2C), // Deep Charcoal
-      onBackground: const Color(0xFF2C2C2C), // Deep Charcoal
       onSurface: const Color(0xFF2C2C2C), // Deep Charcoal
     );
 
@@ -64,7 +62,8 @@ class AppTheme {
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: colorScheme.error, width: 2),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       ),
     );
   }
@@ -74,11 +73,9 @@ class AppTheme {
       primary: const Color(0xFF8B2E3C), // Deep Burgundy
       secondary: const Color(0xFFD4AF37), // Warm Gold
       error: const Color(0xFFC62828), // Soft Red
-      background: const Color(0xFF2C2C2C), // Deep Charcoal
       surface: const Color(0xFF3A3A3A), // Dark Surface
       onPrimary: Colors.white,
       onSecondary: Colors.white,
-      onBackground: Colors.white,
       onSurface: Colors.white,
     );
 
@@ -131,7 +128,8 @@ class AppTheme {
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: colorScheme.error, width: 2),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       ),
     );
   }

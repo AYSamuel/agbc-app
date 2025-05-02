@@ -142,7 +142,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           Border.all(color: AppTheme.primaryColor, width: 3),
                       boxShadow: [
                         BoxShadow(
-                          color: AppTheme.primaryColor.withOpacity(0.2),
+                          color: AppTheme.primaryColor.withValues(alpha: 0.2),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
@@ -274,9 +274,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                         decoration: BoxDecoration(
                                           color: task.status == 'completed'
                                               ? AppTheme.successColor
-                                                  .withOpacity(0.1)
+                                                  .withValues(alpha: 0.1)
                                               : AppTheme.warningColor
-                                                  .withOpacity(0.1),
+                                                  .withValues(alpha: 0.1),
                                           borderRadius:
                                               BorderRadius.circular(20),
                                         ),
@@ -372,9 +372,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                         decoration: BoxDecoration(
                                           color: meeting.status == 'completed'
                                               ? AppTheme.successColor
-                                                  .withOpacity(0.1)
+                                                  .withValues(alpha: 0.1)
                                               : AppTheme.primaryColor
-                                                  .withOpacity(0.1),
+                                                  .withValues(alpha: 0.1),
                                           borderRadius:
                                               BorderRadius.circular(20),
                                         ),

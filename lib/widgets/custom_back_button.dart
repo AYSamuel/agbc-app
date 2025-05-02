@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import '../utils/theme.dart';
 
 /// A customizable back button widget with animation and haptic feedback.
-/// 
+///
 /// This widget provides a consistent back button design across the app with:
 /// - Smooth animation on press
 /// - Haptic feedback
@@ -23,7 +23,8 @@ class CustomBackButton extends StatefulWidget {
   State<CustomBackButton> createState() => _CustomBackButtonState();
 }
 
-class _CustomBackButtonState extends State<CustomBackButton> with SingleTickerProviderStateMixin {
+class _CustomBackButtonState extends State<CustomBackButton>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
   late final Animation<double> _scaleAnimation;
 
@@ -48,11 +49,11 @@ class _CustomBackButtonState extends State<CustomBackButton> with SingleTickerPr
   Future<void> _handleTap() async {
     // Provide haptic feedback
     await HapticFeedback.lightImpact();
-    
+
     // Animate the button
     await _controller.forward();
     await _controller.reverse();
-    
+
     // Call the onPressed callback
     widget.onPressed();
   }
@@ -67,7 +68,7 @@ class _CustomBackButtonState extends State<CustomBackButton> with SingleTickerPr
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 4,
               offset: const Offset(0, 2),
             ),
@@ -91,4 +92,4 @@ class _CustomBackButtonState extends State<CustomBackButton> with SingleTickerPr
       ),
     );
   }
-} 
+}

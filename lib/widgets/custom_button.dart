@@ -3,7 +3,7 @@ import 'package:agbc_app/widgets/loading_indicator.dart';
 import 'package:agbc_app/utils/theme.dart';
 
 /// A customizable button widget with loading state, animations, and disabled state styling.
-/// 
+///
 /// This widget provides a consistent button design across the app with:
 /// - Loading state with spinner
 /// - Disabled state styling
@@ -38,7 +38,8 @@ class CustomButton extends StatefulWidget {
   State<CustomButton> createState() => _CustomButtonState();
 }
 
-class _CustomButtonState extends State<CustomButton> with SingleTickerProviderStateMixin {
+class _CustomButtonState extends State<CustomButton>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
   late final Animation<double> _scaleAnimation;
 
@@ -62,7 +63,7 @@ class _CustomButtonState extends State<CustomButton> with SingleTickerProviderSt
 
   Future<void> _handleTap() async {
     if (widget.onPressed == null || widget.isLoading) return;
-    
+
     await _controller.forward();
     await _controller.reverse();
     widget.onPressed!();
@@ -72,10 +73,11 @@ class _CustomButtonState extends State<CustomButton> with SingleTickerProviderSt
   Widget build(BuildContext context) {
     final isDisabled = widget.onPressed == null || widget.isLoading;
     final backgroundColor = isDisabled
-        ? (widget.backgroundColor ?? AppTheme.primaryColor).withOpacity(0.5)
+        ? (widget.backgroundColor ?? AppTheme.primaryColor)
+            .withValues(alpha: 0.5)
         : widget.backgroundColor ?? AppTheme.primaryColor;
     final foregroundColor = isDisabled
-        ? (widget.foregroundColor ?? Colors.white).withOpacity(0.5)
+        ? (widget.foregroundColor ?? Colors.white).withValues(alpha: 0.5)
         : widget.foregroundColor ?? Colors.white;
 
     return ScaleTransition(
@@ -94,11 +96,9 @@ class _CustomButtonState extends State<CustomButton> with SingleTickerProviderSt
             elevation: isDisabled ? 0 : 2,
             padding: const EdgeInsets.symmetric(horizontal: 16),
           ),
-          child: widget.isLoading
-              ? const LoadingIndicator()
-              : widget.child,
+          child: widget.isLoading ? const LoadingIndicator() : widget.child,
         ),
       ),
     );
   }
-} 
+}

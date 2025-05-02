@@ -74,14 +74,14 @@ class _TaskStatusCardState extends State<TaskStatusCard>
                 const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
             decoration: BoxDecoration(
               color: hasTasks
-                  ? AppTheme.accentColor.withOpacity(0.15)
+                  ? AppTheme.accentColor.withAlpha(38)
                   : AppTheme.cardColor,
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
                   color: hasTasks
-                      ? AppTheme.accentColor.withOpacity(0.1)
-                      : Colors.black.withOpacity(0.05),
+                      ? AppTheme.accentColor.withAlpha(26)
+                      : Colors.black.withAlpha(13),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),

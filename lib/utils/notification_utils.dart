@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:agbc_app/services/notification_service.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Utility class for sending notifications
 class NotificationUtils {
@@ -32,7 +31,8 @@ class NotificationUtils {
       );
     } catch (e) {
       debugPrint('Error sending notification: $e');
-      await _notificationService.logError('send_notification_util', e.toString());
+      await _notificationService.logError(
+          'send_notification_util', e.toString());
       rethrow;
     }
   }
@@ -70,7 +70,8 @@ class NotificationUtils {
       }
     } catch (e) {
       debugPrint('Error sending broadcast notification: $e');
-      await _notificationService.logError('send_broadcast_notification_util', e.toString());
+      await _notificationService.logError(
+          'send_broadcast_notification_util', e.toString());
       rethrow;
     }
   }

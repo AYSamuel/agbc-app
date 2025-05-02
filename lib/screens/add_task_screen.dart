@@ -61,10 +61,16 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     );
 
     if (picked != null) {
+      // Check if the widget is still mounted before showing the time picker
+      if (!mounted) return;
+
       final TimeOfDay? time = await showTimePicker(
         context: context,
         initialTime: TimeOfDay.now(),
       );
+
+      // Check again after the async operation
+      if (!mounted) return;
 
       if (time != null) {
         final DateTime selectedDateTime = DateTime(
@@ -176,7 +182,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
+                          color: Colors.black.withValues(alpha: 0.05),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
@@ -228,54 +234,72 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                         const SizedBox(height: 16),
                         CustomInput(
                           label: 'Assignee',
-                          controller: TextEditingController(),
+                          controller: TextEditingController(
+                              text: _selectedAssigneeId ?? ''),
                           hint: 'Select assignee',
                           prefixIcon:
                               const Icon(Icons.person, color: Colors.grey),
                           readOnly: true,
                           onTap: () async {
-                            final users = await context
-                                .read<SupabaseProvider>()
-                                .getAllUsers()
-                                .first;
+                            // Check if widget is still mounted before proceeding
                             if (!mounted) return;
+                            
+                            // Get provider before async operation
+                            final SupabaseProvider provider =
+                                Provider.of<SupabaseProvider>(context, listen: false);
+                            
+                            try {
+                              final users = await provider.getAllUsers().first;
 
-                            showDialog(
-                              context: context,
-                              builder: (context) => AlertDialog(
-                                title: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    const Text('Select Assignee'),
-                                    IconButton(
-                                      icon: const Icon(Icons.close),
-                                      onPressed: () => Navigator.pop(context),
+                              // Check again if widget is still mounted after async operation
+                              if (!mounted) return;
+
+                              // Now it's safe to use the context - use the current context after mounted check
+                              await showDialog(
+                                context: context,
+                                builder: (dialogContext) => AlertDialog(
+                                  title: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      const Text('Select Assignee'),
+                                      IconButton(
+                                        icon: const Icon(Icons.close),
+                                        onPressed: () =>
+                                            Navigator.pop(dialogContext),
+                                      ),
+                                    ],
+                                  ),
+                                  content: SizedBox(
+                                    width: double.maxFinite,
+                                    child: ListView.builder(
+                                      shrinkWrap: true,
+                                      itemCount: users.length,
+                                      itemBuilder: (context, index) {
+                                        final user = users[index];
+                                        return ListTile(
+                                          title: Text(user.displayName),
+                                          subtitle: Text(user.email),
+                                          onTap: () {
+                                            setState(() {
+                                              _selectedAssigneeId = user.id;
+                                            });
+                                            Navigator.pop(dialogContext);
+                                          },
+                                        );
+                                      },
                                     ),
-                                  ],
-                                ),
-                                content: SizedBox(
-                                  width: double.maxFinite,
-                                  child: ListView.builder(
-                                    shrinkWrap: true,
-                                    itemCount: users.length,
-                                    itemBuilder: (context, index) {
-                                      final user = users[index];
-                                      return ListTile(
-                                        title: Text(user.displayName),
-                                        subtitle: Text(user.email),
-                                        onTap: () {
-                                          setState(() {
-                                            _selectedAssigneeId = user.id;
-                                          });
-                                          Navigator.pop(context);
-                                        },
-                                      );
-                                    },
                                   ),
                                 ),
-                              ),
-                            );
+                              );
+                            } catch (e) {
+                              // Using the logger from the app's logging package instead of print
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('Failed to load users: ${e.toString()}')),
+                                );
+                              }
+                            }
                           },
                           validator: (value) {
                             if (_selectedAssigneeId == null) {

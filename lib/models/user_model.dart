@@ -16,12 +16,13 @@ class UserModel {
   final String? location; // User's location/city
 
   // Department involvement
-  final List<String> departments; // Church departments (choir, media, ushering, etc.)
-  final bool is_active; // Whether the account is active
-  final bool email_verified; // Whether email has been verified
+  final List<String>
+      departments; // Church departments (choir, media, ushering, etc.)
+  final bool isActive; // Whether the account is active
+  final bool emailVerified; // Whether email has been verified
   final Map<String, bool> notificationSettings; // Notification preferences
-  final String? notification_token;
-  final DateTime? notification_token_updated_at;
+  final String? notificationToken;
+  final DateTime? notificationTokenUpdatedAt;
 
   /// Constructor for creating a new UserModel instance
   UserModel({
@@ -31,39 +32,41 @@ class UserModel {
     required this.role,
     required this.createdAt,
     this.lastLogin,
-    required this.is_active,
-    required this.email_verified,
+    required this.isActive,
+    required this.emailVerified,
     required this.departments,
     required this.notificationSettings,
     this.location,
     this.branchId,
     this.phoneNumber,
     this.photoUrl,
-    this.notification_token,
-    this.notification_token_updated_at,
+    this.notificationToken,
+    this.notificationTokenUpdatedAt,
   });
 
   /// Creates a UserModel instance from JSON data
   factory UserModel.fromJson(Map<String, dynamic> json) {
-    print('Creating UserModel from JSON: $json');
     return UserModel(
       id: json['id'] as String,
       displayName: json['display_name'] as String,
       email: json['email'] as String,
       role: json['role'] as String,
       createdAt: DateTime.parse(json['created_at'] as String),
-      lastLogin: json['last_login'] != null ? DateTime.parse(json['last_login'] as String) : null,
-      is_active: json['is_active'] as bool,
-      email_verified: json['email_verified'] as bool,
+      lastLogin: json['last_login'] != null
+          ? DateTime.parse(json['last_login'] as String)
+          : null,
+      isActive: json['is_active'] as bool,
+      emailVerified: json['email_verified'] as bool,
       departments: List<String>.from(json['departments'] as List),
-      notificationSettings: Map<String, bool>.from(json['notification_settings'] as Map),
+      notificationSettings:
+          Map<String, bool>.from(json['notification_settings'] as Map),
       location: json['location'] as String?,
       branchId: json['branch_id'] as String?,
       phoneNumber: json['phone_number'] as String?,
       photoUrl: json['photo_url'] as String?,
-      notification_token: json['notification_token'],
-      notification_token_updated_at: json['notification_token_updated_at'] != null 
-          ? DateTime.parse(json['notification_token_updated_at'] as String) 
+      notificationToken: json['notification_token'] as String?,
+      notificationTokenUpdatedAt: json['notification_token_updated_at'] != null
+          ? DateTime.parse(json['notification_token_updated_at'] as String)
           : null,
     );
   }
@@ -77,16 +80,17 @@ class UserModel {
       'role': role,
       'created_at': createdAt.toIso8601String(),
       'last_login': lastLogin?.toIso8601String(),
-      'is_active': is_active,
-      'email_verified': email_verified,
+      'is_active': isActive,
+      'email_verified': emailVerified,
       'departments': departments,
       'notification_settings': notificationSettings,
       'location': location,
       'branch_id': branchId,
       'phone_number': phoneNumber,
       'photo_url': photoUrl,
-      'notification_token': notification_token,
-      'notification_token_updated_at': notification_token_updated_at?.toIso8601String(),
+      'notification_token': notificationToken,
+      'notification_token_updated_at':
+          notificationTokenUpdatedAt?.toIso8601String(),
     };
   }
 
@@ -109,16 +113,16 @@ class UserModel {
     String? role,
     DateTime? createdAt,
     DateTime? lastLogin,
-    bool? is_active,
-    bool? email_verified,
+    bool? isActive,
+    bool? emailVerified,
     List<String>? departments,
     Map<String, bool>? notificationSettings,
     String? location,
     String? branchId,
     String? phoneNumber,
     String? photoUrl,
-    String? notification_token,
-    DateTime? notification_token_updated_at,
+    String? notificationToken,
+    DateTime? notificationTokenUpdatedAt,
   }) {
     return UserModel(
       id: id ?? this.id,
@@ -127,16 +131,17 @@ class UserModel {
       role: role ?? this.role,
       createdAt: createdAt ?? this.createdAt,
       lastLogin: lastLogin ?? this.lastLogin,
-      is_active: is_active ?? this.is_active,
-      email_verified: email_verified ?? this.email_verified,
+      isActive: isActive ?? this.isActive,
+      emailVerified: emailVerified ?? this.emailVerified,
       departments: departments ?? this.departments,
       notificationSettings: notificationSettings ?? this.notificationSettings,
       location: location ?? this.location,
       branchId: branchId ?? this.branchId,
       phoneNumber: phoneNumber ?? this.phoneNumber,
       photoUrl: photoUrl ?? this.photoUrl,
-      notification_token: notification_token ?? this.notification_token,
-      notification_token_updated_at: notification_token_updated_at ?? this.notification_token_updated_at,
+      notificationToken: notificationToken ?? this.notificationToken,
+      notificationTokenUpdatedAt:
+          notificationTokenUpdatedAt ?? this.notificationTokenUpdatedAt,
     );
   }
 }

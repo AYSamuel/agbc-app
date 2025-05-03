@@ -9,7 +9,7 @@ class ChurchBranch {
   final List<String> members;
   final DateTime createdAt;
   final String createdBy;
-  final bool is_active;
+  final bool isActive;
 
   ChurchBranch({
     required this.id,
@@ -22,10 +22,10 @@ class ChurchBranch {
     List<String>? departments,
     List<String>? members,
     DateTime? createdAt,
-    this.is_active = true,
-  }) : departments = departments ?? [],
-       members = members ?? [],
-       createdAt = createdAt ?? DateTime.now();
+    this.isActive = true,
+  })  : departments = departments ?? [],
+        members = members ?? [],
+        createdAt = createdAt ?? DateTime.now();
 
   factory ChurchBranch.fromJson(Map<String, dynamic> json) {
     return ChurchBranch(
@@ -34,12 +34,15 @@ class ChurchBranch {
       location: json['location'] ?? '',
       address: json['address'] ?? '',
       description: json['description'],
-      pastorId: json['pastorId'],
-      departments: (json['departments'] as List<dynamic>?)?.cast<String>() ?? [],
+      pastorId: json['pastor_id'],
+      departments:
+          (json['departments'] as List<dynamic>?)?.cast<String>() ?? [],
       members: (json['members'] as List<dynamic>?)?.cast<String>() ?? [],
-      createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
-      createdBy: json['createdBy'] ?? '',
-      is_active: json['is_active'] ?? true,
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'])
+          : null,
+      createdBy: json['created_by'] ?? '',
+      isActive: json['is_active'] ?? true,
     );
   }
 
@@ -50,12 +53,12 @@ class ChurchBranch {
       'location': location,
       'address': address,
       'description': description,
-      'pastorId': pastorId,
+      'pastor_id': pastorId,
       'departments': departments,
       'members': members,
-      'createdAt': createdAt.toIso8601String(),
-      'createdBy': createdBy,
-      'is_active': is_active,
+      'created_at': createdAt.toIso8601String(),
+      'created_by': createdBy,
+      'is_active': isActive,
     };
   }
 
@@ -70,7 +73,7 @@ class ChurchBranch {
     List<String>? members,
     DateTime? createdAt,
     String? createdBy,
-    bool? is_active,
+    bool? isActive,
   }) {
     return ChurchBranch(
       id: id ?? this.id,
@@ -83,7 +86,7 @@ class ChurchBranch {
       members: members ?? this.members,
       createdAt: createdAt ?? this.createdAt,
       createdBy: createdBy ?? this.createdBy,
-      is_active: is_active ?? this.is_active,
+      isActive: isActive ?? this.isActive,
     );
   }
-} 
+}

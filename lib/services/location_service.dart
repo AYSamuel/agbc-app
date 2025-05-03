@@ -38,7 +38,30 @@ class LocationService {
 
       if (placemarks.isNotEmpty) {
         Placemark place = placemarks[0];
-        return formatLocation(place.locality, place.country);
+        // Only use city (locality) and country
+        String? city = place.locality?.trim();
+        String? country = place.country?.trim();
+
+        // Fallbacks if locality is empty
+        if (city == null || city.isEmpty) {
+          city = place.subAdministrativeArea?.trim();
+        }
+        if (city == null || city.isEmpty) {
+          city = place.administrativeArea?.trim();
+        }
+
+        // Build the result string
+        if (city != null &&
+            city.isNotEmpty &&
+            country != null &&
+            country.isNotEmpty) {
+          return '$city, $country';
+        } else if (city != null && city.isNotEmpty) {
+          return city;
+        } else if (country != null && country.isNotEmpty) {
+          return country;
+        }
+        return null;
       }
       return null;
     } catch (e) {

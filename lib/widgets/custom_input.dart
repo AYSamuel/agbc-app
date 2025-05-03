@@ -205,9 +205,7 @@ class _CustomInputState extends State<CustomInput>
             : null,
         suffixIcon: _buildSuffixIcon(),
         filled: true,
-        fillColor: widget.enabled
-            ? AppTheme.cardColor
-            : AppTheme.cardColor.withValues(alpha: 0.5),
+        fillColor: widget.backgroundColor ?? Colors.white,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(widget.borderRadius),
           borderSide: BorderSide(
@@ -237,7 +235,7 @@ class _CustomInputState extends State<CustomInput>
           ),
         ),
         contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         isDense: true,
       ),
     );
@@ -251,37 +249,19 @@ class _CustomInputState extends State<CustomInput>
   }
 
   Widget? _buildSuffixIcon() {
-    if (widget.suffixIcon != null) return widget.suffixIcon;
+    if (widget.suffixIcon == null) return null;
 
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (widget.isLocationField && isValidatingLocation)
-          const SizedBox(
-            width: 20,
-            height: 20,
-            child: CircularProgressIndicator(
-              strokeWidth: 2,
-              valueColor: AlwaysStoppedAnimation<Color>(AppTheme.neutralColor),
-            ),
-          ),
-        if (widget.controller.text.isNotEmpty && !widget.obscureText)
-          IconButton(
-            icon: Icon(
-              Icons.clear,
-              color: AppTheme.neutralColor,
-              size: 20,
-            ),
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
-            onPressed: () {
-              widget.controller.clear();
-              if (widget.onChanged != null) {
-                widget.onChanged!('');
-              }
-            },
-          ),
-      ],
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: IconTheme(
+        data: IconThemeData(
+          color: _isFocused
+              ? AppTheme.primaryColor
+              : AppTheme.neutralColor.withValues(alpha: 0.6),
+          size: 20,
+        ),
+        child: widget.suffixIcon!,
+      ),
     );
   }
 }

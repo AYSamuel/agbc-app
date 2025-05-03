@@ -18,13 +18,13 @@ class MeetingModel {
   // Organizational details
   final String organizer; // Person responsible for the meeting
   final String location; // Physical or virtual meeting location
-  final bool is_virtual; // Whether this is an online meeting
-  final String? meeting_link; // Link for virtual meetings
-  final int expected_attendance; // Expected number of attendees
+  final bool isVirtual; // Whether this is an online meeting
+  final String? meetingLink; // Link for virtual meetings
+  final int expectedAttendance; // Expected number of attendees
   final List<String> attendees; // List of user IDs who plan to attend
 
   // Meeting status tracking
-  final bool is_cancelled; // Whether the meeting has been cancelled
+  final bool isCancelled; // Whether the meeting has been cancelled
   final String
       status; // Current status (scheduled, ongoing, completed, cancelled)
 
@@ -41,11 +41,11 @@ class MeetingModel {
     this.category = 'general', // Default category
     required this.organizer,
     required this.location,
-    this.is_virtual = false, // Default to physical meeting
-    this.meeting_link, // Optional virtual meeting link
-    this.expected_attendance = 0,
+    this.isVirtual = false, // Default to physical meeting
+    this.meetingLink, // Optional virtual meeting link
+    this.expectedAttendance = 0,
     this.attendees = const [], // Default to empty list
-    this.is_cancelled = false, // Default to not cancelled
+    this.isCancelled = false, // Default to not cancelled
     this.status = 'scheduled', // Default status
   }) : createdAt = createdAt ?? DateTime.now();
 
@@ -55,20 +55,22 @@ class MeetingModel {
       id: json['id'] ?? '',
       title: json['title'] ?? '',
       description: json['description'] ?? '',
-      dateTime: DateTime.parse(json['dateTime']),
-      createdAt:
-          json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
-      endTime: json['endTime'] != null ? DateTime.parse(json['endTime']) : null,
+      dateTime: DateTime.parse(json['date_time']),
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'])
+          : null,
+      endTime:
+          json['end_time'] != null ? DateTime.parse(json['end_time']) : null,
       type: json['type'] ?? 'local',
-      branchId: json['branchId'],
+      branchId: json['branch_id'],
       category: json['category'] ?? 'general',
       organizer: json['organizer'] ?? '',
       location: json['location'] ?? '',
-      is_virtual: json['is_virtual'] ?? false,
-      meeting_link: json['meeting_link'],
-      expected_attendance: json['expected_attendance'] ?? 0,
+      isVirtual: json['is_virtual'] ?? false,
+      meetingLink: json['meeting_link'],
+      expectedAttendance: json['expected_attendance'] ?? 0,
       attendees: List<String>.from(json['attendees'] ?? []),
-      is_cancelled: json['is_cancelled'] ?? false,
+      isCancelled: json['is_cancelled'] ?? false,
       status: json['status'] ?? 'scheduled',
     );
   }
@@ -79,26 +81,26 @@ class MeetingModel {
       'id': id,
       'title': title,
       'description': description,
-      'dateTime': dateTime.toIso8601String(),
-      'createdAt': createdAt.toIso8601String(),
-      'endTime': endTime?.toIso8601String(),
+      'date_time': dateTime.toIso8601String(),
+      'created_at': createdAt.toIso8601String(),
+      'end_time': endTime?.toIso8601String(),
       'type': type,
-      'branchId': branchId,
+      'branch_id': branchId,
       'category': category,
       'organizer': organizer,
       'location': location,
-      'is_virtual': is_virtual,
-      'meeting_link': meeting_link,
-      'expected_attendance': expected_attendance,
+      'is_virtual': isVirtual,
+      'meeting_link': meetingLink,
+      'expected_attendance': expectedAttendance,
       'attendees': attendees,
-      'is_cancelled': is_cancelled,
+      'is_cancelled': isCancelled,
       'status': status,
     };
   }
 
   /// Determines if a meeting should be visible to a user based on their branch affiliation
   bool shouldNotify(String? userBranchId) {
-    if (is_cancelled) return false; // Don't notify for cancelled meetings
+    if (isCancelled) return false; // Don't notify for cancelled meetings
     if (type == 'global') return true; // Global meetings visible to all
     return userBranchId != null &&
         userBranchId == branchId; // Local meeting check
@@ -109,7 +111,7 @@ class MeetingModel {
     final now = DateTime.now();
     return now.isAfter(dateTime) &&
         (endTime == null || now.isBefore(endTime!)) &&
-        !is_cancelled;
+        !isCancelled;
   }
 
   /// Creates a copy of the meeting with updated fields
@@ -125,11 +127,11 @@ class MeetingModel {
     String? category,
     String? organizer,
     String? location,
-    bool? is_virtual,
-    String? meeting_link,
-    int? expected_attendance,
+    bool? isVirtual,
+    String? meetingLink,
+    int? expectedAttendance,
     List<String>? attendees,
-    bool? is_cancelled,
+    bool? isCancelled,
     String? status,
   }) {
     return MeetingModel(
@@ -144,11 +146,11 @@ class MeetingModel {
       category: category ?? this.category,
       organizer: organizer ?? this.organizer,
       location: location ?? this.location,
-      is_virtual: is_virtual ?? this.is_virtual,
-      meeting_link: meeting_link ?? this.meeting_link,
-      expected_attendance: expected_attendance ?? this.expected_attendance,
+      isVirtual: isVirtual ?? this.isVirtual,
+      meetingLink: meetingLink ?? this.meetingLink,
+      expectedAttendance: expectedAttendance ?? this.expectedAttendance,
       attendees: attendees ?? this.attendees,
-      is_cancelled: is_cancelled ?? this.is_cancelled,
+      isCancelled: isCancelled ?? this.isCancelled,
       status: status ?? this.status,
     );
   }

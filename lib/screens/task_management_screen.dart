@@ -101,7 +101,7 @@ class TaskManagementScreen extends StatelessWidget {
                               Text(task.description),
                               const SizedBox(height: 4),
                               Text(
-                                'Assigned to: ${task.assigned_to}',
+                                'Assigned to: ${task.assignedTo}',
                                 style: const TextStyle(fontSize: 12),
                               ),
                               Text(

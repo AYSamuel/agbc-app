@@ -101,23 +101,25 @@ class _MyAppState extends State<MyApp> {
     try {
       if (uri.path == '/verify-email') {
         // Check for both token and token_hash parameters
-        final token = uri.queryParameters['token'] ?? uri.queryParameters['token_hash'];
+        final token =
+            uri.queryParameters['token'] ?? uri.queryParameters['token_hash'];
         if (token != null) {
           // Get the auth service instance
           final authService = Provider.of<AuthService>(context, listen: false);
-          
+
           // Verify the email
           await authService.verifyEmail(token);
-          
+
           if (mounted) {
             // Show success message
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('Email verified successfully! You can now log in.'),
+                content:
+                    Text('Email verified successfully! You can now log in.'),
                 backgroundColor: Colors.green,
               ),
             );
-            
+
             // Redirect to login screen
             Navigator.of(context).pushReplacementNamed('/login');
           }
@@ -159,7 +161,8 @@ class _MyAppState extends State<MyApp> {
         '/login': (context) => const LoginScreen(),
         '/register': (context) => const RegisterScreen(),
         '/verification': (context) => const VerificationScreen(),
-        '/email-verification-success': (context) => const EmailVerificationSuccessScreen(),
+        '/email-verification-success': (context) =>
+            const EmailVerificationSuccessScreen(),
         '/home': (context) => const MainNavigationScreen(),
       },
     );

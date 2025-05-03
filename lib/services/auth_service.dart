@@ -225,7 +225,7 @@ class AuthService extends ChangeNotifier {
           _currentUser = user;
           _currentUser = _currentUser!.copyWith(
             lastLogin: DateTime.now(),
-            email_verified: true,
+            emailVerified: true,
           );
           await _supabaseService.updateUser(_currentUser!);
           // Register device for notifications
@@ -315,8 +315,8 @@ class AuthService extends ChangeNotifier {
         role: role,
         createdAt: DateTime.now(),
         lastLogin: DateTime.now(),
-        is_active: true,
-        email_verified: false,
+        isActive: true,
+        emailVerified: false,
         departments: [],
         notificationSettings: {
           'email': true,
@@ -409,8 +409,8 @@ class AuthService extends ChangeNotifier {
           photoUrl: user.userMetadata?['photo_url'],
           createdAt: DateTime.parse(user.createdAt),
           lastLogin: DateTime.now(),
-          is_active: true,
-          email_verified: user.emailConfirmedAt != null,
+          isActive: true,
+          emailVerified: user.emailConfirmedAt != null,
           departments: [],
           notificationSettings: {
             'email': true,
@@ -429,16 +429,45 @@ class AuthService extends ChangeNotifier {
   /// Sends a verification email to the current user
   Future<void> sendVerificationEmail() async {
     try {
+      // Get the current user if available
       final user = _supabase.auth.currentUser;
+
       if (user == null) {
-        throw AuthException('No authenticated user found.');
+        // If no user is logged in, we need the email from the login form
+        throw AuthException('Please enter your email address first.');
       }
+
+      // Resend the verification email
       await _supabase.auth.resend(
         type: OtpType.signup,
         email: user.email!,
       );
+
+      _log.info('Verification email resent to: ${user.email}');
     } catch (e) {
-      throw AuthException('Failed to send verification email.');
+      _log.severe('Error sending verification email: $e');
+      if (e is AuthException) {
+        rethrow;
+      }
+      throw AuthException(
+          'Failed to send verification email. Please try again.');
+    }
+  }
+
+  /// Sends a verification email to a specific email address
+  Future<void> sendVerificationEmailTo(String email) async {
+    try {
+      // For existing users who need to verify their email, we use signInWithOtp
+      await _supabase.auth.signInWithOtp(
+        email: email,
+        shouldCreateUser: false,
+      );
+
+      _log.info('Verification email sent to: $email');
+    } catch (e) {
+      _log.severe('Error sending verification email: $e');
+      throw AuthException(
+          'Failed to send verification email. Please try again.');
     }
   }
 
@@ -455,7 +484,7 @@ class AuthService extends ChangeNotifier {
       if (user.emailConfirmedAt != null) {
         // Update database if verified
         if (_currentUser != null) {
-          _currentUser = _currentUser!.copyWith(email_verified: true);
+          _currentUser = _currentUser!.copyWith(emailVerified: true);
           await _supabaseService.updateUser(_currentUser!);
         }
         return true;
@@ -572,7 +601,7 @@ class AuthService extends ChangeNotifier {
     try {
       if (_supabase.auth.currentUser != null) {
         await _supabaseService
-            .updateUser(_currentUser!.copyWith(is_active: false));
+            .updateUser(_currentUser!.copyWith(isActive: false));
         await _supabase.auth.signOut();
         _currentUser = null;
         notifyListeners();
@@ -597,6 +626,65 @@ class AuthService extends ChangeNotifier {
     }
   }
 
+  /// Verifies a user's email using the provided token
+  Future<void> verifyEmail(String token) async {
+    try {
+      _log.fine('Starting email verification with token: $token');
+
+      // Verify the email using Supabase
+      final response = await _supabase.auth.verifyOTP(
+        type: OtpType.email,
+        token: token,
+      );
+
+      _log.fine('OTP verification response: ${response.user != null}');
+
+      // Refresh the session to get updated user info
+      await _supabase.auth.refreshSession();
+
+      // Get the current user from Supabase
+      final user = _supabase.auth.currentUser;
+      _log.fine('Current user after verification: ${user?.email}');
+      _log.fine('Email confirmed at: ${user?.emailConfirmedAt}');
+
+      if (user != null) {
+        // Get the user from our database
+        final dbUser = await _supabaseService.getUser(user.id).first;
+        if (dbUser != null) {
+          // Update last login
+          final updatedUser = dbUser.copyWith(
+            lastLogin: DateTime.now(),
+          );
+
+          // Update in database
+          await _supabaseService.updateUser(updatedUser);
+          _log.fine('Updated user last login time');
+
+          // Update local state if we have a current user
+          if (_currentUser != null) {
+            _currentUser = updatedUser;
+            notifyListeners();
+          }
+
+          // Log the verification status
+          _log.info('=== Email Verification Status ===');
+          _log.info('User ID: ${user.id}');
+          _log.info('Email: ${user.email}');
+          _log.info('Email Confirmed At (Auth): ${user.emailConfirmedAt}');
+          _log.info('Email Verified (DB): ${updatedUser.emailVerified}');
+          _log.info('==============================');
+        } else {
+          _log.fine('User not found in database');
+        }
+      } else {
+        _log.fine('No user found after verification');
+      }
+    } catch (e) {
+      _log.severe('Error verifying email: $e');
+      throw AuthException('Failed to verify email. Please try again.');
+    }
+  }
+
   /// Checks the current authentication state and updates the user accordingly
   Future<void> checkAuthState() async {
     try {
@@ -607,7 +695,8 @@ class AuthService extends ChangeNotifier {
       if (session != null) {
         _log.fine('Session user ID: ${session.user.id}');
         _log.fine('Session user email: ${session.user.email}');
-        _log.fine('Session user emailConfirmedAt: ${session.user.emailConfirmedAt}');
+        _log.fine(
+            'Session user emailConfirmedAt: ${session.user.emailConfirmedAt}');
 
         // Force a session refresh first
         _log.fine('Attempting to refresh session...');
@@ -623,12 +712,11 @@ class AuthService extends ChangeNotifier {
         final user = await _supabaseService.getUser(session.user.id).first;
         if (user != null) {
           _log.fine('Found user in database: ${user.email}');
-          _currentUser = user;
-          _currentUser = _currentUser!.copyWith(
+
+          _currentUser = user.copyWith(
             lastLogin: DateTime.now(),
-            email_verified: currentUser?.emailConfirmedAt != null,
           );
-          _log.fine('Updated user verification status: ${_currentUser!.email_verified}');
+          _log.fine('Updated user last login time');
           await _supabaseService.updateUser(_currentUser!);
           // Register device for notifications
           await _notificationService.registerDevice(session.user.id);
@@ -680,8 +768,8 @@ class AuthService extends ChangeNotifier {
           role: 'member',
           createdAt: DateTime.now(),
           lastLogin: DateTime.now(),
-          is_active: true,
-          email_verified: false,
+          isActive: true,
+          emailVerified: false,
           departments: [],
           notificationSettings: {
             'email': true,
@@ -746,8 +834,8 @@ class AuthService extends ChangeNotifier {
         role: role,
         createdAt: DateTime.now(),
         lastLogin: DateTime.now(),
-        is_active: true,
-        email_verified: false,
+        isActive: true,
+        emailVerified: false,
         departments: [],
         notificationSettings: {
           'email': true,
@@ -778,12 +866,48 @@ class AuthService extends ChangeNotifier {
     try {
       final user = await _supabaseService.getUser(session.user.id).first;
       if (user != null) {
+        // Update user with Auth's email verification status
+        final isEmailVerified = session.user.emailConfirmedAt != null;
         _currentUser = user.copyWith(
           lastLogin: DateTime.now(),
-          email_verified: session.user.emailConfirmedAt != null,
+          emailVerified: isEmailVerified,
         );
+
+        // Update in database
         await _supabaseService.updateUser(_currentUser!);
+
+        // Double check the update
+        final updatedUser =
+            await _supabaseService.getUser(session.user.id).first;
+        if (updatedUser != null &&
+            updatedUser.emailVerified != isEmailVerified) {
+          // If the update didn't take effect, try one more time
+          await _supabaseService.updateUser(_currentUser!);
+        }
+
         await _notificationService.registerDevice(session.user.id);
+
+        // Log detailed user information
+        _log.info('=== User Session Details ===');
+        _log.info('User ID: ${session.user.id}');
+        _log.info('Email: ${session.user.email}');
+        _log.info('Email Verified (DB): ${_currentUser!.emailVerified}');
+        _log.info(
+            'Email Verified (Auth): ${session.user.emailConfirmedAt != null}');
+        _log.info('Last Sign In: ${session.user.lastSignInAt}');
+        _log.info('Created At: ${session.user.createdAt}');
+        _log.info('Role: ${user.role}');
+        _log.info('Display Name: ${user.displayName}');
+        _log.info('Location: ${user.location ?? 'Not set'}');
+        _log.info('Branch ID: ${user.branchId ?? 'Not assigned'}');
+        _log.info('Active Status: ${user.isActive}');
+        _log.info(
+            'Departments: ${user.departments.isEmpty ? 'None' : user.departments.join(', ')}');
+        _log.info('Session Expires: ${session.expiresAt}');
+        _log.info('Access Token: ${session.accessToken.substring(0, 10)}...');
+        _log.info(
+            'Refresh Token: ${session.refreshToken?.substring(0, 10) ?? 'N/A'}...');
+        _log.info('========================');
       }
     } catch (e) {
       _log.severe('Error handling session: $e');
@@ -883,50 +1007,38 @@ class AuthService extends ChangeNotifier {
     }
   }
 
-  /// Verifies a user's email using the provided token
-  Future<void> verifyEmail(String token) async {
+  /// Force update email verification status
+  Future<void> forceUpdateEmailVerification() async {
     try {
-      _log.fine('Starting email verification with token: $token');
-
-      // Verify the email using Supabase
-      final response = await _supabase.auth.verifyOTP(
-        type: OtpType.signup,
-        token: token,
-      );
-
-      _log.fine('OTP verification response: ${response.user != null}');
-
-      // Refresh the session to get updated user info
-      await _supabase.auth.refreshSession();
-
-      // Get the current user from Supabase
       final user = _supabase.auth.currentUser;
-      _log.fine('Current user after verification: ${user?.email}');
-      _log.fine('Email confirmed at: ${user?.emailConfirmedAt}');
-
       if (user != null) {
-        // Get the user from our database
+        final isEmailVerified = user.emailConfirmedAt != null;
+        _log.info('Force updating email verification status: $isEmailVerified');
+
+        // Get current user from database
         final dbUser = await _supabaseService.getUser(user.id).first;
         if (dbUser != null) {
-          // Update the user's verification status in the database
-          final updatedUser = dbUser.copyWith(email_verified: true);
-          await _supabaseService.updateUser(updatedUser);
-          _log.fine('Updated user verification status in database');
+          // Update with new verification status
+          final updatedUser = dbUser.copyWith(
+            emailVerified: isEmailVerified,
+            lastLogin: DateTime.now(),
+          );
 
-          // Update local state if we have a current user
-          if (_currentUser != null) {
-            _currentUser = updatedUser;
-            notifyListeners();
-          }
-        } else {
-          _log.fine('User not found in database');
+          // Update in database
+          await _supabaseService.updateUser(updatedUser);
+
+          // Update local state
+          _currentUser = updatedUser;
+          notifyListeners();
+
+          _log.info('Email verification status updated successfully');
+          _log.info('Email Verified (DB): ${updatedUser.emailVerified}');
+          _log.info('Email Verified (Auth): $isEmailVerified');
         }
-      } else {
-        _log.fine('No user found after verification');
       }
     } catch (e) {
-      _log.severe('Error verifying email: $e');
-      throw AuthException('Failed to verify email. Please try again.');
+      _log.severe('Error force updating email verification: $e');
+      throw AuthException('Failed to update email verification status');
     }
   }
 }

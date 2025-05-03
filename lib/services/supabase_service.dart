@@ -23,10 +23,8 @@ class SupabaseService {
   }
 
   Stream<List<UserModel>> getAllUsers() {
-    return _supabase
-        .from('users')
-        .stream(primaryKey: ['id'])
-        .map((data) => data.map((doc) => UserModel.fromJson(doc)).toList());
+    return _supabase.from('users').stream(primaryKey: ['id']).map(
+        (data) => data.map((doc) => UserModel.fromJson(doc)).toList());
   }
 
   // Task operations
@@ -39,10 +37,8 @@ class SupabaseService {
   }
 
   Stream<List<TaskModel>> getAllTasks() {
-    return _supabase
-        .from('tasks')
-        .stream(primaryKey: ['id'])
-        .map((data) => data.map((doc) => TaskModel.fromJson(doc)).toList());
+    return _supabase.from('tasks').stream(primaryKey: ['id']).map(
+        (data) => data.map((doc) => TaskModel.fromJson(doc)).toList());
   }
 
   Future<void> createTask(TaskModel task) async {
@@ -57,7 +53,8 @@ class SupabaseService {
     await _supabase.from('tasks').delete().eq('id', taskId);
   }
 
-  Future<void> addCommentToTask(String taskId, String userId, String comment) async {
+  Future<void> addCommentToTask(
+      String taskId, String userId, String comment) async {
     await _supabase.from('tasks').update({
       'comments': [
         {
@@ -78,20 +75,16 @@ class SupabaseService {
 
   // Meeting operations
   Stream<List<MeetingModel>> getMeetingsForUser(String userId) {
-    return _supabase
-        .from('meetings')
-        .stream(primaryKey: ['id'])
-        .map((data) => data
+    return _supabase.from('meetings').stream(primaryKey: ['id']).map((data) =>
+        data
             .where((doc) => (doc['invited_users'] as List).contains(userId))
             .map((doc) => MeetingModel.fromJson(doc))
             .toList());
   }
 
   Stream<List<MeetingModel>> getAllMeetings() {
-    return _supabase
-        .from('meetings')
-        .stream(primaryKey: ['id'])
-        .map((data) => data.map((doc) => MeetingModel.fromJson(doc)).toList());
+    return _supabase.from('meetings').stream(primaryKey: ['id']).map(
+        (data) => data.map((doc) => MeetingModel.fromJson(doc)).toList());
   }
 
   Future<void> createMeeting(MeetingModel meeting) async {
@@ -99,7 +92,10 @@ class SupabaseService {
   }
 
   Future<void> updateMeeting(MeetingModel meeting) async {
-    await _supabase.from('meetings').update(meeting.toJson()).eq('id', meeting.id);
+    await _supabase
+        .from('meetings')
+        .update(meeting.toJson())
+        .eq('id', meeting.id);
   }
 
   Future<void> deleteMeeting(String meetingId) async {
@@ -119,10 +115,8 @@ class SupabaseService {
 
   // Branch operations
   Stream<List<ChurchBranch>> getAllBranches() {
-    return _supabase
-        .from('branches')
-        .stream(primaryKey: ['id'])
-        .map((data) => data.map((doc) => ChurchBranch.fromJson(doc)).toList());
+    return _supabase.from('branches').stream(primaryKey: ['id']).map(
+        (data) => data.map((doc) => ChurchBranch.fromJson(doc)).toList());
   }
 
   Future<void> createBranch(ChurchBranch branch) async {
@@ -143,13 +137,18 @@ class SupabaseService {
         .from('branches')
         .stream(primaryKey: ['id'])
         .eq('id', branchId)
-        .map((data) => data.isNotEmpty ? ChurchBranch.fromJson(data.first) : null);
+        .map((data) =>
+            data.isNotEmpty ? ChurchBranch.fromJson(data.first) : null);
   }
 
   // Department Operations
   Future<List<String>> getDepartments(String branchId) async {
     try {
-      final data = await _supabase.from('branches').select('departments').eq('id', branchId).single();
+      final data = await _supabase
+          .from('branches')
+          .select('departments')
+          .eq('id', branchId)
+          .single();
       return List<String>.from(data['departments'] ?? []);
     } catch (e) {
       return [];
@@ -166,4 +165,4 @@ class SupabaseService {
       throw Exception('Failed to update user role: $e');
     }
   }
-} 
+}

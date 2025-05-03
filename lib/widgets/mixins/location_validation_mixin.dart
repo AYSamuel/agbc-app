@@ -51,13 +51,15 @@ mixin LocationValidationMixin<T extends StatefulWidget> on State<T> {
 
   Future<void> _validateLocation(String location) async {
     if (!mounted) return;
-    
+
     setState(() => _isValidatingLocation = true);
+
     try {
-      final result = await _locationService!.validateAndNormalizeLocation(location);
-      
+      final result =
+          await _locationService!.validateAndNormalizeLocation(location);
+
       if (!mounted) return;
-      
+
       if (result.isValid && result.normalizedLocation != null) {
         _updateLocationIfNeeded(result.normalizedLocation!, location);
         setState(() => _locationError = null);
@@ -74,8 +76,9 @@ mixin LocationValidationMixin<T extends StatefulWidget> on State<T> {
     }
   }
 
-  void _updateLocationIfNeeded(String normalizedLocation, String currentLocation) {
-    if (normalizedLocation != _controller.text && 
+  void _updateLocationIfNeeded(
+      String normalizedLocation, String currentLocation) {
+    if (normalizedLocation != _controller.text &&
         currentLocation == _controller.text.trim()) {
       _controller.text = normalizedLocation;
       _controller.selection = TextSelection.fromPosition(
@@ -83,4 +86,4 @@ mixin LocationValidationMixin<T extends StatefulWidget> on State<T> {
       );
     }
   }
-} 
+}

@@ -121,7 +121,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
           title: _titleController.text,
           description: _descriptionController.text,
           deadline: _selectedDeadline!,
-          assigned_to: _selectedAssigneeId!,
+          assignedTo: _selectedAssigneeId!,
           createdBy: currentUser.id,
           reminder: _selectedReminder,
           priority: _selectedPriority,
@@ -243,11 +243,12 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                           onTap: () async {
                             // Check if widget is still mounted before proceeding
                             if (!mounted) return;
-                            
+
                             // Get provider before async operation
                             final SupabaseProvider provider =
-                                Provider.of<SupabaseProvider>(context, listen: false);
-                            
+                                Provider.of<SupabaseProvider>(context,
+                                    listen: false);
+
                             try {
                               final users = await provider.getAllUsers().first;
 
@@ -296,7 +297,9 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                               // Using the logger from the app's logging package instead of print
                               if (mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('Failed to load users: ${e.toString()}')),
+                                  SnackBar(
+                                      content: Text(
+                                          'Failed to load users: ${e.toString()}')),
                                 );
                               }
                             }

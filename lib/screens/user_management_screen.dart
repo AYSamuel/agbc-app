@@ -10,7 +10,6 @@ class UserManagementScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
     final supabaseProvider = Provider.of<SupabaseProvider>(context);
 
     return Scaffold(
@@ -50,7 +49,7 @@ class UserManagementScreen extends StatelessWidget {
                     return const Center(child: CircularProgressIndicator());
                   }
                   final users = snapshot.data!;
-                  
+
                   if (users.isEmpty) {
                     return const Center(
                       child: Column(
@@ -96,18 +95,20 @@ class UserManagementScreen extends StatelessWidget {
                         color: AppTheme.cardColor,
                         child: ListTile(
                           leading: CircleAvatar(
-                            backgroundImage: user.photoUrl != null && user.photoUrl!.isNotEmpty
+                            backgroundImage: user.photoUrl != null &&
+                                    user.photoUrl!.isNotEmpty
                                 ? NetworkImage(user.photoUrl!)
                                 : null,
-                            child: user.photoUrl == null || user.photoUrl!.isEmpty
-                                ? const Icon(Icons.person)
-                                : null,
+                            child:
+                                user.photoUrl == null || user.photoUrl!.isEmpty
+                                    ? const Icon(Icons.person)
+                                    : null,
                           ),
                           title: Row(
                             children: [
                               Text(user.displayName),
                               const SizedBox(width: 8),
-                              if (user.is_active)
+                              if (user.isActive)
                                 Container(
                                   width: 8,
                                   height: 8,
@@ -165,7 +166,8 @@ class UserManagementScreen extends StatelessWidget {
                               ),
                               IconButton(
                                 icon: const Icon(Icons.edit),
-                                onPressed: () => _showEditUserDialog(context, user),
+                                onPressed: () =>
+                                    _showEditUserDialog(context, user),
                                 color: AppTheme.primaryColor,
                               ),
                             ],
@@ -199,7 +201,8 @@ class UserManagementScreen extends StatelessWidget {
 
   void _showEditUserDialog(BuildContext context, UserModel user) {
     String selectedRole = user.role;
-    final supabaseProvider = Provider.of<SupabaseProvider>(context, listen: false);
+    final supabaseProvider =
+        Provider.of<SupabaseProvider>(context, listen: false);
 
     showDialog(
       context: context,
@@ -269,11 +272,13 @@ class UserManagementScreen extends StatelessWidget {
                         child: CircleAvatar(
                           radius: 36,
                           backgroundColor: const Color(0xFFE8EAF6),
-                          backgroundImage: user.photoUrl != null && user.photoUrl!.isNotEmpty
-                              ? NetworkImage(user.photoUrl!)
-                              : null,
+                          backgroundImage:
+                              user.photoUrl != null && user.photoUrl!.isNotEmpty
+                                  ? NetworkImage(user.photoUrl!)
+                                  : null,
                           child: user.photoUrl == null || user.photoUrl!.isEmpty
-                              ? const Icon(Icons.person, size: 36, color: Color(0xFF1A237E))
+                              ? const Icon(Icons.person,
+                                  size: 36, color: Color(0xFF1A237E))
                               : null,
                         ),
                       ),
@@ -298,13 +303,15 @@ class UserManagementScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 12),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 8),
                         decoration: BoxDecoration(
                           color: _getRoleColor(user.role),
                           borderRadius: BorderRadius.circular(20),
                           boxShadow: [
                             BoxShadow(
-                              color: _getRoleColor(user.role).withValues(alpha: 0.2),
+                              color: _getRoleColor(user.role)
+                                  .withValues(alpha: 0.2),
                               blurRadius: 4,
                               offset: const Offset(0, 2),
                             ),
@@ -346,7 +353,8 @@ class UserManagementScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 12),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 4),
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(10),
@@ -413,12 +421,14 @@ class UserManagementScreen extends StatelessWidget {
                       child: ElevatedButton(
                         onPressed: () async {
                           try {
-                            await supabaseProvider.updateUserRole(user.id, selectedRole);
+                            await supabaseProvider.updateUserRole(
+                                user.id, selectedRole);
                             if (context.mounted) {
                               Navigator.pop(context);
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
-                                  content: Text('User role updated successfully. The user will be notified of this change.'),
+                                  content: Text(
+                                      'User role updated successfully. The user will be notified of this change.'),
                                   backgroundColor: Colors.green,
                                 ),
                               );
@@ -461,4 +471,4 @@ class UserManagementScreen extends StatelessWidget {
       ),
     );
   }
-} 
+}

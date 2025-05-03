@@ -9,15 +9,15 @@ class TaskModel {
   final String createdBy; // ID of user who created the task
 
   // Assignment and scheduling
-  final String assigned_to; // ID of user responsible for the task
+  final String assignedTo; // ID of user responsible for the task
   final DateTime deadline; // When the task needs to be completed
   final DateTime? reminder; // Optional reminder time
-  final String? branch_id; // Associated branch (optional)
+  final String? branchId; // Associated branch (optional)
 
   // Task status and tracking
-  final bool is_accepted; // Whether assignee has accepted the task
-  final bool is_completed; // Whether task has been completed
-  final DateTime? completed_at; // When the task was completed
+  final bool isAccepted; // Whether assignee has accepted the task
+  final bool isCompleted; // Whether task has been completed
+  final DateTime? completedAt; // When the task was completed
   final String status; // Current status (pending, in_progress, completed, etc.)
 
   // Task classification
@@ -34,14 +34,14 @@ class TaskModel {
     required this.title,
     required this.description,
     required this.deadline,
-    required this.assigned_to,
+    required this.assignedTo,
     required this.createdBy,
     DateTime? createdAt,
-    this.branch_id,
+    this.branchId,
     this.reminder,
-    this.is_accepted = false,
-    this.is_completed = false,
-    this.completed_at,
+    this.isAccepted = false,
+    this.isCompleted = false,
+    this.completedAt,
     this.status = 'pending',
     this.priority = 'medium',
     this.category = 'general',
@@ -55,17 +55,18 @@ class TaskModel {
       id: json['id'] ?? '',
       title: json['title'] ?? '',
       description: json['description'] ?? '',
-      createdAt:
-          json['created_at'] != null ? DateTime.parse(json['created_at']) : null,
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'])
+          : null,
       createdBy: json['created_by'] ?? '',
-      assigned_to: json['assigned_to'] ?? '',
+      assignedTo: json['assigned_to'] ?? '',
       deadline: DateTime.parse(json['deadline']),
-      branch_id: json['branch_id'],
+      branchId: json['branch_id'],
       reminder:
           json['reminder'] != null ? DateTime.parse(json['reminder']) : null,
-      is_accepted: json['is_accepted'] ?? false,
-      is_completed: json['is_completed'] ?? false,
-      completed_at: json['completed_at'] != null
+      isAccepted: json['is_accepted'] ?? false,
+      isCompleted: json['is_completed'] ?? false,
+      completedAt: json['completed_at'] != null
           ? DateTime.parse(json['completed_at'])
           : null,
       status: json['status'] ?? 'pending',
@@ -84,13 +85,13 @@ class TaskModel {
       'description': description,
       'created_at': createdAt.toIso8601String(),
       'created_by': createdBy,
-      'assigned_to': assigned_to,
+      'assigned_to': assignedTo,
       'deadline': deadline.toIso8601String(),
-      'branch_id': branch_id,
+      'branch_id': branchId,
       'reminder': reminder?.toIso8601String(),
-      'is_accepted': is_accepted,
-      'is_completed': is_completed,
-      'completed_at': completed_at?.toIso8601String(),
+      'is_accepted': isAccepted,
+      'is_completed': isCompleted,
+      'completed_at': completedAt?.toIso8601String(),
       'status': status,
       'priority': priority,
       'category': category,
@@ -101,13 +102,13 @@ class TaskModel {
 
   /// Checks if the task is overdue
   bool get isOverdue {
-    return !is_completed && DateTime.now().isAfter(deadline);
+    return !isCompleted && DateTime.now().isAfter(deadline);
   }
 
   /// Checks if the task needs attention (approaching deadline)
   bool get needsAttention {
     final daysUntilDeadline = deadline.difference(DateTime.now()).inDays;
-    return !is_completed && !isOverdue && daysUntilDeadline <= 2;
+    return !isCompleted && !isOverdue && daysUntilDeadline <= 2;
   }
 
   /// Creates a copy of the task with updated fields
@@ -117,13 +118,13 @@ class TaskModel {
     String? description,
     DateTime? createdAt,
     String? createdBy,
-    String? assigned_to,
+    String? assignedTo,
     DateTime? deadline,
-    String? branch_id,
+    String? branchId,
     DateTime? reminder,
-    bool? is_accepted,
-    bool? is_completed,
-    DateTime? completed_at,
+    bool? isAccepted,
+    bool? isCompleted,
+    DateTime? completedAt,
     String? status,
     String? priority,
     String? category,
@@ -136,13 +137,13 @@ class TaskModel {
       description: description ?? this.description,
       createdAt: createdAt ?? this.createdAt,
       createdBy: createdBy ?? this.createdBy,
-      assigned_to: assigned_to ?? this.assigned_to,
+      assignedTo: assignedTo ?? this.assignedTo,
       deadline: deadline ?? this.deadline,
-      branch_id: branch_id ?? this.branch_id,
+      branchId: branchId ?? this.branchId,
       reminder: reminder ?? this.reminder,
-      is_accepted: is_accepted ?? this.is_accepted,
-      is_completed: is_completed ?? this.is_completed,
-      completed_at: completed_at ?? this.completed_at,
+      isAccepted: isAccepted ?? this.isAccepted,
+      isCompleted: isCompleted ?? this.isCompleted,
+      completedAt: completedAt ?? this.completedAt,
       status: status ?? this.status,
       priority: priority ?? this.priority,
       category: category ?? this.category,

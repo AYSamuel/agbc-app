@@ -58,7 +58,7 @@ class AppTheme {
         fontWeight: FontWeight.w600,
         decoration: TextDecoration.underline,
         decorationColor: primaryColor,
-        decorationThickness: 1.5,
+        decorationThickness: 1,
       );
 
   static TextStyle get regularTextStyle => GoogleFonts.inter(

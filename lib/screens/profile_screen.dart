@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:agbc_app/utils/theme.dart';
 import 'package:provider/provider.dart';
 import 'package:agbc_app/services/auth_service.dart';
+import 'package:agbc_app/providers/branches_provider.dart';
+import 'package:agbc_app/models/church_branch_model.dart';
 import 'login_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -14,24 +16,26 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _logout() async {
     try {
-      final authService = Provider.of<AuthService>(context, listen: false);
+      final currentContext = context;
+      final authService =
+          Provider.of<AuthService>(currentContext, listen: false);
       await authService.signOut();
-      if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (context) => const LoginScreen(),
-          ),
-        );
-      }
+      if (!mounted) return;
+      if (!currentContext.mounted) return;
+      Navigator.of(currentContext).pushReplacement(
+        MaterialPageRoute(
+          builder: (context) => const LoginScreen(),
+        ),
+      );
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.toString()),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      if (!mounted) return;
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString()),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -158,7 +162,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'AGBC Lighthouse Berlin',
+                          user?.branchId?.isNotEmpty == true
+                              ? _getBranchName(user!.branchId!)
+                              : 'None assigned yet',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w500,
@@ -214,7 +220,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       context,
                       title: 'Branch',
                       value: user?.branchId?.isNotEmpty == true
-                          ? 'AGBC ${user!.branchId?.toUpperCase() ?? ''}'
+                          ? _getBranchName(user!.branchId!)
                           : 'Not assigned',
                       icon: Icons.church,
                     ),
@@ -412,5 +418,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
       default:
         return Colors.green;
     }
+  }
+
+  String _getBranchName(String branchId) {
+    final branchesProvider =
+        Provider.of<BranchesProvider>(context, listen: false);
+    final branch = branchesProvider.branches.firstWhere(
+      (branch) => branch.id == branchId,
+      orElse: () => ChurchBranch(
+        id: branchId,
+        name: 'Unknown Branch',
+        address: '',
+        members: [],
+        departments: [],
+        location: '',
+        createdBy: '',
+      ),
+    );
+    return branch.name;
   }
 }

@@ -23,7 +23,7 @@ class _SplashScreenState extends State<SplashScreen>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1500),
+      duration: const Duration(milliseconds: 5000),
     );
     _fadeAnimation = CurvedAnimation(
       parent: _controller,
@@ -44,15 +44,29 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _initializeApp() async {
+    final initializationStart = DateTime.now();
     try {
       await AppInitializationService.initializeApp();
+      
+      // Ensure splash screen stays for at least 5 seconds
+      final initializationDuration = DateTime.now().difference(initializationStart);
+      if (initializationDuration < const Duration(seconds: 5)) {
+        await Future.delayed(const Duration(seconds: 5) - initializationDuration);
+      }
+      
       _navigateToNextScreen();
     } catch (e) {
+      // Even on error, ensure minimum splash screen duration
+      final initializationDuration = DateTime.now().difference(initializationStart);
+      if (initializationDuration < const Duration(seconds: 5)) {
+        await Future.delayed(const Duration(seconds: 5) - initializationDuration);
+      }
       _navigateToNextScreen();
     }
   }
 
   void _navigateToNextScreen() {
+    if (!mounted) return;
     final authService = Provider.of<AuthService>(context, listen: false);
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(

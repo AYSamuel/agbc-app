@@ -12,10 +12,10 @@ import 'providers/supabase_provider.dart';
 import 'screens/splash_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
-import 'screens/verification_screen.dart';
 import 'screens/email_verification_success_screen.dart';
 import 'screens/main_navigation_screen.dart';
 import 'utils/theme.dart';
+import 'providers/branches_provider.dart';
 
 Future<void> main() async {
   try {
@@ -48,13 +48,18 @@ Future<void> main() async {
     await permissionsService.initialize();
     await notificationService.initialize();
 
+    // Create providers
+    final supabaseProvider = SupabaseProvider();
+    final branchesProvider = BranchesProvider(supabaseProvider);
+
     runApp(
       MultiProvider(
         providers: [
           ChangeNotifierProvider(create: (_) => authService),
-          ChangeNotifierProvider(create: (_) => SupabaseProvider()),
+          ChangeNotifierProvider.value(value: supabaseProvider),
           Provider.value(value: supabaseService),
           ChangeNotifierProvider(create: (_) => notificationService),
+          ChangeNotifierProvider.value(value: branchesProvider),
         ],
         child: const MyApp(),
       ),
@@ -100,52 +105,48 @@ class _MyAppState extends State<MyApp> {
   Future<void> _handleUri(Uri uri) async {
     try {
       if (uri.path == '/verify-email') {
-        // Check for both token and token_hash parameters
-        final token =
-            uri.queryParameters['token'] ?? uri.queryParameters['token_hash'];
-        if (token != null) {
-          // Get the auth service instance
-          final authService = Provider.of<AuthService>(context, listen: false);
+        final token = uri.queryParameters['token'];
 
-          // Verify the email
+        if (token != null) {
+          final currentContext = context;
+          final authService =
+              Provider.of<AuthService>(currentContext, listen: false);
+
           await authService.verifyEmail(token);
 
-          if (mounted) {
-            // Show success message
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content:
-                    Text('Email verified successfully! You can now log in.'),
-                backgroundColor: Colors.green,
-              ),
-            );
+          if (!mounted) return;
+          if (!currentContext.mounted) return;
 
-            // Redirect to login screen
-            Navigator.of(context).pushReplacementNamed('/login');
+          // Check if user is already authenticated
+          if (authService.isAuthenticated) {
+            Navigator.of(currentContext).pushReplacementNamed('/home');
+          } else {
+            Navigator.of(currentContext)
+                .pushReplacementNamed('/email-verification-success');
           }
         } else {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Invalid verification link'),
-                backgroundColor: Colors.red,
-              ),
-            );
-            Navigator.of(context).pushReplacementNamed('/login');
-          }
+          if (!mounted) return;
+          if (!context.mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Invalid verification link'),
+              backgroundColor: Colors.red,
+            ),
+          );
+          Navigator.of(context).pushReplacementNamed('/login');
         }
       }
     } catch (e) {
       debugPrint('Error handling URI: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error verifying email: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
-        );
-        Navigator.of(context).pushReplacementNamed('/login');
-      }
+      if (!mounted) return;
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error verifying email: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      Navigator.of(context).pushReplacementNamed('/login');
     }
   }
 
@@ -160,7 +161,6 @@ class _MyAppState extends State<MyApp> {
         '/': (context) => const SplashScreen(),
         '/login': (context) => const LoginScreen(),
         '/register': (context) => const RegisterScreen(),
-        '/verification': (context) => const VerificationScreen(),
         '/email-verification-success': (context) =>
             const EmailVerificationSuccessScreen(),
         '/home': (context) => const MainNavigationScreen(),

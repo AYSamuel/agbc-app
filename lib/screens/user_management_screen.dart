@@ -423,25 +423,23 @@ class UserManagementScreen extends StatelessWidget {
                           try {
                             await supabaseProvider.updateUserRole(
                                 user.id, selectedRole);
-                            if (context.mounted) {
-                              Navigator.pop(context);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                      'User role updated successfully. The user will be notified of this change.'),
-                                  backgroundColor: Colors.green,
-                                ),
-                              );
-                            }
+                            if (!context.mounted) return;
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                    'User role updated successfully. The user will be notified of this change.'),
+                                backgroundColor: Colors.green,
+                              ),
+                            );
                           } catch (e) {
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('Error updating role: $e'),
-                                  backgroundColor: Colors.red,
-                                ),
-                              );
-                            }
+                            if (!context.mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Error updating role: $e'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
                           }
                         },
                         style: ElevatedButton.styleFrom(

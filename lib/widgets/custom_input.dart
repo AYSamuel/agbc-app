@@ -92,6 +92,7 @@ class _CustomInputState extends State<CustomInput>
 
   void _setupListeners() {
     _focusNode.addListener(_handleFocusChange);
+    widget.controller.addListener(_handleTextChange);
   }
 
   @override
@@ -105,9 +106,14 @@ class _CustomInputState extends State<CustomInput>
 
   void _cleanupListeners() {
     _focusNode.removeListener(_handleFocusChange);
+    widget.controller.removeListener(_handleTextChange);
     if (widget.focusNode == null) {
       _focusNode.dispose();
     }
+  }
+
+  void _handleTextChange() {
+    setState(() {});
   }
 
   void _handleFocusChange() {
@@ -249,19 +255,45 @@ class _CustomInputState extends State<CustomInput>
   }
 
   Widget? _buildSuffixIcon() {
-    if (widget.suffixIcon == null) return null;
-
-    return Padding(
-      padding: const EdgeInsets.only(right: 8),
-      child: IconTheme(
-        data: IconThemeData(
-          color: _isFocused
-              ? AppTheme.primaryColor
-              : AppTheme.neutralColor.withValues(alpha: 0.6),
-          size: 20,
+    if (widget.suffixIcon != null) {
+      return Padding(
+        padding: const EdgeInsets.only(right: 8),
+        child: IconTheme(
+          data: IconThemeData(
+            color: _isFocused
+                ? AppTheme.primaryColor
+                : AppTheme.neutralColor.withValues(alpha: 0.6),
+            size: 20,
+          ),
+          child: widget.suffixIcon!,
         ),
-        child: widget.suffixIcon!,
-      ),
-    );
+      );
+    }
+
+    // Show clear button whenever there's text
+    if (widget.controller.text.isNotEmpty) {
+      return Padding(
+        padding: const EdgeInsets.only(right: 8),
+        child: IconButton(
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(),
+          icon: Icon(
+            Icons.clear,
+            color: _isFocused
+                ? AppTheme.primaryColor
+                : AppTheme.neutralColor.withValues(alpha: 0.6),
+            size: 20,
+          ),
+          onPressed: () {
+            widget.controller.clear();
+            if (widget.onChanged != null) {
+              widget.onChanged!('');
+            }
+          },
+        ),
+      );
+    }
+
+    return null;
   }
 }

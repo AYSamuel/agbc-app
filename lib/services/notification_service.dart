@@ -82,7 +82,7 @@ class NotificationService extends ChangeNotifier {
 
   Future<String?> getDeviceId() async {
     try {
-      final deviceState = await OneSignal.User.pushSubscription;
+      final deviceState = OneSignal.User.pushSubscription;
       return deviceState.id;
     } catch (e) {
       debugPrint('Error getting device ID: $e');

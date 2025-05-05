@@ -13,11 +13,20 @@ import 'package:agbc_app/services/supabase_service.dart';
 import 'package:agbc_app/services/permissions_service.dart';
 import 'package:agbc_app/services/notification_service.dart';
 import 'package:agbc_app/screens/login_screen.dart';
+import 'package:agbc_app/providers/supabase_provider.dart';
+import 'package:agbc_app/providers/branches_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'test_helper.dart';
 
 void main() {
+  late SupabaseService supabaseService;
+  late PermissionsService permissionsService;
+  late NotificationService notificationService;
+  late SupabaseClient supabase;
+  late SupabaseProvider supabaseProvider;
+  late BranchesProvider branchesProvider;
+
   setUpAll(() async {
     // Initialize test environment
     await initializeTestEnvironment();
@@ -35,27 +44,45 @@ void main() {
     );
   });
 
-  testWidgets('Login screen smoke test', (WidgetTester tester) async {
+  setUp(() {
     // Initialize required services
-    final supabaseService = SupabaseService();
-    final permissionsService = PermissionsService();
-    final notificationService = NotificationService();
-    final supabase = Supabase.instance.client;
+    supabaseService = SupabaseService();
+    permissionsService = PermissionsService();
+    notificationService = NotificationService();
+    supabase = Supabase.instance.client;
+    supabaseProvider = SupabaseProvider();
+    branchesProvider = BranchesProvider(supabaseProvider);
+  });
 
+  tearDown(() async {
+    // Clean up any resources
+    await Future.delayed(const Duration(milliseconds: 100));
+  });
+
+  testWidgets('Login screen smoke test', (WidgetTester tester) async {
     // Build our app and trigger a frame
     await tester.pumpWidget(
-      ChangeNotifierProvider(
-        create: (_) => AuthService(
-          supabase: supabase,
-          supabaseService: supabaseService,
-          notificationService: notificationService,
-          permissionsService: permissionsService,
-        ),
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider(
+            create: (_) => AuthService(
+              supabase: supabase,
+              supabaseService: supabaseService,
+              notificationService: notificationService,
+              permissionsService: permissionsService,
+            ),
+          ),
+          ChangeNotifierProvider.value(value: supabaseProvider),
+          ChangeNotifierProvider.value(value: branchesProvider),
+        ],
         child: const MaterialApp(
           home: LoginScreen(),
         ),
       ),
     );
+
+    // Wait for any pending microtasks
+    await tester.pumpAndSettle();
 
     // Verify that the login screen is displayed
     expect(find.text('Welcome Back'), findsOneWidget);

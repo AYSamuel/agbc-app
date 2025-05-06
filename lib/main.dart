@@ -12,7 +12,6 @@ import 'providers/supabase_provider.dart';
 import 'screens/splash_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
-import 'screens/email_verification_success_screen.dart';
 import 'screens/main_navigation_screen.dart';
 import 'utils/theme.dart';
 import 'providers/branches_provider.dart';
@@ -120,20 +119,15 @@ class _MyAppState extends State<MyApp> {
 
           // Check if user is already authenticated
           if (authService.isAuthenticated) {
+            // Refresh user data to ensure all fields are up to date
+            await authService.refreshUserData();
             Navigator.of(currentContext).pushReplacementNamed('/home');
           } else {
-            Navigator.of(currentContext)
-                .pushReplacementNamed('/email-verification-success');
+            Navigator.of(currentContext).pushReplacementNamed('/login');
           }
         } else {
           if (!mounted) return;
           if (!context.mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Invalid verification link'),
-              backgroundColor: Colors.red,
-            ),
-          );
           Navigator.of(context).pushReplacementNamed('/login');
         }
       }
@@ -141,12 +135,6 @@ class _MyAppState extends State<MyApp> {
       debugPrint('Error handling URI: $e');
       if (!mounted) return;
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error verifying email: ${e.toString()}'),
-          backgroundColor: Colors.red,
-        ),
-      );
       Navigator.of(context).pushReplacementNamed('/login');
     }
   }
@@ -162,8 +150,6 @@ class _MyAppState extends State<MyApp> {
         '/': (context) => const SplashScreen(),
         '/login': (context) => const LoginScreen(),
         '/register': (context) => const RegisterScreen(),
-        '/email-verification-success': (context) =>
-            const EmailVerificationSuccessScreen(),
         '/home': (context) => const MainNavigationScreen(),
       },
     );

@@ -106,28 +106,69 @@ class _LoginFormState extends State<LoginForm> with FormValidationMixin {
   }
 
   void _showVerificationDialog() {
+    int countdown = 120; // 2 minutes in seconds
+    bool canResend = false;
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Email Not Verified'),
-        content: const Text(
-          'Please check your email for a verification link. If you haven\'t received it, you can request a new one.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              Provider.of<AuthService>(context, listen: false)
-                  .sendVerificationEmail();
-            },
-            child: const Text('Resend Email'),
-          ),
-        ],
-      ),
+      barrierDismissible: false,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            if (!canResend) {
+              Future.delayed(const Duration(seconds: 1), () {
+                if (countdown > 0) {
+                  setState(() {
+                    countdown--;
+                  });
+                } else {
+                  setState(() {
+                    canResend = true;
+                  });
+                }
+              });
+            }
+
+            return AlertDialog(
+              title: const Text('Email Not Verified'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'Please check your email for a verification link. If you haven\'t received it, you can request a new one.',
+                  ),
+                  if (!canResend) ...[
+                    const SizedBox(height: 16),
+                    Text(
+                      'You can request a new verification email in ${countdown ~/ 60}:${(countdown % 60).toString().padLeft(2, '0')}',
+                      style: const TextStyle(
+                        color: Colors.grey,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Close'),
+                ),
+                TextButton(
+                  onPressed: canResend
+                      ? () {
+                          Navigator.pop(context);
+                          Provider.of<AuthService>(context, listen: false)
+                              .sendVerificationEmail();
+                        }
+                      : null,
+                  child: const Text('Resend Email'),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 

@@ -131,7 +131,7 @@ class RegisterScreen extends StatelessWidget {
                                 RegisterForm(
                                   onRegisterSuccess: () {
                                     Navigator.pushReplacementNamed(
-                                        context, '/home');
+                                        context, '/login');
                                   },
                                 ),
                                 const SizedBox(height: 18),

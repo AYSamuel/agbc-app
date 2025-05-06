@@ -105,40 +105,74 @@ class _RegisterFormState extends State<RegisterForm> with FormValidationMixin {
       );
 
       if (mounted) {
-        // Show a snackbar about the verification email
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.mark_email_unread, color: Colors.white),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Verification email sent to ${_emailController.text.trim()}',
-                    style: const TextStyle(color: Colors.white),
+        // Show verification dialog
+        int countdown = 120; // 2 minutes in seconds
+        bool canResend = false;
+
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) {
+            return StatefulBuilder(
+              builder: (context, setState) {
+                if (!canResend) {
+                  Future.delayed(const Duration(seconds: 1), () {
+                    if (countdown > 0) {
+                      setState(() {
+                        countdown--;
+                      });
+                    } else {
+                      setState(() {
+                        canResend = true;
+                      });
+                    }
+                  });
+                }
+
+                return AlertDialog(
+                  title: const Text('Email Verification Required'),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                        'Please check your email for a verification link. If you haven\'t received it, you can request a new one.',
+                      ),
+                      if (!canResend) ...[
+                        const SizedBox(height: 16),
+                        Text(
+                          'You can request a new verification email in ${countdown ~/ 60}:${(countdown % 60).toString().padLeft(2, '0')}',
+                          style: const TextStyle(
+                            color: Colors.grey,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
-                ),
-              ],
-            ),
-            backgroundColor: Colors.blue,
-            duration: const Duration(seconds: 5),
-            action: SnackBarAction(
-              label: 'Resend',
-              textColor: Colors.white,
-              onPressed: () {
-                authService.sendVerificationEmail();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Verification email resent'),
-                    backgroundColor: Colors.green,
-                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        widget.onRegisterSuccess();
+                      },
+                      child: const Text('Back to Login'),
+                    ),
+                    TextButton(
+                      onPressed: canResend
+                          ? () {
+                              Navigator.pop(context);
+                              authService.sendVerificationEmail();
+                              widget.onRegisterSuccess();
+                            }
+                          : null,
+                      child: const Text('Resend Email'),
+                    ),
+                  ],
                 );
               },
-            ),
-          ),
+            );
+          },
         );
-
-        widget.onRegisterSuccess();
       }
     } catch (e) {
       if (mounted) {

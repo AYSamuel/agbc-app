@@ -51,6 +51,7 @@ Future<void> main() async {
     // Create providers
     final supabaseProvider = SupabaseProvider();
     final branchesProvider = BranchesProvider(supabaseProvider);
+    await branchesProvider.initialize(); // Initialize branches provider
 
     runApp(
       MultiProvider(

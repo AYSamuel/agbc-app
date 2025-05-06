@@ -42,6 +42,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final authService = Provider.of<AuthService>(context);
+    final branchesProvider = Provider.of<BranchesProvider>(context); // Listen to BranchesProvider
     final user = authService.currentUser;
 
     return Scaffold(
@@ -161,15 +162,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                         ),
                         const SizedBox(height: 8),
-                        Text(
-                          user?.branchId?.isNotEmpty == true
-                              ? _getBranchName(user!.branchId!)
-                              : 'None assigned yet',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.grey.shade600,
-                          ),
+                        Builder(
+                          builder: (context) {
+                            String branchDisplayName;
+                            if (user?.branchId?.isNotEmpty == true) {
+                              if (branchesProvider.isLoading) {
+                                branchDisplayName = 'Loading branch...';
+                              } else if (!branchesProvider.isInitialized) {
+                                branchDisplayName = 'Initializing branches...'; // Or some other placeholder
+                              } else {
+                                branchDisplayName = _getBranchName(user!.branchId!);
+                              }
+                            } else {
+                              branchDisplayName = 'None assigned yet';
+                            }
+                            return Text(
+                              branchDisplayName,
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.grey.shade600,
+                              ),
+                            );
+                          }
                         ),
                       ],
                     ),

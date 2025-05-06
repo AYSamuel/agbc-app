@@ -82,15 +82,24 @@ class AuthService extends ChangeNotifier {
         }
       });
 
+      // Check if remember me is enabled
+      final isRemembered = await PreferencesService.isRememberMeEnabled();
+
       // Check if we have a persisted session
       final session = _supabase.auth.currentSession;
       if (session != null) {
-        await _handleAuthStateChange(session);
+        if (isRemembered) {
+          await _handleAuthStateChange(session);
+        } else {
+          // If remember me is not enabled, sign out
+          await _supabase.auth.signOut();
+          _currentUser = null;
+          notifyListeners();
+        }
         return;
       }
 
       // If no session, check for saved credentials
-      final isRemembered = await PreferencesService.isRememberMeEnabled();
       if (isRemembered) {
         final savedEmail = await PreferencesService.getSavedEmail();
         final savedPassword = await PreferencesService.getSavedPassword();

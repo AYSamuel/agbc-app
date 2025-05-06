@@ -128,12 +128,6 @@ class _MyAppState extends State<MyApp> {
         } else {
           if (!mounted) return;
           if (!context.mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Invalid verification link'),
-              backgroundColor: Colors.red,
-            ),
-          );
           Navigator.of(context).pushReplacementNamed('/login');
         }
       }
@@ -141,12 +135,6 @@ class _MyAppState extends State<MyApp> {
       debugPrint('Error handling URI: $e');
       if (!mounted) return;
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error verifying email: ${e.toString()}'),
-          backgroundColor: Colors.red,
-        ),
-      );
       Navigator.of(context).pushReplacementNamed('/login');
     }
   }

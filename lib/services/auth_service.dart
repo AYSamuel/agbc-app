@@ -1039,4 +1039,9 @@ class AuthService extends ChangeNotifier {
       throw AuthException('Failed to update email verification status');
     }
   }
+
+  /// Refreshes the current user's data from the server
+  Future<void> refreshUserData() async {
+    await checkAuthState();
+  }
 }

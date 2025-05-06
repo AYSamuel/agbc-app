@@ -7,7 +7,12 @@ import '../widgets/login_form.dart';
 import '../utils/theme.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+  final bool isLoggingOut;
+
+  const LoginScreen({
+    super.key,
+    this.isLoggingOut = false,
+  });
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -135,6 +140,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               Navigator.of(context)
                                   .pushReplacementNamed('/home');
                             },
+                            isLoggingOut: widget.isLoggingOut,
                           ),
                           const SizedBox(height: 18),
                           // Signup link

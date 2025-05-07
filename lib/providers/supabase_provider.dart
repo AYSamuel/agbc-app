@@ -7,23 +7,23 @@ import '../models/church_branch_model.dart';
 
 class SupabaseProvider with ChangeNotifier {
   final SupabaseService _supabaseService = SupabaseService();
-  
+
   // User Data
   UserModel? _currentUser;
   UserModel? get currentUser => _currentUser;
-  
+
   // Task Data
   List<TaskModel> _tasks = [];
   List<TaskModel> get tasks => _tasks;
-  
+
   // Meeting Data
   List<MeetingModel> _meetings = [];
   List<MeetingModel> get meetings => _meetings;
-  
+
   // Branch Data
   ChurchBranch? _currentBranch;
   ChurchBranch? get currentBranch => _currentBranch;
-  
+
   // Initialize user data
   Future<void> initializeUserData(String id) async {
     _supabaseService.getUser(id).listen((user) {
@@ -41,7 +41,7 @@ class SupabaseProvider with ChangeNotifier {
       notifyListeners();
     });
   }
-  
+
   // Load user tasks
   void _loadUserTasks(String userId) {
     _supabaseService.getTasksForUser(userId).listen((tasks) {
@@ -49,7 +49,7 @@ class SupabaseProvider with ChangeNotifier {
       notifyListeners();
     });
   }
-  
+
   // Load user meetings
   void _loadUserMeetings(String userId) {
     _supabaseService.getMeetingsForUser(userId).listen((meetings) {
@@ -66,49 +66,49 @@ class SupabaseProvider with ChangeNotifier {
   Stream<List<MeetingModel>> getMeetingsForUser(String userId) {
     return _supabaseService.getMeetingsForUser(userId);
   }
-  
+
   // Task Operations
   Future<void> createTask(TaskModel task) async {
     await _supabaseService.createTask(task);
     notifyListeners();
   }
-  
+
   Future<void> updateTask(TaskModel task) async {
     await _supabaseService.updateTask(task);
     notifyListeners();
   }
-  
+
   Future<void> deleteTask(String taskId) async {
     await _supabaseService.deleteTask(taskId);
     notifyListeners();
   }
-  
+
   Future<void> addCommentToTask(String taskId, String comment) async {
     await _supabaseService.addCommentToTask(taskId, _currentUser!.id, comment);
     notifyListeners();
   }
-  
+
   Future<void> updateTaskStatus(String taskId, String status) async {
     await _supabaseService.updateTaskStatus(taskId, status);
     notifyListeners();
   }
-  
+
   // Meeting Operations
   Future<void> createMeeting(MeetingModel meeting) async {
     await _supabaseService.createMeeting(meeting);
     notifyListeners();
   }
-  
+
   Future<void> updateMeeting(MeetingModel meeting) async {
     await _supabaseService.updateMeeting(meeting);
     notifyListeners();
   }
-  
+
   Future<void> deleteMeeting(String meetingId) async {
     await _supabaseService.deleteMeeting(meetingId);
     notifyListeners();
   }
-  
+
   Future<void> updateMeetingAttendance(
     String meetingId,
     String userId,
@@ -121,7 +121,7 @@ class SupabaseProvider with ChangeNotifier {
     );
     notifyListeners();
   }
-  
+
   // Branch Operations
   Stream<List<ChurchBranch>> getAllBranches() {
     return _supabaseService.getAllBranches();
@@ -160,7 +160,7 @@ class SupabaseProvider with ChangeNotifier {
     });
     notifyListeners();
   }
-  
+
   // Department Operations
   List<String> getDepartments() {
     return _currentBranch?.departments ?? [];
@@ -171,9 +171,31 @@ class SupabaseProvider with ChangeNotifier {
     return _supabaseService.getUser(id);
   }
 
-  Future<void> updateUser(UserModel user) async {
-    await _supabaseService.updateUser(user);
-    notifyListeners();
+  Future<void> updateUser(UserModel updatedUser) async {
+    try {
+      final user = await _supabaseService.updateUser(updatedUser);
+
+      // Update current user if it's the same user
+      if (_currentUser?.id == user.id) {
+        _currentUser = user;
+        // Update current branch if branch ID has changed
+        if (_currentBranch?.id != user.branchId) {
+          if (user.branchId == null || user.branchId!.isEmpty) {
+            _currentBranch = null;
+          } else {
+            _supabaseService.getBranch(user.branchId!).listen((branch) {
+              _currentBranch = branch;
+              notifyListeners();
+            });
+          }
+        }
+      }
+
+      notifyListeners();
+    } catch (e) {
+      print('Error updating user: $e');
+      rethrow;
+    }
   }
 
   Stream<List<UserModel>> getAllUsers() {
@@ -194,7 +216,15 @@ class SupabaseProvider with ChangeNotifier {
 
   Future<void> updateUserRole(String userId, String newRole) async {
     try {
-      await _supabaseService.updateUserRole(userId, newRole);
+      final updatedUser =
+          await _supabaseService.updateUserRole(userId, newRole);
+
+      // If the updated user is the current user, update the current user
+      if (_currentUser?.id == userId) {
+        _currentUser = updatedUser;
+      }
+
+      notifyListeners();
     } catch (e) {
       throw Exception('Failed to update user role: $e');
     }
@@ -217,4 +247,4 @@ class SupabaseProvider with ChangeNotifier {
       throw Exception('Failed to create user: $e');
     }
   }
-} 
+}

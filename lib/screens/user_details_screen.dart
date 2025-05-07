@@ -7,6 +7,8 @@ import '../widgets/custom_back_button.dart';
 import '../providers/branches_provider.dart';
 import '../widgets/custom_card.dart';
 import '../widgets/custom_dropdown.dart';
+import 'package:logging/logging.dart';
+import '../models/church_branch_model.dart';
 
 class UserDetailsScreen extends StatefulWidget {
   final UserModel user;
@@ -21,6 +23,7 @@ class UserDetailsScreen extends StatefulWidget {
 }
 
 class _UserDetailsScreenState extends State<UserDetailsScreen> {
+  final _log = Logger('_UserDetailsScreenState');
   late String selectedRole;
   late String? selectedBranchId;
   bool isEditing = false;
@@ -30,6 +33,8 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
     super.initState();
     selectedRole = widget.user.role;
     selectedBranchId = widget.user.branchId;
+    // Refresh branches when screen is opened
+    Provider.of<BranchesProvider>(context, listen: false).refresh();
   }
 
   @override
@@ -39,7 +44,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Header with Back button
+            // Header
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Row(
@@ -74,6 +79,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                 ],
               ),
             ),
+
             // Content
             Expanded(
               child: ListView(
@@ -160,19 +166,38 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Location Information
+                  // Contact Information
                   CustomCard(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Location Information',
+                          'Contact Information',
                           style: AppTheme.titleStyle.copyWith(
                             fontSize: 18,
                             color: AppTheme.primaryColor,
                           ),
                         ),
                         const SizedBox(height: 16),
+                        if (widget.user.phoneNumber != null) ...[
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.phone,
+                                size: 24,
+                                color: AppTheme.neutralColor,
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                widget.user.phoneNumber!,
+                                style: AppTheme.subtitleStyle.copyWith(
+                                  color: AppTheme.neutralColor,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                        ],
                         Row(
                           children: [
                             Icon(
@@ -257,29 +282,48 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                             ),
                           ),
                           const SizedBox(height: 8),
-                          CustomDropdown<String>(
-                            value: selectedBranchId,
-                            hint: 'Select Branch',
-                            items: [
-                              const DropdownMenuItem<String>(
-                                value: null,
-                                child: Text('No Branch'),
-                              ),
-                              ...Provider.of<BranchesProvider>(context)
-                                  .branches
-                                  .map((branch) {
-                                return DropdownMenuItem<String>(
-                                  value: branch.id,
-                                  child: Text(branch.name),
-                                );
-                              }).toList(),
-                            ],
-                            onChanged: (String? newValue) {
-                              setState(() {
-                                selectedBranchId = newValue;
-                              });
-                            },
-                          ),
+                          Builder(builder: (context) {
+                            final branches =
+                                Provider.of<BranchesProvider>(context).branches;
+
+                            // Create a map with branch IDs as keys to ensure uniqueness
+                            final Map<String, ChurchBranch> uniqueBranchesMap =
+                                {};
+                            for (var branch in branches) {
+                              if (branch.id.isNotEmpty) {
+                                uniqueBranchesMap[branch.id] = branch;
+                              }
+                            }
+
+                            // Convert map values to list and sort by name
+                            final uniqueBranches = uniqueBranchesMap.values
+                                .toList()
+                              ..sort((a, b) => a.name.compareTo(b.name));
+
+                            final dropdownItems = uniqueBranches
+                                .map((branch) => DropdownMenuItem<String>(
+                                      value: branch.id,
+                                      child: Text(branch.name),
+                                    ))
+                                .toList();
+
+                            _log.info('Selected Branch ID: $selectedBranchId');
+                            _log.info(
+                                'Available Branch IDs: ${uniqueBranches.map((b) => b.id).toList()}');
+
+                            return CustomDropdown<String>(
+                              value: selectedBranchId,
+                              hint: 'Select Branch',
+                              items: dropdownItems,
+                              onChanged: (String? newValue) {
+                                if (newValue != null) {
+                                  setState(() {
+                                    selectedBranchId = newValue;
+                                  });
+                                }
+                              },
+                            );
+                          }),
                         ],
                       ),
                     ),
@@ -335,15 +379,18 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
       final supabaseProvider =
           Provider.of<SupabaseProvider>(context, listen: false);
 
+      // Update role
       await supabaseProvider.updateUserRole(
         widget.user.id,
         selectedRole,
       );
 
+      // Update branch if changed
       if (selectedBranchId != widget.user.branchId) {
-        await supabaseProvider.updateUser(
-          widget.user.copyWith(branchId: selectedBranchId),
-        );
+        _log.info(
+            'Updating branch from ${widget.user.branchId} to $selectedBranchId');
+        final updatedUser = widget.user.copyWith(branchId: selectedBranchId);
+        await supabaseProvider.updateUser(updatedUser);
       }
 
       if (!context.mounted) return;
@@ -352,6 +399,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
         isEditing = false;
       });
 
+      // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -368,6 +416,9 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
           ),
         ),
       );
+
+      // Force a rebuild of the screen
+      setState(() {});
     } catch (e) {
       if (!context.mounted) return;
 

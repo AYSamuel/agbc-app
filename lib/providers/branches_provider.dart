@@ -21,6 +21,35 @@ class BranchesProvider extends ChangeNotifier {
       _isLoading = true;
       notifyListeners();
 
+      // Get initial data immediately
+      final initialBranches = await _supabaseProvider.getAllBranches().first;
+      _branches = initialBranches;
+      _isInitialized = true;
+      _isLoading = false;
+      notifyListeners();
+
+      // Then listen to updates
+      _supabaseProvider.getAllBranches().listen(
+        (branches) {
+          _branches = branches;
+          notifyListeners();
+        },
+        onError: (error) {
+          // Handle error silently in production
+        },
+      );
+    } catch (e) {
+      _isLoading = false;
+      notifyListeners();
+      // Handle error silently in production
+    }
+  }
+
+  Future<void> refresh() async {
+    try {
+      _isLoading = true;
+      notifyListeners();
+
       final branches = await _supabaseProvider.getAllBranches().first;
       _branches = branches;
       _isInitialized = true;
@@ -32,18 +61,23 @@ class BranchesProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> refresh() async {
-    try {
-      _isLoading = true;
-      notifyListeners();
-
-      final branches = await _supabaseProvider.getAllBranches().first;
-      _branches = branches;
-    } catch (e) {
-      // Handle error silently in production
-    } finally {
-      _isLoading = false;
-      notifyListeners();
+  String getBranchName(String branchId) {
+    if (!_isInitialized || _isLoading) {
+      return 'Loading...';
     }
+
+    final branch = _branches.firstWhere(
+      (branch) => branch.id == branchId,
+      orElse: () => ChurchBranch(
+        id: branchId,
+        name: 'Unknown Branch',
+        address: '',
+        members: [],
+        departments: [],
+        location: '',
+        createdBy: '',
+      ),
+    );
+    return branch.name;
   }
 }

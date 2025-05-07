@@ -96,22 +96,6 @@ class AuthService extends ChangeNotifier {
           _currentUser = null;
           notifyListeners();
         }
-        return;
-      }
-
-      // If no session, check for saved credentials
-      if (isRemembered) {
-        final savedEmail = await PreferencesService.getSavedEmail();
-        final savedPassword = await PreferencesService.getSavedPassword();
-        if (savedEmail != null && savedPassword != null) {
-          // Attempt to sign in with saved credentials
-          await signIn(
-            email: savedEmail,
-            password: savedPassword,
-            rememberMe: true,
-          );
-          return;
-        }
       }
     } catch (e) {
       _log.severe('Error initializing auth service: $e');
@@ -511,16 +495,24 @@ class AuthService extends ChangeNotifier {
       if (_currentUser != null) {
         await _notificationService.removeDevice(_currentUser!.id);
       }
+
+      // Clear saved credentials first
+      await PreferencesService.clearLoginCredentials();
+
+      // Sign out from Supabase
       await _supabase.auth.signOut();
 
-      // Clear the current user first
+      // Clear the current user
       _currentUser = null;
       notifyListeners();
 
       // Clear any cached data
       _loginAttempts.clear();
     } catch (e) {
-      // Handle error silently in production
+      _log.severe('Error during sign out: $e');
+      // Even if there's an error, try to clear local state
+      _currentUser = null;
+      notifyListeners();
     }
   }
 

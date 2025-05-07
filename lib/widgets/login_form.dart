@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
-import 'package:agbc_app/services/preferences_service.dart';
 import 'package:agbc_app/widgets/custom_input.dart';
 import 'package:agbc_app/widgets/loading_indicator.dart';
 import 'package:agbc_app/utils/theme.dart';
 import 'package:agbc_app/widgets/mixins/form_validation_mixin.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'form/form_spacing.dart';
 import 'form/password_field.dart';
@@ -14,11 +14,13 @@ import 'custom_button.dart';
 class LoginForm extends StatefulWidget {
   final VoidCallback onLoginSuccess;
   final bool isLoggingOut;
+  final VoidCallback? onClearFields;
 
   const LoginForm({
     super.key,
     required this.onLoginSuccess,
     this.isLoggingOut = false,
+    this.onClearFields,
   });
 
   @override
@@ -29,13 +31,28 @@ class _LoginFormState extends State<LoginForm> with FormValidationMixin {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  bool _isLoading = false;
   bool _rememberMe = false;
+  bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    _loadSavedCredentials();
+    // Always clear fields by default
+    _clearFields();
+
+    // Load saved credentials if not logging out
+    if (!widget.isLoggingOut) {
+      _loadSavedCredentials();
+    }
+  }
+
+  @override
+  void didUpdateWidget(LoginForm oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Clear fields if we're not logging out and the widget was updated
+    if (!widget.isLoggingOut && oldWidget.isLoggingOut != widget.isLoggingOut) {
+      _clearFields();
+    }
   }
 
   @override
@@ -45,26 +62,26 @@ class _LoginFormState extends State<LoginForm> with FormValidationMixin {
     super.dispose();
   }
 
-  Future<void> _loadSavedCredentials() async {
-    if (widget.isLoggingOut) {
-      return;
-    }
+  void _loadSavedCredentials() async {
+    final prefs = await SharedPreferences.getInstance();
+    final rememberMe = prefs.getBool('remember_me') ?? false;
 
-    final isRememberMeEnabled = await PreferencesService.isRememberMeEnabled();
-    if (isRememberMeEnabled) {
-      final savedEmail = await PreferencesService.getSavedEmail();
-      final savedPassword = await PreferencesService.getSavedPassword();
-
-      if (savedEmail != null && savedPassword != null) {
-        setState(() {
-          _rememberMe = true;
-          _emailController.text = savedEmail;
-          _passwordController.text = savedPassword;
-        });
-      }
-    } else {
-      await PreferencesService.clearLoginCredentials();
+    // Only load credentials if remember me is true AND we're not logging out
+    if (rememberMe && !widget.isLoggingOut) {
+      setState(() {
+        _rememberMe = true;
+        _emailController.text = prefs.getString('saved_email') ?? '';
+        _passwordController.text = prefs.getString('saved_password') ?? '';
+      });
     }
+  }
+
+  void _clearFields() {
+    setState(() {
+      _emailController.clear();
+      _passwordController.clear();
+      _rememberMe = false;
+    });
   }
 
   Future<void> _login() async {

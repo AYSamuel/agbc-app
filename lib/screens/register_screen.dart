@@ -3,9 +3,27 @@ import 'package:flutter/material.dart';
 import '../widgets/register_form.dart';
 import '../utils/theme.dart';
 import '../widgets/custom_back_button.dart';
+import 'package:provider/provider.dart';
+import '../providers/branches_provider.dart';
 
-class RegisterScreen extends StatelessWidget {
+class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
+
+  @override
+  State<RegisterScreen> createState() => _RegisterScreenState();
+}
+
+class _RegisterScreenState extends State<RegisterScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Initialize branches when screen is opened
+    Future.microtask(() {
+      if (mounted) {
+        Provider.of<BranchesProvider>(context, listen: false).initialize();
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -58,8 +76,7 @@ class RegisterScreen extends StatelessWidget {
                   child: Row(
                     children: [
                       CustomBackButton(
-                        onPressed: () => Navigator.of(context)
-                            .pushReplacementNamed('/login'),
+                        onPressed: () => Navigator.of(context).pushReplacementNamed('/login', arguments: {'clearForm': true}),
                       ),
                     ],
                   ),

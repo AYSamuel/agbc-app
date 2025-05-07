@@ -58,7 +58,7 @@ class CustomDropdown<T> extends StatelessWidget {
           decoration: BoxDecoration(
             color: enabled
                 ? AppTheme.backgroundColor
-                : AppTheme.backgroundColor.withOpacity(0.5),
+                : AppTheme.backgroundColor.withValues(alpha: 0.5),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: errorText != null
@@ -75,7 +75,7 @@ class CustomDropdown<T> extends StatelessWidget {
                   size: 24,
                   color: enabled
                       ? AppTheme.neutralColor
-                      : AppTheme.neutralColor.withOpacity(0.5),
+                      : AppTheme.neutralColor.withValues(alpha: 0.5),
                 ),
                 const SizedBox(width: 12),
               ],

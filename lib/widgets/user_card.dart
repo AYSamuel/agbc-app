@@ -44,7 +44,7 @@ class UserCard extends StatelessWidget {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: roleColor.withOpacity(0.2),
+            color: roleColor.withValues(alpha: 0.2),
             width: 1,
           ),
         ),
@@ -58,13 +58,13 @@ class UserCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: roleColor.withOpacity(0.3),
+                    color: roleColor.withValues(alpha: 0.3),
                     width: 2,
                   ),
                 ),
                 child: CircleAvatar(
                   radius: 24,
-                  backgroundColor: roleColor.withOpacity(0.1),
+                  backgroundColor: roleColor.withValues(alpha: 0.1),
                   backgroundImage:
                       user.photoUrl != null && user.photoUrl!.isNotEmpty
                           ? NetworkImage(user.photoUrl!)
@@ -95,16 +95,6 @@ class UserCard extends StatelessWidget {
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        Container(
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            color: user.isActive
-                                ? AppTheme.successColor
-                                : AppTheme.errorColor,
-                            shape: BoxShape.circle,
                           ),
                         ),
                       ],
@@ -197,10 +187,10 @@ class UserCard extends StatelessWidget {
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: roleColor.withOpacity(0.1),
+                      color: roleColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                        color: roleColor.withOpacity(0.3),
+                        color: roleColor.withValues(alpha: 0.3),
                         width: 1,
                       ),
                     ),
@@ -222,7 +212,8 @@ class UserCard extends StatelessWidget {
                     ),
                     onPressed: onEdit,
                     style: IconButton.styleFrom(
-                      backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
+                      backgroundColor:
+                          AppTheme.primaryColor.withValues(alpha: 0.1),
                       padding: const EdgeInsets.all(8),
                     ),
                   ),

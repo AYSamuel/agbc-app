@@ -18,13 +18,27 @@ class SupabaseService {
         .map((data) => data.isNotEmpty ? UserModel.fromJson(data.first) : null);
   }
 
-  Future<void> updateUser(UserModel user) async {
-    await _supabase.from('users').update(user.toJson()).eq('id', user.id);
+  Future<UserModel> updateUser(UserModel user) async {
+    final response = await _supabase
+        .from('users')
+        .update({
+          ...user.toJson(),
+          'branch_id': user.branchId, // Explicitly set branch_id
+        })
+        .eq('id', user.id)
+        .select()
+        .single();
+
+    return UserModel.fromJson(response);
   }
 
   Stream<List<UserModel>> getAllUsers() {
-    return _supabase.from('users').stream(primaryKey: ['id']).map(
-        (data) => data.map((doc) => UserModel.fromJson(doc)).toList());
+    return _supabase
+        .from('users')
+        .select()
+        .order('display_name')
+        .asStream()
+        .map((data) => data.map((doc) => UserModel.fromJson(doc)).toList());
   }
 
   // Task operations
@@ -120,7 +134,29 @@ class SupabaseService {
   }
 
   Future<void> createBranch(ChurchBranch branch) async {
-    await _supabase.from('branches').insert(branch.toJson());
+    final data = branch.toJson();
+
+    // Ensure all UUIDs are properly formatted
+    if (data['id'] != null) {
+      data['id'] = data['id'].toString().toLowerCase();
+    }
+    if (data['pastor_id'] != null) {
+      data['pastor_id'] = data['pastor_id'].toString().toLowerCase();
+    }
+    if (data['created_by'] != null) {
+      data['created_by'] = data['created_by'].toString().toLowerCase();
+    }
+
+    // Remove any null values to prevent type conversion issues
+    data.removeWhere((key, value) => value == null);
+
+    try {
+      await _supabase.from('branches').insert(data);
+    } catch (e) {
+      print('Error creating branch: $e');
+      print('Branch data: $data');
+      rethrow;
+    }
   }
 
   Future<void> updateBranch(String branchId, Map<String, dynamic> data) async {
@@ -155,12 +191,18 @@ class SupabaseService {
     }
   }
 
-  Future<void> updateUserRole(String userId, String newRole) async {
+  Future<UserModel> updateUserRole(String userId, String newRole) async {
     try {
-      await _supabase.from('users').update({
-        'role': newRole,
-        'updated_at': DateTime.now().toIso8601String(),
-      }).eq('id', userId);
+      final response = await _supabase
+          .from('users')
+          .update({
+            'role': newRole,
+          })
+          .eq('id', userId)
+          .select()
+          .single();
+
+      return UserModel.fromJson(response);
     } catch (e) {
       throw Exception('Failed to update user role: $e');
     }

@@ -7,6 +7,9 @@ import 'package:agbc_app/widgets/custom_button.dart';
 import 'package:agbc_app/utils/theme.dart';
 import 'package:uuid/uuid.dart';
 import 'package:agbc_app/widgets/custom_back_button.dart';
+import 'package:agbc_app/models/user_model.dart';
+import 'package:agbc_app/widgets/custom_dropdown.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AddBranchScreen extends StatefulWidget {
   const AddBranchScreen({super.key});
@@ -29,6 +32,8 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
   final _descriptionFocus = FocusNode();
 
   bool _isLoading = false;
+  bool _isActive = true;
+  String? _selectedPastorId;
 
   @override
   void dispose() {
@@ -52,20 +57,26 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
     setState(() => _isLoading = true);
 
     try {
+      final supabase = Supabase.instance.client;
+      final currentUserId = supabase.auth.currentUser?.id;
+
+      if (currentUserId == null) {
+        throw Exception('No authenticated user found');
+      }
+
       final branch = ChurchBranch(
-        id: const Uuid().v4(),
+        id: const Uuid().v4().toLowerCase(),
         name: _nameController.text.trim(),
         location: _locationController.text.trim(),
         address: _addressController.text.trim(),
         description: _descriptionController.text.trim(),
-        pastorId: Provider.of<SupabaseProvider>(context, listen: false)
-                .currentUser
-                ?.id ??
-            '',
-        createdBy: Provider.of<SupabaseProvider>(context, listen: false)
-                .currentUser
-                ?.id ??
-            '',
+        pastorId: _selectedPastorId?.isNotEmpty == true
+            ? _selectedPastorId?.toLowerCase()
+            : null,
+        createdBy: currentUserId.toLowerCase(),
+        isActive: _isActive,
+        departments: [],
+        members: [],
       );
 
       await Provider.of<SupabaseProvider>(context, listen: false)
@@ -133,8 +144,7 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color:
-                              AppTheme.darkNeutralColor.withValues(alpha: 0.05),
+                          color: AppTheme.darkNeutralColor.withOpacity(0.05),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
@@ -208,6 +218,97 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
                               color: AppTheme.neutralColor),
                           focusNode: _descriptionFocus,
                           maxLines: 3,
+                        ),
+                        const SizedBox(height: 16),
+                        // Pastor Selection
+                        StreamBuilder<List<UserModel>>(
+                          stream: Provider.of<SupabaseProvider>(context,
+                                  listen: false)
+                              .getAllUsers(),
+                          builder: (context, snapshot) {
+                            if (snapshot.hasError) {
+                              return Text('Error: ${snapshot.error}');
+                            }
+
+                            if (!snapshot.hasData) {
+                              return const CircularProgressIndicator();
+                            }
+
+                            final users = snapshot.data!;
+                            final pastors = users
+                                .where((user) => user.role == 'pastor')
+                                .toList();
+                            pastors.sort((a, b) =>
+                                a.displayName.compareTo(b.displayName));
+
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Branch Pastor',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppTheme.darkNeutralColor,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                CustomDropdown<String>(
+                                  value: _selectedPastorId,
+                                  label: 'Select Pastor',
+                                  hint: 'Choose a pastor for this branch',
+                                  prefixIcon: Icons.person,
+                                  items: [
+                                    const DropdownMenuItem<String>(
+                                      value: null,
+                                      child: Text('No Pastor Assigned'),
+                                    ),
+                                    ...pastors.map(
+                                        (pastor) => DropdownMenuItem<String>(
+                                              value: pastor.id,
+                                              child: Text(pastor.displayName),
+                                            )),
+                                  ],
+                                  onChanged: (String? value) {
+                                    setState(() {
+                                      _selectedPastorId = value;
+                                    });
+                                  },
+                                ),
+                              ],
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        // Active Status Toggle
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.toggle_on,
+                              color: _isActive
+                                  ? AppTheme.accentColor
+                                  : AppTheme.neutralColor,
+                              size: 40,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Active Branch',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: AppTheme.darkNeutralColor,
+                              ),
+                            ),
+                            const Spacer(),
+                            Switch(
+                              value: _isActive,
+                              onChanged: (value) {
+                                setState(() {
+                                  _isActive = value;
+                                });
+                              },
+                              activeColor: AppTheme.accentColor,
+                            ),
+                          ],
                         ),
                       ],
                     ),

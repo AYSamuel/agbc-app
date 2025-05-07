@@ -19,6 +19,8 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  final _formKey = GlobalKey<FormState>();
+
   @override
   void initState() {
     super.initState();
@@ -32,6 +34,11 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final Map<String, bool>? args =
+        ModalRoute.of(context)?.settings.arguments as Map<String, bool>?;
+    final bool clearForm = args?['clearForm'] ?? false;
+    final bool effectivelyIsLoggingOut = widget.isLoggingOut || clearForm;
+
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       body: Stack(
@@ -136,11 +143,12 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           const SizedBox(height: 32),
                           LoginForm(
+                            key: _formKey,
                             onLoginSuccess: () {
                               Navigator.of(context)
                                   .pushReplacementNamed('/home');
                             },
-                            isLoggingOut: widget.isLoggingOut,
+                            isLoggingOut: effectivelyIsLoggingOut,
                           ),
                           const SizedBox(height: 18),
                           // Signup link

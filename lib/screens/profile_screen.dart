@@ -3,7 +3,6 @@ import 'package:agbc_app/utils/theme.dart';
 import 'package:provider/provider.dart';
 import 'package:agbc_app/services/auth_service.dart';
 import 'package:agbc_app/providers/branches_provider.dart';
-import 'package:agbc_app/models/church_branch_model.dart';
 import 'login_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -14,6 +13,17 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Initialize branches when screen is opened
+    Future.microtask(() {
+      if (mounted) {
+        Provider.of<BranchesProvider>(context, listen: false).initialize();
+      }
+    });
+  }
+
   Future<void> _logout() async {
     try {
       final currentContext = context;
@@ -166,15 +176,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         Builder(builder: (context) {
                           String branchDisplayName;
                           if (user?.branchId?.isNotEmpty == true) {
-                            if (branchesProvider.isLoading) {
-                              branchDisplayName = 'Loading branch...';
-                            } else if (!branchesProvider.isInitialized) {
-                              branchDisplayName =
-                                  'Initializing branches...'; // Or some other placeholder
-                            } else {
-                              branchDisplayName =
-                                  _getBranchName(user!.branchId!);
-                            }
+                            branchDisplayName =
+                                branchesProvider.getBranchName(user!.branchId!);
                           } else {
                             branchDisplayName = 'None assigned yet';
                           }
@@ -236,7 +239,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       context,
                       title: 'Branch',
                       value: user?.branchId?.isNotEmpty == true
-                          ? _getBranchName(user!.branchId!)
+                          ? branchesProvider.getBranchName(user!.branchId!)
                           : 'Not assigned',
                       icon: Icons.church,
                     ),
@@ -434,23 +437,5 @@ class _ProfileScreenState extends State<ProfileScreen> {
       default:
         return Colors.green;
     }
-  }
-
-  String _getBranchName(String branchId) {
-    final branchesProvider =
-        Provider.of<BranchesProvider>(context, listen: false);
-    final branch = branchesProvider.branches.firstWhere(
-      (branch) => branch.id == branchId,
-      orElse: () => ChurchBranch(
-        id: branchId,
-        name: 'Unknown Branch',
-        address: '',
-        members: [],
-        departments: [],
-        location: '',
-        createdBy: '',
-      ),
-    );
-    return branch.name;
   }
 }

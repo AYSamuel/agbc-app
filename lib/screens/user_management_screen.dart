@@ -7,8 +7,23 @@ import '../widgets/custom_back_button.dart';
 import '../widgets/user_card.dart';
 import 'user_details_screen.dart';
 
-class UserManagementScreen extends StatelessWidget {
-  const UserManagementScreen({super.key});
+class UserManagementScreen extends StatefulWidget {
+  final String? initialBranchFilter;
+
+  const UserManagementScreen({
+    super.key,
+    this.initialBranchFilter,
+  });
+
+  @override
+  State<UserManagementScreen> createState() => _UserManagementScreenState();
+}
+
+class _UserManagementScreenState extends State<UserManagementScreen> {
+  @override
+  void initState() {
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -61,7 +76,18 @@ class UserManagementScreen extends StatelessWidget {
                   }
                   final users = snapshot.data!;
 
-                  if (users.isEmpty) {
+                  // Sort users alphabetically by display name
+                  users.sort((a, b) => a.displayName.compareTo(b.displayName));
+
+                  // Filter users by branch if initialBranchFilter is set
+                  final filteredUsers = widget.initialBranchFilter != null
+                      ? users
+                          .where((user) =>
+                              user.branchId == widget.initialBranchFilter)
+                          .toList()
+                      : users;
+
+                  if (filteredUsers.isEmpty) {
                     return Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -80,7 +106,9 @@ class UserManagementScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'There are currently no users in the system.',
+                            widget.initialBranchFilter != null
+                                ? 'There are no users assigned to this branch.'
+                                : 'There are currently no users in the system.',
                             style: AppTheme.subtitleStyle.copyWith(
                               color: AppTheme.neutralColor,
                             ),
@@ -90,14 +118,11 @@ class UserManagementScreen extends StatelessWidget {
                     );
                   }
 
-                  // Sort users alphabetically by display name
-                  users.sort((a, b) => a.displayName.compareTo(b.displayName));
-
                   return ListView.builder(
                     padding: const EdgeInsets.all(16),
-                    itemCount: users.length,
+                    itemCount: filteredUsers.length,
                     itemBuilder: (context, index) {
-                      final user = users[index];
+                      final user = filteredUsers[index];
                       return UserCard(
                         user: user,
                         roleColor: _getRoleColor(user.role),

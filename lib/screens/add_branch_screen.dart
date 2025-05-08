@@ -144,7 +144,8 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: AppTheme.darkNeutralColor.withOpacity(0.05),
+                          color:
+                              AppTheme.darkNeutralColor.withValues(alpha: 0.05),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),

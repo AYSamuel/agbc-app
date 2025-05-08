@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:logging/logging.dart';
 import '../models/user_model.dart';
 import '../models/task_model.dart';
 import '../models/meeting_model.dart';
@@ -6,6 +7,7 @@ import '../models/church_branch_model.dart';
 
 class SupabaseService {
   final SupabaseClient _supabase = Supabase.instance.client;
+  final _logger = Logger('SupabaseService');
 
   SupabaseClient get supabase => _supabase;
 
@@ -153,8 +155,8 @@ class SupabaseService {
     try {
       await _supabase.from('branches').insert(data);
     } catch (e) {
-      print('Error creating branch: $e');
-      print('Branch data: $data');
+      _logger.severe('Error creating branch: $e');
+      _logger.info('Branch data: $data');
       rethrow;
     }
   }
@@ -165,6 +167,12 @@ class SupabaseService {
   }
 
   Future<void> deleteBranch(String branchId) async {
+    // First clear branchId for all users in this branch
+    await _supabase
+        .from('users')
+        .update({'branch_id': null}).eq('branch_id', branchId);
+
+    // Then delete the branch
     await _supabase.from('branches').delete().eq('id', branchId);
   }
 

@@ -853,64 +853,37 @@ class AuthService extends ChangeNotifier {
   /// Handle a new session
   Future<void> _handleSession(Session session) async {
     try {
+      // Get user data from our database
       final user = await _supabaseService.getUser(session.user.id).first;
       if (user != null) {
-        // Update user with Auth's email verification status and metadata
-        final isEmailVerified = session.user.emailConfirmedAt != null;
-        final metadata = session.user.userMetadata ?? {};
+        // Check if the branch exists
+        if (user.branchId != null) {
+          final branchExists = await _supabase
+              .from('branches')
+              .select()
+              .eq('id', user.branchId!)
+              .maybeSingle();
 
-        _currentUser = user.copyWith(
-          lastLogin: DateTime.now(),
-          emailVerified: isEmailVerified,
-          displayName: metadata['full_name'] ?? user.displayName,
-          phoneNumber: metadata['phone'] ?? user.phoneNumber,
-          location: metadata['location'] ?? user.location,
-          branchId: metadata['branch'] ?? user.branchId,
-        );
-
-        // Update in database
-        await _supabaseService.updateUser(_currentUser!);
-
-        // Double check the update
-        final updatedUser =
-            await _supabaseService.getUser(session.user.id).first;
-        if (updatedUser != null) {
-          // If any fields didn't update correctly, try one more time
-          if (updatedUser.phoneNumber != _currentUser!.phoneNumber ||
-              updatedUser.location != _currentUser!.location ||
-              updatedUser.branchId != _currentUser!.branchId) {
-            await _supabaseService.updateUser(_currentUser!);
+          if (branchExists == null) {
+            // Update user's branch_id to null if branch doesn't exist
+            final updatedUser = user.copyWith(branchId: null);
+            await _supabaseService.updateUser(updatedUser);
+            _currentUser = updatedUser;
+          } else {
+            _currentUser = user;
           }
+        } else {
+          _currentUser = user;
         }
 
+        // Register device for notifications
         await _notificationService.registerDevice(session.user.id);
-
-        // Log detailed user information
-        _log.info('=== User Session Details ===');
-        _log.info('User ID: ${session.user.id}');
-        _log.info('Email: ${session.user.email}');
-        _log.info('Email Verified (DB): ${_currentUser!.emailVerified}');
-        _log.info(
-            'Email Verified (Auth): ${session.user.emailConfirmedAt != null}');
-        _log.info('Last Sign In: ${session.user.lastSignInAt}');
-        _log.info('Created At: ${session.user.createdAt}');
-        _log.info('Role: ${user.role}');
-        _log.info('Display Name: ${user.displayName}');
-        _log.info('Phone Number: ${user.phoneNumber ?? 'Not set'}');
-        _log.info('Location: ${user.location ?? 'Not set'}');
-        _log.info('Branch ID: ${user.branchId ?? 'Not assigned'}');
-        _log.info('Active Status: ${user.isActive}');
-        _log.info(
-            'Departments: ${user.departments.isEmpty ? 'None' : user.departments.join(', ')}');
-        _log.info('Session Expires: ${session.expiresAt}');
-        _log.info('Access Token: ${session.accessToken.substring(0, 10)}...');
-        _log.info(
-            'Refresh Token: ${session.refreshToken?.substring(0, 10) ?? 'N/A'}...');
-        _log.info('========================');
+        notifyListeners();
       }
     } catch (e) {
       _log.severe('Error handling session: $e');
       _currentUser = null;
+      notifyListeners();
     }
   }
 
@@ -1043,6 +1016,17 @@ class AuthService extends ChangeNotifier {
 
   /// Refreshes the current user's data from the server
   Future<void> refreshUserData() async {
-    await checkAuthState();
+    try {
+      final user = _supabase.auth.currentUser;
+      if (user != null) {
+        final updatedUser = await _supabaseService.getUser(user.id).first;
+        if (updatedUser != null) {
+          _currentUser = updatedUser;
+          notifyListeners();
+        }
+      }
+    } catch (e) {
+      _log.severe('Error refreshing user data: $e');
+    }
   }
 }

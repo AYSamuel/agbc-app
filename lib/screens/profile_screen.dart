@@ -17,9 +17,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void initState() {
     super.initState();
     // Initialize branches when screen is opened
-    Future.microtask(() {
+    Future.microtask(() async {
       if (mounted) {
-        Provider.of<BranchesProvider>(context, listen: false).initialize();
+        final branchesProvider =
+            Provider.of<BranchesProvider>(context, listen: false);
+        final authService = Provider.of<AuthService>(context, listen: false);
+        final user = authService.currentUser;
+
+        // Initialize branches if not already initialized
+        if (!branchesProvider.isInitialized) {
+          await branchesProvider.initialize();
+        }
+
+        // If user has a branch, ensure it's loaded
+        if (user?.branchId != null && user!.branchId!.isNotEmpty) {
+          await branchesProvider.refresh();
+        }
       }
     });
   }
@@ -52,8 +65,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final authService = Provider.of<AuthService>(context);
-    final branchesProvider =
-        Provider.of<BranchesProvider>(context); // Listen to BranchesProvider
+    final branchesProvider = Provider.of<BranchesProvider>(context);
     final user = authService.currentUser;
 
     return Scaffold(

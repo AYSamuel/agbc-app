@@ -50,7 +50,6 @@ Future<void> main() async {
     // Create providers
     final supabaseProvider = SupabaseProvider();
     final branchesProvider = BranchesProvider(supabaseProvider);
-    await branchesProvider.initialize(); // Initialize branches provider
 
     runApp(
       MultiProvider(
@@ -113,17 +112,15 @@ class _MyAppState extends State<MyApp> {
               Provider.of<AuthService>(currentContext, listen: false);
 
           await authService.verifyEmail(token);
+          await authService.refreshUserData();
 
           if (!mounted) return;
-          if (!currentContext.mounted) return;
 
           // Check if user is already authenticated
           if (authService.isAuthenticated) {
-            // Refresh user data to ensure all fields are up to date
-            await authService.refreshUserData();
-            Navigator.of(currentContext).pushReplacementNamed('/home');
+            Navigator.of(context).pushReplacementNamed('/home');
           } else {
-            Navigator.of(currentContext).pushReplacementNamed('/login');
+            Navigator.of(context).pushReplacementNamed('/login');
           }
         } else {
           if (!mounted) return;
@@ -142,6 +139,7 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: navigatorKey,
       title: 'AGBC App',
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,

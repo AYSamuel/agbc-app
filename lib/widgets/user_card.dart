@@ -27,7 +27,7 @@ class UserCard extends StatelessWidget {
       );
       return branch.name;
     } catch (e) {
-      return 'Unknown Branch';
+      return 'No branch joined yet';
     }
   }
 

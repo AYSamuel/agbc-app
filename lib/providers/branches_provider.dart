@@ -1,12 +1,14 @@
 import 'package:flutter/foundation.dart';
 import '../models/church_branch_model.dart';
 import '../providers/supabase_provider.dart';
+import 'package:logging/logging.dart';
 
 class BranchesProvider extends ChangeNotifier {
   final SupabaseProvider _supabaseProvider;
   List<ChurchBranch> _branches = [];
   bool _isLoading = false;
   bool _isInitialized = false;
+  final _logger = Logger('BranchesProvider');
 
   BranchesProvider(this._supabaseProvider);
 
@@ -35,13 +37,13 @@ class BranchesProvider extends ChangeNotifier {
           notifyListeners();
         },
         onError: (error) {
-          // Handle error silently in production
+          _logger.severe('Error listening to branch updates: $error');
         },
       );
     } catch (e) {
+      _logger.severe('Error initializing branches: $e');
       _isLoading = false;
       notifyListeners();
-      // Handle error silently in production
     }
   }
 
@@ -53,8 +55,9 @@ class BranchesProvider extends ChangeNotifier {
       final branches = await _supabaseProvider.getAllBranches().first;
       _branches = branches;
       _isInitialized = true;
+      _logger.info('Refreshed branches: ${branches.length} branches loaded');
     } catch (e) {
-      // Handle error silently in production
+      _logger.severe('Error refreshing branches: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -66,17 +69,24 @@ class BranchesProvider extends ChangeNotifier {
       return 'Loading...';
     }
 
+    _logger.info('Getting branch name for ID: $branchId');
+    _logger.info(
+        'Available branches: ${_branches.map((b) => '${b.id}: ${b.name}').join(', ')}');
+
     final branch = _branches.firstWhere(
       (branch) => branch.id == branchId,
-      orElse: () => ChurchBranch(
-        id: branchId,
-        name: 'Unknown Branch',
-        address: '',
-        members: [],
-        departments: [],
-        location: '',
-        createdBy: '',
-      ),
+      orElse: () {
+        _logger.warning('Branch not found for ID: $branchId');
+        return ChurchBranch(
+          id: branchId,
+          name: 'No branch joined yet',
+          address: '',
+          members: [],
+          departments: [],
+          location: '',
+          createdBy: '',
+        );
+      },
     );
     return branch.name;
   }

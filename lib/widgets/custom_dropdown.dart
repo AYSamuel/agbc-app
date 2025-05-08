@@ -51,10 +51,6 @@ class CustomDropdown<T> extends StatelessWidget {
           const SizedBox(height: 8),
         ],
         Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 4,
-          ),
           decoration: BoxDecoration(
             color: enabled
                 ? AppTheme.backgroundColor
@@ -63,21 +59,23 @@ class CustomDropdown<T> extends StatelessWidget {
             border: Border.all(
               color: errorText != null
                   ? AppTheme.errorColor
-                  : AppTheme.dividerColor,
-              width: 1,
+                  : AppTheme.neutralColor.withValues(alpha: 0.15),
+              width: 1.5,
             ),
           ),
           child: Row(
             children: [
               if (prefixIcon != null) ...[
-                Icon(
-                  prefixIcon,
-                  size: 24,
-                  color: enabled
-                      ? AppTheme.neutralColor
-                      : AppTheme.neutralColor.withValues(alpha: 0.5),
+                Padding(
+                  padding: const EdgeInsets.only(left: 12, right: 8),
+                  child: Icon(
+                    prefixIcon,
+                    size: 20,
+                    color: enabled
+                        ? AppTheme.neutralColor.withValues(alpha: 0.6)
+                        : AppTheme.neutralColor.withValues(alpha: 0.5),
+                  ),
                 ),
-                const SizedBox(width: 12),
               ],
               Expanded(
                 child: DropdownButtonFormField<T>(
@@ -87,11 +85,23 @@ class CustomDropdown<T> extends StatelessWidget {
                   style: style ??
                       TextStyle(
                         color: enabled
-                            ? AppTheme.primaryColor
+                            ? AppTheme.darkNeutralColor
                             : AppTheme.neutralColor,
+                        fontWeight: FontWeight.w500,
                         fontSize: 16,
+                        letterSpacing: 0.2,
                       ),
-                  hint: hint != null ? Text(hint!) : null,
+                  hint: hint != null
+                      ? Text(
+                          hint!,
+                          style: TextStyle(
+                            color: AppTheme.neutralColor.withValues(alpha: 0.6),
+                            fontWeight: FontWeight.w400,
+                            fontSize: 15,
+                            letterSpacing: 0.2,
+                          ),
+                        )
+                      : null,
                   items: items,
                   onChanged: enabled ? onChanged : null,
                   validator: validator,
@@ -99,7 +109,10 @@ class CustomDropdown<T> extends StatelessWidget {
                   autovalidateMode: autovalidateMode,
                   decoration: InputDecoration(
                     border: InputBorder.none,
-                    contentPadding: EdgeInsets.zero,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 12,
+                    ),
                     isDense: true,
                     enabledBorder: InputBorder.none,
                     focusedBorder: InputBorder.none,
@@ -110,8 +123,9 @@ class CustomDropdown<T> extends StatelessWidget {
                   ),
                   icon: Icon(
                     Icons.arrow_drop_down,
-                    color:
-                        enabled ? AppTheme.primaryColor : AppTheme.neutralColor,
+                    color: enabled
+                        ? AppTheme.primaryColor
+                        : AppTheme.neutralColor.withValues(alpha: 0.5),
                   ),
                   menuMaxHeight: 300,
                   borderRadius: BorderRadius.circular(12),

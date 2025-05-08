@@ -96,14 +96,15 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             border: Border.all(
-                              color: AppTheme.primaryColor.withOpacity(0.3),
+                              color:
+                                  AppTheme.primaryColor.withValues(alpha: 0.3),
                               width: 2,
                             ),
                           ),
                           child: CircleAvatar(
                             radius: 48,
                             backgroundColor:
-                                AppTheme.primaryColor.withOpacity(0.1),
+                                AppTheme.primaryColor.withValues(alpha: 0.1),
                             backgroundImage: widget.user.photoUrl != null &&
                                     widget.user.photoUrl!.isNotEmpty
                                 ? NetworkImage(widget.user.photoUrl!)
@@ -143,11 +144,11 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                           ),
                           decoration: BoxDecoration(
                             color: _getRoleColor(widget.user.role)
-                                .withOpacity(0.1),
+                                .withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
                               color: _getRoleColor(widget.user.role)
-                                  .withOpacity(0.3),
+                                  .withValues(alpha: 0.3),
                               width: 1,
                             ),
                           ),

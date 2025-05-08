@@ -34,6 +34,26 @@ class NotificationService extends ChangeNotifier {
 
       // Request permission for notifications
       await OneSignal.Notifications.requestPermission(true);
+
+      // Set up notification handlers
+      OneSignal.Notifications.addClickListener((event) {
+        debugPrint('Notification clicked: ${event.notification.title}');
+        // Handle notification click
+        if (event.notification.additionalData != null) {
+          final data = event.notification.additionalData;
+          // Handle deep linking or navigation based on notification data
+          debugPrint('Notification data: $data');
+        }
+      });
+
+      OneSignal.Notifications.addForegroundWillDisplayListener((event) {
+        debugPrint(
+            'Foreground notification received: ${event.notification.title}');
+        // You can prevent the notification from displaying by calling:
+        // event.preventDefault();
+        // event.notification.display();
+      });
+
       _isInitialized = true;
     } catch (e) {
       debugPrint('Error initializing OneSignal: $e');

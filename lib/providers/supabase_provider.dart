@@ -1,12 +1,21 @@
-import 'package:flutter/foundation.dart';
+import 'package:logging/logging.dart';
 import '../services/supabase_service.dart';
 import '../models/user_model.dart';
 import '../models/task_model.dart';
 import '../models/meeting_model.dart';
 import '../models/church_branch_model.dart';
+import 'package:provider/provider.dart';
+import '../services/auth_service.dart';
+import 'package:flutter/material.dart';
+
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 class SupabaseProvider with ChangeNotifier {
   final SupabaseService _supabaseService = SupabaseService();
+  final _logger = Logger('SupabaseProvider');
+
+  // Expose SupabaseService
+  SupabaseService get supabaseService => _supabaseService;
 
   // User Data
   UserModel? _currentUser;
@@ -24,22 +33,62 @@ class SupabaseProvider with ChangeNotifier {
   ChurchBranch? _currentBranch;
   ChurchBranch? get currentBranch => _currentBranch;
 
+  // Initialize branch data
+  Future<void> initializeBranchData(String? branchId) async {
+    if (branchId != null) {
+      try {
+        // First get the branch data immediately
+        final branch = await _supabaseService.getBranch(branchId).first;
+        _currentBranch = branch;
+        notifyListeners();
+
+        // Then set up a listener for updates
+        _supabaseService.getBranch(branchId).listen((branch) {
+          _currentBranch = branch;
+          notifyListeners();
+        });
+      } catch (e) {
+        _logger.severe('Error initializing branch data: $e');
+        _currentBranch = null;
+        notifyListeners();
+      }
+    } else {
+      _currentBranch = null;
+      notifyListeners();
+    }
+  }
+
   // Initialize user data
   Future<void> initializeUserData(String id) async {
-    _supabaseService.getUser(id).listen((user) {
+    try {
+      // First get the user data immediately
+      final user = await _supabaseService.getUser(id).first;
       _currentUser = user;
+
       if (user != null) {
-        if (user.branchId != null) {
-          _supabaseService.getBranch(user.branchId!).listen((branch) {
-            _currentBranch = branch;
-            notifyListeners();
-          });
-        }
+        // Initialize branch data
+        await initializeBranchData(user.branchId);
+
+        // Set up listeners for updates
+        _supabaseService.getUser(id).listen((user) async {
+          _currentUser = user;
+          if (user != null) {
+            // Update branch data if branch ID changes
+            if (_currentBranch?.id != user.branchId) {
+              await initializeBranchData(user.branchId);
+            }
+          }
+          notifyListeners();
+        });
+
         _loadUserTasks(id);
         _loadUserMeetings(id);
       }
       notifyListeners();
-    });
+    } catch (e) {
+      _logger.severe('Error initializing user data: $e');
+      rethrow;
+    }
   }
 
   // Load user tasks
@@ -191,9 +240,14 @@ class SupabaseProvider with ChangeNotifier {
         }
       }
 
+      // Notify AuthService to refresh user data
+      final authService =
+          Provider.of<AuthService>(navigatorKey.currentContext!, listen: false);
+      await authService.refreshUserData();
+
       notifyListeners();
     } catch (e) {
-      print('Error updating user: $e');
+      _logger.severe('Error updating user: $e');
       rethrow;
     }
   }

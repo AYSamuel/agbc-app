@@ -45,6 +45,14 @@ class AppInitializationService {
       await branchesProvider.initialize();
       developer.log('Branches provider initialized');
 
+      // Ensure branches are loaded
+      final branches = await supabaseProvider.getAllBranches().first;
+      if (branches.isEmpty) {
+        developer.log('Warning: No branches found during initialization');
+      } else {
+        developer.log('Successfully loaded ${branches.length} branches');
+      }
+
       // If user is logged in, initialize their data
       final currentUser = supabase.auth.currentUser;
       if (currentUser != null) {

@@ -33,8 +33,10 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
     super.initState();
     selectedRole = widget.user.role;
     selectedBranchId = widget.user.branchId;
-    // Refresh branches when screen is opened
-    Provider.of<BranchesProvider>(context, listen: false).refresh();
+    // Refresh branches after the first frame is built
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<BranchesProvider>(context, listen: false).refresh();
+    });
   }
 
   @override

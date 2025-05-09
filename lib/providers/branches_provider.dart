@@ -90,4 +90,11 @@ class BranchesProvider extends ChangeNotifier {
     );
     return branch.name;
   }
+
+  void setBranches(List<ChurchBranch> branches) {
+    _branches = branches;
+    _isInitialized = true;
+    _isLoading = false;
+    notifyListeners();
+  }
 }

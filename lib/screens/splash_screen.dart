@@ -4,7 +4,6 @@ import '../services/auth_service.dart';
 import '../services/app_initialization_service.dart';
 import 'main_navigation_screen.dart';
 import 'login_screen.dart';
-import '../providers/branches_provider.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -48,13 +47,6 @@ class _SplashScreenState extends State<SplashScreen>
     final initializationStart = DateTime.now();
     try {
       await AppInitializationService.initializeApp();
-
-      // Get branches provider and ensure branches are loaded
-      final branchesProvider =
-          Provider.of<BranchesProvider>(context, listen: false);
-      if (!branchesProvider.isInitialized) {
-        await branchesProvider.initialize();
-      }
 
       // Ensure splash screen stays for at least 5 seconds
       final initializationDuration =

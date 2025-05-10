@@ -74,7 +74,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         slivers: [
           // Profile Header
           SliverAppBar(
-            expandedHeight: 280,
+            expandedHeight: 220,
             pinned: true,
             backgroundColor: AppTheme.backgroundColor,
             flexibleSpace: FlexibleSpaceBar(
@@ -83,7 +83,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: SafeArea(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 24, vertical: 16),
+                        horizontal: 20, vertical: 12),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
@@ -91,25 +91,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         Stack(
                           children: [
                             Container(
-                              width: 120,
-                              height: 120,
+                              width: 90,
+                              height: 90,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 border: Border.all(
                                   color: AppTheme.primaryColor,
-                                  width: 3,
+                                  width: 2,
                                 ),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: AppTheme.primaryColor
-                                        .withValues(alpha: 0.2),
-                                    blurRadius: 15,
-                                    offset: const Offset(0, 4),
+                                    color:
+                                        AppTheme.primaryColor.withOpacity(0.15),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 3),
                                   ),
                                 ],
                               ),
                               child: CircleAvatar(
-                                radius: 60,
+                                radius: 45,
                                 backgroundColor: Colors.transparent,
                                 backgroundImage: (user?.photoUrl != null &&
                                         user!.photoUrl!.isNotEmpty)
@@ -118,7 +118,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 child: (user?.photoUrl == null ||
                                         user!.photoUrl!.isEmpty)
                                     ? const Icon(Icons.person,
-                                        size: 50, color: Color(0xFF1A237E))
+                                        size: 40, color: Color(0xFF1A237E))
                                     : null,
                               ),
                             ),
@@ -126,15 +126,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               right: 0,
                               bottom: 0,
                               child: Container(
-                                padding: const EdgeInsets.all(10),
+                                padding: const EdgeInsets.all(8),
                                 decoration: BoxDecoration(
                                   color: AppTheme.primaryColor,
                                   shape: BoxShape.circle,
                                   boxShadow: [
                                     BoxShadow(
                                       color: AppTheme.primaryColor
-                                          .withValues(alpha: 0.3),
-                                      blurRadius: 8,
+                                          .withOpacity(0.2),
+                                      blurRadius: 6,
                                       offset: const Offset(0, 2),
                                     ),
                                   ],
@@ -142,34 +142,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 child: const Icon(
                                   Icons.camera_alt,
                                   color: Colors.white,
-                                  size: 22,
+                                  size: 18,
                                 ),
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 16),
                         // Name and Role
                         Text(
                           user?.displayName ?? 'User',
                           style: const TextStyle(
-                            fontSize: 28,
+                            fontSize: 22,
                             fontWeight: FontWeight.bold,
                             color: Color(0xFF1A237E),
                           ),
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 6),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 8),
+                              horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
                             color: _getRoleColor(user?.role ?? 'member'),
-                            borderRadius: BorderRadius.circular(25),
+                            borderRadius: BorderRadius.circular(20),
                             boxShadow: [
                               BoxShadow(
                                 color: _getRoleColor(user?.role ?? 'member')
-                                    .withValues(alpha: 0.3),
-                                blurRadius: 8,
+                                    .withOpacity(0.2),
+                                blurRadius: 6,
                                 offset: const Offset(0, 2),
                               ),
                             ],
@@ -179,12 +179,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             style: const TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
-                              fontSize: 14,
-                              letterSpacing: 1,
+                              fontSize: 12,
+                              letterSpacing: 0.5,
                             ),
                           ),
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 6),
                         Builder(builder: (context) {
                           String branchDisplayName;
                           if (user?.branchId?.isNotEmpty == true) {
@@ -196,7 +196,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           return Text(
                             branchDisplayName,
                             style: TextStyle(
-                              fontSize: 16,
+                              fontSize: 14,
                               fontWeight: FontWeight.w500,
                               color: Colors.grey.shade600,
                             ),
@@ -267,41 +267,40 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                 // Logout Button
                 Padding(
-                  padding: const EdgeInsets.all(24),
+                  padding: const EdgeInsets.all(16),
                   child: Material(
                     color: Colors.transparent,
                     child: InkWell(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(12),
                       onTap: _logout,
                       child: Container(
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
                           color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(12),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.05),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
+                              color: Colors.black.withOpacity(0.04),
+                              blurRadius: 8,
+                              offset: const Offset(0, 3),
                             ),
                           ],
                         ),
                         child: Row(
                           children: [
                             Container(
-                              padding: const EdgeInsets.all(10),
+                              padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color:
-                                    AppTheme.errorColor.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(12),
+                                color: AppTheme.errorColor.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(10),
                               ),
                               child: Icon(
                                 Icons.logout,
                                 color: AppTheme.errorColor,
-                                size: 24,
+                                size: 20,
                               ),
                             ),
-                            const SizedBox(width: 16),
+                            const SizedBox(width: 12),
                             const Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -309,16 +308,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   Text(
                                     'Logout',
                                     style: TextStyle(
-                                      fontSize: 16,
+                                      fontSize: 14,
                                       fontWeight: FontWeight.w600,
                                       color: Color(0xFF1A237E),
                                     ),
                                   ),
-                                  SizedBox(height: 4),
+                                  SizedBox(height: 2),
                                   Text(
                                     'Sign out of your account',
                                     style: TextStyle(
-                                      fontSize: 14,
+                                      fontSize: 12,
                                       color: Colors.grey,
                                     ),
                                   ),
@@ -328,6 +327,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             Icon(
                               Icons.chevron_right,
                               color: Colors.grey.shade400,
+                              size: 20,
                             ),
                           ],
                         ),
@@ -349,19 +349,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
     required List<Widget> children,
   }) {
     return Padding(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             title,
             style: const TextStyle(
-              fontSize: 22,
+              fontSize: 18,
               fontWeight: FontWeight.bold,
               color: Color(0xFF1A237E),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           ...children,
         ],
       ),
@@ -377,36 +377,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         onTap: () {},
         child: Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 8,
+                offset: const Offset(0, 3),
               ),
             ],
           ),
           child: Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(10),
+                padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
+                  color: AppTheme.primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(
                   icon,
                   color: AppTheme.primaryColor,
-                  size: 24,
+                  size: 20,
                 ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -414,15 +414,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     Text(
                       title,
                       style: const TextStyle(
-                        fontSize: 14,
+                        fontSize: 12,
                         color: Colors.grey,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 2),
                     Text(
                       value,
                       style: const TextStyle(
-                        fontSize: 16,
+                        fontSize: 14,
                         fontWeight: FontWeight.w500,
                         color: Color(0xFF1A237E),
                       ),

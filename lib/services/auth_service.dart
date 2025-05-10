@@ -75,7 +75,16 @@ class AuthService extends ChangeNotifier {
           _supabase.auth.onAuthStateChange.listen((data) async {
         final session = data.session;
         if (session != null) {
-          await _handleAuthStateChange(session);
+          // Check if remember me is enabled
+          final isRemembered = await PreferencesService.isRememberMeEnabled();
+          if (isRemembered) {
+            await _handleAuthStateChange(session);
+          } else {
+            // If remember me is not enabled, sign out
+            await _supabase.auth.signOut();
+            _currentUser = null;
+            notifyListeners();
+          }
         } else {
           _currentUser = null;
           notifyListeners();
@@ -123,9 +132,11 @@ class AuthService extends ChangeNotifier {
   Future<void> setRememberMe(bool value) async {
     _rememberMe = value;
     if (!value) {
-      // If remember me is disabled, clear the auth state and saved credentials
+      // If remember me is disabled, sign out and clear the session
       await _supabase.auth.signOut();
       await PreferencesService.clearLoginCredentials();
+      _currentUser = null;
+      notifyListeners();
     }
   }
 
@@ -897,6 +908,9 @@ class AuthService extends ChangeNotifier {
       _isLoading = true;
       notifyListeners();
 
+      // Set remember me preference before signing in
+      await setRememberMe(rememberMe);
+
       final response = await _supabase.auth.signInWithPassword(
         email: email,
         password: password,
@@ -904,17 +918,6 @@ class AuthService extends ChangeNotifier {
 
       if (response.user == null) {
         throw AuthException('Invalid email or password');
-      }
-
-      // Save credentials only after successful login
-      if (rememberMe) {
-        await PreferencesService.saveLoginCredentials(
-          email: email,
-          password: password,
-          rememberMe: true,
-        );
-      } else {
-        await PreferencesService.clearLoginCredentials();
       }
 
       // Check if email is verified
@@ -926,14 +929,6 @@ class AuthService extends ChangeNotifier {
       }
 
       await _handleSession(response.session!);
-
-      if (rememberMe) {
-        await PreferencesService.saveLoginCredentials(
-          email: email,
-          password: password,
-          rememberMe: true,
-        );
-      }
 
       return _currentUser!;
     } catch (e) {

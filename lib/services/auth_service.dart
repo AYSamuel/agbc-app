@@ -845,8 +845,8 @@ class AuthService extends ChangeNotifier {
         branchId: branchId,
       );
 
-      // 3. Save user to database
-      await _supabaseService.updateUser(user);
+      // 3. Save user to database using insert
+      await _supabase.from('users').insert(user.toJson());
 
       // 4. Set session if available
       if (response.session != null) {
@@ -908,6 +908,8 @@ class AuthService extends ChangeNotifier {
         _log.info(
             'Refresh Token: ${session.refreshToken?.substring(0, 10) ?? 'N/A'}...');
         _log.info('========================');
+      } else {
+        _log.warning('User not found in database during session handling: ${session.user.id}');
       }
     } catch (e) {
       _log.severe('Error handling session: $e');
@@ -953,13 +955,56 @@ class AuthService extends ChangeNotifier {
         );
       }
 
-      await _handleSession(response.session!);
+      // Check if user exists in database
+      final user = await _supabaseService.getUser(response.user!.id).first;
+      
+      // If user doesn't exist in the database, create them
+      if (user == null) {
+        _log.info('User not found in database, creating user record');
+        // Create user in our database
+        final newUser = UserModel(
+          id: response.user!.id,
+          displayName: response.user!.userMetadata?['full_name'] ?? email.split('@')[0],
+          email: email,
+          role: response.user!.userMetadata?['role'] ?? 'member',
+          createdAt: DateTime.parse(response.user!.createdAt),
+          lastLogin: DateTime.now(),
+          isActive: true,
+          emailVerified: response.user!.emailConfirmedAt != null,
+          departments: [],
+          notificationSettings: {
+            'email': true,
+            'push': true,
+          },
+          phoneNumber: response.user!.userMetadata?['phone'],
+          location: response.user!.userMetadata?['location'],
+          branchId: response.user!.userMetadata?['branch'],
+        );
+
+        // Save user to database
+        await _supabase.from('users').insert(newUser.toJson());
+        _currentUser = newUser;
+
+        // Register device for notifications
+        await _notificationService.registerDevice(response.user!.id);
+      } else {
+        await _handleSession(response.session!);
+      }
 
       if (rememberMe) {
         await PreferencesService.saveLoginCredentials(
           email: email,
           password: password,
           rememberMe: true,
+        );
+      }
+      
+      // Double-check that we have a current user
+      if (_currentUser == null) {
+        _log.severe('Current user is still null after sign in process');
+        throw AuthException(
+          'Failed to retrieve user data. Please try again.',
+          code: 'user_data_error',
         );
       }
 

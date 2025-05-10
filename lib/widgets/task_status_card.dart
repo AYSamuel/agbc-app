@@ -74,14 +74,14 @@ class _TaskStatusCardState extends State<TaskStatusCard>
                 const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
             decoration: BoxDecoration(
               color: hasTasks
-                  ? AppTheme.accentColor.withAlpha(38)
-                  : AppTheme.cardColor,
+                  ? AppTheme.warningColor.withAlpha(38)
+                  : AppTheme.successColor.withAlpha(38),
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
                   color: hasTasks
-                      ? AppTheme.accentColor.withAlpha(26)
-                      : Colors.black.withAlpha(13),
+                      ? AppTheme.warningColor.withAlpha(26)
+                      : AppTheme.successColor.withAlpha(26),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -94,24 +94,52 @@ class _TaskStatusCardState extends State<TaskStatusCard>
                   child: Icon(
                     hasTasks ? Icons.task : Icons.task_alt,
                     key: ValueKey<bool>(hasTasks),
-                    color: hasTasks ? AppTheme.accentColor : Colors.grey,
+                    color: hasTasks
+                        ? AppTheme.warningColor
+                        : AppTheme.successColor,
                     size: 24,
                   ),
                 ),
                 const SizedBox(width: 12),
                 AnimatedSwitcher(
                   duration: const Duration(milliseconds: 300),
-                  child: Text(
-                    hasTasks
-                        ? 'You currently have $taskCount ${taskCount == 1 ? 'task' : 'tasks'} assigned to you'
-                        : 'You currently have no tasks assigned to you',
-                    key: ValueKey<int>(taskCount),
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      color: hasTasks ? AppTheme.accentColor : Colors.grey,
-                    ),
-                  ),
+                  child: hasTasks
+                      ? RichText(
+                          key: ValueKey<int>(taskCount),
+                          text: TextSpan(
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                              color: AppTheme.warningColor,
+                            ),
+                            children: [
+                              const TextSpan(
+                                text: 'You currently have ',
+                                style: TextStyle(fontWeight: FontWeight.w500),
+                              ),
+                              TextSpan(
+                                text: '$taskCount',
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold),
+                              ),
+                              TextSpan(
+                                text:
+                                    ' ${taskCount == 1 ? 'task' : 'tasks'} assigned to you',
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.w500),
+                              ),
+                            ],
+                          ),
+                        )
+                      : Text(
+                          'You currently have no tasks assigned to you',
+                          key: ValueKey<int>(taskCount),
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                            color: AppTheme.successColor,
+                          ),
+                        ),
                 ),
               ],
             ),

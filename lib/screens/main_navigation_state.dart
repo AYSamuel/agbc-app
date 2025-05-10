@@ -72,4 +72,4 @@ class MainNavigationState extends State<MainNavigationScreen> {
       ),
     );
   }
-} 
+}

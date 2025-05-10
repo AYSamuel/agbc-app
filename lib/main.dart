@@ -13,9 +13,9 @@ import 'screens/splash_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/verification_screen.dart';
-import 'screens/email_verification_success_screen.dart';
 import 'screens/main_navigation_screen.dart';
 import 'utils/theme.dart';
+import 'providers/branches_provider.dart';
 
 Future<void> main() async {
   try {
@@ -25,12 +25,22 @@ Future<void> main() async {
     // Load environment variables
     await dotenv.load(fileName: ".env");
 
-    // Initialize Supabase
-    await Supabase.initialize(
-      url: dotenv.env['SUPABASE_URL']!,
-      anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
-      debug: true, // Enable debug logs to help troubleshoot auth issues
-    );
+    // Initialize Supabase with error handling
+    try {
+      await Supabase.initialize(
+        url: dotenv.env['SUPABASE_URL']!,
+        anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
+        debug: false, // Disable debug logs to reduce noise
+      );
+    } catch (e) {
+      // Ignore specific errors related to code verifier
+      if (e.toString().contains('Code verifier could not be found')) {
+        debugPrint('Ignoring expected Supabase initialization error: $e');
+      } else {
+        // Rethrow other errors
+        rethrow;
+      }
+    }
 
     // Initialize services
     final supabase = Supabase.instance.client;
@@ -55,6 +65,11 @@ Future<void> main() async {
           ChangeNotifierProvider(create: (_) => SupabaseProvider()),
           Provider.value(value: supabaseService),
           ChangeNotifierProvider(create: (_) => notificationService),
+          ChangeNotifierProvider(
+            create: (context) => BranchesProvider(
+              Provider.of<SupabaseProvider>(context, listen: false),
+            ),
+          ),
         ],
         child: const MyApp(),
       ),
@@ -85,12 +100,18 @@ class _MyAppState extends State<MyApp> {
       // Handle links that opened the app
       final initialUri = await _appLinks.getInitialAppLink();
       if (initialUri != null) {
-        _handleUri(initialUri);
+        // Only handle our custom verification links
+        if (initialUri.path.contains('verify-email')) {
+          _handleUri(initialUri);
+        }
       }
 
       // Handle incoming links when app is running
       _appLinks.uriLinkStream.listen((uri) {
-        _handleUri(uri);
+        // Only handle our custom verification links
+        if (uri.path.contains('verify-email')) {
+          _handleUri(uri);
+        }
       });
     } catch (e) {
       debugPrint('Error handling deep link: $e');
@@ -99,6 +120,15 @@ class _MyAppState extends State<MyApp> {
 
   Future<void> _handleUri(Uri uri) async {
     try {
+      // Let Supabase handle the deep link first
+      try {
+        await Supabase.instance.client.auth.getSessionFromUrl(uri);
+      } catch (e) {
+        // Ignore the error - this is just to let Supabase try to handle the URL
+        // The error about code verifier is expected when we're handling our own links
+        debugPrint('Supabase auth URL handling: $e');
+      }
+      
       if (uri.path == '/verify-email') {
         // Check for both token and token_hash parameters
         final token =
@@ -121,7 +151,7 @@ class _MyAppState extends State<MyApp> {
             );
 
             // Redirect to login screen
-            Navigator.of(context).pushReplacementNamed('/login');
+            Navigator.of(context).pushReplacementNamed('/login', arguments: {'clearForm': true});
           }
         } else {
           if (mounted) {
@@ -161,8 +191,6 @@ class _MyAppState extends State<MyApp> {
         '/login': (context) => const LoginScreen(),
         '/register': (context) => const RegisterScreen(),
         '/verification': (context) => const VerificationScreen(),
-        '/email-verification-success': (context) =>
-            const EmailVerificationSuccessScreen(),
         '/home': (context) => const MainNavigationScreen(),
       },
     );

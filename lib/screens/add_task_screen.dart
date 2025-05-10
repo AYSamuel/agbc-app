@@ -241,23 +241,19 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                               const Icon(Icons.person, color: Colors.grey),
                           readOnly: true,
                           onTap: () async {
-                            // Check if widget is still mounted before proceeding
                             if (!mounted) return;
-
-                            // Get provider before async operation
+                            final currentContext = context;
                             final SupabaseProvider provider =
-                                Provider.of<SupabaseProvider>(context,
+                                Provider.of<SupabaseProvider>(currentContext,
                                     listen: false);
 
                             try {
                               final users = await provider.getAllUsers().first;
-
-                              // Check again if widget is still mounted after async operation
                               if (!mounted) return;
 
-                              // Now it's safe to use the context - use the current context after mounted check
+                              if (!currentContext.mounted) return;
                               await showDialog(
-                                context: context,
+                                context: currentContext,
                                 builder: (dialogContext) => AlertDialog(
                                   title: Row(
                                     mainAxisAlignment:
@@ -294,14 +290,13 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                                 ),
                               );
                             } catch (e) {
-                              // Using the logger from the app's logging package instead of print
-                              if (mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                      content: Text(
-                                          'Failed to load users: ${e.toString()}')),
-                                );
-                              }
+                              if (!mounted) return;
+                              if (!context.mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                    content: Text(
+                                        'Failed to load users: ${e.toString()}')),
+                              );
                             }
                           },
                           validator: (value) {

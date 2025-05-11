@@ -130,18 +130,41 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
-        backgroundColor: AppTheme.cardColor.withValues(alpha: 0.75),
-        selectedItemColor: AppTheme.primaryColor,
-        unselectedItemColor: AppTheme.neutralColor,
-        selectedLabelStyle:
-            const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-        unselectedLabelStyle:
-            const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
-        type: BottomNavigationBarType.fixed,
-        items: _navItems,
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: AppTheme.backgroundColor,
+          border: Border(
+            top: BorderSide(
+              color: AppTheme.dividerColor.withValues(alpha: 0.5),
+              width: 1,
+            ),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: AppTheme.primaryColor.withValues(alpha: 0.5),
+              blurRadius: 10,
+              offset: const Offset(0, -2),
+            ),
+          ],
+        ),
+        child: BottomNavigationBar(
+          currentIndex: _selectedIndex,
+          onTap: _onItemTapped,
+          backgroundColor: AppTheme.backgroundColor,
+          elevation: 0,
+          selectedItemColor: AppTheme.primaryColor,
+          unselectedItemColor: AppTheme.neutralColor.withValues(alpha: 0.7),
+          selectedLabelStyle: const TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 12,
+          ),
+          unselectedLabelStyle: const TextStyle(
+            fontWeight: FontWeight.w500,
+            fontSize: 12,
+          ),
+          type: BottomNavigationBarType.fixed,
+          items: _navItems,
+        ),
       ),
     );
   }

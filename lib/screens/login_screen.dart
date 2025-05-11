@@ -1,14 +1,44 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/branches_provider.dart';
 import '../widgets/login_form.dart';
 import '../utils/theme.dart';
 
-class LoginScreen extends StatelessWidget {
-  const LoginScreen({super.key});
+class LoginScreen extends StatefulWidget {
+  final bool isLoggingOut;
+
+  const LoginScreen({
+    super.key,
+    this.isLoggingOut = false,
+  });
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final _formKey = GlobalKey<FormState>();
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize branches data when login screen loads
+    Future.microtask(() {
+      if (mounted) {
+        Provider.of<BranchesProvider>(context, listen: false).initialize();
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
+    final Map<String, bool>? args =
+        ModalRoute.of(context)?.settings.arguments as Map<String, bool>?;
+    final bool clearForm = args?['clearForm'] ?? false;
+    final bool effectivelyIsLoggingOut = widget.isLoggingOut || clearForm;
+
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       body: Stack(
@@ -76,7 +106,7 @@ class LoginScreen extends StatelessWidget {
                       ),
                       padding: AppTheme.cardPadding,
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           const SizedBox(height: 12),
                           // Modern lock icon
@@ -86,14 +116,14 @@ class LoginScreen extends StatelessWidget {
                               backgroundColor:
                                   AppTheme.primaryColor.withValues(alpha: 0.08),
                               child: Icon(
-                                Icons.lock_rounded,
+                                Icons.lock_outline_rounded,
                                 color: AppTheme.primaryColor,
                                 size: 48,
                               ),
                             ),
                           ),
                           const SizedBox(height: 24),
-                          // Welcome Text
+                          // Title Text
                           Text(
                             'Welcome Back',
                             style: AppTheme.titleStyle.copyWith(
@@ -112,12 +142,13 @@ class LoginScreen extends StatelessWidget {
                             textAlign: TextAlign.center,
                           ),
                           const SizedBox(height: 32),
-                          // Login Form
                           LoginForm(
+                            key: _formKey,
                             onLoginSuccess: () {
                               Navigator.of(context)
                                   .pushReplacementNamed('/home');
                             },
+                            isLoggingOut: effectivelyIsLoggingOut,
                           ),
                           const SizedBox(height: 18),
                           // Signup link
@@ -148,19 +179,4 @@ class LoginScreen extends StatelessWidget {
       ),
     );
   }
-}
-
-// Custom clipper for diagonal cut
-class DiagonalClipper extends CustomClipper<Path> {
-  @override
-  Path getClip(Size size) {
-    final path = Path();
-    path.lineTo(0, size.height);
-    path.lineTo(size.width, 0);
-    path.close();
-    return path;
-  }
-
-  @override
-  bool shouldReclip(covariant CustomClipper<Path> oldClipper) => false;
 }

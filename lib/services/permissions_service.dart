@@ -21,7 +21,19 @@ class PermissionsService with ChangeNotifier {
   Future<void> initialize() async {
     // Initialize and request necessary permissions
     await Permission.location.request();
-    await Permission.notification.request();
+
+    // Request notification permission with proper handling
+    final notificationStatus = await Permission.notification.request();
+    if (notificationStatus.isDenied) {
+      debugPrint('Notification permission denied');
+    } else if (notificationStatus.isPermanentlyDenied) {
+      debugPrint('Notification permission permanently denied');
+      // You might want to show a dialog explaining why notifications are important
+      // and guide the user to app settings
+    } else if (notificationStatus.isGranted) {
+      debugPrint('Notification permission granted');
+    }
+
     await Permission.camera.request();
     await Permission.storage.request();
   }

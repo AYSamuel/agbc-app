@@ -128,7 +128,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           style: GoogleFonts.inter(
                             fontSize: 28,
                             fontWeight: FontWeight.bold,
-                            color: AppTheme.secondaryColor,
+                            color: AppTheme.primaryColor,
                           ),
                         ),
                       ],
@@ -405,15 +405,19 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
-      floatingActionButton: RadialMenu(
-        onTaskPressed: () => _showTaskCreationDialog(context),
-        onMeetingPressed:
-            showMeetings ? () => _showMeetingCreationDialog(context) : null,
-        onBranchPressed:
-            showBranches ? () => _showBranchCreationDialog(context) : null,
-        showBranchOption: showBranches,
-        showMeetingOption: showMeetings,
-      ),
+      floatingActionButton: user?.role == 'member'
+          ? null
+          : RadialMenu(
+              onTaskPressed: () => _showTaskCreationDialog(context),
+              onMeetingPressed: showMeetings
+                  ? () => _showMeetingCreationDialog(context)
+                  : null,
+              onBranchPressed: showBranches
+                  ? () => _showBranchCreationDialog(context)
+                  : null,
+              showBranchOption: showBranches,
+              showMeetingOption: showMeetings,
+            ),
     );
   }
 }

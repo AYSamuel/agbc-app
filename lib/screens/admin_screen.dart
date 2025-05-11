@@ -5,6 +5,7 @@ import 'meeting_management_screen.dart';
 import 'branch_management_screen.dart';
 import '../utils/theme.dart';
 import '../widgets/custom_back_button.dart';
+import '../widgets/admin_card.dart';
 import 'main_navigation_screen.dart';
 
 class AdminScreen extends StatelessWidget {
@@ -29,106 +30,83 @@ class AdminScreen extends StatelessWidget {
                     },
                   ),
                   const SizedBox(width: 16),
-                  const Text(
+                  Text(
                     'Admin Dashboard',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF1A237E),
+                    style: AppTheme.titleStyle.copyWith(
+                      color: AppTheme.primaryColor,
                     ),
                   ),
                 ],
               ),
             ),
             Expanded(
-              child: GridView.count(
-                padding: const EdgeInsets.all(16),
-                crossAxisCount: 2,
-                mainAxisSpacing: 16,
-                crossAxisSpacing: 16,
-                children: [
-                  _buildAdminCard(
-                    context,
-                    icon: Icons.people,
-                    title: 'Users',
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const UserManagementScreen(),
-                      ),
-                    ),
-                  ),
-                  _buildAdminCard(
-                    context,
-                    icon: Icons.task,
-                    title: 'Tasks',
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const TaskManagementScreen(),
-                      ),
-                    ),
-                  ),
-                  _buildAdminCard(
-                    context,
-                    icon: Icons.calendar_today,
-                    title: 'Meetings',
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const MeetingManagementScreen(),
-                      ),
-                    ),
-                  ),
-                  _buildAdminCard(
-                    context,
-                    icon: Icons.church,
-                    title: 'Branches',
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const BranchManagementScreen(),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  // Calculate the size of each card based on available space
+                  final cardWidth = (constraints.maxWidth - 48) /
+                      2; // 48 = padding (16) + spacing (16)
+                  final cardHeight = cardWidth * 1.2; // Maintain aspect ratio
 
-  Widget _buildAdminCard(
-    BuildContext context, {
-    required IconData icon,
-    required String title,
-    required VoidCallback onTap,
-  }) {
-    return Card(
-      elevation: 4,
-      color: AppTheme.cardColor,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              icon,
-              size: 48,
-              color: AppTheme.primaryColor,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
+                  return GridView.count(
+                    padding: const EdgeInsets.all(16),
+                    crossAxisCount: 2,
+                    mainAxisSpacing: 16,
+                    crossAxisSpacing: 16,
+                    childAspectRatio: cardWidth / cardHeight,
+                    children: [
+                      AdminCard(
+                        icon: Icons.people,
+                        title: 'Users',
+                        description: 'Manage church members and roles',
+                        color: AppTheme.primaryColor,
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const UserManagementScreen(),
+                          ),
+                        ),
+                      ),
+                      AdminCard(
+                        icon: Icons.task,
+                        title: 'Tasks',
+                        description: 'Assign and track church tasks',
+                        color: AppTheme.accentColor,
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const TaskManagementScreen(),
+                          ),
+                        ),
+                      ),
+                      AdminCard(
+                        icon: Icons.calendar_today,
+                        title: 'Meetings',
+                        description: 'Schedule and manage meetings',
+                        color: AppTheme.secondaryColor,
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                const MeetingManagementScreen(),
+                          ),
+                        ),
+                      ),
+                      AdminCard(
+                        icon: Icons.church,
+                        title: 'Branches',
+                        description: 'Manage church branches',
+                        color: AppTheme.successColor,
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                const BranchManagementScreen(),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
               ),
             ),
           ],

@@ -8,12 +8,11 @@ import '../widgets/custom_button.dart';
 import '../widgets/loading_indicator.dart';
 import '../utils/theme.dart';
 import '../widgets/mixins/form_validation_mixin.dart';
-import '../providers/supabase_provider.dart';
-import '../models/church_branch_model.dart';
 import '../widgets/custom_dropdown.dart';
 import 'form/password_field.dart';
 import 'form/location_field.dart';
 import 'form/form_spacing.dart';
+import '../providers/branches_provider.dart';
 
 class RegisterForm extends StatefulWidget {
   final VoidCallback onRegisterSuccess;
@@ -106,40 +105,83 @@ class _RegisterFormState extends State<RegisterForm> with FormValidationMixin {
       );
 
       if (mounted) {
-        // Show a snackbar about the verification email
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.mark_email_unread, color: Colors.white),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Verification email sent to ${_emailController.text.trim()}',
-                    style: const TextStyle(color: Colors.white),
+        // Show verification dialog
+        int countdown = 120; // 2 minutes in seconds
+        bool canResend = false;
+        Timer? countdownTimer;
+
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) {
+            return StatefulBuilder(
+              builder: (context, setState) {
+                // Start the countdown timer if it's not already running
+                if (!canResend && countdownTimer == null) {
+                  countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+                    // Check if the StatefulBuilder is still mounted
+                    if (countdown > 0) {
+                      setState(() {
+                        countdown--;
+                      });
+                    } else {
+                      setState(() {
+                        canResend = true;
+                      });
+                      timer.cancel();
+                      countdownTimer = null;
+                    }
+                  });
+                }
+
+                return AlertDialog(
+                  title: const Text('Email Verification Required'),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                        'Please check your email for a verification link. If you haven\'t received it, you can request a new one.',
+                      ),
+                      if (!canResend) ...[
+                        const SizedBox(height: 16),
+                        Text(
+                          'You can request a new verification email in ${countdown ~/ 60}:${(countdown % 60).toString().padLeft(2, '0')}',
+                          style: const TextStyle(
+                            color: Colors.grey,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
-                ),
-              ],
-            ),
-            backgroundColor: Colors.blue,
-            duration: const Duration(seconds: 5),
-            action: SnackBarAction(
-              label: 'Resend',
-              textColor: Colors.white,
-              onPressed: () {
-                authService.sendVerificationEmail();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Verification email resent'),
-                    backgroundColor: Colors.green,
-                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () {
+                        // Cancel the timer when dialog is closed
+                        countdownTimer?.cancel();
+                        Navigator.pop(context);
+                        widget.onRegisterSuccess();
+                      },
+                      child: const Text('Back to Login'),
+                    ),
+                    TextButton(
+                      onPressed: canResend
+                          ? () {
+                              // Cancel the timer when dialog is closed
+                              countdownTimer?.cancel();
+                              Navigator.pop(context);
+                              authService.sendVerificationEmail();
+                              widget.onRegisterSuccess();
+                            }
+                          : null,
+                      child: const Text('Resend Email'),
+                    ),
+                  ],
                 );
               },
-            ),
-          ),
+            );
+          },
         );
-
-        widget.onRegisterSuccess();
       }
     } catch (e) {
       if (mounted) {
@@ -214,38 +256,47 @@ class _RegisterFormState extends State<RegisterForm> with FormValidationMixin {
           const FormSpacing(),
 
           // Branch Selection
-          StreamBuilder<List<ChurchBranch>>(
-            stream: Provider.of<SupabaseProvider>(context).getAllBranches(),
-            builder: (context, snapshot) {
-              if (snapshot.hasError) {
-                return Text('Error: ${snapshot.error}');
+          Consumer<BranchesProvider>(
+            builder: (context, branchesProvider, child) {
+              final branches = branchesProvider.branches;
+              if (branches.isEmpty) {
+                return Text(
+                  'No branches available',
+                  style: AppTheme.regularTextStyle.copyWith(
+                    color: AppTheme.errorColor,
+                  ),
+                );
               }
-              if (!snapshot.hasData) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              final branches = snapshot.data!;
 
               return CustomDropdown<String>(
                 value: _selectedBranchId,
                 label: 'Select Branch',
-                hint: 'Select a branch',
+                hint: 'Choose your church branch',
                 prefixIcon: Icons.church,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please select a branch';
+                  }
+                  return null;
+                },
                 items: branches.map((branch) {
                   return DropdownMenuItem<String>(
                     value: branch.id,
-                    child: Text(branch.name),
+                    child: Text(
+                      branch.name,
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            color: AppTheme.darkNeutralColor,
+                            fontWeight: FontWeight.w500,
+                            fontSize: 16,
+                            letterSpacing: 0.2,
+                          ),
+                    ),
                   );
                 }).toList(),
                 onChanged: (value) {
                   setState(() {
                     _selectedBranchId = value;
                   });
-                },
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please select a branch';
-                  }
-                  return null;
                 },
               );
             },

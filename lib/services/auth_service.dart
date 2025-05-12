@@ -379,9 +379,12 @@ class AuthService extends ChangeNotifier {
 
   /// Updates a user's role (only accessible by admins)
   Future<void> updateUserRole(String id, String newRole) async {
+    _log.info('Attempting to update role for user ID: $id to new role: $newRole');
     try {
       await _supabase.from('users').update({'role': newRole}).eq('id', id);
+      _log.info('Successfully updated role in DB for user ID: $id to $newRole');
     } catch (e) {
+      _log.severe('Error updating role in DB for user ID: $id to $newRole. Error: $e');
       rethrow;
     }
   }

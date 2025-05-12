@@ -71,7 +71,7 @@ class _TaskStatusCardState extends State<TaskStatusCard>
           child: Container(
             margin: const EdgeInsets.symmetric(horizontal: 24.0),
             padding:
-                const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
+                const EdgeInsets.symmetric(vertical: 10.0, horizontal: 16.0),
             decoration: BoxDecoration(
               color: hasTasks
                   ? AppTheme.warningColor.withAlpha(38)

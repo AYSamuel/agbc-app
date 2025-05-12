@@ -12,7 +12,7 @@ class AppTheme {
   static const Color darkNeutralColor = Color(0xFF2C2C2C); // Deep Charcoal
 
   // Background & Utility Colors
-  static const Color backgroundColor = Color(0xFFF5F5F0); // Soft Cream
+  static const Color backgroundColor = Color(0xFFFFFFFF); // White
   static const Color cardColor = Color(0xFFF0EDE6); // Light Beige
   static const Color dividerColor = Color(0xFFD4D1C9); // Soft Taupe
 

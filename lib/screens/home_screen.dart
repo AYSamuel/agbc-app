@@ -105,7 +105,7 @@ class _HomeScreenState extends State<HomeScreen> {
             // Welcome and profile section
             Padding(
               padding:
-                  const EdgeInsets.symmetric(vertical: 32.0, horizontal: 24.0),
+                  const EdgeInsets.symmetric(vertical: 20.0, horizontal: 24.0),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
@@ -117,7 +117,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         Text(
                           'Welcome,',
                           style: GoogleFonts.inter(
-                            fontSize: 24,
+                            fontSize: 22,
                             fontWeight: FontWeight.w500,
                             color: AppTheme.neutralColor,
                           ),
@@ -126,7 +126,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         Text(
                           user?.displayName ?? 'User',
                           style: GoogleFonts.inter(
-                            fontSize: 28,
+                            fontSize: 24,
                             fontWeight: FontWeight.bold,
                             color: AppTheme.primaryColor,
                           ),
@@ -149,7 +149,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ],
                     ),
                     child: CircleAvatar(
-                      radius: 36,
+                      radius: 30,
                       backgroundColor: AppTheme.cardColor,
                       backgroundImage: (user != null &&
                               user.photoUrl != null &&
@@ -182,226 +182,226 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(height: 24),
             // Tasks and Meetings Section
-            Expanded(
-              child: DefaultTabController(
-                length: 2,
-                child: Column(
-                  children: [
-                    TabBar(
-                      labelColor: AppTheme.primaryColor,
-                      unselectedLabelColor: AppTheme.neutralColor,
-                      indicatorColor: AppTheme.primaryColor,
-                      tabs: const [
-                        Tab(text: 'Tasks'),
-                        Tab(text: 'Meetings'),
-                      ],
-                    ),
-                    Expanded(
-                      child: TabBarView(
-                        children: [
-                          // Tasks Tab
-                          StreamBuilder<List<TaskModel>>(
-                            stream: supabaseProvider
-                                .getTasksForUser(user?.id ?? ''),
-                            builder: (context, snapshot) {
-                              if (snapshot.hasError) {
-                                return Center(
-                                    child: Text('Error: ${snapshot.error}'));
-                              }
-                              if (!snapshot.hasData) {
-                                return const Center(
-                                    child: CircularProgressIndicator());
-                              }
-                              final tasks = snapshot.data!;
-                              if (tasks.isEmpty) {
-                                return Center(
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(
-                                        Icons.task_alt,
-                                        size: 64,
-                                        color: AppTheme.neutralColor,
-                                      ),
-                                      const SizedBox(height: 16),
-                                      Text(
-                                        'No Tasks',
-                                        style: GoogleFonts.inter(
-                                          fontSize: 20,
-                                          fontWeight: FontWeight.bold,
-                                          color: AppTheme.secondaryColor,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Text(
-                                        'You have no tasks assigned',
-                                        style: GoogleFonts.inter(
-                                          fontSize: 16,
-                                          color: AppTheme.neutralColor,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              }
-                              return ListView.builder(
-                                padding: const EdgeInsets.all(16),
-                                itemCount: tasks.length,
-                                itemBuilder: (context, index) {
-                                  final task = tasks[index];
-                                  return Card(
-                                    margin: const EdgeInsets.only(bottom: 16),
-                                    color: AppTheme.cardColor,
-                                    child: ListTile(
-                                      title: Text(
-                                        task.title,
-                                        style: GoogleFonts.inter(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w600,
-                                          color: AppTheme.darkNeutralColor,
-                                        ),
-                                      ),
-                                      subtitle: Text(
-                                        task.description,
-                                        style: GoogleFonts.inter(
-                                          fontSize: 14,
-                                          color: AppTheme.neutralColor,
-                                        ),
-                                      ),
-                                      trailing: Container(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 12, vertical: 6),
-                                        decoration: BoxDecoration(
-                                          color: task.status == 'completed'
-                                              ? AppTheme.successColor
-                                                  .withValues(alpha: 0.1)
-                                              : AppTheme.warningColor
-                                                  .withValues(alpha: 0.1),
-                                          borderRadius:
-                                              BorderRadius.circular(20),
-                                        ),
-                                        child: Text(
-                                          task.status,
-                                          style: GoogleFonts.inter(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w600,
-                                            color: task.status == 'completed'
-                                                ? AppTheme.successColor
-                                                : AppTheme.warningColor,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                },
-                              );
-                            },
-                          ),
-                          // Meetings Tab
-                          StreamBuilder<List<MeetingModel>>(
-                            stream: supabaseProvider
-                                .getMeetingsForUser(user?.id ?? ''),
-                            builder: (context, snapshot) {
-                              if (snapshot.hasError) {
-                                return Center(
-                                    child: Text('Error: ${snapshot.error}'));
-                              }
-                              if (!snapshot.hasData) {
-                                return const Center(
-                                    child: CircularProgressIndicator());
-                              }
-                              final meetings = snapshot.data!;
-                              if (meetings.isEmpty) {
-                                return Center(
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(
-                                        Icons.calendar_today,
-                                        size: 64,
-                                        color: AppTheme.neutralColor,
-                                      ),
-                                      const SizedBox(height: 16),
-                                      Text(
-                                        'No Meetings',
-                                        style: GoogleFonts.inter(
-                                          fontSize: 20,
-                                          fontWeight: FontWeight.bold,
-                                          color: AppTheme.secondaryColor,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Text(
-                                        'You have no meetings scheduled',
-                                        style: GoogleFonts.inter(
-                                          fontSize: 16,
-                                          color: AppTheme.neutralColor,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              }
-                              return ListView.builder(
-                                padding: const EdgeInsets.all(16),
-                                itemCount: meetings.length,
-                                itemBuilder: (context, index) {
-                                  final meeting = meetings[index];
-                                  return Card(
-                                    margin: const EdgeInsets.only(bottom: 16),
-                                    color: AppTheme.cardColor,
-                                    child: ListTile(
-                                      title: Text(
-                                        meeting.title,
-                                        style: GoogleFonts.inter(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w600,
-                                          color: AppTheme.secondaryColor,
-                                        ),
-                                      ),
-                                      subtitle: Text(
-                                        '${meeting.dateTime.toString()} - ${meeting.location}',
-                                        style: GoogleFonts.inter(
-                                          fontSize: 14,
-                                          color: AppTheme.neutralColor,
-                                        ),
-                                      ),
-                                      trailing: Container(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 12, vertical: 6),
-                                        decoration: BoxDecoration(
-                                          color: meeting.status == 'completed'
-                                              ? AppTheme.successColor
-                                                  .withValues(alpha: 0.1)
-                                              : AppTheme.primaryColor
-                                                  .withValues(alpha: 0.1),
-                                          borderRadius:
-                                              BorderRadius.circular(20),
-                                        ),
-                                        child: Text(
-                                          meeting.status,
-                                          style: GoogleFonts.inter(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w600,
-                                            color: meeting.status == 'completed'
-                                                ? AppTheme.successColor
-                                                : AppTheme.primaryColor,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                },
-                              );
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+            // Expanded(
+            //   child: DefaultTabController(
+            //     length: 2,
+            //     child: Column(
+            //       children: [
+            //         TabBar(
+            //           labelColor: AppTheme.primaryColor,
+            //           unselectedLabelColor: AppTheme.neutralColor,
+            //           indicatorColor: AppTheme.primaryColor,
+            //           tabs: const [
+            //             Tab(text: 'Tasks'),
+            //             Tab(text: 'Meetings'),
+            //           ],
+            //         ),
+            //         Expanded(
+            //           child: TabBarView(
+            //             children: [
+            //               // Tasks Tab
+            //               StreamBuilder<List<TaskModel>>(
+            //                 stream: supabaseProvider
+            //                     .getTasksForUser(user?.id ?? ''),
+            //                 builder: (context, snapshot) {
+            //                   if (snapshot.hasError) {
+            //                     return Center(
+            //                         child: Text('Error: ${snapshot.error}'));
+            //                   }
+            //                   if (!snapshot.hasData) {
+            //                     return const Center(
+            //                         child: CircularProgressIndicator());
+            //                   }
+            //                   final tasks = snapshot.data!;
+            //                   if (tasks.isEmpty) {
+            //                     return Center(
+            //                       child: Column(
+            //                         mainAxisAlignment: MainAxisAlignment.center,
+            //                         children: [
+            //                           Icon(
+            //                             Icons.task_alt,
+            //                             size: 64,
+            //                             color: AppTheme.neutralColor,
+            //                           ),
+            //                           const SizedBox(height: 16),
+            //                           Text(
+            //                             'No Tasks',
+            //                             style: GoogleFonts.inter(
+            //                               fontSize: 20,
+            //                               fontWeight: FontWeight.bold,
+            //                               color: AppTheme.secondaryColor,
+            //                             ),
+            //                           ),
+            //                           const SizedBox(height: 8),
+            //                           Text(
+            //                             'You have no tasks assigned',
+            //                             style: GoogleFonts.inter(
+            //                               fontSize: 16,
+            //                               color: AppTheme.neutralColor,
+            //                             ),
+            //                           ),
+            //                         ],
+            //                       ),
+            //                     );
+            //                   }
+            //                   return ListView.builder(
+            //                     padding: const EdgeInsets.all(16),
+            //                     itemCount: tasks.length,
+            //                     itemBuilder: (context, index) {
+            //                       final task = tasks[index];
+            //                       return Card(
+            //                         margin: const EdgeInsets.only(bottom: 16),
+            //                         color: AppTheme.cardColor,
+            //                         child: ListTile(
+            //                           title: Text(
+            //                             task.title,
+            //                             style: GoogleFonts.inter(
+            //                               fontSize: 16,
+            //                               fontWeight: FontWeight.w600,
+            //                               color: AppTheme.darkNeutralColor,
+            //                             ),
+            //                           ),
+            //                           subtitle: Text(
+            //                             task.description,
+            //                             style: GoogleFonts.inter(
+            //                               fontSize: 14,
+            //                               color: AppTheme.neutralColor,
+            //                             ),
+            //                           ),
+            //                           trailing: Container(
+            //                             padding: const EdgeInsets.symmetric(
+            //                                 horizontal: 12, vertical: 6),
+            //                             decoration: BoxDecoration(
+            //                               color: task.status == 'completed'
+            //                                   ? AppTheme.successColor
+            //                                       .withValues(alpha: 0.1)
+            //                                   : AppTheme.warningColor
+            //                                       .withValues(alpha: 0.1),
+            //                               borderRadius:
+            //                                   BorderRadius.circular(20),
+            //                             ),
+            //                             child: Text(
+            //                               task.status,
+            //                               style: GoogleFonts.inter(
+            //                                 fontSize: 12,
+            //                                 fontWeight: FontWeight.w600,
+            //                                 color: task.status == 'completed'
+            //                                     ? AppTheme.successColor
+            //                                     : AppTheme.warningColor,
+            //                               ),
+            //                             ),
+            //                           ),
+            //                         ),
+            //                       );
+            //                     },
+            //                   );
+            //                 },
+            //               ),
+            //               // Meetings Tab
+            //               StreamBuilder<List<MeetingModel>>(
+            //                 stream: supabaseProvider
+            //                     .getMeetingsForUser(user?.id ?? ''),
+            //                 builder: (context, snapshot) {
+            //                   if (snapshot.hasError) {
+            //                     return Center(
+            //                         child: Text('Error: ${snapshot.error}'));
+            //                   }
+            //                   if (!snapshot.hasData) {
+            //                     return const Center(
+            //                         child: CircularProgressIndicator());
+            //                   }
+            //                   final meetings = snapshot.data!;
+            //                   if (meetings.isEmpty) {
+            //                     return Center(
+            //                       child: Column(
+            //                         mainAxisAlignment: MainAxisAlignment.center,
+            //                         children: [
+            //                           Icon(
+            //                             Icons.calendar_today,
+            //                             size: 64,
+            //                             color: AppTheme.neutralColor,
+            //                           ),
+            //                           const SizedBox(height: 16),
+            //                           Text(
+            //                             'No Meetings',
+            //                             style: GoogleFonts.inter(
+            //                               fontSize: 20,
+            //                               fontWeight: FontWeight.bold,
+            //                               color: AppTheme.secondaryColor,
+            //                             ),
+            //                           ),
+            //                           const SizedBox(height: 8),
+            //                           Text(
+            //                             'You have no meetings scheduled',
+            //                             style: GoogleFonts.inter(
+            //                               fontSize: 16,
+            //                               color: AppTheme.neutralColor,
+            //                             ),
+            //                           ),
+            //                         ],
+            //                       ),
+            //                     );
+            //                   }
+            //                   return ListView.builder(
+            //                     padding: const EdgeInsets.all(16),
+            //                     itemCount: meetings.length,
+            //                     itemBuilder: (context, index) {
+            //                       final meeting = meetings[index];
+            //                       return Card(
+            //                         margin: const EdgeInsets.only(bottom: 16),
+            //                         color: AppTheme.cardColor,
+            //                         child: ListTile(
+            //                           title: Text(
+            //                             meeting.title,
+            //                             style: GoogleFonts.inter(
+            //                               fontSize: 16,
+            //                               fontWeight: FontWeight.w600,
+            //                               color: AppTheme.secondaryColor,
+            //                             ),
+            //                           ),
+            //                           subtitle: Text(
+            //                             '${meeting.dateTime.toString()} - ${meeting.location}',
+            //                             style: GoogleFonts.inter(
+            //                               fontSize: 14,
+            //                               color: AppTheme.neutralColor,
+            //                             ),
+            //                           ),
+            //                           trailing: Container(
+            //                             padding: const EdgeInsets.symmetric(
+            //                                 horizontal: 12, vertical: 6),
+            //                             decoration: BoxDecoration(
+            //                               color: meeting.status == 'completed'
+            //                                   ? AppTheme.successColor
+            //                                       .withValues(alpha: 0.1)
+            //                                   : AppTheme.primaryColor
+            //                                       .withValues(alpha: 0.1),
+            //                               borderRadius:
+            //                                   BorderRadius.circular(20),
+            //                             ),
+            //                             child: Text(
+            //                               meeting.status,
+            //                               style: GoogleFonts.inter(
+            //                                 fontSize: 12,
+            //                                 fontWeight: FontWeight.w600,
+            //                                 color: meeting.status == 'completed'
+            //                                     ? AppTheme.successColor
+            //                                     : AppTheme.primaryColor,
+            //                               ),
+            //                             ),
+            //                           ),
+            //                         ),
+            //                       );
+            //                     },
+            //                   );
+            //                 },
+            //               ),
+            //             ],
+            //           ),
+            //         ),
+            //       ],
+            //     ),
+            //   ),
+            // ),
           ],
         ),
       ),

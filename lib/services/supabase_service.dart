@@ -3,6 +3,7 @@ import '../models/user_model.dart';
 import '../models/task_model.dart';
 import '../models/meeting_model.dart';
 import '../models/church_branch_model.dart';
+import 'package:flutter/foundation.dart';
 
 class SupabaseService {
   final SupabaseClient _supabase = Supabase.instance.client;
@@ -115,8 +116,20 @@ class SupabaseService {
 
   // Branch operations
   Stream<List<ChurchBranch>> getAllBranches() {
-    return _supabase.from('branches').stream(primaryKey: ['id']).map(
-        (data) => data.map((doc) => ChurchBranch.fromJson(doc)).toList());
+    try {
+      return _supabase
+          .from('branches')
+          .stream(primaryKey: ['id'])
+          .order('name')
+          .map((data) => data.map((doc) => ChurchBranch.fromJson(doc)).toList())
+          .handleError((error) {
+            debugPrint('Error fetching branches: $error');
+            return <ChurchBranch>[]; // Return empty list on error
+          });
+    } catch (e) {
+      debugPrint('Error setting up branches stream: $e');
+      return Stream.value(<ChurchBranch>[]); // Return empty list on error
+    }
   }
 
   Future<void> createBranch(ChurchBranch branch) async {

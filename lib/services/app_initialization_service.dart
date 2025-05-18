@@ -5,6 +5,7 @@ import 'package:agbc_app/services/notification_service.dart';
 import 'package:agbc_app/services/user_service.dart';
 import 'package:agbc_app/providers/branches_provider.dart';
 import 'package:agbc_app/providers/supabase_provider.dart';
+import 'package:agbc_app/services/preferences_service.dart';
 import 'dart:developer' as developer;
 
 class AppInitializationService {
@@ -59,14 +60,21 @@ class AppInitializationService {
         developer.log('Error loading branches during initialization: $e');
       }
 
-      // If user is logged in, initialize their data
+      // Check if user is logged in and remember me is enabled
       final currentUser = supabase.auth.currentUser;
       if (currentUser != null) {
-        developer.log('User is logged in, initializing user data...');
-
-        // Initialize user data which will also initialize branch data
-        await supabaseProvider.initializeUserData(currentUser.id);
-        developer.log('User data initialized');
+        final isRemembered = await PreferencesService.isRememberMeEnabled();
+        if (isRemembered) {
+          developer.log(
+              'User is logged in and remember me is enabled, initializing user data...');
+          // Initialize user data which will also initialize branch data
+          await supabaseProvider.initializeUserData(currentUser.id);
+          developer.log('User data initialized');
+        } else {
+          developer.log(
+              'User session found but remember me is not enabled, signing out...');
+          await supabase.auth.signOut();
+        }
       } else {
         developer.log('No user is logged in');
       }

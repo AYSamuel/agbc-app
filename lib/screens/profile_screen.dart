@@ -3,6 +3,7 @@ import 'package:agbc_app/utils/theme.dart';
 import 'package:provider/provider.dart';
 import 'package:agbc_app/services/auth_service.dart';
 import 'package:agbc_app/providers/branches_provider.dart';
+import 'package:agbc_app/widgets/custom_back_button.dart';
 import 'login_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -42,7 +43,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final currentContext = context;
       final authService =
           Provider.of<AuthService>(currentContext, listen: false);
-      await authService.signOut();
+      await authService.logout();
       if (!mounted) return;
       if (!currentContext.mounted) return;
       Navigator.of(currentContext).pushReplacement(
@@ -77,6 +78,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
             expandedHeight: 220,
             pinned: true,
             backgroundColor: AppTheme.backgroundColor,
+            leading: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: CustomBackButton(
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+            ),
             flexibleSpace: FlexibleSpaceBar(
               background: Container(
                 color: AppTheme.backgroundColor,

@@ -6,7 +6,6 @@ import 'branch_management_screen.dart';
 import '../utils/theme.dart';
 import '../widgets/custom_back_button.dart';
 import '../widgets/admin_card.dart';
-import 'main_navigation_screen.dart';
 
 class AdminScreen extends StatelessWidget {
   const AdminScreen({super.key});
@@ -25,8 +24,8 @@ class AdminScreen extends StatelessWidget {
                 children: [
                   CustomBackButton(
                     onPressed: () {
-                      // Navigate back to home screen
-                      MainNavigationScreen.navigateToTab(context, 0);
+                      // Simply pop back to the previous screen
+                      Navigator.pop(context);
                     },
                   ),
                   const SizedBox(width: 16),

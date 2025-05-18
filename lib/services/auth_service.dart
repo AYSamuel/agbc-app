@@ -155,10 +155,8 @@ class AuthService extends ChangeNotifier {
       // Clear saved credentials
       await PreferencesService.clearLoginCredentials();
 
-      // Clear platform-specific persistence (web only)
-      if (kIsWeb) {
-        await _supabase.auth.signOut();
-      }
+      // Sign out from Supabase
+      await _supabase.auth.signOut();
 
       // Clear any cached data
       _loginAttempts.clear();
@@ -379,12 +377,14 @@ class AuthService extends ChangeNotifier {
 
   /// Updates a user's role (only accessible by admins)
   Future<void> updateUserRole(String id, String newRole) async {
-    _log.info('Attempting to update role for user ID: $id to new role: $newRole');
+    _log.info(
+        'Attempting to update role for user ID: $id to new role: $newRole');
     try {
       await _supabase.from('users').update({'role': newRole}).eq('id', id);
       _log.info('Successfully updated role in DB for user ID: $id to $newRole');
     } catch (e) {
-      _log.severe('Error updating role in DB for user ID: $id to $newRole. Error: $e');
+      _log.severe(
+          'Error updating role in DB for user ID: $id to $newRole. Error: $e');
       rethrow;
     }
   }
@@ -912,7 +912,8 @@ class AuthService extends ChangeNotifier {
             'Refresh Token: ${session.refreshToken?.substring(0, 10) ?? 'N/A'}...');
         _log.info('========================');
       } else {
-        _log.warning('User not found in database during session handling: ${session.user.id}');
+        _log.warning(
+            'User not found in database during session handling: ${session.user.id}');
       }
     } catch (e) {
       _log.severe('Error handling session: $e');
@@ -960,14 +961,15 @@ class AuthService extends ChangeNotifier {
 
       // Check if user exists in database
       final user = await _supabaseService.getUser(response.user!.id).first;
-      
+
       // If user doesn't exist in the database, create them
       if (user == null) {
         _log.info('User not found in database, creating user record');
         // Create user in our database
         final newUser = UserModel(
           id: response.user!.id,
-          displayName: response.user!.userMetadata?['full_name'] ?? email.split('@')[0],
+          displayName:
+              response.user!.userMetadata?['full_name'] ?? email.split('@')[0],
           email: email,
           role: response.user!.userMetadata?['role'] ?? 'member',
           createdAt: DateTime.parse(response.user!.createdAt),
@@ -1001,7 +1003,7 @@ class AuthService extends ChangeNotifier {
           rememberMe: true,
         );
       }
-      
+
       // Double-check that we have a current user
       if (_currentUser == null) {
         _log.severe('Current user is still null after sign in process');

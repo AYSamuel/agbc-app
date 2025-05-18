@@ -3,8 +3,8 @@ import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
   // Primary Colors
-  static const Color primaryColor = Color(0xFF8B2E3C); // Deep Burgundy
-  static const Color secondaryColor = Color(0xFFD4AF37); // Warm Gold
+  static const Color primaryColor = Color(0xFF5B7EBF); // Primary Blue
+  static const Color secondaryColor = Color(0xFFF9C784); // Warm Orange
 
   // Secondary Colors
   static const Color accentColor = Color(0xFF2E5A3C); // Forest Green
@@ -12,9 +12,10 @@ class AppTheme {
   static const Color darkNeutralColor = Color(0xFF2C2C2C); // Deep Charcoal
 
   // Background & Utility Colors
-  static const Color backgroundColor = Color(0xFFFFFFFF); // White
-  static const Color cardColor = Color(0xFFF0EDE6); // Light Beige
-  static const Color dividerColor = Color(0xFFD4D1C9); // Soft Taupe
+  static const Color backgroundColor =
+      Color(0xFFF8F9FA); // Light Gray Background
+  static const Color cardColor = Color(0xFFFFFFFF); // White
+  static const Color dividerColor = Color(0xFFE5E7EB); // Light Gray Divider
 
   // Feedback Colors
   static const Color successColor = Color(0xFF7A9D7A); // Sage Green

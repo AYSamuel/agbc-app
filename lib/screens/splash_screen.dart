@@ -1,9 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../services/auth_service.dart';
 import '../services/app_initialization_service.dart';
-import 'main_navigation_screen.dart';
-import 'login_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -56,8 +52,11 @@ class _SplashScreenState extends State<SplashScreen>
             const Duration(seconds: 5) - initializationDuration);
       }
 
-      _navigateToNextScreen();
+      if (mounted) {
+        _navigateToNextScreen();
+      }
     } catch (e) {
+      debugPrint('Error during app initialization: $e');
       // Even on error, ensure minimum splash screen duration
       final initializationDuration =
           DateTime.now().difference(initializationStart);
@@ -65,20 +64,15 @@ class _SplashScreenState extends State<SplashScreen>
         await Future.delayed(
             const Duration(seconds: 5) - initializationDuration);
       }
-      _navigateToNextScreen();
+      if (mounted) {
+        _navigateToNextScreen();
+      }
     }
   }
 
   void _navigateToNextScreen() {
     if (!mounted) return;
-    final authService = Provider.of<AuthService>(context, listen: false);
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (context) => authService.isAuthenticated
-            ? const MainNavigationScreen()
-            : const LoginScreen(),
-      ),
-    );
+    Navigator.of(context).pushReplacementNamed('/home');
   }
 
   @override

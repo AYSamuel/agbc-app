@@ -128,13 +128,14 @@ class _MyAppState extends State<MyApp> {
         // The error about code verifier is expected when we're handling our own links
         debugPrint('Supabase auth URL handling: $e');
       }
-      
+
       if (uri.path == '/verify-email') {
         // Check for both token and token_hash parameters
         final token =
             uri.queryParameters['token'] ?? uri.queryParameters['token_hash'];
         if (token != null) {
           // Get the auth service instance
+          if (!mounted) return;
           final authService = Provider.of<AuthService>(context, listen: false);
 
           // Verify the email
@@ -151,7 +152,8 @@ class _MyAppState extends State<MyApp> {
             );
 
             // Redirect to login screen
-            Navigator.of(context).pushReplacementNamed('/login', arguments: {'clearForm': true});
+            Navigator.of(context)
+                .pushReplacementNamed('/login', arguments: {'clearForm': true});
           }
         } else {
           if (mounted) {

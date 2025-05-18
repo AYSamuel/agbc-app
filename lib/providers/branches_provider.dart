@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import '../models/church_branch_model.dart';
 import '../providers/supabase_provider.dart';
 import 'package:logging/logging.dart';
+import 'dart:async';
 
 class BranchesProvider extends ChangeNotifier {
   final SupabaseProvider _supabaseProvider;
@@ -9,12 +10,19 @@ class BranchesProvider extends ChangeNotifier {
   bool _isLoading = false;
   bool _isInitialized = false;
   final _logger = Logger('BranchesProvider');
+  StreamSubscription<List<ChurchBranch>>? _branchesSubscription;
 
   BranchesProvider(this._supabaseProvider);
 
   List<ChurchBranch> get branches => _branches;
   bool get isLoading => _isLoading;
   bool get isInitialized => _isInitialized;
+
+  @override
+  void dispose() {
+    _branchesSubscription?.cancel();
+    super.dispose();
+  }
 
   Future<void> initialize() async {
     if (_isInitialized) return;
@@ -23,25 +31,42 @@ class BranchesProvider extends ChangeNotifier {
       _isLoading = true;
       notifyListeners();
 
-      // Get initial data immediately
-      final initialBranches = await _supabaseProvider.getAllBranches().first;
-      _branches = initialBranches;
-      _isInitialized = true;
-      _isLoading = false;
-      notifyListeners();
+      // Cancel any existing subscription
+      await _branchesSubscription?.cancel();
 
-      // Then listen to updates
-      _supabaseProvider.getAllBranches().listen(
+      // Set up the stream subscription first
+      _branchesSubscription = _supabaseProvider.getAllBranches().listen(
         (branches) {
           _branches = branches;
+          _isInitialized = true;
+          _logger.info('Received branch update: ${branches.length} branches');
           notifyListeners();
         },
         onError: (error) {
           _logger.severe('Error listening to branch updates: $error');
+          _branches = [];
+          _isInitialized = true; // Mark as initialized even on error
+          notifyListeners();
         },
       );
+
+      // Get initial data
+      try {
+        final initialBranches = await _supabaseProvider.getAllBranches().first;
+        _branches = initialBranches;
+        _isInitialized = true;
+        _logger.info(
+            'Successfully initialized branches: ${initialBranches.length} branches loaded');
+      } catch (e) {
+        _logger.warning('Error getting initial branches: $e');
+        _branches = [];
+        _isInitialized = true; // Mark as initialized even on error
+      }
     } catch (e) {
       _logger.severe('Error initializing branches: $e');
+      _branches = [];
+      _isInitialized = true; // Mark as initialized even on error
+    } finally {
       _isLoading = false;
       notifyListeners();
     }
@@ -58,6 +83,7 @@ class BranchesProvider extends ChangeNotifier {
       _logger.info('Refreshed branches: ${branches.length} branches loaded');
     } catch (e) {
       _logger.severe('Error refreshing branches: $e');
+      _branches = [];
     } finally {
       _isLoading = false;
       notifyListeners();

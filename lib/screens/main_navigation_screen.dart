@@ -1,171 +1,106 @@
 import 'package:flutter/material.dart';
-import 'package:agbc_app/screens/home_screen.dart';
-import 'package:agbc_app/screens/profile_screen.dart';
-import 'package:agbc_app/screens/admin_screen.dart';
-import 'package:agbc_app/utils/theme.dart';
 import 'package:provider/provider.dart';
-import 'package:agbc_app/services/auth_service.dart';
+import '../services/auth_service.dart';
+import '../widgets/admin_route_guard.dart';
+import 'home_screen.dart';
+import 'login_screen.dart';
+import 'meetings_screen.dart';
+import 'pray_screen.dart';
+import 'tasks_screen.dart';
+import 'profile_screen.dart';
+import 'admin_screen.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../widgets/bottom_nav_bar.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
 
   @override
   State<MainNavigationScreen> createState() => _MainNavigationScreenState();
-
-  // Public method to navigate to a specific tab
-  static void navigateToTab(BuildContext context, int index) {
-    final state = context.findAncestorStateOfType<_MainNavigationScreenState>();
-    if (state != null) {
-      state._onItemTapped(index);
-    }
-  }
 }
 
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
-  int _selectedIndex = 0;
-  List<Widget> _screens = [];
-  List<BottomNavigationBarItem> _navItems = [];
+  int _currentIndex = 0;
+  final List<Widget> _screens = [
+    const HomeScreen(),
+    const MeetingsScreen(),
+    const PrayScreen(),
+    const TasksScreen(),
+  ];
 
   @override
   void initState() {
     super.initState();
-    _initializeScreens();
+    _checkAuthState();
   }
 
-  void _initializeScreens() {
-    // Initialize with default screens
-    _screens = const [
-      HomeScreen(),
-      ProfileScreen(),
-    ];
-
-    // Initialize with default navigation items
-    _navItems = [
-      _buildNavItem(Icons.home, 'Home', 0, 0),
-      _buildNavItem(Icons.person, 'Profile', 1, 0),
-    ];
-  }
-
-  BottomNavigationBarItem _buildNavItem(
-      IconData icon, String label, int index, int currentIndex) {
-    return BottomNavigationBarItem(
-      icon: Container(
-        decoration: currentIndex == index
-            ? BoxDecoration(
-                color: AppTheme.primaryColor.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(16),
-              )
-            : null,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        child: Icon(
-          icon,
-          color: currentIndex == index
-              ? AppTheme.primaryColor
-              : AppTheme.neutralColor,
-        ),
-      ),
-      label: label,
-    );
-  }
-
-  void _onItemTapped(int index) {
-    final user = Provider.of<AuthService>(context, listen: false).currentUser;
-    if (index == 2 && !(user?.isAdmin ?? false)) {
-      return; // Don't allow non-admins to access admin page
-    }
-    setState(() {
-      _selectedIndex = index;
-    });
-  }
-
-  void _updateAdminAccess(bool hasAdminAccess) {
-    setState(() {
-      if (hasAdminAccess && _screens.length == 2) {
-        _screens = [..._screens, const AdminScreen()];
-        _navItems = [
-          ..._navItems,
-          _buildNavItem(Icons.admin_panel_settings, 'Admin', 2, _selectedIndex)
-        ];
-      } else if (!hasAdminAccess && _screens.length > 2) {
-        _screens = _screens.sublist(0, 2);
-        _navItems = _navItems.sublist(0, 2);
-        if (_selectedIndex >= _screens.length) {
-          _selectedIndex = 0;
-        }
-      }
-    });
+  Future<void> _checkAuthState() async {
+    final authService = Provider.of<AuthService>(context, listen: false);
+    await authService.checkAuthState();
   }
 
   @override
   Widget build(BuildContext context) {
-    final user = Provider.of<AuthService>(context).currentUser;
-    final hasAdminAccess = user?.isAdmin ?? false;
+    final authService = Provider.of<AuthService>(context, listen: true);
+    final supabase = Supabase.instance.client;
 
-    // Update admin access if needed
-    if ((hasAdminAccess && _screens.length == 2) ||
-        (!hasAdminAccess && _screens.length > 2)) {
-      _updateAdminAccess(hasAdminAccess);
-    }
+    // Check both the auth service state and Supabase session
+    final isAuthenticated =
+        authService.isAuthenticated && supabase.auth.currentSession != null;
 
-    // Rebuild nav items with current selected index
-    _navItems = [
-      _buildNavItem(Icons.home, 'Home', 0, _selectedIndex),
-      _buildNavItem(Icons.person, 'Profile', 1, _selectedIndex),
-    ];
-    if (hasAdminAccess) {
-      _navItems.add(_buildNavItem(
-          Icons.admin_panel_settings, 'Admin', 2, _selectedIndex));
+    // If not authenticated, show login screen
+    if (!isAuthenticated) {
+      return const LoginScreen(isLoggingOut: false);
     }
 
     return Scaffold(
-      body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: IndexedStack(
-                index: _selectedIndex,
-                children: _screens,
-              ),
-            ),
-          ],
-        ),
+      body: IndexedStack(
+        index: _currentIndex,
+        children: _screens,
       ),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: AppTheme.backgroundColor,
-          border: Border(
-            top: BorderSide(
-              color: AppTheme.dividerColor.withValues(alpha: 0.5),
-              width: 1,
-            ),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: AppTheme.primaryColor.withValues(alpha: 0.5),
-              blurRadius: 10,
-              offset: const Offset(0, -2),
-            ),
-          ],
-        ),
-        child: BottomNavigationBar(
-          currentIndex: _selectedIndex,
-          onTap: _onItemTapped,
-          backgroundColor: AppTheme.backgroundColor,
-          elevation: 0,
-          selectedItemColor: AppTheme.primaryColor,
-          unselectedItemColor: AppTheme.neutralColor.withValues(alpha: 0.7),
-          selectedLabelStyle: const TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 12,
-          ),
-          unselectedLabelStyle: const TextStyle(
-            fontWeight: FontWeight.w500,
-            fontSize: 12,
-          ),
-          type: BottomNavigationBarType.fixed,
-          items: _navItems,
-        ),
+      bottomNavigationBar: BottomNavBar(
+        currentIndex: _currentIndex,
+        onTap: _handleNavigation,
       ),
     );
+  }
+
+  void _handleNavigation(int index) {
+    // For bottom nav items (0-3), just update the index
+    if (index < 4) {
+      setState(() {
+        _currentIndex = index;
+      });
+      return;
+    }
+
+    // For modal screens (4+), handle navigation
+    switch (index) {
+      case 4: // Profile
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const ProfileScreen()),
+        );
+        break;
+      case 5: // Admin Center
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const AdminRouteGuard(
+              child: AdminScreen(),
+            ),
+          ),
+        );
+        break;
+      case 6: // Settings
+        // TODO: Navigate to settings screen
+        break;
+      case 7: // Help & Support
+        // TODO: Navigate to help screen
+        break;
+      case 8: // About
+        // TODO: Navigate to about screen
+        break;
+    }
   }
 }

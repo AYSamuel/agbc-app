@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:agbc_app/utils/theme.dart';
 import 'package:agbc_app/widgets/task_status_card.dart';
 import 'package:agbc_app/widgets/daily_verse_card.dart';
@@ -15,8 +16,39 @@ import 'add_branch_screen.dart';
 import 'add_task_screen.dart';
 import 'meetings_screen.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Set status bar to transparent with dark icons
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark,
+        statusBarBrightness: Brightness.light,
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    // Reset status bar to default when leaving the screen
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark,
+        statusBarBrightness: Brightness.light,
+      ),
+    );
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {

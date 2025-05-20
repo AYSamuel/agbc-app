@@ -90,9 +90,11 @@ class _TaskStatusCardState extends State<TaskStatusCard> {
           GestureDetector(
             onTap: () {
               // Navigate to tasks screen
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const TasksScreen()),
+              Navigator.of(context, rootNavigator: true).push(
+                MaterialPageRoute(
+                  builder: (context) => const TasksScreen(showBackButton: true),
+                  fullscreenDialog: true,
+                ),
               );
             },
             child: Row(

@@ -25,7 +25,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     const HomeScreen(),
     const MeetingsScreen(),
     const PrayScreen(),
-    const TasksScreen(),
+    const TasksScreen(showBackButton: false),
   ];
 
   @override
@@ -54,9 +54,16 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     }
 
     return Scaffold(
-      body: IndexedStack(
-        index: _currentIndex,
-        children: _screens,
+      body: Navigator(
+        initialRoute: '/',
+        onGenerateRoute: (settings) {
+          return MaterialPageRoute(
+            builder: (context) => IndexedStack(
+              index: _currentIndex,
+              children: _screens,
+            ),
+          );
+        },
       ),
       bottomNavigationBar: BottomNavBar(
         currentIndex: _currentIndex,

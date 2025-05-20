@@ -3,7 +3,9 @@ import '../models/user_model.dart';
 import '../models/task_model.dart';
 import '../models/meeting_model.dart';
 import '../models/church_branch_model.dart';
+import '../models/comment_model.dart';
 import 'package:flutter/foundation.dart';
+import 'package:uuid/uuid.dart';
 
 class SupabaseService {
   final SupabaseClient _supabase = Supabase.instance.client;
@@ -43,7 +45,14 @@ class SupabaseService {
   }
 
   Future<void> createTask(TaskModel task) async {
-    await _supabase.from('tasks').insert(task.toJson());
+    final taskJson = task.toJson();
+    taskJson.remove(
+        'attachments'); // Remove attachments field before sending to database
+
+    // Log the data being sent to help debug
+    debugPrint('Creating task with data: $taskJson');
+
+    await _supabase.from('tasks').insert(taskJson);
   }
 
   Future<void> updateTask(TaskModel task) async {
@@ -56,15 +65,14 @@ class SupabaseService {
 
   Future<void> addCommentToTask(
       String taskId, String userId, String comment) async {
-    await _supabase.from('tasks').update({
-      'comments': [
-        {
-          'user_id': userId,
-          'content': comment,
-          'timestamp': DateTime.now().toIso8601String(),
-        }
-      ]
-    }).eq('id', taskId);
+    final commentData = {
+      'id': const Uuid().v4(),
+      'task_id': taskId,
+      'user_id': userId,
+      'content': comment,
+      'created_at': DateTime.now().toIso8601String(),
+    };
+    await _supabase.from('task_comments').insert(commentData);
   }
 
   Future<void> updateTaskStatus(String taskId, String status) async {
@@ -177,5 +185,14 @@ class SupabaseService {
     } catch (e) {
       throw Exception('Failed to update user role: $e');
     }
+  }
+
+  Stream<List<CommentModel>> getTaskComments(String taskId) {
+    return _supabase
+        .from('task_comments')
+        .stream(primaryKey: ['id'])
+        .eq('task_id', taskId)
+        .order('created_at')
+        .map((data) => data.map((doc) => CommentModel.fromJson(doc)).toList());
   }
 }

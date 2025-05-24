@@ -1,10 +1,12 @@
-import 'package:flutter/material.dart';
-import 'package:agbc_app/utils/theme.dart';
 import 'package:agbc_app/models/task_model.dart';
-import 'package:provider/provider.dart';
-import 'package:agbc_app/services/auth_service.dart';
-import 'package:remixicon/remixicon.dart';
 import 'package:agbc_app/screens/tasks_screen.dart';
+import 'package:agbc_app/services/auth_service.dart';
+import 'package:agbc_app/utils/theme.dart';
+import 'package:agbc_app/widgets/custom_button.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+import 'package:remixicon/remixicon.dart';
 
 class TaskStatusCard extends StatefulWidget {
   final List<TaskModel> tasks;
@@ -87,9 +89,12 @@ class _TaskStatusCardState extends State<TaskStatusCard> {
             ),
           ),
           const SizedBox(height: 12),
-          GestureDetector(
-            onTap: () {
+          CustomButton.text(
+            onPressed: () async {
+              // Add haptic feedback
+              await HapticFeedback.lightImpact();
               // Navigate to tasks screen
+              if (!mounted) return;
               Navigator.of(context, rootNavigator: true).push(
                 MaterialPageRoute(
                   builder: (context) => const TasksScreen(showBackButton: true),

@@ -2,15 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../utils/theme.dart';
 import '../models/task_model.dart';
-import '../models/user_model.dart';
 import '../services/supabase_service.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 import 'task_details_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:remixicon/remixicon.dart';
-import '../widgets/custom_card.dart';
-import '../widgets/custom_dropdown.dart';
+import '../widgets/task_card.dart';
 import '../widgets/custom_back_button.dart';
 
 class TasksScreen extends StatefulWidget {
@@ -25,7 +23,6 @@ class _TasksScreenState extends State<TasksScreen> {
   final SupabaseService _supabaseService = SupabaseService();
   String _selectedFilter = 'all';
   String _selectedSort = 'due_date';
-  final Map<String, UserModel?> _userCache = {};
 
   @override
   void initState() {
@@ -58,13 +55,23 @@ class _TasksScreenState extends State<TasksScreen> {
     final user = Provider.of<AuthService>(context).currentUser;
 
     return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
+      backgroundColor: const Color(0xFFF8F9FA),
       body: SafeArea(
         child: Column(
           children: [
-            // Header with conditional Back button
-            Padding(
-              padding: const EdgeInsets.all(16.0),
+            // Fixed Header
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
               child: Row(
                 children: [
                   if (widget.showBackButton) ...[
@@ -74,17 +81,138 @@ class _TasksScreenState extends State<TasksScreen> {
                     const SizedBox(width: 16),
                   ],
                   Text(
-                    'My Tasks',
+                    'Tasks',
                     style: GoogleFonts.inter(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.darkNeutralColor,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF1F2937),
                     ),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    icon: const Icon(Remix.filter_3_line),
+                    color: const Color(0xFF4B5563),
+                    onPressed: () {
+                      // Show filter options
+                    },
                   ),
                 ],
               ),
             ),
-            _buildFilterAndSortBar(),
+
+            // Filter Tabs
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
+                    children: [
+                      _buildFilterTab(
+                        'All Tasks',
+                        _selectedFilter == 'all',
+                        Remix.list_check,
+                      ),
+                      _buildFilterTab(
+                        'In Progress',
+                        _selectedFilter == 'in_progress',
+                        Remix.time_line,
+                      ),
+                      _buildFilterTab(
+                        'Completed',
+                        _selectedFilter == 'completed',
+                        Remix.checkbox_circle_line,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+            // Sort Options
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                border: Border(
+                  bottom: BorderSide(
+                    color: Color(0xFFF3F4F6),
+                    width: 1,
+                  ),
+                ),
+              ),
+              child: StreamBuilder<List<TaskModel>>(
+                stream: _supabaseService.getTasksForUser(user?.id ?? ''),
+                builder: (context, snapshot) {
+                  if (!snapshot.hasData) {
+                    return const SizedBox.shrink();
+                  }
+
+                  final tasks = snapshot.data!;
+                  final filteredTasks = _filterAndSortTasks(tasks);
+                  final taskCount = filteredTasks.length;
+                  final taskText = taskCount == 1 ? 'task' : 'tasks';
+
+                  return Row(
+                    children: [
+                      Text(
+                        '$taskCount $taskText',
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          color: const Color(0xFF6B7280),
+                        ),
+                      ),
+                      const Spacer(),
+                      Text(
+                        'Sort by:',
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          color: const Color(0xFF4B5563),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      GestureDetector(
+                        onTap: () {
+                          _showSortOptions(context);
+                        },
+                        child: Row(
+                          children: [
+                            Text(
+                              _getSortLabel(_selectedSort),
+                              style: GoogleFonts.inter(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                color: const Color(0xFF5B7EBF),
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            const Icon(
+                              Remix.arrow_down_s_line,
+                              size: 16,
+                              color: Color(0xFF5B7EBF),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
+
+            // Task List
             Expanded(
               child: StreamBuilder<List<TaskModel>>(
                 stream: _supabaseService.getTasksForUser(user?.id ?? ''),
@@ -117,8 +245,7 @@ class _TasksScreenState extends State<TasksScreen> {
                             width: 80,
                             height: 80,
                             decoration: BoxDecoration(
-                              color:
-                                  AppTheme.warningColor.withValues(alpha: 0.1),
+                              color: AppTheme.warningColor.withOpacity(0.1),
                               shape: BoxShape.circle,
                             ),
                             child: Icon(
@@ -153,7 +280,20 @@ class _TasksScreenState extends State<TasksScreen> {
                     padding: const EdgeInsets.all(16),
                     itemCount: tasks.length,
                     itemBuilder: (context, index) {
-                      return _buildTaskCard(tasks[index]);
+                      return TaskCard(
+                        task: tasks[index],
+                        onTap: () {
+                          Navigator.of(context, rootNavigator: true).push(
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  TaskDetailsScreen(task: tasks[index]),
+                            ),
+                          );
+                        },
+                        onStatusChanged: (value) {
+                          // Handle task status change
+                        },
+                      );
                     },
                   );
                 },
@@ -162,157 +302,57 @@ class _TasksScreenState extends State<TasksScreen> {
           ],
         ),
       ),
+      floatingActionButton: null,
     );
   }
 
-  Widget _buildFilterAndSortBar() {
+  Widget _buildFilterTab(String label, bool isSelected, IconData icon) {
+    String filterValue = label.toLowerCase().replaceAll(' ', '_');
+    if (label == 'All Tasks') {
+      filterValue = 'all';
+    }
+
     return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: CustomDropdown<String>(
-              value: _selectedFilter,
-              label: 'Filter',
-              items: const [
-                DropdownMenuItem(value: 'all', child: Text('All Tasks')),
-                DropdownMenuItem(value: 'pending', child: Text('Pending')),
-                DropdownMenuItem(
-                    value: 'in_progress', child: Text('In Progress')),
-                DropdownMenuItem(value: 'completed', child: Text('Completed')),
-              ],
-              onChanged: (value) {
-                if (value != null) {
-                  setState(() {
-                    _selectedFilter = value;
-                  });
-                }
-              },
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: CustomDropdown<String>(
-              value: _selectedSort,
-              label: 'Sort by',
-              items: const [
-                DropdownMenuItem(value: 'due_date', child: Text('Due Date')),
-                DropdownMenuItem(value: 'priority', child: Text('Priority')),
-                DropdownMenuItem(value: 'status', child: Text('Status')),
-              ],
-              onChanged: (value) {
-                if (value != null) {
-                  setState(() {
-                    _selectedSort = value;
-                  });
-                }
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTaskCard(TaskModel task) {
-    return CustomCard(
-      padding: const EdgeInsets.all(16),
-      borderRadius: 8,
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withValues(alpha: 0.05),
-          blurRadius: 10,
-          offset: const Offset(0, 4),
-        ),
-      ],
-      child: InkWell(
-        onTap: () {
-          Navigator.of(context, rootNavigator: true).push(
-            MaterialPageRoute(
-              builder: (context) => TaskDetailsScreen(task: task),
-            ),
-          );
+      margin: const EdgeInsets.symmetric(horizontal: 6),
+      child: ElevatedButton(
+        onPressed: () {
+          setState(() {
+            _selectedFilter = filterValue;
+          });
         },
-        borderRadius: BorderRadius.circular(8),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    task.title,
-                    style: GoogleFonts.inter(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      color: AppTheme.darkNeutralColor,
-                    ),
-                  ),
-                ),
-                _buildStatusChip(task.status),
-              ],
+        style: ElevatedButton.styleFrom(
+          backgroundColor: isSelected ? const Color(0xFF5B7EBF) : Colors.white,
+          foregroundColor: isSelected ? Colors.white : const Color(0xFF4B5563),
+          elevation: isSelected ? 2 : 0,
+          shadowColor: isSelected
+              ? const Color(0xFF5B7EBF).withOpacity(0.3)
+              : Colors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(
+              color: isSelected
+                  ? const Color(0xFF5B7EBF)
+                  : const Color(0xFFE5E7EB),
+              width: 1,
             ),
-            const SizedBox(height: 8),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 18,
+              color: isSelected ? Colors.white : const Color(0xFF4B5563),
+            ),
+            const SizedBox(width: 8),
             Text(
-              task.description,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
+              label,
               style: GoogleFonts.inter(
                 fontSize: 14,
-                color: AppTheme.neutralColor,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
               ),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                _buildInfoChip(
-                  Remix.calendar_line,
-                  _formatDate(task.dueDate),
-                  Colors.blue,
-                ),
-                const SizedBox(width: 8),
-                _buildInfoChip(
-                  Remix.flag_line,
-                  task.priority.toUpperCase(),
-                  _getPriorityColor(task.priority),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            FutureBuilder<UserModel?>(
-              future: _getUserDetails(task.createdBy),
-              builder: (context, snapshot) {
-                if (snapshot.hasData) {
-                  return Row(
-                    children: [
-                      Icon(
-                        Remix.user_line,
-                        size: 16,
-                        color: AppTheme.neutralColor,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Created by: ${snapshot.data?.displayName ?? 'Unknown'}',
-                        style: GoogleFonts.inter(
-                          fontSize: 14,
-                          color: AppTheme.neutralColor,
-                        ),
-                      ),
-                    ],
-                  );
-                }
-                return const SizedBox.shrink();
-              },
             ),
           ],
         ),
@@ -320,47 +360,143 @@ class _TasksScreenState extends State<TasksScreen> {
     );
   }
 
-  Widget _buildStatusChip(String status) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: _getStatusColor(status).withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(16),
+  void _showSortOptions(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
-      child: Text(
-        status.toUpperCase(),
-        style: GoogleFonts.inter(
-          color: _getStatusColor(status),
-          fontWeight: FontWeight.bold,
-          fontSize: 12,
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Text(
+                      'Sort by',
+                      style: GoogleFonts.inter(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF1F2937),
+                      ),
+                    ),
+                    const Spacer(),
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Remix.close_line),
+                      color: const Color(0xFF6B7280),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+              _buildSortOption(
+                context,
+                'Due Date',
+                'due_date',
+                Remix.calendar_line,
+              ),
+              _buildSortOption(
+                context,
+                'Priority',
+                'priority',
+                Remix.flag_line,
+              ),
+              _buildSortOption(
+                context,
+                'Status',
+                'status',
+                Remix.checkbox_circle_line,
+              ),
+              _buildSortOption(
+                context,
+                'Title',
+                'title',
+                Remix.file_text_line,
+              ),
+              _buildSortOption(
+                context,
+                'Created Date',
+                'created_at',
+                Remix.time_line,
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildSortOption(
+    BuildContext context,
+    String label,
+    String value,
+    IconData icon,
+  ) {
+    final isSelected = _selectedSort == value;
+    return InkWell(
+      onTap: () {
+        setState(() {
+          _selectedSort = value;
+        });
+        Navigator.pop(context);
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        color: isSelected ? const Color(0xFFF3F4F6) : Colors.transparent,
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              size: 20,
+              color: isSelected
+                  ? const Color(0xFF5B7EBF)
+                  : const Color(0xFF6B7280),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              label,
+              style: GoogleFonts.inter(
+                fontSize: 16,
+                color: isSelected
+                    ? const Color(0xFF5B7EBF)
+                    : const Color(0xFF1F2937),
+                fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
+              ),
+            ),
+            const Spacer(),
+            if (isSelected)
+              const Icon(
+                Remix.check_line,
+                color: Color(0xFF5B7EBF),
+                size: 20,
+              ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildInfoChip(IconData icon, String label, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14, color: color),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: GoogleFonts.inter(
-              color: color,
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
+  String _getSortLabel(String sortValue) {
+    switch (sortValue) {
+      case 'due_date':
+        return 'Due Date';
+      case 'priority':
+        return 'Priority';
+      case 'status':
+        return 'Status';
+      case 'title':
+        return 'Title';
+      case 'created_at':
+        return 'Created Date';
+      default:
+        return 'Due Date';
+    }
   }
 
   List<TaskModel> _filterAndSortTasks(List<TaskModel> tasks) {
@@ -383,6 +519,12 @@ class _TasksScreenState extends State<TasksScreen> {
       case 'status':
         filteredTasks.sort((a, b) => a.status.compareTo(b.status));
         break;
+      case 'title':
+        filteredTasks.sort((a, b) => a.title.compareTo(b.title));
+        break;
+      case 'created_at':
+        filteredTasks.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+        break;
     }
 
     return filteredTasks;
@@ -398,50 +540,6 @@ class _TasksScreenState extends State<TasksScreen> {
         return 1;
       default:
         return 0;
-    }
-  }
-
-  Color _getStatusColor(String status) {
-    switch (status.toLowerCase()) {
-      case 'completed':
-        return Colors.green;
-      case 'in_progress':
-        return Colors.orange;
-      case 'pending':
-        return Colors.blue;
-      default:
-        return Colors.grey;
-    }
-  }
-
-  Color _getPriorityColor(String priority) {
-    switch (priority.toLowerCase()) {
-      case 'high':
-        return Colors.red;
-      case 'medium':
-        return Colors.orange;
-      case 'low':
-        return Colors.green;
-      default:
-        return Colors.grey;
-    }
-  }
-
-  String _formatDate(DateTime date) {
-    return '${date.day}/${date.month}/${date.year}';
-  }
-
-  Future<UserModel?> _getUserDetails(String userId) async {
-    if (_userCache.containsKey(userId)) {
-      return _userCache[userId];
-    }
-
-    try {
-      final user = await _supabaseService.getUser(userId).first;
-      _userCache[userId] = user;
-      return user;
-    } catch (e) {
-      return null;
     }
   }
 }

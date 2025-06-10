@@ -7,6 +7,8 @@ import 'package:google_fonts/google_fonts.dart';
 import '../services/supabase_service.dart';
 import '../models/user_model.dart';
 import 'package:remixicon/remixicon.dart';
+import 'package:provider/provider.dart';
+import '../providers/supabase_provider.dart';
 
 /// A screen that displays the details of a task
 class TaskDetailsScreen extends StatefulWidget {
@@ -195,6 +197,63 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                     ),
                     const SizedBox(height: 16),
 
+                    // Status Action Buttons
+                    if (_task.status != 'completed') ...[
+                      Row(
+                        children: [
+                          if (_task.status == 'pending')
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                onPressed: () =>
+                                    _updateTaskStatus('in_progress'),
+                                icon: const Icon(Remix.play_circle_line),
+                                label: const Text('Start Working'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.orange,
+                                  foregroundColor: Colors.white,
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 12),
+                                ),
+                              ),
+                            ),
+                          if (_task.status == 'in_progress')
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                onPressed: () => _updateTaskStatus('completed'),
+                                icon: const Icon(Remix.checkbox_circle_line),
+                                label: const Text('Mark as Completed'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.green,
+                                  foregroundColor: Colors.white,
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 12),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ] else ...[
+                      // Reset Task Button for completed tasks
+                      Row(
+                        children: [
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              onPressed: () => _showResetTaskDialog(context),
+                              icon: const Icon(Remix.refresh_line),
+                              label: const Text('Reset Task'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF5B7EBF),
+                                foregroundColor: Colors.white,
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 12),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                    const SizedBox(height: 16),
+
                     // Due Date
                     _buildInfoCard(
                       'Due Date',
@@ -369,5 +428,165 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
 
   String _formatDateTime(DateTime dateTime) {
     return '${dateTime.day}/${dateTime.month}/${dateTime.year} ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}';
+  }
+
+  Future<void> _showResetTaskDialog(BuildContext context) async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        backgroundColor: const Color(0xFFF8F9FA),
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF5B7EBF).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(
+                      Remix.refresh_line,
+                      color: Color(0xFF5B7EBF),
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Text(
+                    'Reset Task',
+                    style: GoogleFonts.inter(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF1F2937),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              Text(
+                'Are you sure you want to reset this task?',
+                style: GoogleFonts.inter(
+                  fontSize: 16,
+                  color: const Color(0xFF1F2937),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'This will change its status back to pending and allow you to continue working on it.',
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  color: const Color(0xFF6B7280),
+                ),
+              ),
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
+                    ),
+                    child: Text(
+                      'Cancel',
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: const Color(0xFF6B7280),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton(
+                    onPressed: () => Navigator.pop(context, true),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF5B7EBF),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: Text(
+                      'Reset Task',
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (result == true) {
+      _updateTaskStatus('pending');
+    }
+  }
+
+  Future<void> _updateTaskStatus(String newStatus) async {
+    try {
+      final supabaseService = SupabaseService();
+      final updateData = {
+        'status': newStatus,
+        'updated_at': DateTime.now().toIso8601String(),
+      };
+
+      // Set completed_at timestamp when task is marked as completed
+      if (newStatus == 'completed') {
+        updateData['completed_at'] = DateTime.now().toIso8601String();
+      } else if (newStatus == 'pending') {
+        // Remove completed_at field when resetting to pending
+        updateData.remove('completed_at');
+      }
+
+      await supabaseService.updateTaskStatus(_task.id, newStatus, updateData);
+
+      if (mounted) {
+        setState(() {
+          _task = _task.copyWith(
+            status: newStatus,
+            completedAt: newStatus == 'completed' ? DateTime.now() : null,
+          );
+        });
+
+        // Notify the SupabaseProvider of the change
+        if (context.mounted) {
+          final provider =
+              Provider.of<SupabaseProvider>(context, listen: false);
+          provider.updateTask(_task);
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+                'Task status updated to ${newStatus.replaceAll('_', ' ')}'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to update task status: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 }

@@ -6,7 +6,6 @@ import 'home_screen.dart';
 import 'login_screen.dart';
 import 'meetings_screen.dart';
 import 'pray_screen.dart';
-import 'tasks_screen.dart';
 import 'profile_screen.dart';
 import 'admin_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -25,7 +24,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     const HomeScreen(),
     const MeetingsScreen(),
     const PrayScreen(),
-    const TasksScreen(showBackButton: false),
   ];
 
   @override

@@ -46,12 +46,8 @@ class SupabaseService {
 
   Future<void> createTask(TaskModel task) async {
     final taskJson = task.toJson();
-    taskJson.remove(
-        'attachments'); // Remove attachments field before sending to database
-
     // Log the data being sent to help debug
     debugPrint('Creating task with data: $taskJson');
-
     await _supabase.from('tasks').insert(taskJson);
   }
 
@@ -75,11 +71,14 @@ class SupabaseService {
     await _supabase.from('task_comments').insert(commentData);
   }
 
-  Future<void> updateTaskStatus(String taskId, String status) async {
-    await _supabase.from('tasks').update({
+  Future<void> updateTaskStatus(String taskId, String status,
+      [Map<String, dynamic>? additionalData]) async {
+    final updateData = {
       'status': status,
       'updated_at': DateTime.now().toIso8601String(),
-    }).eq('id', taskId);
+      ...?additionalData,
+    };
+    await _supabase.from('tasks').update(updateData).eq('id', taskId);
   }
 
   // Meeting operations

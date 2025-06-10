@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:agbc_app/utils/theme.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
+import '../screens/tasks_screen.dart';
 
 class BottomNavBar extends StatelessWidget {
   final int currentIndex;
@@ -38,7 +39,6 @@ class BottomNavBar extends StatelessWidget {
               _buildNavItem(0, Icons.home_rounded, 'Home'),
               _buildNavItem(1, Icons.calendar_today_rounded, 'Meetings'),
               _buildPrayButton(),
-              _buildNavItem(3, Icons.task_rounded, 'Tasks'),
               _buildMoreButton(context, isAdmin),
             ],
           ),
@@ -150,6 +150,21 @@ class BottomNavBar extends StatelessWidget {
                   () {
                     Navigator.pop(context);
                     onTap(4); // Profile
+                  },
+                ),
+                _buildMoreItem(
+                  context,
+                  Icons.task_rounded,
+                  'Tasks',
+                  () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            const TasksScreen(showBackButton: true),
+                      ),
+                    );
                   },
                 ),
                 if (isAdmin)

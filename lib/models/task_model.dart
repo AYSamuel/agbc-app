@@ -16,12 +16,10 @@ class TaskModel {
 
   // Task status and tracking
   final String status; // Current status (pending, in_progress, completed, etc.)
+  final DateTime? completedAt; // When the task was completed
 
   // Task classification
   final String priority; // Priority level (high, medium, low)
-
-  // Collaboration
-  final List<String> attachments; // Links to related files/documents
 
   /// Constructor for creating a new TaskModel instance
   TaskModel({
@@ -36,7 +34,7 @@ class TaskModel {
     this.branchId,
     this.status = 'pending',
     this.priority = 'medium',
-    this.attachments = const [],
+    this.completedAt,
   }) : createdAt = createdAt ?? DateTime.now();
 
   /// Creates a TaskModel instance from JSON data
@@ -57,7 +55,9 @@ class TaskModel {
       branchId: json['branch_id'],
       status: json['status'] ?? 'pending',
       priority: json['priority'] ?? 'medium',
-      attachments: List<String>.from(json['attachments'] ?? []),
+      completedAt: json['completed_at'] != null
+          ? DateTime.parse(json['completed_at'])
+          : null,
     );
   }
 
@@ -75,7 +75,7 @@ class TaskModel {
       'branch_id': branchId,
       'status': status,
       'priority': priority,
-      'attachments': attachments,
+      'completed_at': completedAt?.toIso8601String(),
     };
   }
 
@@ -103,7 +103,7 @@ class TaskModel {
     String? branchId,
     String? status,
     String? priority,
-    List<String>? attachments,
+    DateTime? completedAt,
   }) {
     return TaskModel(
       id: id ?? this.id,
@@ -117,7 +117,7 @@ class TaskModel {
       branchId: branchId ?? this.branchId,
       status: status ?? this.status,
       priority: priority ?? this.priority,
-      attachments: attachments ?? this.attachments,
+      completedAt: completedAt ?? this.completedAt,
     );
   }
 

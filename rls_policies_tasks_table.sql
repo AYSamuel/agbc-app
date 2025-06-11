@@ -1,6 +1,9 @@
--- Add reminder column to tasks table
+r-- Add reminder column to tasks table
 ALTER TABLE tasks
 ADD COLUMN reminder TIMESTAMP WITH TIME ZONE;
+
+-- Add completed_at column to tasks table
+ALTER TABLE tasks ADD COLUMN completed_at TIMESTAMP WITH TIME ZONE;
 
 -- Enable Row Level Security
 ALTER TABLE tasks ENABLE ROW LEVEL SECURITY;

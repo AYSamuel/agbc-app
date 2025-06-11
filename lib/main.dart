@@ -98,7 +98,7 @@ class _MyAppState extends State<MyApp> {
   Future<void> _handleDeepLink() async {
     try {
       // Handle links that opened the app
-      final initialUri = await _appLinks.getInitialAppLink();
+      final initialUri = await _appLinks.getInitialLink();
       if (initialUri != null) {
         // Only handle our custom verification links
         if (initialUri.path.contains('verify-email')) {

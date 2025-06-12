@@ -6,10 +6,10 @@ import 'package:agbc_app/utils/theme.dart';
 enum ButtonVariant {
   /// A filled button with background color
   filled,
-  
+
   /// An outlined button with border
   outlined,
-  
+
   /// A text button with no background or border
   text,
 }
@@ -26,37 +26,37 @@ enum ButtonVariant {
 class CustomButton extends StatefulWidget {
   /// Callback when button is pressed
   final VoidCallback? onPressed;
-  
+
   /// The button's child widget
   final Widget child;
-  
+
   /// Button width (null for auto)
   final double? width;
-  
+
   /// Button height
   final double height;
-  
+
   /// Background color (ignored for text variant)
   final Color? backgroundColor;
-  
+
   /// Text/icon color
   final Color? foregroundColor;
-  
+
   /// Border radius
   final double borderRadius;
-  
+
   /// Show loading indicator if true
   final bool isLoading;
-  
+
   /// Animation duration
   final Duration animationDuration;
-  
+
   /// Button style variant
   final ButtonVariant variant;
-  
+
   /// Border color (only used for outlined variant)
   final Color? borderColor;
-  
+
   /// Elevation (only used for filled variant)
   final double? elevation;
 
@@ -154,10 +154,11 @@ class _CustomButtonState extends State<CustomButton>
         ? (widget.foregroundColor ?? Colors.white).withValues(alpha: 0.5)
         : widget.foregroundColor ?? Colors.white;
 
-    final buttonChild = widget.isLoading ? const LoadingIndicator() : widget.child;
-    
+    final buttonChild =
+        widget.isLoading ? const LoadingIndicator() : widget.child;
+
     Widget button;
-    
+
     switch (widget.variant) {
       case ButtonVariant.text:
         button = TextButton(
@@ -171,7 +172,7 @@ class _CustomButtonState extends State<CustomButton>
           child: buttonChild,
         );
         break;
-        
+
       case ButtonVariant.outlined:
         button = OutlinedButton(
           onPressed: isDisabled ? null : _handleTap,
@@ -179,8 +180,9 @@ class _CustomButtonState extends State<CustomButton>
             backgroundColor: widget.backgroundColor,
             foregroundColor: foregroundColor,
             side: BorderSide(
-              color: isDisabled 
-                  ? (widget.borderColor ?? foregroundColor).withOpacity(0.5)
+              color: isDisabled
+                  ? (widget.borderColor ?? foregroundColor)
+                      .withValues(alpha: 0.5)
                   : widget.borderColor ?? AppTheme.primaryColor,
             ),
             shape: RoundedRectangleBorder(
@@ -192,7 +194,7 @@ class _CustomButtonState extends State<CustomButton>
           child: buttonChild,
         );
         break;
-        
+
       case ButtonVariant.filled:
         button = ElevatedButton(
           onPressed: isDisabled ? null : _handleTap,
@@ -208,7 +210,7 @@ class _CustomButtonState extends State<CustomButton>
           child: buttonChild,
         );
     }
-    
+
     return ScaleTransition(
       scale: _scaleAnimation,
       child: SizedBox(

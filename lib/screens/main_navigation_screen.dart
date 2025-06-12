@@ -1,111 +1,58 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import '../services/auth_service.dart';
-import '../widgets/admin_route_guard.dart';
+import '../providers/navigation_provider.dart';
+import '../widgets/bottom_nav_bar.dart';
 import 'home_screen.dart';
-import 'login_screen.dart';
 import 'meetings_screen.dart';
 import 'pray_screen.dart';
+import 'read_screen.dart';
 import 'profile_screen.dart';
-import 'admin_screen.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import '../widgets/bottom_nav_bar.dart';
+import 'admin_center_screen.dart';
+import 'settings_screen.dart';
+import 'help_support_screen.dart';
+import 'about_screen.dart';
 
-class MainNavigationScreen extends StatefulWidget {
+class MainNavigationScreen extends StatelessWidget {
   const MainNavigationScreen({super.key});
 
   @override
-  State<MainNavigationScreen> createState() => _MainNavigationScreenState();
-}
-
-class _MainNavigationScreenState extends State<MainNavigationScreen> {
-  int _currentIndex = 0;
-  final List<Widget> _screens = [
-    const HomeScreen(),
-    const MeetingsScreen(),
-    const PrayScreen(),
-  ];
-
-  @override
-  void initState() {
-    super.initState();
-    _checkAuthState();
-  }
-
-  Future<void> _checkAuthState() async {
-    final authService = Provider.of<AuthService>(context, listen: false);
-    await authService.checkAuthState();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final authService = Provider.of<AuthService>(context, listen: true);
-    final supabase = Supabase.instance.client;
+    // Set system UI overlay style
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark,
+        systemNavigationBarColor: Colors.white,
+        systemNavigationBarIconBrightness: Brightness.dark,
+      ),
+    );
 
-    // Check both the auth service state and Supabase session
-    final isAuthenticated =
-        authService.isAuthenticated && supabase.auth.currentSession != null;
-
-    // If not authenticated, show login screen
-    if (!isAuthenticated) {
-      return const LoginScreen(isLoggingOut: false);
-    }
-
-    return Scaffold(
-      body: Navigator(
-        initialRoute: '/',
-        onGenerateRoute: (settings) {
-          return MaterialPageRoute(
-            builder: (context) => IndexedStack(
-              index: _currentIndex,
-              children: _screens,
+    return ChangeNotifierProvider(
+      create: (_) => NavigationProvider(),
+      child: Consumer<NavigationProvider>(
+        builder: (context, navigationProvider, _) {
+          return Scaffold(
+            body: SafeArea(
+              child: IndexedStack(
+                index: navigationProvider.currentIndex,
+                children: [
+                  const HomeScreen(),
+                  const MeetingsScreen(),
+                  const PrayScreen(),
+                  const ReadScreen(),
+                  const ProfileScreen(),
+                  const AdminCenterScreen(),
+                  const SettingsScreen(),
+                  const HelpSupportScreen(),
+                  const AboutScreen(),
+                ],
+              ),
             ),
+            bottomNavigationBar: const BottomNavBar(),
           );
         },
       ),
-      bottomNavigationBar: BottomNavBar(
-        currentIndex: _currentIndex,
-        onTap: _handleNavigation,
-      ),
     );
-  }
-
-  void _handleNavigation(int index) {
-    // For bottom nav items (0-3), just update the index
-    if (index < 4) {
-      setState(() {
-        _currentIndex = index;
-      });
-      return;
-    }
-
-    // For modal screens (4+), handle navigation
-    switch (index) {
-      case 4: // Profile
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const ProfileScreen()),
-        );
-        break;
-      case 5: // Admin Center
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const AdminRouteGuard(
-              child: AdminScreen(),
-            ),
-          ),
-        );
-        break;
-      case 6: // Settings
-        // TODO: Navigate to settings screen
-        break;
-      case 7: // Help & Support
-        // TODO: Navigate to help screen
-        break;
-      case 8: // About
-        // TODO: Navigate to about screen
-        break;
-    }
   }
 }

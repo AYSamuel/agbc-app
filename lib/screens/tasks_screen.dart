@@ -10,6 +10,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:remixicon/remixicon.dart';
 import '../widgets/task_card.dart';
 import '../widgets/custom_back_button.dart';
+import '../widgets/custom_drawer.dart';
 
 class TasksScreen extends StatefulWidget {
   final bool showBackButton;
@@ -66,7 +67,7 @@ class _TasksScreenState extends State<TasksScreen> {
                 color: Colors.white,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -108,7 +109,7 @@ class _TasksScreenState extends State<TasksScreen> {
                 color: Colors.white,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -245,7 +246,8 @@ class _TasksScreenState extends State<TasksScreen> {
                             width: 80,
                             height: 80,
                             decoration: BoxDecoration(
-                              color: AppTheme.warningColor.withOpacity(0.1),
+                              color:
+                                  AppTheme.warningColor.withValues(alpha: 0.1),
                               shape: BoxShape.circle,
                             ),
                             child: Icon(
@@ -325,7 +327,7 @@ class _TasksScreenState extends State<TasksScreen> {
           foregroundColor: isSelected ? Colors.white : const Color(0xFF4B5563),
           elevation: isSelected ? 2 : 0,
           shadowColor: isSelected
-              ? const Color(0xFF5B7EBF).withOpacity(0.3)
+              ? const Color(0xFF5B7EBF).withValues(alpha: 0.3)
               : Colors.transparent,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
@@ -363,121 +365,67 @@ class _TasksScreenState extends State<TasksScreen> {
   void _showSortOptions(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (context) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    Text(
-                      'Sort by',
-                      style: GoogleFonts.inter(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: const Color(0xFF1F2937),
-                      ),
-                    ),
-                    const Spacer(),
-                    IconButton(
-                      onPressed: () => Navigator.pop(context),
-                      icon: const Icon(Remix.close_line),
-                      color: const Color(0xFF6B7280),
-                    ),
-                  ],
-                ),
-              ),
-              const Divider(height: 1),
-              _buildSortOption(
-                context,
-                'Due Date',
-                'due_date',
-                Remix.calendar_line,
-              ),
-              _buildSortOption(
-                context,
-                'Priority',
-                'priority',
-                Remix.flag_line,
-              ),
-              _buildSortOption(
-                context,
-                'Status',
-                'status',
-                Remix.checkbox_circle_line,
-              ),
-              _buildSortOption(
-                context,
-                'Title',
-                'title',
-                Remix.file_text_line,
-              ),
-              _buildSortOption(
-                context,
-                'Created Date',
-                'created_at',
-                Remix.time_line,
-              ),
-              const SizedBox(height: 8),
-            ],
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => CustomDrawer(
+        title: 'Sort by',
+        items: [
+          DrawerItem(
+            icon: Remix.calendar_line,
+            label: 'Due Date',
+            showChevron: false,
+            onTap: () {
+              setState(() {
+                _selectedSort = 'due_date';
+              });
+              Navigator.pop(context);
+            },
           ),
-        );
-      },
-    );
-  }
-
-  Widget _buildSortOption(
-    BuildContext context,
-    String label,
-    String value,
-    IconData icon,
-  ) {
-    final isSelected = _selectedSort == value;
-    return InkWell(
-      onTap: () {
-        setState(() {
-          _selectedSort = value;
-        });
-        Navigator.pop(context);
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        color: isSelected ? const Color(0xFFF3F4F6) : Colors.transparent,
-        child: Row(
-          children: [
-            Icon(
-              icon,
-              size: 20,
-              color: isSelected
-                  ? const Color(0xFF5B7EBF)
-                  : const Color(0xFF6B7280),
-            ),
-            const SizedBox(width: 12),
-            Text(
-              label,
-              style: GoogleFonts.inter(
-                fontSize: 16,
-                color: isSelected
-                    ? const Color(0xFF5B7EBF)
-                    : const Color(0xFF1F2937),
-                fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
-              ),
-            ),
-            const Spacer(),
-            if (isSelected)
-              const Icon(
-                Remix.check_line,
-                color: Color(0xFF5B7EBF),
-                size: 20,
-              ),
-          ],
-        ),
+          DrawerItem(
+            icon: Remix.flag_line,
+            label: 'Priority',
+            showChevron: false,
+            onTap: () {
+              setState(() {
+                _selectedSort = 'priority';
+              });
+              Navigator.pop(context);
+            },
+          ),
+          DrawerItem(
+            icon: Remix.checkbox_circle_line,
+            label: 'Status',
+            showChevron: false,
+            onTap: () {
+              setState(() {
+                _selectedSort = 'status';
+              });
+              Navigator.pop(context);
+            },
+          ),
+          DrawerItem(
+            icon: Remix.file_text_line,
+            label: 'Title',
+            showChevron: false,
+            onTap: () {
+              setState(() {
+                _selectedSort = 'title';
+              });
+              Navigator.pop(context);
+            },
+          ),
+          DrawerItem(
+            icon: Remix.time_line,
+            label: 'Created Date',
+            showChevron: false,
+            onTap: () {
+              setState(() {
+                _selectedSort = 'created_at';
+              });
+              Navigator.pop(context);
+            },
+          ),
+        ],
       ),
     );
   }

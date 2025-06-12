@@ -1,25 +1,41 @@
 import 'package:flutter/material.dart';
-import 'package:agbc_app/utils/theme.dart';
+import 'package:flutter/services.dart';
+import '../utils/theme.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 import '../screens/tasks_screen.dart';
+import '../screens/profile_screen.dart';
+import '../screens/admin_screen.dart';
+import '../screens/settings_screen.dart';
+import '../screens/help_support_screen.dart';
+import '../screens/about_screen.dart';
+import '../widgets/custom_drawer.dart';
+import '../providers/navigation_provider.dart';
+import '../widgets/admin_route_guard.dart';
 
 class BottomNavBar extends StatelessWidget {
-  final int currentIndex;
-  final Function(int) onTap;
+  const BottomNavBar({super.key});
 
-  const BottomNavBar({
-    super.key,
-    required this.currentIndex,
-    required this.onTap,
-  });
+  void _handleTap(BuildContext context, int index) {
+    HapticFeedback.selectionClick();
+    context.read<NavigationProvider>().navigateTo(index);
+  }
+
+  void _navigateToScreen(BuildContext context, Widget screen) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => screen),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final user = Provider.of<AuthService>(context, listen: false).currentUser;
     final isAdmin = user?.role == 'admin';
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
 
     return Container(
+      height: 65 + bottomPadding,
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
@@ -30,250 +46,224 @@ class BottomNavBar extends StatelessWidget {
           ),
         ],
       ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildNavItem(0, Icons.home_rounded, 'Home'),
-              _buildNavItem(1, Icons.calendar_today_rounded, 'Meetings'),
-              _buildPrayButton(),
-              _buildMoreButton(context, isAdmin),
-            ],
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Padding(
+            padding: EdgeInsets.only(
+              top: 8.0,
+              bottom: 8.0 + bottomPadding,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildNavItem(context, NavigationProvider.homeIndex,
+                    Icons.home_rounded, 'Home'),
+                _buildNavItem(context, NavigationProvider.meetingsIndex,
+                    Icons.calendar_today_rounded, 'Meetings'),
+                const SizedBox(width: 48), // Space for the Pray button
+                _buildNavItem(context, NavigationProvider.readIndex,
+                    Icons.menu_book_rounded, 'Read'),
+                _buildMoreButton(context, isAdmin),
+              ],
+            ),
           ),
+          Positioned(
+            left: 0,
+            right: 0,
+            top: -25,
+            child: Center(
+              child: _buildPrayButton(context),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNavItem(
+      BuildContext context, int index, IconData icon, String label) {
+    final isSelected =
+        context.watch<NavigationProvider>().currentIndex == index;
+    final color = isSelected ? AppTheme.primaryColor : const Color(0xFF6B7280);
+
+    return Semantics(
+      label: label,
+      button: true,
+      selected: isSelected,
+      child: GestureDetector(
+        onTap: () => _handleTap(context, index),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              color: color,
+              size: 24,
+              semanticLabel: label,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                color: color,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildNavItem(int index, IconData icon, String label) {
-    final isSelected = currentIndex == index;
-    return GestureDetector(
-      onTap: () => onTap(index),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            color: isSelected ? AppTheme.primaryColor : Colors.grey,
-            size: 24,
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              color: isSelected ? AppTheme.primaryColor : Colors.grey,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  Widget _buildPrayButton(BuildContext context) {
+    final isSelected = context.watch<NavigationProvider>().currentIndex ==
+        NavigationProvider.prayIndex;
+    final color = isSelected ? AppTheme.primaryColor : const Color(0xFF6B7280);
 
-  Widget _buildPrayButton() {
-    return GestureDetector(
-      onTap: () => onTap(2),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: AppTheme.primaryColor,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: AppTheme.primaryColor.withValues(alpha: 0.3),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
-                ),
-              ],
+    return Semantics(
+      label: 'Pray',
+      button: true,
+      selected: isSelected,
+      child: GestureDetector(
+        onTap: () => _handleTap(context, NavigationProvider.prayIndex),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: AppTheme.primaryColor,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: AppTheme.primaryColor.withValues(alpha: 0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.favorite_rounded,
+                color: Colors.white,
+                size: 24,
+                semanticLabel: 'Pray',
+              ),
             ),
-            child: const Icon(
-              Icons.favorite_rounded,
-              color: Colors.white,
-              size: 24,
+            const SizedBox(height: 4),
+            Text(
+              'Pray',
+              style: TextStyle(
+                fontSize: 12,
+                color: color,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+              ),
             ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Pray',
-            style: TextStyle(
-              fontSize: 12,
-              color: currentIndex == 2 ? AppTheme.primaryColor : Colors.grey,
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildMoreButton(BuildContext context, bool isAdmin) {
-    return GestureDetector(
-      onTap: () {
-        showModalBottomSheet(
-          context: context,
-          backgroundColor: Colors.transparent,
-          isScrollControlled: true,
-          builder: (context) => Container(
-            decoration: BoxDecoration(
-              color: AppTheme.backgroundColor,
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(32)),
-              boxShadow: [
-                BoxShadow(
-                  color: AppTheme.primaryColor.withValues(alpha: 0.1),
-                  blurRadius: 30,
-                  offset: const Offset(0, -8),
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 40,
-                  height: 4,
-                  margin: const EdgeInsets.only(top: 12, bottom: 20),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                _buildMoreItem(
-                  context,
-                  Icons.person_outline_rounded,
-                  'Profile',
-                  () {
+    final isSelected = context.watch<NavigationProvider>().currentIndex ==
+        NavigationProvider.moreIndex;
+    final color = isSelected ? AppTheme.primaryColor : const Color(0xFF6B7280);
+
+    return Semantics(
+      label: 'More Options',
+      button: true,
+      selected: isSelected,
+      child: GestureDetector(
+        onTap: () {
+          HapticFeedback.mediumImpact();
+          showModalBottomSheet(
+            context: context,
+            backgroundColor: Colors.transparent,
+            isScrollControlled: true,
+            builder: (context) => CustomDrawer(
+              title: 'More Options',
+              items: [
+                DrawerItem(
+                  icon: Icons.person_outline_rounded,
+                  label: 'Profile',
+                  onTap: () {
                     Navigator.pop(context);
-                    onTap(4); // Profile
+                    _navigateToScreen(context, const ProfileScreen());
                   },
                 ),
-                _buildMoreItem(
-                  context,
-                  Icons.task_rounded,
-                  'Tasks',
-                  () {
+                DrawerItem(
+                  icon: Icons.task_rounded,
+                  label: 'Tasks',
+                  onTap: () {
                     Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            const TasksScreen(showBackButton: true),
-                      ),
-                    );
+                    _navigateToScreen(
+                        context, const TasksScreen(showBackButton: true));
                   },
                 ),
                 if (isAdmin)
-                  _buildMoreItem(
-                    context,
-                    Icons.admin_panel_settings_rounded,
-                    'Admin Center',
-                    () {
+                  DrawerItem(
+                    icon: Icons.admin_panel_settings_rounded,
+                    label: 'Admin Center',
+                    onTap: () {
                       Navigator.pop(context);
-                      onTap(5); // Admin Center
+                      _navigateToScreen(
+                        context,
+                        const AdminRouteGuard(
+                          child: AdminScreen(),
+                        ),
+                      );
                     },
                   ),
-                _buildMoreItem(
-                  context,
-                  Icons.settings_outlined,
-                  'Settings',
-                  () {
+                DrawerItem(
+                  icon: Icons.settings_rounded,
+                  label: 'Settings',
+                  onTap: () {
                     Navigator.pop(context);
-                    onTap(6); // Settings
+                    _navigateToScreen(context, const SettingsScreen());
                   },
                 ),
-                _buildMoreItem(
-                  context,
-                  Icons.help_outline_rounded,
-                  'Help & Support',
-                  () {
+                DrawerItem(
+                  icon: Icons.help_outline_rounded,
+                  label: 'Help & Support',
+                  onTap: () {
                     Navigator.pop(context);
-                    onTap(7); // Help
+                    _navigateToScreen(context, const HelpSupportScreen());
                   },
                 ),
-                _buildMoreItem(
-                  context,
-                  Icons.info_outline_rounded,
-                  'About',
-                  () {
+                DrawerItem(
+                  icon: Icons.info_outline_rounded,
+                  label: 'About',
+                  onTap: () {
                     Navigator.pop(context);
-                    onTap(8); // About
+                    _navigateToScreen(context, const AboutScreen());
                   },
                 ),
-                const SizedBox(height: 20),
               ],
             ),
-          ),
-        );
-      },
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.menu_rounded,
-            color: currentIndex >= 4 ? AppTheme.primaryColor : Colors.grey,
-            size: 24,
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'More',
-            style: TextStyle(
-              fontSize: 12,
-              color: currentIndex >= 4 ? AppTheme.primaryColor : Colors.grey,
+          );
+        },
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.more_horiz_rounded,
+              color: color,
+              size: 24,
+              semanticLabel: 'More Options',
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMoreItem(
-    BuildContext context,
-    IconData icon,
-    String label,
-    VoidCallback onTap,
-  ) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  icon,
-                  color: AppTheme.primaryColor,
-                  size: 24,
-                ),
+            const SizedBox(height: 4),
+            Text(
+              'More',
+              style: TextStyle(
+                fontSize: 12,
+                color: color,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
               ),
-              const SizedBox(width: 16),
-              Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 16,
-                  color: Color(0xFF1A237E),
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const Spacer(),
-              Icon(
-                Icons.chevron_right,
-                color: Colors.grey[400],
-                size: 20,
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

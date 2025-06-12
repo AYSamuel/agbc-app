@@ -449,7 +449,7 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF5B7EBF).withOpacity(0.1),
+                      color: const Color(0xFF5B7EBF).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: const Icon(

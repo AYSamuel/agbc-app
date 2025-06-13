@@ -73,6 +73,9 @@ class AppInitializationService {
         } else {
           developer.log(
               'User session found but remember me is not enabled, signing out...');
+          // Clear any saved credentials
+          await PreferencesService.clearLoginCredentials();
+          // Sign out the user
           await supabase.auth.signOut();
         }
       } else {

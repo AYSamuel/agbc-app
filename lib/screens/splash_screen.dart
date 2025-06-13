@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/app_initialization_service.dart';
+import 'package:provider/provider.dart';
+import '../services/auth_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -72,7 +74,12 @@ class _SplashScreenState extends State<SplashScreen>
 
   void _navigateToNextScreen() {
     if (!mounted) return;
-    Navigator.of(context).pushReplacementNamed('/home');
+    final authService = Provider.of<AuthService>(context, listen: false);
+    if (authService.isAuthenticated) {
+      Navigator.of(context).pushReplacementNamed('/home');
+    } else {
+      Navigator.of(context).pushReplacementNamed('/login');
+    }
   }
 
   @override

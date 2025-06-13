@@ -267,7 +267,11 @@ class _TasksScreenState extends State<TasksScreen> {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'You don\'t have any tasks assigned to you',
+                            _selectedFilter == 'all'
+                                ? 'You don\'t have any tasks assigned to you'
+                                : _selectedFilter == 'in_progress'
+                                    ? 'You currently have no tasks in progress'
+                                    : 'You have no completed tasks yet',
                             style: GoogleFonts.inter(
                               fontSize: 16,
                               color: AppTheme.neutralColor,

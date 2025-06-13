@@ -82,7 +82,7 @@ class _TaskStatusCardState extends State<TaskStatusCard> {
           Text(
             hasTasks
                 ? 'You have $taskCount ${taskCount == 1 ? 'task' : 'tasks'} assigned to you'
-                : 'You currently have no tasks',
+                : 'You don\'t have any tasks assigned to you',
             style: TextStyle(
               fontSize: 14,
               color: AppTheme.neutralColor,
@@ -90,11 +90,8 @@ class _TaskStatusCardState extends State<TaskStatusCard> {
           ),
           const SizedBox(height: 12),
           CustomButton.text(
-            onPressed: () async {
-              // Add haptic feedback
-              await HapticFeedback.lightImpact();
-              // Navigate to tasks screen
-              if (!mounted) return;
+            onPressed: () {
+              HapticFeedback.lightImpact();
               Navigator.of(context, rootNavigator: true).push(
                 MaterialPageRoute(
                   builder: (context) => const TasksScreen(showBackButton: true),

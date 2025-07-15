@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/supabase_provider.dart';
-import 'package:agbc_app/models/church_branch_model.dart';
-import 'package:agbc_app/widgets/custom_input.dart';
-import 'package:agbc_app/widgets/custom_button.dart';
-import 'package:agbc_app/utils/theme.dart';
+import 'package:grace_portal/models/church_branch_model.dart';
+import 'package:grace_portal/widgets/custom_input.dart';
+import 'package:grace_portal/widgets/custom_button.dart';
+import 'package:grace_portal/utils/theme.dart';
 import 'package:uuid/uuid.dart';
-import 'package:agbc_app/widgets/custom_back_button.dart';
-import 'package:agbc_app/models/user_model.dart';
-import 'package:agbc_app/widgets/custom_dropdown.dart';
+import 'package:grace_portal/widgets/custom_back_button.dart';
+import 'package:grace_portal/models/user_model.dart';
+import 'package:grace_portal/widgets/custom_dropdown.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AddBranchScreen extends StatefulWidget {

@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:agbc_app/services/notification_service.dart';
+import 'package:grace_portal/services/notification_service.dart';
 
 /// Utility class for sending notifications
 class NotificationUtils {

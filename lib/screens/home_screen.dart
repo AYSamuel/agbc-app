@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:agbc_app/utils/theme.dart';
-import 'package:agbc_app/widgets/task_status_card.dart';
-import 'package:agbc_app/widgets/daily_verse_card.dart';
-import 'package:agbc_app/widgets/quick_action_card.dart';
-import 'package:agbc_app/widgets/radial_menu.dart';
-import 'package:agbc_app/widgets/app_nav_bar.dart';
+import 'package:grace_portal/utils/theme.dart';
+import 'package:grace_portal/widgets/task_status_card.dart';
+import 'package:grace_portal/widgets/daily_verse_card.dart';
+import 'package:grace_portal/widgets/quick_action_card.dart';
+import 'package:grace_portal/widgets/radial_menu.dart';
+import 'package:grace_portal/widgets/app_nav_bar.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 import '../providers/supabase_provider.dart';

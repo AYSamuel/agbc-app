@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:agbc_app/utils/theme.dart';
+import 'package:grace_portal/utils/theme.dart';
 
 class RadialMenu extends StatefulWidget {
   final VoidCallback onTaskPressed;
@@ -22,7 +22,8 @@ class RadialMenu extends StatefulWidget {
   State<RadialMenu> createState() => _RadialMenuState();
 }
 
-class _RadialMenuState extends State<RadialMenu> with SingleTickerProviderStateMixin {
+class _RadialMenuState extends State<RadialMenu>
+    with SingleTickerProviderStateMixin {
   AnimationController? _controller;
   Animation<double>? _scaleAnimation;
   Animation<double>? _rotationAnimation;
@@ -45,9 +46,12 @@ class _RadialMenuState extends State<RadialMenu> with SingleTickerProviderStateM
       curve: Curves.easeInOut,
     );
 
-    _scaleAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(curvedAnimation);
-    _rotationAnimation = Tween<double>(begin: 0.0, end: 0.5).animate(curvedAnimation);
-    _opacityAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(curvedAnimation);
+    _scaleAnimation =
+        Tween<double>(begin: 0.0, end: 1.0).animate(curvedAnimation);
+    _rotationAnimation =
+        Tween<double>(begin: 0.0, end: 0.5).animate(curvedAnimation);
+    _opacityAnimation =
+        Tween<double>(begin: 0.0, end: 1.0).animate(curvedAnimation);
     _taskOffsetAnimation = Tween<Offset>(
       begin: const Offset(0, 0),
       end: const Offset(-0.5, -0.5),
@@ -70,7 +74,7 @@ class _RadialMenuState extends State<RadialMenu> with SingleTickerProviderStateM
 
   void _toggleMenu() {
     if (_controller == null) return;
-    
+
     setState(() {
       _isOpen = !_isOpen;
       if (_isOpen) {
@@ -88,7 +92,9 @@ class _RadialMenuState extends State<RadialMenu> with SingleTickerProviderStateM
     required String semanticLabel,
     required Animation<Offset>? offsetAnimation,
   }) {
-    if (offsetAnimation == null || _scaleAnimation == null || _opacityAnimation == null) {
+    if (offsetAnimation == null ||
+        _scaleAnimation == null ||
+        _opacityAnimation == null) {
       return const SizedBox.shrink();
     }
 
@@ -210,4 +216,4 @@ class _RadialMenuState extends State<RadialMenu> with SingleTickerProviderStateM
       ],
     );
   }
-} 
+}

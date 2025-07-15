@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
-import 'package:agbc_app/services/auth_service.dart';
-import 'package:agbc_app/services/supabase_service.dart';
-import 'package:agbc_app/services/permissions_service.dart';
-import 'package:agbc_app/services/notification_service.dart';
-import 'package:agbc_app/screens/login_screen.dart';
-import 'package:agbc_app/providers/branches_provider.dart';
+import 'package:grace_portal/services/auth_service.dart';
+import 'package:grace_portal/services/supabase_service.dart';
+import 'package:grace_portal/services/permissions_service.dart';
+import 'package:grace_portal/services/notification_service.dart';
+import 'package:grace_portal/screens/login_screen.dart';
+import 'package:grace_portal/providers/branches_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'test_helper.dart';
 

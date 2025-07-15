@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:agbc_app/utils/theme.dart';
+import 'package:grace_portal/utils/theme.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class DailyVerseCard extends StatelessWidget {

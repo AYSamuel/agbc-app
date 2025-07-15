@@ -8,7 +8,7 @@ import '../models/meeting_model.dart';
 import '../services/supabase_service.dart';
 import '../services/permissions_service.dart';
 import '../services/preferences_service.dart';
-import 'package:agbc_app/services/notification_service.dart';
+import 'package:grace_portal/services/notification_service.dart';
 
 /// Exception for user-facing authentication errors.
 class AuthException implements Exception {

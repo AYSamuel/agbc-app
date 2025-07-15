@@ -1,11 +1,11 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:agbc_app/services/location_service.dart';
-import 'package:agbc_app/services/permissions_service.dart';
-import 'package:agbc_app/services/notification_service.dart';
-import 'package:agbc_app/services/user_service.dart';
-import 'package:agbc_app/providers/branches_provider.dart';
-import 'package:agbc_app/providers/supabase_provider.dart';
-import 'package:agbc_app/services/preferences_service.dart';
+import 'package:grace_portal/services/location_service.dart';
+import 'package:grace_portal/services/permissions_service.dart';
+import 'package:grace_portal/services/notification_service.dart';
+import 'package:grace_portal/services/user_service.dart';
+import 'package:grace_portal/providers/branches_provider.dart';
+import 'package:grace_portal/providers/supabase_provider.dart';
+import 'package:grace_portal/services/preferences_service.dart';
 import 'dart:developer' as developer;
 
 class AppInitializationService {

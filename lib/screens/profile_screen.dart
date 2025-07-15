@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:agbc_app/utils/theme.dart';
+import 'package:grace_portal/utils/theme.dart';
 import 'package:provider/provider.dart';
-import 'package:agbc_app/services/auth_service.dart';
-import 'package:agbc_app/providers/branches_provider.dart';
-import 'package:agbc_app/widgets/custom_back_button.dart';
+import 'package:grace_portal/services/auth_service.dart';
+import 'package:grace_portal/providers/branches_provider.dart';
+import 'package:grace_portal/widgets/custom_back_button.dart';
 import 'login_screen.dart';
 
 class ProfileScreen extends StatefulWidget {

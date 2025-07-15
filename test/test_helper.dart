@@ -2,8 +2,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:agbc_app/models/church_branch_model.dart';
-import 'package:agbc_app/providers/supabase_provider.dart';
+import 'package:grace_portal/models/church_branch_model.dart';
+import 'package:grace_portal/providers/supabase_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 

@@ -1,4 +1,4 @@
-/// UserModel represents a church member or staff in the AGBC app.
+/// UserModel represents a church member or staff in the Grace Portal app.
 /// Handles user profile information, roles, and church departments.
 class UserModel {
   // Basic user information

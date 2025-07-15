@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
-import 'package:agbc_app/widgets/custom_input.dart';
-import 'package:agbc_app/widgets/loading_indicator.dart';
-import 'package:agbc_app/utils/theme.dart';
-import 'package:agbc_app/widgets/mixins/form_validation_mixin.dart';
+import 'package:grace_portal/widgets/custom_input.dart';
+import 'package:grace_portal/widgets/loading_indicator.dart';
+import 'package:grace_portal/utils/theme.dart';
+import 'package:grace_portal/widgets/mixins/form_validation_mixin.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'form/form_spacing.dart';

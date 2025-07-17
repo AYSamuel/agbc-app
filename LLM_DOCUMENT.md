@@ -1,11 +1,11 @@
-# AGBC App - Comprehensive Project Overview
+# GRACE PORTAL - Comprehensive Project Overview
 
 ## 1. Introduction
 
-**App Name:** AGBC App
+**App Name:** GRACE PORTAL
 
 **Overview:**
-AGBC App is a comprehensive church management tool designed to streamline administrative tasks and enhance member engagement. Developed using Flutter, it provides a centralized platform for managing church activities, member communication, and organizational workflows. The application serves both church administrators by offering robust management tools and church members by fostering a connected and engaged community.
+GRACE PORTAL is a comprehensive church management tool designed to streamline administrative tasks and enhance member engagement. Developed using Flutter, it provides a centralized platform for managing church activities, member communication, and organizational workflows. The application serves both church administrators by offering robust management tools and church members by fostering a connected and engaged community.
 
 **Purpose:**
 To empower church leaders with efficient management tools for tasks, meetings, members, and branches, while providing church members with timely information, resources, and avenues for community engagement.
@@ -17,7 +17,7 @@ To empower church leaders with efficient management tools for tasks, meetings, m
 
 ## 2. Core Features
 
-The AGBC App offers a suite of features tailored to the needs of a church community:
+The GRACE PORTAL offers a suite of features tailored to the needs of a church community:
 
 **2.1. User Authentication & Role-Based Access Control:**
 

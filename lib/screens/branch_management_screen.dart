@@ -32,23 +32,45 @@ class _BranchManagementScreenState extends State<BranchManagementScreen> {
             // Header with Back button
             Padding(
               padding: const EdgeInsets.all(16.0),
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  CustomBackButton(
-                    onPressed: () => Navigator.pop(context),
+                  // Title row
+                  Row(
+                    children: [
+                      CustomBackButton(
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                      const SizedBox(width: 16),
+                      const Text(
+                        'Branches',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1A237E),
+                        ),
+                      ),
+                      const Spacer(),
+                      if (user?.role == 'admin')
+                        IconButton(
+                          icon: const Icon(Icons.add),
+                          onPressed: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const AddBranchScreen(),
+                              fullscreenDialog: true,
+                            ),
+                          ),
+                          color: AppTheme.primaryColor,
+                        ),
+                    ],
                   ),
-                  const SizedBox(width: 16),
-                  const Text(
-                    'Branches',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF1A237E),
-                    ),
-                  ),
-                  const Spacer(),
-                  if (user?.role == 'admin')
-                    Row(
+                  // Admin buttons row
+                  if (user?.role == 'admin') ...[
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
                       children: [
                         ElevatedButton.icon(
                           onPressed: () async {
@@ -84,20 +106,42 @@ class _BranchManagementScreenState extends State<BranchManagementScreen> {
                             foregroundColor: Colors.white,
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        IconButton(
-                          icon: const Icon(Icons.add),
-                          onPressed: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const AddBranchScreen(),
-                              fullscreenDialog: true,
-                            ),
+                        ElevatedButton.icon(
+                          onPressed: () async {
+                            try {
+                              final deviceId =
+                                  await notificationService.getDeviceId();
+                              final user = authService.currentUser;
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                        'Device ID: ${deviceId ?? 'null'}\nUser ID: ${user?.id ?? 'null'}'),
+                                    duration: const Duration(seconds: 5),
+                                  ),
+                                );
+                              }
+                            } catch (e) {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Error: ${e.toString()}'),
+                                    backgroundColor: AppTheme.errorColor,
+                                  ),
+                                );
+                              }
+                            }
+                          },
+                          icon: const Icon(Icons.info),
+                          label: const Text('Debug Device'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.orange,
+                            foregroundColor: Colors.white,
                           ),
-                          color: AppTheme.primaryColor,
                         ),
                       ],
                     ),
+                  ],
                 ],
               ),
             ),

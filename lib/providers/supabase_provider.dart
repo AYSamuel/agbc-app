@@ -220,4 +220,23 @@ class SupabaseProvider with ChangeNotifier {
       throw Exception('Failed to create user: $e');
     }
   }
+
+  // Admin user management operations
+  Future<void> deleteUser(String userId) async {
+    try {
+      await _supabaseService.deleteUser(userId);
+      notifyListeners();
+    } catch (e) {
+      throw Exception('Failed to delete user: $e');
+    }
+  }
+
+  Future<void> updateUserBranch(String userId, String? branchId) async {
+    try {
+      await _supabaseService.updateUserBranch(userId, branchId);
+      notifyListeners();
+    } catch (e) {
+      throw Exception('Failed to update user branch: $e');
+    }
+  }
 }

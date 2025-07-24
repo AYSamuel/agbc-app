@@ -194,4 +194,45 @@ class SupabaseService {
         .order('created_at')
         .map((data) => data.map((doc) => CommentModel.fromJson(doc)).toList());
   }
+
+  // Admin user management operations
+  Future<void> deleteUser(String userId) async {
+    try {
+      // First, delete related data to maintain referential integrity
+      // Delete user's tasks
+      await _supabase.from('tasks').delete().eq('assigned_to', userId);
+      
+      // Delete user's task comments
+      await _supabase.from('task_comments').delete().eq('user_id', userId);
+      
+      // Remove user from meeting invitations
+      final meetings = await _supabase.from('meetings').select('id, invited_users');
+      for (final meeting in meetings) {
+        final invitedUsers = List<String>.from(meeting['invited_users'] ?? []);
+        if (invitedUsers.contains(userId)) {
+          invitedUsers.remove(userId);
+          await _supabase.from('meetings').update({
+            'invited_users': invitedUsers,
+            'updated_at': DateTime.now().toIso8601String(),
+          }).eq('id', meeting['id']);
+        }
+      }
+      
+      // Finally, delete the user record
+      await _supabase.from('users').delete().eq('id', userId);
+    } catch (e) {
+      throw Exception('Failed to delete user: $e');
+    }
+  }
+
+  Future<void> updateUserBranch(String userId, String? branchId) async {
+    try {
+      await _supabase.from('users').update({
+        'branch_id': branchId,
+        'updated_at': DateTime.now().toIso8601String(),
+      }).eq('id', userId);
+    } catch (e) {
+      throw Exception('Failed to update user branch: $e');
+    }
+  }
 }

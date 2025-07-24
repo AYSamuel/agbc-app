@@ -111,12 +111,46 @@ class AuthService extends ChangeNotifier {
 
   Future<void> _handleAuthStateChange(Session session) async {
     try {
+      _log.info('=== AUTH STATE CHANGE HANDLER ===');
+      _log.info('Session user ID: ${session.user.id}');
+      _log.info('Session user email: ${session.user.email}');
+
+      // Only proceed if the session has a valid user ID
+      if (session.user.id == null || session.user.id.isEmpty) {
+        _log.warning(
+            'No valid user ID in session. Skipping profile fetch and device registration.');
+        return;
+      }
+
       // Get user data from our database
-      final user = await _supabaseService.getUser(session.user.id).first;
-      if (user != null) {
-        _currentUser = user;
-        // Register device for notifications
-        await _notificationService.registerDevice(session.user.id);
+      print('Fetching user profile for id: ${session.user.id}');
+      try {
+        final user = await _supabaseService.getUser(session.user.id).first;
+        print('Profile fetch result: $user');
+        if (user != null) {
+          _log.info('User found in database: ${user.email}');
+          _currentUser = user;
+
+          // Only register device if we have a valid current user and the session is fresh
+          // This prevents device registration during app initialization with stale sessions
+          if (_currentUser != null && session.accessToken.isNotEmpty) {
+            _log.info('Registering device for user: ${session.user.id}');
+            try {
+              await _notificationService.registerDevice(session.user.id);
+              _log.info('Device registration completed');
+            } catch (e) {
+              _log.warning('Device registration failed, but continuing: $e');
+              // Don't rethrow - device registration failure shouldn't block login
+            }
+          }
+        } else {
+          _log.warning('User not found in database for ID: ${session.user.id}');
+        }
+      } catch (e, stack) {
+        print('Error fetching user profile: $e');
+        print(stack);
+        _log.severe('Error fetching user profile: $e');
+        _log.severe('Stack: $stack');
       }
       notifyListeners();
     } catch (e) {
@@ -160,6 +194,20 @@ class AuthService extends ChangeNotifier {
 
       // Clear any cached data
       _loginAttempts.clear();
+
+      // Reinitialize the auth state listener for future logins
+      _log.info('Reinitializing auth state listener after logout');
+      _authStateSubscription =
+          _supabase.auth.onAuthStateChange.listen((data) async {
+        final session = data.session;
+        if (session != null) {
+          await _handleAuthStateChange(session);
+        } else {
+          _currentUser = null;
+          notifyListeners();
+        }
+      });
+      _log.info('Auth state listener reinitialized successfully');
     } catch (e) {
       // Handle error silently in production
     }
@@ -226,8 +274,6 @@ class AuthService extends ChangeNotifier {
             emailVerified: true,
           );
           await _supabaseService.updateUser(_currentUser!);
-          // Register device for notifications
-          await _notificationService.registerDevice(response.user!.id);
           return _currentUser;
         }
       }
@@ -339,24 +385,10 @@ class AuthService extends ChangeNotifier {
           await _supabase.auth.refreshSession();
           _log.info('Session refreshed after registration');
 
-          // Register device for notifications
-          await _notificationService.registerDevice(response.user!.id);
-        } catch (e) {
+          // Device registration will be handled by _handleAuthStateChange
+        } catch (e, stack) {
           _log.warning('Error setting session after registration: $e');
-          // Try to sign in with the credentials
-          try {
-            final signInResponse = await _supabase.auth.signInWithPassword(
-              email: email,
-              password: password,
-            );
-            if (signInResponse.session != null) {
-              await _supabase.auth
-                  .setSession(signInResponse.session!.accessToken);
-              _log.info('Successfully signed in after registration');
-            }
-          } catch (signInError) {
-            _log.severe('Error signing in after registration: $signInError');
-          }
+          _log.warning('Stack: $stack');
         }
       }
 
@@ -365,13 +397,11 @@ class AuthService extends ChangeNotifier {
       notifyListeners();
 
       return user;
-    } catch (e) {
-      _log.severe('Error during registration: $e');
-      if (e is AuthException) rethrow;
-      if (e is PostgrestException) {
-        throw AuthException('Database error: ${e.message}');
-      }
-      throw AuthException('An unexpected error occurred during registration.');
+    } catch (e, stack) {
+      _log.severe('=== REGISTRATION ERROR ===');
+      _log.severe('Error: $e');
+      _log.severe('Stack: $stack');
+      rethrow;
     }
   }
 
@@ -721,8 +751,7 @@ class AuthService extends ChangeNotifier {
           );
           _log.fine('Updated user last login time');
           await _supabaseService.updateUser(_currentUser!);
-          // Register device for notifications
-          await _notificationService.registerDevice(session.user.id);
+          // Device registration will be handled by _handleAuthStateChange
         } else {
           _log.fine('No user found in database');
         }
@@ -813,7 +842,15 @@ class AuthService extends ChangeNotifier {
       _isLoading = true;
       notifyListeners();
 
+      _log.info('=== REGISTRATION STARTED ===');
+      _log.info('Email: $email');
+      _log.info('Name: $name');
+      _log.info('Role: $role');
+      _log.info('Location: $location');
+      _log.info('Branch ID: $branchId');
+
       // 1. Sign up with Supabase Auth
+      _log.info('Step 1: Signing up with Supabase Auth...');
       final response = await _supabase.auth.signUp(
         email: email,
         password: password,
@@ -825,11 +862,15 @@ class AuthService extends ChangeNotifier {
         },
       );
 
+      _log.info('Auth response: ${response.user != null}');
+      _log.info('Session: ${response.session != null}');
+
       if (response.user == null) {
         throw AuthException('Registration failed. Please try again.');
       }
 
       // 2. Create user in database
+      _log.info('Step 2: Creating user in database...');
       final user = UserModel(
         id: response.user!.id,
         displayName: name,
@@ -848,16 +889,35 @@ class AuthService extends ChangeNotifier {
         branchId: branchId,
       );
 
+      _log.info('User model created with ID: ${user.id}');
+      _log.info('User JSON: ${user.toJson()}');
+
       // 3. Save user to database using insert
-      await _supabase.from('users').insert(user.toJson());
+      _log.info('Step 3: Inserting user into database...');
+      try {
+        await _supabase.from('users').insert(user.toJson());
+        _log.info('User successfully inserted into database');
+      } catch (dbError, dbStack) {
+        _log.severe('Database insert error: $dbError');
+        _log.severe('Stack: $dbStack');
+        rethrow;
+      }
 
       // 4. Set session if available
       if (response.session != null) {
+        _log.info('Step 4: Setting session...');
         await _supabase.auth.setSession(response.session!.accessToken);
         await _handleSession(response.session!);
+        _log.info('Session set successfully');
       }
 
+      _log.info('=== REGISTRATION COMPLETED SUCCESSFULLY ===');
       return user;
+    } catch (e, stack) {
+      _log.severe('=== REGISTRATION ERROR ===');
+      _log.severe('Error: $e');
+      _log.severe('Stack: $stack');
+      rethrow;
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -888,7 +948,7 @@ class AuthService extends ChangeNotifier {
           await _supabaseService.updateUser(_currentUser!);
         }
 
-        await _notificationService.registerDevice(session.user.id);
+        // Device registration will be handled by _handleAuthStateChange
 
         // Log detailed user information
         _log.info('=== User Session Details ===');
@@ -990,8 +1050,7 @@ class AuthService extends ChangeNotifier {
         await _supabase.from('users').insert(newUser.toJson());
         _currentUser = newUser;
 
-        // Register device for notifications
-        await _notificationService.registerDevice(response.user!.id);
+        // Device registration will be handled by _handleAuthStateChange
       } else {
         await _handleSession(response.session!);
       }

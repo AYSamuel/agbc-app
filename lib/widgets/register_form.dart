@@ -78,13 +78,25 @@ class _RegisterFormState extends State<RegisterForm> with FormValidationMixin {
   }
 
   Future<void> _register() async {
+    print('--- Registration Attempt ---');
+    print('Name: \'${_nameController.text}\'');
+    print('Email: \'${_emailController.text}\'');
+    print('Phone: \'${_phoneController.text}\'');
+    print('Location: \'${_locationController.text}\'');
+    print('BranchId: \'$_selectedBranchId\'');
+    print('Password: (length: \'${_passwordController.text.length}\')');
+    print(
+        'Confirm Password: (length: \'${_confirmPasswordController.text.length}\')');
+
     if (!_formKey.currentState!.validate()) {
+      print('Form validation failed');
       _showErrorSnackBar('Please fill in all required fields correctly');
       return;
     }
 
     // Validate branch selection
     if (_selectedBranchId == null) {
+      print('No branch selected');
       _showErrorSnackBar('Please select a branch');
       return;
     }
@@ -93,16 +105,17 @@ class _RegisterFormState extends State<RegisterForm> with FormValidationMixin {
 
     try {
       final authService = Provider.of<AuthService>(context, listen: false);
-
+      print('Calling registerWithEmailAndPassword...');
       await authService.registerWithEmailAndPassword(
         _emailController.text.trim(),
         _passwordController.text,
         _nameController.text.trim(),
         _phoneController.text.trim(),
         _locationController.text.trim(),
-        'member',
+        'member', // Default role for new registrations
         _selectedBranchId,
       );
+      print('Registration call succeeded');
 
       if (mounted) {
         // Show verification dialog
@@ -118,7 +131,8 @@ class _RegisterFormState extends State<RegisterForm> with FormValidationMixin {
               builder: (context, setState) {
                 // Start the countdown timer if it's not already running
                 if (!canResend && countdownTimer == null) {
-                  countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+                  countdownTimer =
+                      Timer.periodic(const Duration(seconds: 1), (timer) {
                     // Check if the StatefulBuilder is still mounted
                     if (countdown > 0) {
                       setState(() {
@@ -183,7 +197,9 @@ class _RegisterFormState extends State<RegisterForm> with FormValidationMixin {
           },
         );
       }
-    } catch (e) {
+    } catch (e, stack) {
+      print('Registration error: $e');
+      print(stack);
       if (mounted) {
         String errorMessage;
         if (e is AuthException) {

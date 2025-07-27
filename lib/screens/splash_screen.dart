@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../services/app_initialization_service.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 
@@ -21,7 +20,7 @@ class _SplashScreenState extends State<SplashScreen>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 5000),
+      duration: const Duration(milliseconds: 3000),
     );
     _fadeAnimation = CurvedAnimation(
       parent: _controller,
@@ -44,14 +43,16 @@ class _SplashScreenState extends State<SplashScreen>
   Future<void> _initializeApp() async {
     final initializationStart = DateTime.now();
     try {
-      await AppInitializationService.initializeApp();
+      // Wait for auth service to be ready (it's already initialized in main.dart)
+      // Just add a small delay to ensure everything is properly set up
+      await Future.delayed(const Duration(milliseconds: 500));
 
-      // Ensure splash screen stays for at least 5 seconds
+      // Ensure splash screen stays for at least 3 seconds for better UX
       final initializationDuration =
           DateTime.now().difference(initializationStart);
-      if (initializationDuration < const Duration(seconds: 5)) {
+      if (initializationDuration < const Duration(seconds: 3)) {
         await Future.delayed(
-            const Duration(seconds: 5) - initializationDuration);
+            const Duration(seconds: 3) - initializationDuration);
       }
 
       if (mounted) {
@@ -62,9 +63,9 @@ class _SplashScreenState extends State<SplashScreen>
       // Even on error, ensure minimum splash screen duration
       final initializationDuration =
           DateTime.now().difference(initializationStart);
-      if (initializationDuration < const Duration(seconds: 5)) {
+      if (initializationDuration < const Duration(seconds: 3)) {
         await Future.delayed(
-            const Duration(seconds: 5) - initializationDuration);
+            const Duration(seconds: 3) - initializationDuration);
       }
       if (mounted) {
         _navigateToNextScreen();
@@ -114,6 +115,27 @@ class _SplashScreenState extends State<SplashScreen>
                     color: colorScheme.onPrimary,
                   ),
                   const SizedBox(height: 24),
+                  // App Name
+                  Text(
+                    'Grace Portal',
+                    style: TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      color: colorScheme.onPrimary,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Church Management System',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color:
+                          colorScheme.onPrimary.withAlpha((0.8 * 255).round()),
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 40),
                   // Loading Indicator
                   CircularProgressIndicator(
                     valueColor:

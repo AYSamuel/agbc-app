@@ -144,16 +144,15 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
     );
   }
 
-  Color _getRoleColor(String role) {
-    switch (role.toLowerCase()) {
-      case 'admin':
+  Color _getRoleColor(UserRole role) {
+    switch (role) {
+      case UserRole.admin:
         return AppTheme.errorColor;
-      case 'pastor':
+      case UserRole.pastor:
         return AppTheme.secondaryColor;
-      case 'worker':
+      case UserRole.worker:
         return AppTheme.accentColor;
-      case 'member':
-      default:
+      case UserRole.member:
         return AppTheme.successColor;
     }
   }

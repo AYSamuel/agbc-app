@@ -24,7 +24,7 @@ class UserDetailsScreen extends StatefulWidget {
 
 class _UserDetailsScreenState extends State<UserDetailsScreen> {
   final _log = Logger('_UserDetailsScreenState');
-  late String selectedRole;
+  late UserRole selectedRole;
   late String? selectedBranchId;
   bool isEditing = false;
 
@@ -155,7 +155,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                             ),
                           ),
                           child: Text(
-                            widget.user.role.toUpperCase(),
+                            widget.user.role.name.toUpperCase(),
                             style: TextStyle(
                               color: _getRoleColor(widget.user.role),
                               fontWeight: FontWeight.bold,
@@ -211,7 +211,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                             const SizedBox(width: 12),
                             Expanded(
                               child: Text(
-                                widget.user.location ?? 'Not set',
+                                widget.user.locationString ?? 'Not set',
                                 style: AppTheme.subtitleStyle.copyWith(
                                   color: AppTheme.neutralColor,
                                 ),
@@ -247,27 +247,27 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                             ),
                           ),
                           const SizedBox(height: 8),
-                          CustomDropdown<String>(
+                          CustomDropdown<UserRole>(
                             value: selectedRole,
                             items: const [
                               DropdownMenuItem(
-                                value: 'admin',
+                                value: UserRole.admin,
                                 child: Text('Admin'),
                               ),
                               DropdownMenuItem(
-                                value: 'pastor',
+                                value: UserRole.pastor,
                                 child: Text('Pastor'),
                               ),
                               DropdownMenuItem(
-                                value: 'worker',
+                                value: UserRole.worker,
                                 child: Text('Worker'),
                               ),
                               DropdownMenuItem(
-                                value: 'member',
+                                value: UserRole.member,
                                 child: Text('Member'),
                               ),
                             ],
-                            onChanged: (String? newValue) {
+                            onChanged: (UserRole? newValue) {
                               if (newValue != null) {
                                 setState(() {
                                   selectedRole = newValue;
@@ -363,16 +363,15 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
     );
   }
 
-  Color _getRoleColor(String role) {
-    switch (role.toLowerCase()) {
-      case 'admin':
+  Color _getRoleColor(UserRole role) {
+    switch (role) {
+      case UserRole.admin:
         return AppTheme.errorColor;
-      case 'pastor':
+      case UserRole.pastor:
         return AppTheme.secondaryColor;
-      case 'worker':
+      case UserRole.worker:
         return AppTheme.accentColor;
-      case 'member':
-      default:
+      case UserRole.member:
         return AppTheme.successColor;
     }
   }
@@ -385,7 +384,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
       // Update role
       await supabaseProvider.updateUserRole(
         widget.user.id,
-        selectedRole,
+        selectedRole.name,
       );
 
       // Update branch if changed

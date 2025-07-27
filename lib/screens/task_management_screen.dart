@@ -4,7 +4,8 @@ import '../models/task_model.dart';
 import '../utils/theme.dart';
 import '../widgets/custom_back_button.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../services/supabase_service.dart';
+import 'package:provider/provider.dart';
+import '../providers/supabase_provider.dart';
 import '../models/user_model.dart';
 import 'task_details_screen.dart';
 import '../widgets/custom_card.dart';
@@ -20,35 +21,27 @@ class TaskManagementScreen extends StatefulWidget {
 }
 
 class _TaskManagementScreenState extends State<TaskManagementScreen> {
-  final SupabaseService _supabaseService = SupabaseService();
   String _selectedFilter = 'all';
   String _selectedSort = 'due_date';
   final Map<String, UserModel?> _userCache = {};
+  List<UserModel> _allUsers = [];
 
   @override
   void initState() {
     super.initState();
-    // Set status bar to transparent with dark icons
-    SystemChrome.setSystemUIOverlayStyle(
-      const SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.dark,
-        statusBarBrightness: Brightness.light,
-      ),
-    );
+    _loadUsers();
   }
 
-  @override
-  void dispose() {
-    // Reset status bar to default when leaving the screen
-    SystemChrome.setSystemUIOverlayStyle(
-      const SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.dark,
-        statusBarBrightness: Brightness.light,
-      ),
-    );
-    super.dispose();
+  void _loadUsers() {
+    final supabaseProvider =
+        Provider.of<SupabaseProvider>(context, listen: false);
+    supabaseProvider.getAllUsers().listen((users) {
+      if (mounted) {
+        setState(() {
+          _allUsers = users;
+        });
+      }
+    });
   }
 
   @override
@@ -81,13 +74,13 @@ class _TaskManagementScreenState extends State<TaskManagementScreen> {
             _buildFilterAndSortBar(),
             Expanded(
               child: StreamBuilder<List<TaskModel>>(
-                stream: _supabaseService.getAllTasks(),
+                stream: Provider.of<SupabaseProvider>(context).getAllTasks(),
                 builder: (context, snapshot) {
                   if (snapshot.hasError) {
                     return Center(
                       child: Text(
                         'Error: ${snapshot.error}',
-                        style: const TextStyle(
+                        style: GoogleFonts.inter(
                           color: Colors.red,
                           fontSize: 16,
                         ),
@@ -96,45 +89,39 @@ class _TaskManagementScreenState extends State<TaskManagementScreen> {
                   }
 
                   if (!snapshot.hasData) {
-                    return const Center(
-                      child: CircularProgressIndicator(),
+                    return Center(
+                      child: CircularProgressIndicator(
+                        color: AppTheme.primaryColor,
+                      ),
                     );
                   }
 
                   final tasks = _filterAndSortTasks(snapshot.data!);
+
                   if (tasks.isEmpty) {
                     return Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Container(
-                            width: 80,
-                            height: 80,
-                            decoration: BoxDecoration(
-                              color:
-                                  AppTheme.warningColor.withValues(alpha: 0.1),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              Remix.task_line,
-                              color: AppTheme.warningColor,
-                              size: 40,
-                            ),
+                          Icon(
+                            Remix.task_line,
+                            size: 64,
+                            color: AppTheme.primaryColor,
                           ),
                           const SizedBox(height: 16),
                           Text(
                             'No Tasks Found',
                             style: GoogleFonts.inter(
-                              fontSize: 20,
+                              fontSize: 18,
                               fontWeight: FontWeight.bold,
-                              color: AppTheme.darkNeutralColor,
+                              color: AppTheme.primaryColor,
                             ),
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'There are no tasks in the system',
+                            'There are no tasks matching your current filter.',
                             style: GoogleFonts.inter(
-                              fontSize: 16,
+                              fontSize: 14,
                               color: AppTheme.neutralColor,
                             ),
                           ),
@@ -161,29 +148,19 @@ class _TaskManagementScreenState extends State<TaskManagementScreen> {
 
   Widget _buildFilterAndSortBar() {
     return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
           Expanded(
             child: CustomDropdown<String>(
               value: _selectedFilter,
-              label: 'Filter',
               items: const [
                 DropdownMenuItem(value: 'all', child: Text('All Tasks')),
                 DropdownMenuItem(value: 'pending', child: Text('Pending')),
                 DropdownMenuItem(
                     value: 'in_progress', child: Text('In Progress')),
                 DropdownMenuItem(value: 'completed', child: Text('Completed')),
+                DropdownMenuItem(value: 'cancelled', child: Text('Cancelled')),
               ],
               onChanged: (value) {
                 if (value != null) {
@@ -192,17 +169,20 @@ class _TaskManagementScreenState extends State<TaskManagementScreen> {
                   });
                 }
               },
+              hint: 'Filter by Status',
             ),
           ),
           const SizedBox(width: 16),
           Expanded(
             child: CustomDropdown<String>(
               value: _selectedSort,
-              label: 'Sort by',
               items: const [
                 DropdownMenuItem(value: 'due_date', child: Text('Due Date')),
                 DropdownMenuItem(value: 'priority', child: Text('Priority')),
                 DropdownMenuItem(value: 'status', child: Text('Status')),
+                DropdownMenuItem(value: 'title', child: Text('Title')),
+                DropdownMenuItem(
+                    value: 'created_at', child: Text('Created Date')),
               ],
               onChanged: (value) {
                 if (value != null) {
@@ -211,6 +191,7 @@ class _TaskManagementScreenState extends State<TaskManagementScreen> {
                   });
                 }
               },
+              hint: 'Sort by',
             ),
           ),
         ],
@@ -219,75 +200,74 @@ class _TaskManagementScreenState extends State<TaskManagementScreen> {
   }
 
   Widget _buildTaskCard(TaskModel task) {
-    return CustomCard(
-      padding: const EdgeInsets.all(16),
-      borderRadius: 8,
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withValues(alpha: 0.05),
-          blurRadius: 10,
-          offset: const Offset(0, 4),
-        ),
-      ],
-      child: InkWell(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => TaskDetailsScreen(task: task),
-            ),
-          );
-        },
-        borderRadius: BorderRadius.circular(8),
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.lightImpact();
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => TaskDetailsScreen(task: task),
+          ),
+        );
+      },
+      child: CustomCard(
+        padding: const EdgeInsets.only(bottom: 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
-                  child: Text(
-                    task.title,
-                    style: GoogleFonts.inter(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      color: AppTheme.darkNeutralColor,
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        task.title,
+                        style: GoogleFonts.inter(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.darkNeutralColor,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        task.description,
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          color: AppTheme.neutralColor,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ),
                 ),
+                const SizedBox(width: 12),
                 _buildStatusChip(task.status),
               ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              task.description,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                color: AppTheme.neutralColor,
-              ),
             ),
             const SizedBox(height: 16),
             Row(
               children: [
                 _buildInfoChip(
-                  Remix.calendar_line,
-                  _formatDate(task.dueDate),
-                  Colors.blue,
+                  icon: Remix.flag_line,
+                  label: _getPriorityDisplayText(task.priority),
+                  color: _getPriorityColor(task.priority),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 12),
                 _buildInfoChip(
-                  Remix.flag_line,
-                  task.priority.toUpperCase(),
-                  _getPriorityColor(task.priority),
+                  icon: Remix.calendar_line,
+                  label: _formatDate(task.dueDate),
+                  color: AppTheme.neutralColor,
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
             FutureBuilder<UserModel?>(
-              future: _getUserDetails(task.createdBy),
+              future: _getUserDetails(task.assignedTo),
               builder: (context, snapshot) {
-                if (snapshot.hasData) {
+                if (snapshot.hasData && snapshot.data != null) {
                   return Row(
                     children: [
                       Icon(
@@ -297,9 +277,9 @@ class _TaskManagementScreenState extends State<TaskManagementScreen> {
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        'Created by: ${snapshot.data?.displayName ?? 'Unknown'}',
+                        'Assigned to: ${snapshot.data!.displayName}',
                         style: GoogleFonts.inter(
-                          fontSize: 14,
+                          fontSize: 12,
                           color: AppTheme.neutralColor,
                         ),
                       ),
@@ -315,7 +295,7 @@ class _TaskManagementScreenState extends State<TaskManagementScreen> {
     );
   }
 
-  Widget _buildStatusChip(String status) {
+  Widget _buildStatusChip(TaskStatus status) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
@@ -323,7 +303,7 @@ class _TaskManagementScreenState extends State<TaskManagementScreen> {
         borderRadius: BorderRadius.circular(16),
       ),
       child: Text(
-        status.toUpperCase(),
+        _getStatusDisplayText(status),
         style: GoogleFonts.inter(
           color: _getStatusColor(status),
           fontWeight: FontWeight.bold,
@@ -333,28 +313,29 @@ class _TaskManagementScreenState extends State<TaskManagementScreen> {
     );
   }
 
-  Widget _buildInfoChip(IconData icon, String label, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14, color: color),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: GoogleFonts.inter(
-              color: color,
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-            ),
+  Widget _buildInfoChip({
+    required IconData icon,
+    required String label,
+    required Color color,
+  }) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(
+          icon,
+          size: 14,
+          color: color,
+        ),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: GoogleFonts.inter(
+            fontSize: 12,
+            color: color,
+            fontWeight: FontWeight.w500,
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -362,8 +343,25 @@ class _TaskManagementScreenState extends State<TaskManagementScreen> {
     // Apply filter
     var filteredTasks = tasks;
     if (_selectedFilter != 'all') {
-      filteredTasks =
-          tasks.where((task) => task.status == _selectedFilter).toList();
+      TaskStatus? filterStatus;
+      switch (_selectedFilter) {
+        case 'pending':
+          filterStatus = TaskStatus.pending;
+          break;
+        case 'in_progress':
+          filterStatus = TaskStatus.inProgress;
+          break;
+        case 'completed':
+          filterStatus = TaskStatus.completed;
+          break;
+        case 'cancelled':
+          filterStatus = TaskStatus.cancelled;
+          break;
+      }
+      if (filterStatus != null) {
+        filteredTasks =
+            tasks.where((task) => task.status == filterStatus).toList();
+      }
     }
 
     // Apply sort
@@ -376,49 +374,95 @@ class _TaskManagementScreenState extends State<TaskManagementScreen> {
             .compareTo(_getPriorityWeight(a.priority)));
         break;
       case 'status':
-        filteredTasks.sort((a, b) => a.status.compareTo(b.status));
+        filteredTasks.sort((a, b) =>
+            _getStatusWeight(a.status).compareTo(_getStatusWeight(b.status)));
+        break;
+      case 'title':
+        filteredTasks.sort((a, b) => a.title.compareTo(b.title));
+        break;
+      case 'created_at':
+        filteredTasks.sort((a, b) => b.createdAt.compareTo(a.createdAt));
         break;
     }
 
     return filteredTasks;
   }
 
-  int _getPriorityWeight(String priority) {
-    switch (priority.toLowerCase()) {
-      case 'high':
+  int _getPriorityWeight(TaskPriority priority) {
+    switch (priority) {
+      case TaskPriority.urgent:
+        return 4;
+      case TaskPriority.high:
         return 3;
-      case 'medium':
+      case TaskPriority.medium:
         return 2;
-      case 'low':
+      case TaskPriority.low:
         return 1;
-      default:
-        return 0;
     }
   }
 
-  Color _getStatusColor(String status) {
-    switch (status.toLowerCase()) {
-      case 'completed':
+  int _getStatusWeight(TaskStatus status) {
+    switch (status) {
+      case TaskStatus.pending:
+        return 1;
+      case TaskStatus.inProgress:
+        return 2;
+      case TaskStatus.completed:
+        return 3;
+      case TaskStatus.cancelled:
+        return 4;
+    }
+  }
+
+  String _getStatusDisplayText(TaskStatus status) {
+    switch (status) {
+      case TaskStatus.pending:
+        return 'PENDING';
+      case TaskStatus.inProgress:
+        return 'IN PROGRESS';
+      case TaskStatus.completed:
+        return 'COMPLETED';
+      case TaskStatus.cancelled:
+        return 'CANCELLED';
+    }
+  }
+
+  String _getPriorityDisplayText(TaskPriority priority) {
+    switch (priority) {
+      case TaskPriority.low:
+        return 'LOW';
+      case TaskPriority.medium:
+        return 'MEDIUM';
+      case TaskPriority.high:
+        return 'HIGH';
+      case TaskPriority.urgent:
+        return 'URGENT';
+    }
+  }
+
+  Color _getStatusColor(TaskStatus status) {
+    switch (status) {
+      case TaskStatus.completed:
         return Colors.green;
-      case 'in_progress':
+      case TaskStatus.inProgress:
         return Colors.orange;
-      case 'pending':
+      case TaskStatus.pending:
         return Colors.blue;
-      default:
-        return Colors.grey;
+      case TaskStatus.cancelled:
+        return Colors.red;
     }
   }
 
-  Color _getPriorityColor(String priority) {
-    switch (priority.toLowerCase()) {
-      case 'high':
+  Color _getPriorityColor(TaskPriority priority) {
+    switch (priority) {
+      case TaskPriority.urgent:
+        return const Color(0xFF9D174D);
+      case TaskPriority.high:
         return Colors.red;
-      case 'medium':
+      case TaskPriority.medium:
         return Colors.orange;
-      case 'low':
+      case TaskPriority.low:
         return Colors.green;
-      default:
-        return Colors.grey;
     }
   }
 
@@ -432,7 +476,11 @@ class _TaskManagementScreenState extends State<TaskManagementScreen> {
     }
 
     try {
-      final user = await _supabaseService.getUser(userId).first;
+      // Find user from the loaded users list
+      final user = _allUsers.firstWhere(
+        (user) => user.id == userId,
+        orElse: () => throw Exception('User not found'),
+      );
       _userCache[userId] = user;
       return user;
     } catch (e) {

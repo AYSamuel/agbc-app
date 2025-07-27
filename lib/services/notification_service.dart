@@ -1,8 +1,8 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'dart:io' show Platform;
 
 class NotificationService extends ChangeNotifier {
   static final NotificationService _instance = NotificationService._internal();
@@ -49,8 +49,6 @@ class NotificationService extends ChangeNotifier {
     debugPrint('=== DEVICE REGISTRATION STARTED ===');
     debugPrint('User ID: $userId');
     debugPrint('OneSignal initialized: $_isInitialized');
-    print('Attempting to insert into user_devices: user_id=$userId');
-    print('Current auth.uid: ${Supabase.instance.client.auth.currentUser?.id}');
 
     if (!_isInitialized) {
       debugPrint('OneSignal not initialized, initializing now...');
@@ -58,71 +56,104 @@ class NotificationService extends ChangeNotifier {
     }
 
     try {
-      // Get the device state
+      // Determine platform first
+      String platform;
+      if (kIsWeb) {
+        platform = 'web';
+      } else if (Platform.isIOS) {
+        platform = 'ios';
+      } else if (Platform.isAndroid) {
+        platform = 'android';
+      } else {
+        platform = 'unknown';
+      }
+
+      debugPrint('Platform detected: $platform');
+
+      // Ensure the device is subscribed first
+      debugPrint('Ensuring device is subscribed...');
+      await OneSignal.Notifications.requestPermission(true);
+
+      // IMPORTANT: Logout first to clear any existing external user ID
+      debugPrint('Clearing any existing OneSignal session...');
+      await OneSignal.logout();
+      await Future.delayed(const Duration(seconds: 1));
+
+      // Now login with the new user ID
+      debugPrint('Calling OneSignal.login($userId)...');
+      await OneSignal.login(userId);
+      debugPrint('OneSignal login completed for user: $userId');
+
+      // Wait for OneSignal to process the login and get device state
+      await Future.delayed(const Duration(seconds: 2));
+
+      // Get the device state after login
       final deviceState = OneSignal.User.pushSubscription;
       final oneSignalUserId = deviceState.id;
-      print(
-          'DeviceState: id=${deviceState.id}, optedIn=${deviceState.optedIn}');
-
+      final pushToken = deviceState.token;
+      
       debugPrint('=== DEVICE REGISTRATION DEBUG ===');
       debugPrint('Registering device for user: $userId');
       debugPrint('OneSignal Device ID: $oneSignalUserId');
+      debugPrint('Push Token: $pushToken');
       debugPrint('Device opted in: ${deviceState.optedIn}');
 
-      if (oneSignalUserId != null && deviceState.optedIn == true) {
-        // Check if this device is already registered for a different user
-        final existingDevice = await _supabase
-            .from('user_devices')
-            .select('user_id')
-            .eq('onesignal_user_id', oneSignalUserId)
-            .neq('user_id', userId)
-            .maybeSingle();
-
-        if (existingDevice != null) {
-          debugPrint(
-              'Device was previously registered for user: ${existingDevice['user_id']}');
-          debugPrint('Cleaning up previous registration...');
-
-          // Remove the previous user's registration
-          await _supabase
-              .from('user_devices')
-              .delete()
-              .eq('user_id', existingDevice['user_id']);
-          debugPrint('Previous user registration removed from database');
-        }
-
-        // Ensure the device is subscribed first
-        debugPrint('Ensuring device is subscribed...');
-        await OneSignal.Notifications.requestPermission(true);
-
-        // Set the external user ID - this is crucial for targeting notifications
-        debugPrint('Calling OneSignal.login($userId)...');
-        await OneSignal.login(userId);
-        debugPrint('OneSignal login completed for user: $userId');
-
-        // Wait a moment for OneSignal to process the login
-        await Future.delayed(const Duration(seconds: 1));
-
-        // Store the mapping in our database for reference
-        print(
-            'Upserting into user_devices: user_id=$userId, onesignal_user_id=$oneSignalUserId');
-        await _supabase.from('user_devices').upsert({
-          'user_id': userId,
-          'onesignal_user_id': oneSignalUserId,
-          'updated_at': DateTime.now().toIso8601String(),
-        });
-        debugPrint('Device record updated in database');
-
-        debugPrint('Device registered successfully for user: $userId');
-        debugPrint(
-            'Database record updated with OneSignal User ID: $oneSignalUserId');
+      // Generate a unique device ID
+      String deviceId;
+      if (oneSignalUserId != null && oneSignalUserId.isNotEmpty) {
+        deviceId = oneSignalUserId;
+        debugPrint('Using OneSignal device ID: $deviceId');
       } else {
-        debugPrint(
-            'Device not ready for notifications. ID: $oneSignalUserId, Opted in: ${deviceState.optedIn}');
-        throw Exception('Device not ready for notifications');
+        // Generate a fallback device ID using user ID and platform
+        deviceId = '${userId}_${platform}_${DateTime.now().millisecondsSinceEpoch}';
+        debugPrint('Generated fallback device ID: $deviceId');
       }
+
+      // CLEAN UP: Remove ALL existing entries for this user to avoid duplicates
+      debugPrint('Cleaning up any existing device registrations for user...');
+      await _supabase
+          .from('user_devices')
+          .delete()
+          .eq('user_id', userId);
+      debugPrint('Existing registrations cleaned up');
+
+      // Also clean up any entries with the same device_id from other users
+      await _supabase
+          .from('user_devices')
+          .delete()
+          .eq('device_id', deviceId);
+      debugPrint('Existing device_id registrations cleaned up');
+
+      // Prepare the device data
+      final deviceData = {
+        'user_id': userId,
+        'device_id': deviceId,
+        'platform': platform,
+        'push_token': pushToken,
+        'onesignal_user_id': oneSignalUserId,
+        'is_active': true,
+        'last_seen': DateTime.now().toIso8601String(),
+        'updated_at': DateTime.now().toIso8601String(),
+      };
+
+      debugPrint('Device data to insert: $deviceData');
+
+      // Insert the new record (using insert instead of upsert to avoid conflicts)
+      final result = await _supabase.from('user_devices').insert(deviceData);
+      debugPrint('Database insert result: $result');
+
+      // Verify the insertion
+      final verifyResult = await _supabase
+          .from('user_devices')
+          .select('id, device_id, platform, onesignal_user_id')
+          .eq('user_id', userId)
+          .single();
+
+      debugPrint('✅ Device registration verified in database: $verifyResult');
+      debugPrint('Device registered successfully for user: $userId');
+
     } catch (e) {
-      debugPrint('Error registering device: $e');
+      debugPrint('❌ Error registering device: $e');
       await logError('register_device', e.toString());
       rethrow;
     }

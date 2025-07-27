@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../utils/theme.dart';
 import '../models/task_model.dart';
-import '../services/supabase_service.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
+import '../providers/supabase_provider.dart';
 import 'task_details_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:remixicon/remixicon.dart';
@@ -21,7 +21,6 @@ class TasksScreen extends StatefulWidget {
 }
 
 class _TasksScreenState extends State<TasksScreen> {
-  final SupabaseService _supabaseService = SupabaseService();
   String _selectedFilter = 'all';
   String _selectedSort = 'due_date';
 
@@ -155,7 +154,8 @@ class _TasksScreenState extends State<TasksScreen> {
                 ),
               ),
               child: StreamBuilder<List<TaskModel>>(
-                stream: _supabaseService.getTasksForUser(user?.id ?? ''),
+                stream: Provider.of<SupabaseProvider>(context)
+                    .getUserTasks(user?.id ?? ''),
                 builder: (context, snapshot) {
                   if (!snapshot.hasData) {
                     return const SizedBox.shrink();
@@ -216,7 +216,8 @@ class _TasksScreenState extends State<TasksScreen> {
             // Task List
             Expanded(
               child: StreamBuilder<List<TaskModel>>(
-                stream: _supabaseService.getTasksForUser(user?.id ?? ''),
+                stream: Provider.of<SupabaseProvider>(context)
+                    .getUserTasks(user?.id ?? ''),
                 builder: (context, snapshot) {
                   if (snapshot.hasError) {
                     return Center(
@@ -455,8 +456,25 @@ class _TasksScreenState extends State<TasksScreen> {
     // Apply filter
     var filteredTasks = tasks;
     if (_selectedFilter != 'all') {
-      filteredTasks =
-          tasks.where((task) => task.status == _selectedFilter).toList();
+      TaskStatus? filterStatus;
+      switch (_selectedFilter) {
+        case 'pending':
+          filterStatus = TaskStatus.pending;
+          break;
+        case 'in_progress':
+          filterStatus = TaskStatus.inProgress;
+          break;
+        case 'completed':
+          filterStatus = TaskStatus.completed;
+          break;
+        case 'cancelled':
+          filterStatus = TaskStatus.cancelled;
+          break;
+      }
+      if (filterStatus != null) {
+        filteredTasks =
+            tasks.where((task) => task.status == filterStatus).toList();
+      }
     }
 
     // Apply sort
@@ -469,7 +487,8 @@ class _TasksScreenState extends State<TasksScreen> {
             .compareTo(_getPriorityWeight(a.priority)));
         break;
       case 'status':
-        filteredTasks.sort((a, b) => a.status.compareTo(b.status));
+        filteredTasks.sort((a, b) =>
+            _getStatusWeight(a.status).compareTo(_getStatusWeight(b.status)));
         break;
       case 'title':
         filteredTasks.sort((a, b) => a.title.compareTo(b.title));
@@ -482,16 +501,29 @@ class _TasksScreenState extends State<TasksScreen> {
     return filteredTasks;
   }
 
-  int _getPriorityWeight(String priority) {
-    switch (priority.toLowerCase()) {
-      case 'high':
+  int _getPriorityWeight(TaskPriority priority) {
+    switch (priority) {
+      case TaskPriority.urgent:
+        return 4;
+      case TaskPriority.high:
         return 3;
-      case 'medium':
+      case TaskPriority.medium:
         return 2;
-      case 'low':
+      case TaskPriority.low:
         return 1;
-      default:
-        return 0;
+    }
+  }
+
+  int _getStatusWeight(TaskStatus status) {
+    switch (status) {
+      case TaskStatus.pending:
+        return 1;
+      case TaskStatus.inProgress:
+        return 2;
+      case TaskStatus.completed:
+        return 3;
+      case TaskStatus.cancelled:
+        return 4;
     }
   }
 }

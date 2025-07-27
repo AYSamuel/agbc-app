@@ -31,6 +31,26 @@ class UserCard extends StatelessWidget {
     }
   }
 
+  String _formatUserLocation(Map<String, dynamic>? location) {
+    if (location == null || location.isEmpty) return 'No location set';
+
+    final city = location['city']?.toString().trim();
+    final country = location['country']?.toString().trim();
+
+    if (city != null &&
+        country != null &&
+        city.isNotEmpty &&
+        country.isNotEmpty) {
+      return '$city, $country';
+    } else if (city != null && city.isNotEmpty) {
+      return city;
+    } else if (country != null && country.isNotEmpty) {
+      return country;
+    }
+
+    return 'No location set';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Card(
@@ -131,7 +151,7 @@ class UserCard extends StatelessWidget {
                                 const SizedBox(width: 4),
                                 Flexible(
                                   child: Text(
-                                    user.location!,
+                                    _formatUserLocation(user.location),
                                     style: AppTheme.subtitleStyle.copyWith(
                                       fontSize: 12,
                                       color: AppTheme.neutralColor,
@@ -195,7 +215,7 @@ class UserCard extends StatelessWidget {
                       ),
                     ),
                     child: Text(
-                      user.role.toUpperCase(),
+                      user.role.name.toUpperCase(),
                       style: TextStyle(
                         color: roleColor,
                         fontWeight: FontWeight.bold,

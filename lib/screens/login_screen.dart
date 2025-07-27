@@ -27,7 +27,7 @@ class _LoginScreenState extends State<LoginScreen> {
     // Initialize branches data when login screen loads
     Future.microtask(() {
       if (mounted) {
-        Provider.of<BranchesProvider>(context, listen: false).initialize();
+        Provider.of<BranchesProvider>(context, listen: false).fetchBranches();
       }
     });
   }

@@ -1,126 +1,179 @@
 import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/church_branch_model.dart';
-import '../providers/supabase_provider.dart';
-import 'package:logging/logging.dart';
-import 'dart:async';
 
 class BranchesProvider extends ChangeNotifier {
-  final SupabaseProvider _supabaseProvider;
+  final SupabaseClient _supabase = Supabase.instance.client;
+
   List<ChurchBranch> _branches = [];
   bool _isLoading = false;
-  bool _isInitialized = false;
-  final _logger = Logger('BranchesProvider');
-  StreamSubscription<List<ChurchBranch>>? _branchesSubscription;
-
-  BranchesProvider(this._supabaseProvider);
+  String? _error;
 
   List<ChurchBranch> get branches => _branches;
   bool get isLoading => _isLoading;
-  bool get isInitialized => _isInitialized;
+  String? get error => _error;
 
-  @override
-  void dispose() {
-    _branchesSubscription?.cancel();
-    super.dispose();
-  }
-
-  Future<void> initialize() async {
-    if (_isInitialized) return;
+  /// Fetch all branches from the church_branches table
+  Future<void> fetchBranches() async {
+    _setLoading(true);
+    _error = null;
 
     try {
-      _isLoading = true;
+      final response =
+          await _supabase.from('church_branches').select('*').order('name');
+
+      _branches = (response as List)
+          .map((json) => ChurchBranch.fromJson(json))
+          .toList();
+
       notifyListeners();
-
-      // Cancel any existing subscription
-      await _branchesSubscription?.cancel();
-
-      // Set up the stream subscription first
-      _branchesSubscription = _supabaseProvider.getAllBranches().listen(
-        (branches) {
-          _branches = branches;
-          _isInitialized = true;
-          _logger.info('Received branch update: ${branches.length} branches');
-          notifyListeners();
-        },
-        onError: (error) {
-          _logger.severe('Error listening to branch updates: $error');
-          _branches = [];
-          _isInitialized = true; // Mark as initialized even on error
-          notifyListeners();
-        },
-      );
-
-      // Get initial data
-      try {
-        final initialBranches = await _supabaseProvider.getAllBranches().first;
-        _branches = initialBranches;
-        _isInitialized = true;
-        _logger.info(
-            'Successfully initialized branches: ${initialBranches.length} branches loaded');
-      } catch (e) {
-        _logger.warning('Error getting initial branches: $e');
-        _branches = [];
-        _isInitialized = true; // Mark as initialized even on error
+    } catch (e) {
+      _error = 'Failed to fetch branches: $e';
+      if (kDebugMode) {
+        print('Error fetching branches: $e');
       }
-    } catch (e) {
-      _logger.severe('Error initializing branches: $e');
-      _branches = [];
-      _isInitialized = true; // Mark as initialized even on error
     } finally {
-      _isLoading = false;
-      notifyListeners();
+      _setLoading(false);
     }
   }
 
-  Future<void> refresh() async {
+  /// Get a specific branch by ID
+  ChurchBranch? getBranchById(String id) {
     try {
-      _isLoading = true;
-      notifyListeners();
-
-      final branches = await _supabaseProvider.getAllBranches().first;
-      _branches = branches;
-      _isInitialized = true;
-      _logger.info('Refreshed branches: ${branches.length} branches loaded');
+      return _branches.firstWhere((branch) => branch.id == id);
     } catch (e) {
-      _logger.severe('Error refreshing branches: $e');
-      _branches = [];
-    } finally {
-      _isLoading = false;
+      return null;
+    }
+  }
+
+  /// Get branch name by ID (useful for display purposes)
+  String getBranchName(String? branchId) {
+    if (branchId == null) return 'No Branch';
+    final branch = getBranchById(branchId);
+    return branch?.name ?? 'Unknown Branch';
+  }
+
+  /// Add a new branch to the database
+  Future<bool> addBranch(ChurchBranch branch) async {
+    _setLoading(true);
+    _error = null;
+
+    try {
+      final response = await _supabase
+          .from('church_branches')
+          .insert(branch.toJson())
+          .select()
+          .single();
+
+      final newBranch = ChurchBranch.fromJson(response);
+      _branches.add(newBranch);
       notifyListeners();
+      return true;
+    } catch (e) {
+      _error = 'Failed to add branch: $e';
+      if (kDebugMode) {
+        print('Error adding branch: $e');
+      }
+      return false;
+    } finally {
+      _setLoading(false);
     }
   }
 
-  String getBranchName(String branchId) {
-    if (!_isInitialized || _isLoading) {
-      return 'Loading...';
+  /// Update an existing branch
+  Future<bool> updateBranch(ChurchBranch branch) async {
+    _setLoading(true);
+    _error = null;
+
+    try {
+      await _supabase
+          .from('church_branches')
+          .update(branch.toJson())
+          .eq('id', branch.id);
+
+      final index = _branches.indexWhere((b) => b.id == branch.id);
+      if (index != -1) {
+        _branches[index] = branch;
+        notifyListeners();
+      }
+      return true;
+    } catch (e) {
+      _error = 'Failed to update branch: $e';
+      if (kDebugMode) {
+        print('Error updating branch: $e');
+      }
+      return false;
+    } finally {
+      _setLoading(false);
     }
-
-    _logger.info('Getting branch name for ID: $branchId');
-    _logger.info(
-        'Available branches: ${_branches.map((b) => '${b.id}: ${b.name}').join(', ')}');
-
-    final branch = _branches.firstWhere(
-      (branch) => branch.id == branchId,
-      orElse: () {
-        _logger.warning('Branch not found for ID: $branchId');
-        return ChurchBranch(
-          id: branchId,
-          name: 'No branch joined yet',
-          address: '',
-          members: [],
-          departments: [],
-          location: '',
-          createdBy: '',
-        );
-      },
-    );
-    return branch.name;
   }
 
-  void setBranches(List<ChurchBranch> branches) {
-    _branches = branches;
-    _isInitialized = true;
-    _isLoading = false;
+  /// Delete a branch
+  Future<bool> deleteBranch(String branchId) async {
+    _setLoading(true);
+    _error = null;
+
+    try {
+      await _supabase.from('church_branches').delete().eq('id', branchId);
+
+      _branches.removeWhere((branch) => branch.id == branchId);
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = 'Failed to delete branch: $e';
+      if (kDebugMode) {
+        print('Error deleting branch: $e');
+      }
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  /// Get branches as a stream for real-time updates
+  Stream<List<ChurchBranch>> getBranchesStream() {
+    return _supabase
+        .from('church_branches')
+        .stream(primaryKey: ['id'])
+        .order('name')
+        .map(
+            (data) => data.map((json) => ChurchBranch.fromJson(json)).toList());
+  }
+
+  /// Search branches by name or location
+  List<ChurchBranch> searchBranches(String query) {
+    if (query.isEmpty) return _branches;
+
+    final lowercaseQuery = query.toLowerCase();
+    return _branches.where((branch) {
+      return branch.name.toLowerCase().contains(lowercaseQuery) ||
+          (branch.address.toLowerCase().contains(lowercaseQuery)) ||
+          ((branch.location['city']
+                  ?.toString()
+                  .toLowerCase()
+                  .contains(lowercaseQuery) ??
+              false)) ||
+          (branch.location['country']
+                  ?.toString()
+                  .toLowerCase()
+                  .contains(lowercaseQuery) ??
+              false);
+    }).toList();
+  }
+
+  /// Clear error message
+  void clearError() {
+    _error = null;
+    notifyListeners();
+  }
+
+  /// Refresh branches data
+  Future<void> refresh() async {
+    await fetchBranches();
+  }
+
+  void _setLoading(bool loading) {
+    _isLoading = loading;
     notifyListeners();
   }
 }

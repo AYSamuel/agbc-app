@@ -34,7 +34,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   String? _selectedBranchId;
   String _selectedAssigneeName = '';
   String _selectedBranchName = '';
-  String _selectedPriority = 'medium';
+  TaskPriority _selectedPriority = TaskPriority.medium;
   DateTime? _selectedDeadline;
 
   // Track form completion
@@ -479,18 +479,24 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                         Row(
                           children: [
                             Expanded(
-                              child: CustomDropdown<String>(
+                              child: CustomDropdown<TaskPriority>(
                                 value: _selectedPriority,
                                 label: 'Priority',
                                 hint: 'Select priority',
                                 prefixIcon: Icons.priority_high,
                                 items: const [
                                   DropdownMenuItem(
-                                      value: 'high', child: Text('High')),
+                                      value: TaskPriority.urgent,
+                                      child: Text('Urgent')),
                                   DropdownMenuItem(
-                                      value: 'medium', child: Text('Medium')),
+                                      value: TaskPriority.high,
+                                      child: Text('High')),
                                   DropdownMenuItem(
-                                      value: 'low', child: Text('Low')),
+                                      value: TaskPriority.medium,
+                                      child: Text('Medium')),
+                                  DropdownMenuItem(
+                                      value: TaskPriority.low,
+                                      child: Text('Low')),
                                 ],
                                 onChanged: (value) {
                                   setState(() {

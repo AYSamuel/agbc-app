@@ -1,36 +1,34 @@
+// lib/main.dart
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:app_links/app_links.dart';
+import 'config/app_config.dart';
 import 'services/auth_service.dart';
-import 'services/supabase_service.dart';
 import 'services/notification_service.dart';
-import 'services/permissions_service.dart';
-import 'providers/supabase_provider.dart';
+import 'providers/branches_provider.dart';
+import 'providers/supabase_provider.dart'; // Add this import
 import 'screens/splash_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
-import 'screens/verification_screen.dart';
 import 'screens/main_navigation_screen.dart';
 import 'utils/theme.dart';
-import 'providers/branches_provider.dart';
 
 Future<void> main() async {
   try {
-    // Ensure Flutter bindings are initialized
+    // Ensure Flutter widgets are initialized before any plugin calls.
     WidgetsFlutterBinding.ensureInitialized();
 
-    // Load environment variables
-    await dotenv.load(fileName: ".env");
+    // Load environment variables from .env file.
+    await AppConfig.load();
 
-    // Initialize Supabase with error handling
+    // Initialize Supabase client with the loaded URL and anonymous key.
     try {
       await Supabase.initialize(
-        url: dotenv.env['SUPABASE_URL']!,
-        anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
-        debug: false, // Disable debug logs to reduce noise
+        url: AppConfig.supabaseUrl,
+        anonKey: AppConfig.supabaseAnonKey,
+        debug: false, // Set to false in production
       );
     } catch (e) {
       // Ignore specific errors related to code verifier
@@ -43,35 +41,27 @@ Future<void> main() async {
     }
 
     // Initialize services
-    final supabase = Supabase.instance.client;
-    final supabaseService = SupabaseService();
+    final authService = AuthService();
     final notificationService = NotificationService();
-    final permissionsService = PermissionsService();
-    final authService = AuthService(
-      supabase: supabase,
-      supabaseService: supabaseService,
-      notificationService: notificationService,
-      permissionsService: permissionsService,
-    );
 
     // Initialize services in sequence
-    await permissionsService.initialize();
+    await authService.initialize();
     await notificationService.initialize();
 
+    // Run the main application widget.
     runApp(
       MultiProvider(
         providers: [
+          // Provide AuthService to the widget tree. It will manage authentication state.
           ChangeNotifierProvider(create: (_) => authService),
-          ChangeNotifierProvider(create: (_) => SupabaseProvider()),
-          Provider.value(value: supabaseService),
+          // Provide NotificationService
           ChangeNotifierProvider(create: (_) => notificationService),
-          ChangeNotifierProvider(
-            create: (context) => BranchesProvider(
-              Provider.of<SupabaseProvider>(context, listen: false),
-            ),
-          ),
+          // Provide BranchesProvider
+          ChangeNotifierProvider(create: (_) => BranchesProvider()),
+          // Provide SupabaseProvider - Add this line
+          ChangeNotifierProvider(create: (_) => SupabaseProvider()),
         ],
-        child: const MyApp(),
+        child: const GracePortalApp(),
       ),
     );
   } catch (e) {
@@ -79,104 +69,73 @@ Future<void> main() async {
   }
 }
 
-class MyApp extends StatefulWidget {
-  const MyApp({super.key});
+/// The root widget of the Grace Portal application.
+/// It sets up the MultiProvider for state management and defines the app's theme.
+class GracePortalApp extends StatefulWidget {
+  const GracePortalApp({super.key});
 
   @override
-  State<MyApp> createState() => _MyAppState();
+  State<GracePortalApp> createState() => _GracePortalAppState();
 }
 
-class _MyAppState extends State<MyApp> {
-  final _appLinks = AppLinks();
+class _GracePortalAppState extends State<GracePortalApp> {
+  final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
+  late AppLinks _appLinks;
+  StreamSubscription<Uri>? _linkSubscription;
 
   @override
   void initState() {
     super.initState();
-    _handleDeepLink();
+    _initDeepLinks();
   }
 
-  Future<void> _handleDeepLink() async {
-    try {
-      // Handle links that opened the app
-      final initialUri = await _appLinks.getInitialLink();
-      if (initialUri != null) {
-        // Only handle our custom verification links
-        if (initialUri.path.contains('verify-email')) {
-          _handleUri(initialUri);
-        }
-      }
+  @override
+  void dispose() {
+    _linkSubscription?.cancel();
+    super.dispose();
+  }
 
-      // Handle incoming links when app is running
-      _appLinks.uriLinkStream.listen((uri) {
-        // Only handle our custom verification links
-        if (uri.path.contains('verify-email')) {
-          _handleUri(uri);
-        }
-      });
-    } catch (e) {
-      debugPrint('Error handling deep link: $e');
+  void _initDeepLinks() async {
+    _appLinks = AppLinks();
+
+    // Handle app launch from deep link
+    final initialUri = await _appLinks.getInitialLink();
+    if (initialUri != null) {
+      _handleDeepLink(initialUri);
     }
+
+    // Handle deep links while app is running
+    _linkSubscription = _appLinks.uriLinkStream.listen(
+      (uri) {
+        _handleDeepLink(uri);
+      },
+      onError: (err) {
+        debugPrint('Deep link error: $err');
+      },
+    );
   }
 
-  Future<void> _handleUri(Uri uri) async {
-    try {
-      // Let Supabase handle the deep link first
-      try {
-        await Supabase.instance.client.auth.getSessionFromUrl(uri);
-      } catch (e) {
-        // Ignore the error - this is just to let Supabase try to handle the URL
-        // The error about code verifier is expected when we're handling our own links
-        debugPrint('Supabase auth URL handling: $e');
-      }
-
-      if (uri.path == '/verify-email') {
-        // Check for both token and token_hash parameters
-        final token =
-            uri.queryParameters['token'] ?? uri.queryParameters['token_hash'];
-        if (token != null) {
-          // Get the auth service instance
-          if (!mounted) return;
-          final authService = Provider.of<AuthService>(context, listen: false);
-
-          // Verify the email
-          await authService.verifyEmail(token);
-
-          if (mounted) {
-            // Show success message
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content:
-                    Text('Email verified successfully! You can now log in.'),
-                backgroundColor: Colors.green,
-              ),
-            );
-
-            // Redirect to login screen
-            Navigator.of(context)
-                .pushReplacementNamed('/login', arguments: {'clearForm': true});
-          }
-        } else {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Invalid verification link'),
-                backgroundColor: Colors.red,
-              ),
-            );
-            Navigator.of(context).pushReplacementNamed('/login');
-          }
-        }
-      }
-    } catch (e) {
-      debugPrint('Error handling URI: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error verifying email: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
-        );
-        Navigator.of(context).pushReplacementNamed('/login');
+  void _handleDeepLink(Uri uri) {
+    debugPrint('Received deep link: $uri');
+    
+    if (uri.scheme == 'agbcapp') {
+      switch (uri.host) {
+        case 'login':
+          // Navigate to login screen
+          _navigatorKey.currentState?.pushNamedAndRemoveUntil(
+            '/login',
+            (route) => false,
+          );
+          break;
+        case 'callback':
+          // Handle general callback (legacy support)
+          _navigatorKey.currentState?.pushNamedAndRemoveUntil(
+            '/login',
+            (route) => false,
+          );
+          break;
+        default:
+          debugPrint('Unknown deep link path: ${uri.host}');
       }
     }
   }
@@ -184,16 +143,55 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: _navigatorKey,
       title: 'Grace Portal',
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
-      initialRoute: '/',
+      theme: AppTheme.lightTheme, // Apply the light theme
+      darkTheme: AppTheme.darkTheme, // Apply the dark theme
+      themeMode: ThemeMode.system, // Use system theme preference
+      home: const AuthGate(), // The initial screen that checks authentication status
       routes: {
-        '/': (context) => const SplashScreen(),
         '/login': (context) => const LoginScreen(),
         '/register': (context) => const RegisterScreen(),
-        '/verification': (context) => const VerificationScreen(),
         '/home': (context) => const MainNavigationScreen(),
+      },
+    );
+  }
+}
+
+/// A widget that acts as an authentication gate.
+/// It listens to Supabase authentication changes and routes users appropriately
+/// based on their authentication status and email verification.
+class AuthGate extends StatelessWidget {
+  const AuthGate({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<AuthService>(
+      builder: (context, authService, child) {
+        // Show loading indicator while initializing
+        if (authService.isLoading) {
+          return const Scaffold(
+            body: Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
+
+        // Check authentication status
+        if (authService.isAuthenticated) {
+          // Check if email is verified
+          if (authService.currentUser?.emailConfirmedAt == null) {
+            // User is authenticated but not verified, show login screen
+            // They can try to login again after verification
+            return const LoginScreen();
+          }
+
+          // User is authenticated and verified, go to main app
+          return const MainNavigationScreen();
+        } else {
+          // User is not authenticated, show splash screen which handles navigation
+          return const SplashScreen();
+        }
       },
     );
   }

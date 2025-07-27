@@ -20,7 +20,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     // Initialize branches when screen is opened
     Future.microtask(() {
       if (mounted) {
-        Provider.of<BranchesProvider>(context, listen: false).initialize();
+        Provider.of<BranchesProvider>(context, listen: false).fetchBranches();
       }
     });
   }

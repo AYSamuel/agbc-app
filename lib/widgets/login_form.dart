@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/auth_service.dart';
-import 'package:grace_portal/widgets/custom_input.dart';
-import 'package:grace_portal/widgets/loading_indicator.dart';
-import 'package:grace_portal/utils/theme.dart';
-import 'package:grace_portal/widgets/mixins/form_validation_mixin.dart';
+import 'custom_input.dart';
+import 'loading_indicator.dart';
+import '../utils/theme.dart';
+import 'mixins/form_validation_mixin.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'form/form_spacing.dart';
@@ -92,7 +93,7 @@ class _LoginFormState extends State<LoginForm> with FormValidationMixin {
     try {
       final authService = Provider.of<AuthService>(context, listen: false);
 
-      await authService.signIn(
+      await authService.signInWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text,
         rememberMe: _rememberMe,
@@ -104,9 +105,11 @@ class _LoginFormState extends State<LoginForm> with FormValidationMixin {
     } catch (e) {
       if (mounted) {
         if (e is AuthException) {
-          if (e.code == 'email_not_verified') {
+          if (e.message.toLowerCase().contains('email not confirmed') ||
+              e.message.toLowerCase().contains('email_not_verified')) {
             _showVerificationDialog();
-          } else if (e.code == 'invalid_credentials') {
+          } else if (e.message.toLowerCase().contains('invalid') ||
+              e.message.toLowerCase().contains('credentials')) {
             _showInvalidCredentialsDialog(e.message);
           } else {
             _showErrorDialog(e.message);

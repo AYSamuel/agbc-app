@@ -17,7 +17,7 @@ class TaskCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool isCompleted = task.status == 'completed';
+    final bool isCompleted = task.status == TaskStatus.completed;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -143,26 +143,32 @@ class TaskCard extends StatelessWidget {
     );
   }
 
-  Widget _buildPriorityBadge(String priority) {
+  Widget _buildPriorityBadge(TaskPriority priority) {
     Color bgColor;
     Color textColor;
+    String displayText;
 
-    switch (priority.toLowerCase()) {
-      case 'high':
+    switch (priority) {
+      case TaskPriority.high:
         bgColor = const Color(0xFFFEE2E2);
         textColor = const Color(0xFFDC2626);
+        displayText = 'HIGH';
         break;
-      case 'medium':
+      case TaskPriority.urgent:
+        bgColor = const Color(0xFFFDF2F8);
+        textColor = const Color(0xFF9D174D);
+        displayText = 'URGENT';
+        break;
+      case TaskPriority.medium:
         bgColor = const Color(0xFFFEF3C7);
         textColor = const Color(0xFFD97706);
+        displayText = 'MEDIUM';
         break;
-      case 'low':
+      case TaskPriority.low:
         bgColor = const Color(0xFFD1FAE5);
         textColor = const Color(0xFF059669);
+        displayText = 'LOW';
         break;
-      default:
-        bgColor = const Color(0xFFF3F4F6);
-        textColor = const Color(0xFF6B7280);
     }
 
     return Container(
@@ -172,7 +178,7 @@ class TaskCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(4),
       ),
       child: Text(
-        priority.toUpperCase(),
+        displayText,
         style: GoogleFonts.inter(
           fontSize: 12,
           fontWeight: FontWeight.w500,
@@ -182,31 +188,32 @@ class TaskCard extends StatelessWidget {
     );
   }
 
-  Widget _buildStatusBadge(String status) {
+  Widget _buildStatusBadge(TaskStatus status) {
     Color bgColor;
     Color textColor;
     String displayText;
 
-    switch (status.toLowerCase()) {
-      case 'completed':
+    switch (status) {
+      case TaskStatus.completed:
         bgColor = const Color(0xFFD1FAE5);
         textColor = const Color(0xFF059669);
         displayText = 'Completed';
         break;
-      case 'in_progress':
+      case TaskStatus.inProgress:
         bgColor = const Color(0xFFFEF3C7);
         textColor = const Color(0xFFD97706);
         displayText = 'In Progress';
         break;
-      case 'pending':
+      case TaskStatus.pending:
         bgColor = const Color(0xFFF3F4F6);
         textColor = const Color(0xFF6B7280);
         displayText = 'Pending';
         break;
-      default:
-        bgColor = const Color(0xFFF3F4F6);
-        textColor = const Color(0xFF6B7280);
-        displayText = status.toUpperCase();
+      case TaskStatus.cancelled:
+        bgColor = const Color(0xFFFEE2E2);
+        textColor = const Color(0xFFDC2626);
+        displayText = 'Cancelled';
+        break;
     }
 
     return Container(

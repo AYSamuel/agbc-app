@@ -30,8 +30,8 @@ class BottomNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final user = Provider.of<AuthService>(context, listen: false).currentUser;
-    final isAdmin = user?.role == 'admin';
+    final authService = Provider.of<AuthService>(context, listen: false);
+    final isAdmin = authService.isAdmin;
     final bottomPadding = MediaQuery.of(context).padding.bottom;
 
     return Container(

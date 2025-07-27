@@ -24,8 +24,9 @@ class _TaskStatusCardState extends State<TaskStatusCard> {
   @override
   Widget build(BuildContext context) {
     final user = Provider.of<AuthService>(context).currentUser;
-    final taskCount =
-        widget.tasks.where((task) => task.status != 'completed').length;
+    final taskCount = widget.tasks
+        .where((task) => task.status != TaskStatus.completed)
+        .length;
     final hasTasks = taskCount > 0;
 
     // For members, only show the card if they have active tasks

@@ -21,13 +21,17 @@ class AddBranchScreen extends StatefulWidget {
 class _AddBranchScreenState extends State<AddBranchScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  final _locationController = TextEditingController();
+  final _cityController = TextEditingController();
+  final _stateController = TextEditingController();
+  final _countryController = TextEditingController();
   final _addressController = TextEditingController();
   final _descriptionController = TextEditingController();
 
   // Focus nodes for keyboard navigation
   final _nameFocus = FocusNode();
-  final _locationFocus = FocusNode();
+  final _cityFocus = FocusNode();
+  final _stateFocus = FocusNode();
+  final _countryFocus = FocusNode();
   final _addressFocus = FocusNode();
   final _descriptionFocus = FocusNode();
 
@@ -38,13 +42,17 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
   @override
   void dispose() {
     _nameController.dispose();
-    _locationController.dispose();
+    _cityController.dispose();
+    _stateController.dispose();
+    _countryController.dispose();
     _addressController.dispose();
     _descriptionController.dispose();
 
     // Dispose focus nodes
     _nameFocus.dispose();
-    _locationFocus.dispose();
+    _cityFocus.dispose();
+    _stateFocus.dispose();
+    _countryFocus.dispose();
     _addressFocus.dispose();
     _descriptionFocus.dispose();
 
@@ -64,10 +72,22 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
         throw Exception('No authenticated user found');
       }
 
+      // Create location map from individual fields
+      final location = <String, dynamic>{};
+      if (_cityController.text.trim().isNotEmpty) {
+        location['city'] = _cityController.text.trim();
+      }
+      if (_stateController.text.trim().isNotEmpty) {
+        location['state'] = _stateController.text.trim();
+      }
+      if (_countryController.text.trim().isNotEmpty) {
+        location['country'] = _countryController.text.trim();
+      }
+
       final branch = ChurchBranch(
         id: const Uuid().v4().toLowerCase(),
         name: _nameController.text.trim(),
-        location: _locationController.text.trim(),
+        location: location,
         address: _addressController.text.trim(),
         description: _descriptionController.text.trim(),
         pastorId: _selectedPastorId?.isNotEmpty == true
@@ -170,7 +190,7 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
                           prefixIcon:
                               Icon(Icons.church, color: AppTheme.neutralColor),
                           focusNode: _nameFocus,
-                          nextFocusNode: _locationFocus,
+                          nextFocusNode: _cityFocus,
                           validator: (value) {
                             if (value == null || value.isEmpty) {
                               return 'Please enter a branch name';
@@ -179,20 +199,43 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
                           },
                         ),
                         const SizedBox(height: 16),
+                        // Location fields
+                        Row(
+                          children: [
+                            Expanded(
+                              child: CustomInput(
+                                label: 'City',
+                                controller: _cityController,
+                                hint: 'Enter city',
+                                prefixIcon: Icon(Icons.location_city,
+                                    color: AppTheme.neutralColor),
+                                focusNode: _cityFocus,
+                                nextFocusNode: _stateFocus,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: CustomInput(
+                                label: 'State/Province',
+                                controller: _stateController,
+                                hint: 'Enter state',
+                                prefixIcon: Icon(Icons.map,
+                                    color: AppTheme.neutralColor),
+                                focusNode: _stateFocus,
+                                nextFocusNode: _countryFocus,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
                         CustomInput(
-                          label: 'Location',
-                          controller: _locationController,
-                          hint: 'Enter branch location',
-                          prefixIcon: Icon(Icons.location_on,
+                          label: 'Country',
+                          controller: _countryController,
+                          hint: 'Enter country',
+                          prefixIcon: Icon(Icons.public,
                               color: AppTheme.neutralColor),
-                          focusNode: _locationFocus,
+                          focusNode: _countryFocus,
                           nextFocusNode: _addressFocus,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter a location';
-                            }
-                            return null;
-                          },
                         ),
                         const SizedBox(height: 16),
                         CustomInput(
@@ -237,7 +280,7 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
 
                             final users = snapshot.data!;
                             final pastors = users
-                                .where((user) => user.role == 'pastor')
+                                .where((user) => user.role == UserRole.pastor)
                                 .toList();
                             pastors.sort((a, b) =>
                                 a.displayName.compareTo(b.displayName));

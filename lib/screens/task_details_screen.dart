@@ -4,7 +4,6 @@ import '../models/task_model.dart';
 import '../utils/theme.dart';
 import '../widgets/custom_back_button.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../services/supabase_service.dart';
 import '../models/user_model.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:provider/provider.dart';
@@ -57,27 +56,33 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
   }
 
   Future<void> _loadUserDetails() async {
-    final supabaseService = SupabaseService();
+    final supabaseProvider =
+        Provider.of<SupabaseProvider>(context, listen: false);
 
     // Load creator details
-    final creatorStream = supabaseService.getUser(_task.createdBy);
-    creatorStream.listen((user) {
-      if (mounted) {
-        setState(() {
-          _creator = user;
-        });
-      }
-    });
+    try {
+      final creatorStream = supabaseProvider.getUser(_task.createdBy);
+      creatorStream.listen((user) {
+        if (mounted) {
+          setState(() {
+            _creator = user;
+          });
+        }
+      });
 
-    // Load assignee details
-    final assigneeStream = supabaseService.getUser(_task.assignedTo);
-    assigneeStream.listen((user) {
-      if (mounted) {
-        setState(() {
-          _assignee = user;
-        });
-      }
-    });
+      // Load assignee details
+      final assigneeStream = supabaseProvider.getUser(_task.assignedTo);
+      assigneeStream.listen((user) {
+        if (mounted) {
+          setState(() {
+            _assignee = user;
+          });
+        }
+      });
+    } catch (e) {
+      // Handle error silently or show a message
+      print('Error loading user details: $e');
+    }
   }
 
   @override
@@ -179,7 +184,7 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                         Expanded(
                           child: _buildInfoCard(
                             'Status',
-                            _task.status.toUpperCase(),
+                            _getStatusDisplayText(_task.status),
                             _getStatusColor(_task.status),
                             Remix.checkbox_circle_line,
                           ),
@@ -188,7 +193,7 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                         Expanded(
                           child: _buildInfoCard(
                             'Priority',
-                            _task.priority.toUpperCase(),
+                            _getPriorityDisplayText(_task.priority),
                             _getPriorityColor(_task.priority),
                             Remix.flag_line,
                           ),
@@ -198,14 +203,14 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                     const SizedBox(height: 16),
 
                     // Status Action Buttons
-                    if (_task.status != 'completed') ...[
+                    if (_task.status != TaskStatus.completed) ...[
                       Row(
                         children: [
-                          if (_task.status == 'pending')
+                          if (_task.status == TaskStatus.pending)
                             Expanded(
                               child: ElevatedButton.icon(
                                 onPressed: () =>
-                                    _updateTaskStatus('in_progress'),
+                                    _updateTaskStatus(TaskStatus.inProgress),
                                 icon: const Icon(Remix.play_circle_line),
                                 label: const Text('Start Working'),
                                 style: ElevatedButton.styleFrom(
@@ -216,10 +221,11 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                                 ),
                               ),
                             ),
-                          if (_task.status == 'in_progress')
+                          if (_task.status == TaskStatus.inProgress)
                             Expanded(
                               child: ElevatedButton.icon(
-                                onPressed: () => _updateTaskStatus('completed'),
+                                onPressed: () =>
+                                    _updateTaskStatus(TaskStatus.completed),
                                 icon: const Icon(Remix.checkbox_circle_line),
                                 label: const Text('Mark as Completed'),
                                 style: ElevatedButton.styleFrom(
@@ -400,29 +406,55 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
     );
   }
 
-  Color _getStatusColor(String status) {
-    switch (status.toLowerCase()) {
-      case 'completed':
-        return Colors.green;
-      case 'in_progress':
-        return Colors.orange;
-      case 'pending':
-        return Colors.blue;
-      default:
-        return Colors.grey;
+  String _getStatusDisplayText(TaskStatus status) {
+    switch (status) {
+      case TaskStatus.pending:
+        return 'PENDING';
+      case TaskStatus.inProgress:
+        return 'IN PROGRESS';
+      case TaskStatus.completed:
+        return 'COMPLETED';
+      case TaskStatus.cancelled:
+        return 'CANCELLED';
     }
   }
 
-  Color _getPriorityColor(String priority) {
-    switch (priority.toLowerCase()) {
-      case 'high':
-        return Colors.red;
-      case 'medium':
-        return Colors.orange;
-      case 'low':
+  String _getPriorityDisplayText(TaskPriority priority) {
+    switch (priority) {
+      case TaskPriority.low:
+        return 'LOW';
+      case TaskPriority.medium:
+        return 'MEDIUM';
+      case TaskPriority.high:
+        return 'HIGH';
+      case TaskPriority.urgent:
+        return 'URGENT';
+    }
+  }
+
+  Color _getStatusColor(TaskStatus status) {
+    switch (status) {
+      case TaskStatus.completed:
         return Colors.green;
-      default:
-        return Colors.grey;
+      case TaskStatus.inProgress:
+        return Colors.orange;
+      case TaskStatus.pending:
+        return Colors.blue;
+      case TaskStatus.cancelled:
+        return Colors.red;
+    }
+  }
+
+  Color _getPriorityColor(TaskPriority priority) {
+    switch (priority) {
+      case TaskPriority.urgent:
+        return const Color(0xFF9D174D);
+      case TaskPriority.high:
+        return Colors.red;
+      case TaskPriority.medium:
+        return Colors.orange;
+      case TaskPriority.low:
+        return Colors.green;
     }
   }
 
@@ -533,47 +565,32 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
     );
 
     if (result == true) {
-      _updateTaskStatus('pending');
+      _updateTaskStatus(TaskStatus.pending);
     }
   }
 
-  Future<void> _updateTaskStatus(String newStatus) async {
+  Future<void> _updateTaskStatus(TaskStatus newStatus) async {
     try {
-      final supabaseService = SupabaseService();
-      final updateData = {
-        'status': newStatus,
-        'updated_at': DateTime.now().toIso8601String(),
-      };
+      final supabaseProvider =
+          Provider.of<SupabaseProvider>(context, listen: false);
 
-      // Set completed_at timestamp when task is marked as completed
-      if (newStatus == 'completed') {
-        updateData['completed_at'] = DateTime.now().toIso8601String();
-      } else if (newStatus == 'pending') {
-        // Remove completed_at field when resetting to pending
-        updateData.remove('completed_at');
-      }
+      // Update the task with new status
+      final updatedTask = _task.copyWith(
+        status: newStatus,
+        completedAt: newStatus == TaskStatus.completed ? DateTime.now() : null,
+      );
 
-      await supabaseService.updateTaskStatus(_task.id, newStatus, updateData);
+      await supabaseProvider.updateTask(updatedTask);
 
       if (mounted) {
         setState(() {
-          _task = _task.copyWith(
-            status: newStatus,
-            completedAt: newStatus == 'completed' ? DateTime.now() : null,
-          );
+          _task = updatedTask;
         });
-
-        // Notify the SupabaseProvider of the change
-        if (context.mounted) {
-          final provider =
-              Provider.of<SupabaseProvider>(context, listen: false);
-          provider.updateTask(_task);
-        }
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-                'Task status updated to ${newStatus.replaceAll('_', ' ')}'),
+                'Task status updated to ${_getStatusDisplayText(newStatus).toLowerCase()}'),
             backgroundColor: Colors.green,
           ),
         );

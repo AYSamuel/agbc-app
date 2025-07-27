@@ -1,25 +1,28 @@
-/// Handles task creation, assignment, tracking, and completion status
-/// with support for deadlines, priorities, and notifications.
+/// Enhanced TaskModel with new schema features including metadata, attachments, and ENUMs.
 class TaskModel {
   // Basic task information
-  final String id; // Unique identifier for the task
-  final String title; // Title/name of the task
-  final String description; // Detailed description of the task
-  final DateTime createdAt; // When the task was created
-  final DateTime? updatedAt; // When the task was last updated
-  final String createdBy; // ID of user who created the task
+  final String id;
+  final String title;
+  final String description;
+  final DateTime createdAt;
+  final DateTime updatedAt; // New field for tracking updates
+  final String createdBy;
 
   // Assignment and scheduling
-  final String assignedTo; // ID of user responsible for the task
-  final DateTime dueDate; // When the task needs to be completed
-  final String? branchId; // Associated branch (optional)
+  final String assignedTo;
+  final DateTime dueDate;
+  final String? branchId;
 
-  // Task status and tracking
-  final String status; // Current status (pending, in_progress, completed, etc.)
-  final DateTime? completedAt; // When the task was completed
+  // Task status and tracking using ENUMs
+  final TaskStatus status;
+  final DateTime? completedAt;
 
   // Task classification
-  final String priority; // Priority level (high, medium, low)
+  final TaskPriority priority;
+
+  // Enhanced features
+  final Map<String, dynamic> metadata; // Additional task metadata
+  final List<Map<String, dynamic>> attachments; // File attachments
 
   /// Constructor for creating a new TaskModel instance
   TaskModel({
@@ -30,12 +33,17 @@ class TaskModel {
     required this.assignedTo,
     required this.createdBy,
     DateTime? createdAt,
-    this.updatedAt,
+    DateTime? updatedAt,
     this.branchId,
-    this.status = 'pending',
-    this.priority = 'medium',
+    this.status = TaskStatus.pending,
+    this.priority = TaskPriority.medium,
     this.completedAt,
-  }) : createdAt = createdAt ?? DateTime.now();
+    Map<String, dynamic>? metadata,
+    List<Map<String, dynamic>>? attachments,
+  }) : createdAt = createdAt ?? DateTime.now(),
+       updatedAt = updatedAt ?? DateTime.now(),
+       metadata = metadata ?? {},
+       attachments = attachments ?? [];
 
   /// Creates a TaskModel instance from JSON data
   factory TaskModel.fromJson(Map<String, dynamic> json) {
@@ -45,19 +53,26 @@ class TaskModel {
       description: json['description'] ?? '',
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'])
-          : null,
+          : DateTime.now(),
       updatedAt: json['updated_at'] != null
           ? DateTime.parse(json['updated_at'])
-          : null,
+          : DateTime.now(),
       createdBy: json['created_by'] ?? '',
       assignedTo: json['assigned_to'] ?? '',
       dueDate: DateTime.parse(json['due_date']),
       branchId: json['branch_id'],
-      status: json['status'] ?? 'pending',
-      priority: json['priority'] ?? 'medium',
+      status: TaskStatusExtension.fromDatabaseValue(json['status'] ?? 'pending'),
+      priority: TaskPriority.values.firstWhere(
+        (e) => e.toString().split('.').last == json['priority'],
+        orElse: () => TaskPriority.medium,
+      ),
       completedAt: json['completed_at'] != null
           ? DateTime.parse(json['completed_at'])
           : null,
+      metadata: Map<String, dynamic>.from(json['metadata'] as Map? ?? {}),
+      attachments: List<Map<String, dynamic>>.from(
+        json['attachments'] as List? ?? [],
+      ),
     );
   }
 
@@ -68,26 +83,56 @@ class TaskModel {
       'title': title,
       'description': description,
       'created_at': createdAt.toIso8601String(),
-      'updated_at': updatedAt?.toIso8601String(),
+      'updated_at': updatedAt.toIso8601String(),
       'created_by': createdBy,
       'assigned_to': assignedTo,
       'due_date': dueDate.toIso8601String(),
       'branch_id': branchId,
-      'status': status,
-      'priority': priority,
+      'status': status.databaseValue,
+      'priority': priority.toString().split('.').last,
       'completed_at': completedAt?.toIso8601String(),
+      'metadata': metadata,
+      'attachments': attachments,
     };
   }
 
   /// Checks if the task is overdue
   bool get isOverdue {
-    return status != 'completed' && DateTime.now().isAfter(dueDate);
+    return status != TaskStatus.completed && DateTime.now().isAfter(dueDate);
   }
 
   /// Checks if the task needs attention (approaching deadline)
   bool get needsAttention {
     final daysUntilDue = dueDate.difference(DateTime.now()).inDays;
-    return status != 'completed' && !isOverdue && daysUntilDue <= 2;
+    return status != TaskStatus.completed && !isOverdue && daysUntilDue <= 2;
+  }
+
+  /// Gets the priority color for UI display
+  String get priorityColor {
+    switch (priority) {
+      case TaskPriority.low:
+        return '#4CAF50'; // Green
+      case TaskPriority.medium:
+        return '#FF9800'; // Orange
+      case TaskPriority.high:
+        return '#F44336'; // Red
+      case TaskPriority.urgent:
+        return '#9C27B0'; // Purple
+    }
+  }
+
+  /// Gets the status color for UI display
+  String get statusColor {
+    switch (status) {
+      case TaskStatus.pending:
+        return '#9E9E9E'; // Gray
+      case TaskStatus.inProgress:
+        return '#2196F3'; // Blue
+      case TaskStatus.completed:
+        return '#4CAF50'; // Green
+      case TaskStatus.cancelled:
+        return '#F44336'; // Red
+    }
   }
 
   /// Creates a copy of the task with updated fields
@@ -101,16 +146,18 @@ class TaskModel {
     String? assignedTo,
     DateTime? dueDate,
     String? branchId,
-    String? status,
-    String? priority,
+    TaskStatus? status,
+    TaskPriority? priority,
     DateTime? completedAt,
+    Map<String, dynamic>? metadata,
+    List<Map<String, dynamic>>? attachments,
   }) {
     return TaskModel(
       id: id ?? this.id,
       title: title ?? this.title,
       description: description ?? this.description,
       createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
+      updatedAt: updatedAt ?? DateTime.now(),
       createdBy: createdBy ?? this.createdBy,
       assignedTo: assignedTo ?? this.assignedTo,
       dueDate: dueDate ?? this.dueDate,
@@ -118,10 +165,11 @@ class TaskModel {
       status: status ?? this.status,
       priority: priority ?? this.priority,
       completedAt: completedAt ?? this.completedAt,
+      metadata: metadata ?? this.metadata,
+      attachments: attachments ?? this.attachments,
     );
   }
 
-  /// Two tasks are considered equal if they have the same ID
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -129,4 +177,52 @@ class TaskModel {
 
   @override
   int get hashCode => id.hashCode;
+}
+
+/// Enum for task status matching the database schema
+enum TaskStatus {
+  pending,
+  inProgress,
+  completed,
+  cancelled,
+}
+
+/// Extension to handle database mapping for TaskStatus
+extension TaskStatusExtension on TaskStatus {
+  /// Converts enum to database string value (snake_case)
+  String get databaseValue {
+    switch (this) {
+      case TaskStatus.pending:
+        return 'pending';
+      case TaskStatus.inProgress:
+        return 'in_progress';
+      case TaskStatus.completed:
+        return 'completed';
+      case TaskStatus.cancelled:
+        return 'cancelled';
+    }
+  }
+
+  /// Creates enum from database string value (snake_case)
+  static TaskStatus fromDatabaseValue(String value) {
+    switch (value) {
+      case 'pending':
+        return TaskStatus.pending;
+      case 'in_progress':
+        return TaskStatus.inProgress;
+      case 'completed':
+        return TaskStatus.completed;
+      case 'cancelled':
+      default:
+        return TaskStatus.cancelled;
+    }
+  }
+}
+
+/// Enum for task priority matching the database schema
+enum TaskPriority {
+  low,
+  medium,
+  high,
+  urgent,
 }

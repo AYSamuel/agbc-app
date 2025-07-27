@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:grace_portal/models/user_model.dart';
 import 'package:grace_portal/utils/theme.dart';
 import 'package:grace_portal/widgets/task_status_card.dart';
 import 'package:grace_portal/widgets/daily_verse_card.dart';
@@ -53,7 +54,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final authService = Provider.of<AuthService>(context, listen: true);
-    final user = authService.currentUser;
+    final userProfile = authService.currentUserProfile;
 
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
@@ -91,7 +92,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  user?.displayName ?? 'User',
+                                  userProfile?.displayName ?? 'User',
                                   style: GoogleFonts.inter(
                                     fontSize: 24,
                                     fontWeight: FontWeight.bold,
@@ -109,18 +110,19 @@ class _HomeScreenState extends State<HomeScreen> {
                                   color: AppTheme.primaryColor,
                                   width: 2,
                                 ),
-                                image: (user != null &&
-                                        user.photoUrl != null &&
-                                        user.photoUrl!.isNotEmpty)
+                                image: (userProfile != null &&
+                                        userProfile.photoUrl != null &&
+                                        userProfile.photoUrl!.isNotEmpty)
                                     ? DecorationImage(
-                                        image: NetworkImage(user.photoUrl!),
+                                        image:
+                                            NetworkImage(userProfile.photoUrl!),
                                         fit: BoxFit.cover,
                                       )
                                     : null,
                               ),
-                              child: (user == null ||
-                                      user.photoUrl == null ||
-                                      user.photoUrl!.isEmpty)
+                              child: (userProfile == null ||
+                                      userProfile.photoUrl == null ||
+                                      userProfile.photoUrl!.isEmpty)
                                   ? Icon(Icons.person,
                                       size: 32, color: AppTheme.primaryColor)
                                   : null,
@@ -141,7 +143,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       // Task Status Card
                       StreamBuilder<List<TaskModel>>(
                         stream: Provider.of<SupabaseProvider>(context)
-                            .getTasksForUser(user?.id ?? ''),
+                            .getUserTasks(userProfile?.id ?? ''),
                         builder: (context, snapshot) {
                           if (snapshot.hasError || !snapshot.hasData) {
                             return const SizedBox.shrink();
@@ -281,27 +283,28 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
-      floatingActionButton: user?.role == 'member'
+      floatingActionButton: userProfile?.role == UserRole.member
           ? null
           : RadialMenu(
               onTaskPressed: () => _showTaskCreationDialog(context),
-              onMeetingPressed:
-                  (user?.role == 'pastor' || user?.role == 'admin')
-                      ? () => _showMeetingCreationDialog(context)
-                      : null,
-              onBranchPressed: user?.role == 'admin'
+              onMeetingPressed: (userProfile?.role == UserRole.pastor ||
+                      userProfile?.role == UserRole.admin)
+                  ? () => _showMeetingCreationDialog(context)
+                  : null,
+              onBranchPressed: userProfile?.role == UserRole.admin
                   ? () => _showBranchCreationDialog(context)
                   : null,
-              showBranchOption: user?.role == 'admin',
-              showMeetingOption:
-                  user?.role == 'pastor' || user?.role == 'admin',
+              showBranchOption: userProfile?.role == UserRole.admin,
+              showMeetingOption: userProfile?.role == UserRole.pastor ||
+                  userProfile?.role == UserRole.admin,
             ),
     );
   }
 
   void _showTaskCreationDialog(BuildContext context) {
-    final user = Provider.of<AuthService>(context, listen: false).currentUser;
-    if (user?.role == 'member') {
+    final userProfile =
+        Provider.of<AuthService>(context, listen: false).currentUserProfile;
+    if (userProfile?.role == UserRole.member) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(

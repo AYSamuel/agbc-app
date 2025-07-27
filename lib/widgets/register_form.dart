@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/auth_service.dart';
-import '../services/location_service.dart';
 import '../widgets/custom_input.dart';
 import '../widgets/custom_button.dart';
 import '../widgets/loading_indicator.dart';
@@ -33,10 +33,9 @@ class _RegisterFormState extends State<RegisterForm> with FormValidationMixin {
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  final _locationController = TextEditingController();
-  final _locationService = LocationService();
   bool _isLoading = false;
   String? _selectedBranchId;
+  Map<String, String> _locationData = {'city': '', 'country': ''};
 
   @override
   void dispose() {
@@ -45,7 +44,6 @@ class _RegisterFormState extends State<RegisterForm> with FormValidationMixin {
     _phoneController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
-    _locationController.dispose();
     super.dispose();
   }
 
@@ -77,12 +75,26 @@ class _RegisterFormState extends State<RegisterForm> with FormValidationMixin {
     );
   }
 
+  String _formatLocationString() {
+    final city = _locationData['city']?.trim() ?? '';
+    final country = _locationData['country']?.trim() ?? '';
+
+    if (city.isNotEmpty && country.isNotEmpty) {
+      return '$city, $country';
+    } else if (city.isNotEmpty) {
+      return city;
+    } else if (country.isNotEmpty) {
+      return country;
+    }
+    return '';
+  }
+
   Future<void> _register() async {
     print('--- Registration Attempt ---');
     print('Name: \'${_nameController.text}\'');
     print('Email: \'${_emailController.text}\'');
     print('Phone: \'${_phoneController.text}\'');
-    print('Location: \'${_locationController.text}\'');
+    print('Location: \'${_formatLocationString()}\'');
     print('BranchId: \'$_selectedBranchId\'');
     print('Password: (length: \'${_passwordController.text.length}\')');
     print(
@@ -101,6 +113,14 @@ class _RegisterFormState extends State<RegisterForm> with FormValidationMixin {
       return;
     }
 
+    // Validate location
+    if (_locationData['city']?.isEmpty == true ||
+        _locationData['country']?.isEmpty == true) {
+      print('Location validation failed');
+      _showErrorSnackBar('Please provide both city and country');
+      return;
+    }
+
     setState(() => _isLoading = true);
 
     try {
@@ -111,88 +131,44 @@ class _RegisterFormState extends State<RegisterForm> with FormValidationMixin {
         _passwordController.text,
         _nameController.text.trim(),
         _phoneController.text.trim(),
-        _locationController.text.trim(),
+        _formatLocationString(),
         'member', // Default role for new registrations
         _selectedBranchId,
       );
       print('Registration call succeeded');
 
       if (mounted) {
-        // Show verification dialog
-        int countdown = 120; // 2 minutes in seconds
-        bool canResend = false;
-        Timer? countdownTimer;
-
+        // Show simple verification dialog
         showDialog(
           context: context,
           barrierDismissible: false,
           builder: (context) {
-            return StatefulBuilder(
-              builder: (context, setState) {
-                // Start the countdown timer if it's not already running
-                if (!canResend && countdownTimer == null) {
-                  countdownTimer =
-                      Timer.periodic(const Duration(seconds: 1), (timer) {
-                    // Check if the StatefulBuilder is still mounted
-                    if (countdown > 0) {
-                      setState(() {
-                        countdown--;
-                      });
-                    } else {
-                      setState(() {
-                        canResend = true;
-                      });
-                      timer.cancel();
-                      countdownTimer = null;
-                    }
-                  });
-                }
-
-                return AlertDialog(
-                  title: const Text('Email Verification Required'),
-                  content: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text(
-                        'Please check your email for a verification link. If you haven\'t received it, you can request a new one.',
-                      ),
-                      if (!canResend) ...[
-                        const SizedBox(height: 16),
-                        Text(
-                          'You can request a new verification email in ${countdown ~/ 60}:${(countdown % 60).toString().padLeft(2, '0')}',
-                          style: const TextStyle(
-                            color: Colors.grey,
-                            fontStyle: FontStyle.italic,
-                          ),
-                        ),
-                      ],
-                    ],
+            return AlertDialog(
+              title: const Text('Email Verification Required'),
+              content: const Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.mark_email_unread,
+                    size: 64,
+                    color: AppTheme.accentColor,
                   ),
-                  actions: [
-                    TextButton(
-                      onPressed: () {
-                        // Cancel the timer when dialog is closed
-                        countdownTimer?.cancel();
-                        Navigator.pop(context);
-                        widget.onRegisterSuccess();
-                      },
-                      child: const Text('Back to Login'),
-                    ),
-                    TextButton(
-                      onPressed: canResend
-                          ? () {
-                              // Cancel the timer when dialog is closed
-                              countdownTimer?.cancel();
-                              Navigator.pop(context);
-                              authService.sendVerificationEmail();
-                              widget.onRegisterSuccess();
-                            }
-                          : null,
-                      child: const Text('Resend Email'),
-                    ),
-                  ],
-                );
-              },
+                  SizedBox(height: 16),
+                  Text(
+                    'A verification link has been sent to your email. Please check your email and click the link to verify your account.',
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    widget.onRegisterSuccess();
+                  },
+                  child: const Text('OK'),
+                ),
+              ],
             );
           },
         );
@@ -261,13 +237,19 @@ class _RegisterFormState extends State<RegisterForm> with FormValidationMixin {
 
           // Location Field
           LocationField(
-            controller: _locationController,
-            label: 'Location',
-            hint: 'Enter your location',
-            locationService: _locationService,
-            textInputAction: TextInputAction.next,
-            onSubmitted: (_) => FocusScope.of(context).nextFocus(),
-            validator: validateLocation,
+            initialLocation: _locationData,
+            onLocationChanged: (location) {
+              setState(() {
+                _locationData = location;
+              });
+            },
+            validator: (location) {
+              if (location['city']?.isEmpty == true ||
+                  location['country']?.isEmpty == true) {
+                return 'Both city and country are required';
+              }
+              return null;
+            },
           ),
           const FormSpacing(),
 

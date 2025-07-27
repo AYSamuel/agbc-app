@@ -13,9 +13,9 @@ class AdminRouteGuard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final user = Provider.of<AuthService>(context).currentUser;
+    final authService = Provider.of<AuthService>(context);
 
-    if (user?.role != 'admin') {
+    if (!authService.isAdmin) {
       // Show error and redirect to home
       WidgetsBinding.instance.addPostFrameCallback((_) {
         ScaffoldMessenger.of(context).showSnackBar(

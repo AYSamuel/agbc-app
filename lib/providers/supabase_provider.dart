@@ -1,220 +1,199 @@
 import 'package:flutter/foundation.dart';
-import '../services/supabase_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/user_model.dart';
+import '../models/church_branch_model.dart';
 import '../models/task_model.dart';
 import '../models/meeting_model.dart';
-import '../models/church_branch_model.dart';
 
-class SupabaseProvider with ChangeNotifier {
-  final SupabaseService _supabaseService = SupabaseService();
-  
-  // User Data
-  UserModel? _currentUser;
-  UserModel? get currentUser => _currentUser;
-  
-  // Task Data
-  List<TaskModel> _tasks = [];
-  List<TaskModel> get tasks => _tasks;
-  
-  // Meeting Data
-  List<MeetingModel> _meetings = [];
-  List<MeetingModel> get meetings => _meetings;
-  
-  // Branch Data
-  ChurchBranch? _currentBranch;
-  ChurchBranch? get currentBranch => _currentBranch;
-  
-  // Initialize user data
-  Future<void> initializeUserData(String id) async {
-    _supabaseService.getUser(id).listen((user) {
-      _currentUser = user;
-      if (user != null) {
-        if (user.branchId != null) {
-          _supabaseService.getBranch(user.branchId!).listen((branch) {
-            _currentBranch = branch;
-            notifyListeners();
-          });
-        }
-        _loadUserTasks(id);
-        _loadUserMeetings(id);
-      }
-      notifyListeners();
-    });
-  }
-  
-  // Load user tasks
-  void _loadUserTasks(String userId) {
-    _supabaseService.getTasksForUser(userId).listen((tasks) {
-      _tasks = tasks;
-      notifyListeners();
-    });
-  }
-  
-  // Load user meetings
-  void _loadUserMeetings(String userId) {
-    _supabaseService.getMeetingsForUser(userId).listen((meetings) {
-      _meetings = meetings;
-      notifyListeners();
-    });
-  }
+class SupabaseProvider extends ChangeNotifier {
+  final SupabaseClient _supabase = Supabase.instance.client;
 
-  // Expose SupabaseService streams
-  Stream<List<TaskModel>> getTasksForUser(String userId) {
-    return _supabaseService.getTasksForUser(userId);
-  }
+  bool _isLoading = false;
+  String? _error;
 
-  Stream<List<MeetingModel>> getMeetingsForUser(String userId) {
-    return _supabaseService.getMeetingsForUser(userId);
-  }
-  
-  // Task Operations
-  Future<void> createTask(TaskModel task) async {
-    await _supabaseService.createTask(task);
-    notifyListeners();
-  }
-  
-  Future<void> updateTask(TaskModel task) async {
-    await _supabaseService.updateTask(task);
-    notifyListeners();
-  }
-  
-  Future<void> deleteTask(String taskId) async {
-    await _supabaseService.deleteTask(taskId);
-    notifyListeners();
-  }
-  
-  Future<void> addCommentToTask(String taskId, String comment) async {
-    await _supabaseService.addCommentToTask(taskId, _currentUser!.id, comment);
-    notifyListeners();
-  }
-  
-  Future<void> updateTaskStatus(String taskId, String status) async {
-    await _supabaseService.updateTaskStatus(taskId, status);
-    notifyListeners();
-  }
-  
-  // Meeting Operations
-  Future<void> createMeeting(MeetingModel meeting) async {
-    await _supabaseService.createMeeting(meeting);
-    notifyListeners();
-  }
-  
-  Future<void> updateMeeting(MeetingModel meeting) async {
-    await _supabaseService.updateMeeting(meeting);
-    notifyListeners();
-  }
-  
-  Future<void> deleteMeeting(String meetingId) async {
-    await _supabaseService.deleteMeeting(meetingId);
-    notifyListeners();
-  }
-  
-  Future<void> updateMeetingAttendance(
-    String meetingId,
-    String userId,
-    bool isAttending,
-  ) async {
-    await _supabaseService.updateMeetingAttendance(
-      meetingId,
-      userId,
-      isAttending,
-    );
-    notifyListeners();
-  }
-  
-  // Branch Operations
-  Stream<List<ChurchBranch>> getAllBranches() {
-    return _supabaseService.getAllBranches();
-  }
+  bool get isLoading => _isLoading;
+  String? get error => _error;
 
-  Future<void> createBranch(ChurchBranch branch) async {
-    await _supabaseService.createBranch(branch);
-    notifyListeners();
-  }
+  // ==================== USERS ====================
 
-  Future<void> updateBranch(String branchId, Map<String, dynamic> data) async {
-    await _supabaseService.updateBranch(branchId, data);
-    notifyListeners();
-  }
-
-  Future<void> deleteBranch(String branchId) async {
-    await _supabaseService.deleteBranch(branchId);
-    notifyListeners();
-  }
-
-  Future<void> assignPastorToBranch(String branchId, String pastorId) async {
-    await _supabaseService.updateBranch(branchId, {'pastorId': pastorId});
-    notifyListeners();
-  }
-
-  Future<void> addMemberToBranch(String branchId, String userId) async {
-    await _supabaseService.updateBranch(branchId, {
-      'members': [userId]
-    });
-    notifyListeners();
-  }
-
-  Future<void> removeMemberFromBranch(String branchId, String userId) async {
-    await _supabaseService.updateBranch(branchId, {
-      'members': [userId]
-    });
-    notifyListeners();
-  }
-  
-  // Department Operations
-  List<String> getDepartments() {
-    return _currentBranch?.departments ?? [];
-  }
-
-  // User operations
-  Stream<UserModel?> getUser(String id) {
-    return _supabaseService.getUser(id);
-  }
-
-  Future<void> updateUser(UserModel user) async {
-    await _supabaseService.updateUser(user);
-    notifyListeners();
-  }
-
+  /// Get all users stream
   Stream<List<UserModel>> getAllUsers() {
-    return _supabaseService.getAllUsers();
+    return _supabase
+        .from('users')
+        .stream(primaryKey: ['id'])
+        .order('created_at', ascending: false)
+        .map((data) => data.map((json) => UserModel.fromJson(json)).toList());
   }
 
+  /// Get a specific user by ID
+  Stream<UserModel?> getUser(String userId) {
+    return _supabase
+        .from('users')
+        .stream(primaryKey: ['id'])
+        .eq('id', userId)
+        .map((data) => data.isNotEmpty ? UserModel.fromJson(data.first) : null);
+  }
+
+  /// Update user
+  Future<bool> updateUser(UserModel user) async {
+    _setLoading(true);
+    try {
+      await _supabase.from('users').update(user.toJson()).eq('id', user.id);
+      return true;
+    } catch (e) {
+      _setError('Failed to update user: $e');
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  /// Update user role
+  Future<bool> updateUserRole(String userId, String newRole) async {
+    _setLoading(true);
+    try {
+      await _supabase.from('users').update({'role': newRole}).eq('id', userId);
+      return true;
+    } catch (e) {
+      _setError('Failed to update user role: $e');
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  // ==================== BRANCHES ====================
+
+  /// Get all branches stream
+  Stream<List<ChurchBranch>> getAllBranches() {
+    return _supabase
+        .from('church_branch')
+        .stream(primaryKey: ['id'])
+        .order('name')
+        .map(
+            (data) => data.map((json) => ChurchBranch.fromJson(json)).toList());
+  }
+
+  /// Create new branch
+  Future<bool> createBranch(ChurchBranch branch) async {
+    _setLoading(true);
+    try {
+      await _supabase.from('church_branch').insert(branch.toJson());
+      return true;
+    } catch (e) {
+      _setError('Failed to create branch: $e');
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  /// Delete branch
+  Future<bool> deleteBranch(String branchId) async {
+    _setLoading(true);
+    try {
+      await _supabase.from('church_branch').delete().eq('id', branchId);
+      return true;
+    } catch (e) {
+      _setError('Failed to delete branch: $e');
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  // ==================== TASKS ====================
+
+  /// Get all tasks stream
   Stream<List<TaskModel>> getAllTasks() {
-    return _supabaseService.getAllTasks();
+    return _supabase
+        .from('tasks')
+        .stream(primaryKey: ['id'])
+        .order('created_at', ascending: false)
+        .map((data) => data.map((json) => TaskModel.fromJson(json)).toList());
   }
 
+  /// Get user's assigned tasks
+  Stream<List<TaskModel>> getUserTasks(String userId) {
+    return _supabase
+        .from('tasks')
+        .stream(primaryKey: ['id'])
+        .eq('assigned_to', userId)
+        .order('created_at', ascending: false)
+        .map((data) => data.map((json) => TaskModel.fromJson(json)).toList());
+  }
+
+  /// Create new task
+  Future<bool> createTask(TaskModel task) async {
+    _setLoading(true);
+    try {
+      await _supabase.from('tasks').insert(task.toJson());
+      return true;
+    } catch (e) {
+      _setError('Failed to create task: $e');
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  /// Update task
+  Future<bool> updateTask(TaskModel task) async {
+    _setLoading(true);
+    try {
+      await _supabase.from('tasks').update(task.toJson()).eq('id', task.id);
+      return true;
+    } catch (e) {
+      _setError('Failed to update task: $e');
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  // ==================== MEETINGS ====================
+
+  /// Get all meetings stream
   Stream<List<MeetingModel>> getAllMeetings() {
-    return _supabaseService.getAllMeetings();
+    return _supabase
+        .from('meetings')
+        .stream(primaryKey: ['id'])
+        .order('scheduled_date', ascending: false)
+        .map(
+            (data) => data.map((json) => MeetingModel.fromJson(json)).toList());
   }
 
-  Stream<ChurchBranch?> getBranch(String branchId) {
-    return _supabaseService.getBranch(branchId);
-  }
-
-  Future<void> updateUserRole(String userId, String newRole) async {
+  /// Create new meeting
+  Future<bool> createMeeting(MeetingModel meeting) async {
+    _setLoading(true);
     try {
-      await _supabaseService.updateUserRole(userId, newRole);
+      await _supabase.from('meetings').insert(meeting.toJson());
+      return true;
     } catch (e) {
-      throw Exception('Failed to update user role: $e');
+      _setError('Failed to create meeting: $e');
+      return false;
+    } finally {
+      _setLoading(false);
     }
   }
 
-  Future<List<UserModel>> getUsers() async {
-    try {
-      final users = await _supabaseService.getAllUsers().first;
-      return users;
-    } catch (e) {
-      throw Exception('Failed to fetch users: $e');
-    }
+  // ==================== UTILITY METHODS ====================
+
+  void _setLoading(bool loading) {
+    _isLoading = loading;
+    notifyListeners();
   }
 
-  Future<void> createUser(UserModel user) async {
-    try {
-      await _supabaseService.updateUser(user);
-      notifyListeners();
-    } catch (e) {
-      throw Exception('Failed to create user: $e');
+  void _setError(String error) {
+    _error = error;
+    if (kDebugMode) {
+      print('SupabaseProvider Error: $error');
     }
+    notifyListeners();
   }
-} 
+
+  void clearError() {
+    _error = null;
+    notifyListeners();
+  }
+}

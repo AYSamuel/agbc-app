@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:agbc_app/utils/theme.dart';
+import 'package:grace_portal/utils/theme.dart';
 import 'package:provider/provider.dart';
-import 'package:agbc_app/services/auth_service.dart';
-import 'package:agbc_app/providers/branches_provider.dart';
+import 'package:grace_portal/services/auth_service.dart';
+import 'package:grace_portal/providers/branches_provider.dart';
+import 'package:grace_portal/widgets/custom_back_button.dart';
+import 'package:grace_portal/models/user_model.dart';
 import 'login_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -22,16 +24,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
         final branchesProvider =
             Provider.of<BranchesProvider>(context, listen: false);
         final authService = Provider.of<AuthService>(context, listen: false);
-        final user = authService.currentUser;
+        final user = authService.currentUserProfile;
 
-        // Initialize branches if not already initialized
-        if (!branchesProvider.isInitialized) {
-          await branchesProvider.initialize();
-        }
+        // Fetch branches if not already loaded
+        await branchesProvider.fetchBranches();
 
         // If user has a branch, ensure it's loaded
         if (user?.branchId != null && user!.branchId!.isNotEmpty) {
-          await branchesProvider.refresh();
+          await branchesProvider.fetchBranches();
         }
       }
     });
@@ -66,7 +66,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     final authService = Provider.of<AuthService>(context);
     final branchesProvider = Provider.of<BranchesProvider>(context);
-    final user = authService.currentUser;
+    final user = authService.currentUserProfile;
 
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
@@ -77,6 +77,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
             expandedHeight: 220,
             pinned: true,
             backgroundColor: AppTheme.backgroundColor,
+            leading: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: CustomBackButton(
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+            ),
             flexibleSpace: FlexibleSpaceBar(
               background: Container(
                 color: AppTheme.backgroundColor,
@@ -163,19 +169,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
-                            color: _getRoleColor(user?.role ?? 'member'),
+                            color: _getRoleColor(user?.role ?? UserRole.member),
                             borderRadius: BorderRadius.circular(20),
                             boxShadow: [
                               BoxShadow(
-                                color: _getRoleColor(user?.role ?? 'member')
-                                    .withValues(alpha: 0.2),
+                                color:
+                                    _getRoleColor(user?.role ?? UserRole.member)
+                                        .withValues(alpha: 0.2),
                                 blurRadius: 6,
                                 offset: const Offset(0, 2),
                               ),
                             ],
                           ),
                           child: Text(
-                            user?.role.toUpperCase() ?? 'MEMBER',
+                            user?.role
+                                    .toString()
+                                    .split('.')
+                                    .last
+                                    .toUpperCase() ??
+                                'MEMBER',
                             style: const TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
@@ -236,7 +248,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     _buildInfoCard(
                       context,
                       title: 'Location',
-                      value: user?.location ?? 'Not set',
+                      value: user?.locationString ?? 'Not set',
                       icon: Icons.location_on,
                     ),
                   ],
@@ -259,7 +271,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     _buildInfoCard(
                       context,
                       title: 'Location',
-                      value: user?.location ?? 'Not set',
+                      value: user?.locationString ?? 'Not set',
                       icon: Icons.location_on,
                     ),
                   ],
@@ -438,16 +450,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Color _getRoleColor(String role) {
-    switch (role.toLowerCase()) {
-      case 'admin':
+  Color _getRoleColor(UserRole role) {
+    switch (role) {
+      case UserRole.admin:
         return Colors.red;
-      case 'pastor':
+      case UserRole.pastor:
         return Colors.purple;
-      case 'worker':
+      case UserRole.worker:
         return Colors.blue;
-      case 'member':
-      default:
+      case UserRole.member:
         return Colors.green;
     }
   }

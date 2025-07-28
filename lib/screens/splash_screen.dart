@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
-import '../services/app_initialization_service.dart';
-import 'main_navigation_screen.dart';
-import 'login_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -23,7 +20,7 @@ class _SplashScreenState extends State<SplashScreen>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 5000),
+      duration: const Duration(milliseconds: 3000),
     );
     _fadeAnimation = CurvedAnimation(
       parent: _controller,
@@ -46,39 +43,44 @@ class _SplashScreenState extends State<SplashScreen>
   Future<void> _initializeApp() async {
     final initializationStart = DateTime.now();
     try {
-      await AppInitializationService.initializeApp();
+      // Wait for auth service to be ready (it's already initialized in main.dart)
+      // Just add a small delay to ensure everything is properly set up
+      await Future.delayed(const Duration(milliseconds: 500));
 
-      // Ensure splash screen stays for at least 5 seconds
+      // Ensure splash screen stays for at least 3 seconds for better UX
       final initializationDuration =
           DateTime.now().difference(initializationStart);
-      if (initializationDuration < const Duration(seconds: 5)) {
+      if (initializationDuration < const Duration(seconds: 3)) {
         await Future.delayed(
-            const Duration(seconds: 5) - initializationDuration);
+            const Duration(seconds: 3) - initializationDuration);
       }
 
-      _navigateToNextScreen();
+      if (mounted) {
+        _navigateToNextScreen();
+      }
     } catch (e) {
+      debugPrint('Error during app initialization: $e');
       // Even on error, ensure minimum splash screen duration
       final initializationDuration =
           DateTime.now().difference(initializationStart);
-      if (initializationDuration < const Duration(seconds: 5)) {
+      if (initializationDuration < const Duration(seconds: 3)) {
         await Future.delayed(
-            const Duration(seconds: 5) - initializationDuration);
+            const Duration(seconds: 3) - initializationDuration);
       }
-      _navigateToNextScreen();
+      if (mounted) {
+        _navigateToNextScreen();
+      }
     }
   }
 
   void _navigateToNextScreen() {
     if (!mounted) return;
     final authService = Provider.of<AuthService>(context, listen: false);
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (context) => authService.isAuthenticated
-            ? const MainNavigationScreen()
-            : const LoginScreen(),
-      ),
-    );
+    if (authService.isAuthenticated) {
+      Navigator.of(context).pushReplacementNamed('/home');
+    } else {
+      Navigator.of(context).pushReplacementNamed('/login');
+    }
   }
 
   @override
@@ -113,6 +115,27 @@ class _SplashScreenState extends State<SplashScreen>
                     color: colorScheme.onPrimary,
                   ),
                   const SizedBox(height: 24),
+                  // App Name
+                  Text(
+                    'Grace Portal',
+                    style: TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      color: colorScheme.onPrimary,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Church Management System',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color:
+                          colorScheme.onPrimary.withAlpha((0.8 * 255).round()),
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 40),
                   // Loading Indicator
                   CircularProgressIndicator(
                     valueColor:

@@ -21,7 +21,6 @@ class _BranchManagementScreenState extends State<BranchManagementScreen> {
   Widget build(BuildContext context) {
     final supabaseProvider = Provider.of<SupabaseProvider>(context);
     final authService = Provider.of<AuthService>(context);
-    final user = authService.currentUser;
     final notificationService = Provider.of<NotificationService>(context);
 
     return Scaffold(
@@ -32,72 +31,114 @@ class _BranchManagementScreenState extends State<BranchManagementScreen> {
             // Header with Back button
             Padding(
               padding: const EdgeInsets.all(16.0),
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  CustomBackButton(
-                    onPressed: () => Navigator.pop(context),
+                  // Title row
+                  Row(
+                    children: [
+                      CustomBackButton(
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                      const SizedBox(width: 16),
+                      const Text(
+                        'Branches',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1A237E),
+                        ),
+                      ),
+                      const Spacer(),
+                      // Add button - always visible since only admins can access this screen
+                      IconButton(
+                        icon: const Icon(Icons.add),
+                        onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const AddBranchScreen(),
+                            fullscreenDialog: true,
+                          ),
+                        ),
+                        color: AppTheme.primaryColor,
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 16),
-                  const Text(
-                    'Branches',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF1A237E),
-                    ),
-                  ),
-                  const Spacer(),
-                  if (user?.role == 'admin')
-                    Row(
-                      children: [
-                        ElevatedButton.icon(
-                          onPressed: () async {
-                            try {
-                              await notificationService
-                                  .sendBroadcastNotification(
-                                title: 'Test Notification',
-                                message:
-                                    'This is a test notification from the app',
+                  // Admin buttons row - always visible since only admins can access this screen
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      ElevatedButton.icon(
+                        onPressed: () async {
+                          try {
+                            await notificationService
+                                .sendBroadcastNotification(
+                              title: 'Test Notification',
+                              message:
+                                  'This is a test notification from the app',
+                            );
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Test notification sent!'),
+                                ),
                               );
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Test notification sent!'),
-                                  ),
-                                );
-                              }
-                            } catch (e) {
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text('Error: ${e.toString()}'),
-                                    backgroundColor: AppTheme.errorColor,
-                                  ),
-                                );
-                              }
                             }
-                          },
-                          icon: const Icon(Icons.notifications),
-                          label: const Text('Test Notification'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.primaryColor,
-                            foregroundColor: Colors.white,
-                          ),
+                          } catch (e) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Error: ${e.toString()}'),
+                                  backgroundColor: AppTheme.errorColor,
+                                ),
+                              );
+                            }
+                          }
+                        },
+                        icon: const Icon(Icons.notifications),
+                        label: const Text('Test Notification'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.primaryColor,
+                          foregroundColor: Colors.white,
                         ),
-                        const SizedBox(width: 8),
-                        IconButton(
-                          icon: const Icon(Icons.add),
-                          onPressed: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const AddBranchScreen(),
-                              fullscreenDialog: true,
-                            ),
-                          ),
-                          color: AppTheme.primaryColor,
+                      ),
+                      ElevatedButton.icon(
+                        onPressed: () async {
+                          try {
+                            final deviceId =
+                                await notificationService.getDeviceId();
+                            final user = authService.currentUser;
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                      'Device ID: ${deviceId ?? 'null'}\nUser ID: ${user?.id ?? 'null'}'),
+                                  duration: const Duration(seconds: 5),
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Error: ${e.toString()}'),
+                                  backgroundColor: AppTheme.errorColor,
+                                ),
+                              );
+                            }
+                          }
+                        },
+                        icon: const Icon(Icons.info),
+                        label: const Text('Debug Device'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.orange,
+                          foregroundColor: Colors.white,
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
@@ -156,12 +197,9 @@ class _BranchManagementScreenState extends State<BranchManagementScreen> {
                       final branch = branches[index];
                       return BranchCard(
                         branch: branch,
-                        onEdit: user?.role == 'admin'
-                            ? () => _showEditBranchDialog(context, branch)
-                            : null,
-                        onDelete: user?.role == 'admin'
-                            ? () => _deleteBranch(context, branch)
-                            : null,
+                        // Always provide edit and delete callbacks since only admins can access this screen
+                        onEdit: () => _showEditBranchDialog(context, branch),
+                        onDelete: () => _deleteBranch(context, branch),
                         onView: () => _showBranchDetails(context, branch),
                       );
                     },
@@ -309,7 +347,7 @@ class _BranchManagementScreenState extends State<BranchManagementScreen> {
                 fontSize: 16,
               ),
             ),
-            Text(branch.location),
+            Text(branch.locationString),
             const SizedBox(height: 16),
             const Text(
               'Address:',

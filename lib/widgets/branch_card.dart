@@ -19,6 +19,23 @@ class BranchCard extends StatelessWidget {
     this.showActions = true,
   });
 
+  String _formatLocation(Map<String, dynamic> location) {
+    if (location.isEmpty) return 'No location set';
+    
+    final city = location['city']?.toString().trim();
+    final country = location['country']?.toString().trim();
+    
+    if (city != null && country != null && city.isNotEmpty && country.isNotEmpty) {
+      return '$city, $country';
+    } else if (city != null && city.isNotEmpty) {
+      return city;
+    } else if (country != null && country.isNotEmpty) {
+      return country;
+    }
+    
+    return 'No location set';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -82,7 +99,7 @@ class BranchCard extends StatelessWidget {
                               const SizedBox(width: 4),
                               Expanded(
                                 child: Text(
-                                  branch.location,
+                                  _formatLocation(branch.location),
                                   style: AppTheme.regularTextStyle.copyWith(
                                     color: AppTheme.neutralColor,
                                   ),

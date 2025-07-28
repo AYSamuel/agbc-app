@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.agbc_app"
+    namespace = "com.example.grace_portal"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 

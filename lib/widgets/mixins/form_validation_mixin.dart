@@ -3,7 +3,9 @@ mixin FormValidationMixin {
     if (value == null || value.isEmpty) {
       return 'Please enter your email';
     }
-    if (!value.contains('@')) {
+    // Enhanced email validation
+    final emailRegex = RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
+    if (!emailRegex.hasMatch(value)) {
       return 'Please enter a valid email';
     }
     return null;
@@ -29,9 +31,52 @@ mixin FormValidationMixin {
     return null;
   }
 
-  String? validateLocation(String? value) {
-    if (value == null || value.isEmpty) {
+  /// Validates city/country location data
+  String? validateLocationData(Map<String, String>? locationData) {
+    if (locationData == null || locationData.isEmpty) {
       return 'Please enter your location';
+    }
+    
+    final city = locationData['city']?.trim();
+    final country = locationData['country']?.trim();
+    
+    if (city == null || city.isEmpty) {
+      return 'Please enter your city';
+    }
+    
+    if (country == null || country.isEmpty) {
+      return 'Please enter your country';
+    }
+    
+    if (city.length < 2) {
+      return 'City name must be at least 2 characters';
+    }
+    
+    if (country.length < 2) {
+      return 'Country name must be at least 2 characters';
+    }
+    
+    return null;
+  }
+
+  /// Validates individual city field
+  String? validateCity(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Please enter your city';
+    }
+    if (value.trim().length < 2) {
+      return 'City name must be at least 2 characters';
+    }
+    return null;
+  }
+
+  /// Validates individual country field
+  String? validateCountry(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Please enter your country';
+    }
+    if (value.trim().length < 2) {
+      return 'Country name must be at least 2 characters';
     }
     return null;
   }
@@ -50,10 +95,29 @@ mixin FormValidationMixin {
     if (value == null || value.isEmpty) {
       return 'Please enter your phone number';
     }
-    // Basic phone number validation - can be enhanced based on requirements
-    final phoneRegex = RegExp(r'^\+?[0-9]{10,}$');
-    if (!phoneRegex.hasMatch(value)) {
+    // Enhanced phone number validation
+    final phoneRegex = RegExp(r'^\+?[0-9]{10,15}$');
+    if (!phoneRegex.hasMatch(value.replaceAll(RegExp(r'[\s\-\(\)]'), ''))) {
       return 'Please enter a valid phone number';
+    }
+    return null;
+  }
+
+  /// Validates required text fields
+  String? validateRequired(String? value, String fieldName) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Please enter your $fieldName';
+    }
+    return null;
+  }
+
+  /// Validates text with minimum length
+  String? validateMinLength(String? value, int minLength, String fieldName) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Please enter your $fieldName';
+    }
+    if (value.trim().length < minLength) {
+      return '$fieldName must be at least $minLength characters';
     }
     return null;
   }

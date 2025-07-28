@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-import '../services/location_service.dart';
-import 'mixins/location_validation_mixin.dart';
 import '../utils/theme.dart';
 
 /// A customizable input field widget with support for various features including
-/// location validation, focus management, and custom styling.
+/// focus management, and custom styling.
 class CustomInput extends StatefulWidget {
   final String? label;
   final String? hint;
@@ -30,8 +28,6 @@ class CustomInput extends StatefulWidget {
   final bool autofocus;
   final bool showLabel;
   final FocusNode? nextFocusNode;
-  final bool isLocationField;
-  final LocationService? locationService;
   final bool readOnly;
   final List<String>? autofillHints;
 
@@ -61,8 +57,6 @@ class CustomInput extends StatefulWidget {
     this.autofocus = false,
     this.showLabel = true,
     this.nextFocusNode,
-    this.isLocationField = false,
-    this.locationService,
     this.readOnly = false,
     this.autofillHints,
   });
@@ -72,7 +66,7 @@ class CustomInput extends StatefulWidget {
 }
 
 class _CustomInputState extends State<CustomInput>
-    with SingleTickerProviderStateMixin, LocationValidationMixin {
+    with SingleTickerProviderStateMixin {
   late final FocusNode _focusNode;
   bool _isFocused = false;
 
@@ -81,13 +75,6 @@ class _CustomInputState extends State<CustomInput>
     super.initState();
     _focusNode = widget.focusNode ?? FocusNode();
     _setupListeners();
-
-    if (widget.isLocationField) {
-      initializeLocationValidation(
-        controller: widget.controller,
-        locationService: widget.locationService,
-      );
-    }
   }
 
   void _setupListeners() {
@@ -98,9 +85,6 @@ class _CustomInputState extends State<CustomInput>
   @override
   void dispose() {
     _cleanupListeners();
-    if (widget.isLocationField) {
-      disposeLocationValidation();
-    }
     super.dispose();
   }
 
@@ -165,7 +149,7 @@ class _CustomInputState extends State<CustomInput>
       enabled: widget.enabled,
       maxLines: widget.maxLines,
       maxLength: widget.maxLength,
-      validator: _buildValidator,
+      validator: widget.validator,
       textInputAction: widget.nextFocusNode != null
           ? TextInputAction.next
           : TextInputAction.done,
@@ -245,13 +229,6 @@ class _CustomInputState extends State<CustomInput>
         isDense: true,
       ),
     );
-  }
-
-  String? _buildValidator(String? value) {
-    if (widget.isLocationField && locationError != null) {
-      return locationError;
-    }
-    return widget.validator?.call(value);
   }
 
   Widget? _buildSuffixIcon() {

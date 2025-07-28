@@ -57,8 +57,8 @@
         <div class="success-icon">✓</div>
         <h1>Email Verified!</h1>
         <p class="message">Your email has been successfully verified.</p>
-        <p>You can now return to the AGBC App and log in.</p>
-        <a href="agbcapp://callback" class="open-app">Open AGBC App</a>
+        <p>You can now return to the AGBC App and log in with your credentials.</p>
+        <a href="agbcapp://login" class="open-app">Open AGBC App</a>
         <p class="loading">Opening app...</p>
     </div>
 
@@ -69,7 +69,7 @@
         const refreshToken = params.get('refresh_token');
 
         if (accessToken && refreshToken) {
-            // Store tokens in localStorage
+            // Store tokens in localStorage for potential future use
             localStorage.setItem('sb-access-token', accessToken);
             localStorage.setItem('sb-refresh-token', refreshToken);
         }
@@ -79,10 +79,10 @@
             return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         }
 
-        // Try to open the app
+        // Try to open the app and redirect to login
         function openApp() {
             document.querySelector('.loading').style.display = 'block';
-            window.location.href = 'agbcapp://callback';
+            window.location.href = 'agbcapp://login';
             
             // If after 2 seconds we're still here, the app didn't open
             setTimeout(function() {
@@ -90,13 +90,17 @@
             }, 2000);
         }
 
-        // If on mobile, add click handler
+        // Auto-open app on mobile devices
         if (isMobile()) {
-            document.querySelector('.open-app').addEventListener('click', function(e) {
-                e.preventDefault();
-                openApp();
-            });
+            // Auto-redirect after 2 seconds
+            setTimeout(openApp, 2000);
         }
+
+        // Add click handler for manual opening
+        document.querySelector('.open-app').addEventListener('click', function(e) {
+            e.preventDefault();
+            openApp();
+        });
     </script>
 </body>
-</html> 
+</html>

@@ -117,7 +117,7 @@ class _GracePortalAppState extends State<GracePortalApp> {
 
   void _handleDeepLink(Uri uri) {
     debugPrint('Received deep link: $uri');
-    
+
     if (uri.scheme == 'agbcapp') {
       switch (uri.host) {
         case 'login':
@@ -148,7 +148,8 @@ class _GracePortalAppState extends State<GracePortalApp> {
       theme: AppTheme.lightTheme, // Apply the light theme
       darkTheme: AppTheme.darkTheme, // Apply the dark theme
       themeMode: ThemeMode.system, // Use system theme preference
-      home: const AuthGate(), // The initial screen that checks authentication status
+      home:
+          const AuthGate(), // The initial screen that checks authentication status
       routes: {
         '/login': (context) => const LoginScreen(),
         '/register': (context) => const RegisterScreen(),
@@ -159,40 +160,13 @@ class _GracePortalAppState extends State<GracePortalApp> {
 }
 
 /// A widget that acts as an authentication gate.
-/// It listens to Supabase authentication changes and routes users appropriately
-/// based on their authentication status and email verification.
+/// It always shows the splash screen first, which handles all initialization and routing.
 class AuthGate extends StatelessWidget {
   const AuthGate({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<AuthService>(
-      builder: (context, authService, child) {
-        // Show loading indicator while initializing
-        if (authService.isLoading) {
-          return const Scaffold(
-            body: Center(
-              child: CircularProgressIndicator(),
-            ),
-          );
-        }
-
-        // Check authentication status
-        if (authService.isAuthenticated) {
-          // Check if email is verified
-          if (authService.currentUser?.emailConfirmedAt == null) {
-            // User is authenticated but not verified, show login screen
-            // They can try to login again after verification
-            return const LoginScreen();
-          }
-
-          // User is authenticated and verified, go to main app
-          return const MainNavigationScreen();
-        } else {
-          // User is not authenticated, show splash screen which handles navigation
-          return const SplashScreen();
-        }
-      },
-    );
+    // ALWAYS show splash screen first - let it handle all initialization
+    return const SplashScreen();
   }
 }

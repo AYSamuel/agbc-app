@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../services/auth_service.dart';
+import '../services/notification_service.dart';
+import '../providers/branches_provider.dart';
+import '../providers/supabase_provider.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -10,14 +14,15 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-  late final Animation<double> _fadeAnimation;
-  late final Animation<double> _scaleAnimation;
+    with TickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _fadeAnimation;
+  late Animation<double> _scaleAnimation;
 
   @override
   void initState() {
     super.initState();
+
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 3000),
@@ -31,7 +36,10 @@ class _SplashScreenState extends State<SplashScreen>
       curve: Curves.easeOutBack,
     );
     _controller.forward();
-    _initializeApp();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeApp();
+    });
   }
 
   @override
@@ -42,12 +50,39 @@ class _SplashScreenState extends State<SplashScreen>
 
   Future<void> _initializeApp() async {
     final initializationStart = DateTime.now();
-    try {
-      // Wait for auth service to be ready (it's already initialized in main.dart)
-      // Just add a small delay to ensure everything is properly set up
-      await Future.delayed(const Duration(milliseconds: 500));
 
-      // Ensure splash screen stays for at least 3 seconds for better UX
+    try {
+      final authService = Provider.of<AuthService>(context, listen: false);
+      while (authService.isLoading) {
+        await Future.delayed(const Duration(milliseconds: 100));
+      }
+
+      final notificationService =
+          Provider.of<NotificationService>(context, listen: false);
+      try {
+        await notificationService.initialize();
+      } catch (e) {
+        debugPrint('Notification service initialization warning: $e');
+      }
+
+      final supabaseProvider =
+          Provider.of<SupabaseProvider>(context, listen: false);
+      while (supabaseProvider.isLoading) {
+        await Future.delayed(const Duration(milliseconds: 100));
+      }
+
+      if (supabaseProvider.error != null) {
+        supabaseProvider.clearError();
+      }
+
+      final branchesProvider =
+          Provider.of<BranchesProvider>(context, listen: false);
+      await branchesProvider.fetchBranches();
+
+      while (branchesProvider.isLoading) {
+        await Future.delayed(const Duration(milliseconds: 100));
+      }
+
       final initializationDuration =
           DateTime.now().difference(initializationStart);
       if (initializationDuration < const Duration(seconds: 3)) {
@@ -60,24 +95,42 @@ class _SplashScreenState extends State<SplashScreen>
       }
     } catch (e) {
       debugPrint('Error during app initialization: $e');
-      // Even on error, ensure minimum splash screen duration
+
       final initializationDuration =
           DateTime.now().difference(initializationStart);
       if (initializationDuration < const Duration(seconds: 3)) {
         await Future.delayed(
             const Duration(seconds: 3) - initializationDuration);
       }
+
       if (mounted) {
         _navigateToNextScreen();
       }
     }
   }
 
-  void _navigateToNextScreen() {
+  void _navigateToNextScreen() async {
     if (!mounted) return;
+
     final authService = Provider.of<AuthService>(context, listen: false);
+
     if (authService.isAuthenticated) {
-      Navigator.of(context).pushReplacementNamed('/home');
+      if (authService.currentUser?.emailConfirmedAt == null) {
+        Navigator.of(context).pushReplacementNamed('/login');
+      } else {
+        // Check if user had "Remember Me" enabled
+        final prefs = await SharedPreferences.getInstance();
+        final rememberMe = prefs.getBool('remember_me') ?? false;
+
+        if (rememberMe) {
+          // User chose to stay logged in
+          Navigator.of(context).pushReplacementNamed('/home');
+        } else {
+          // User didn't choose "Remember Me", so sign them out and go to login
+          await authService.signOut();
+          Navigator.of(context).pushReplacementNamed('/login');
+        }
+      }
     } else {
       Navigator.of(context).pushReplacementNamed('/login');
     }
@@ -107,7 +160,6 @@ class _SplashScreenState extends State<SplashScreen>
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // App Logo with animation
                   Image.asset(
                     'assets/images/logo.png',
                     width: 200,
@@ -115,7 +167,6 @@ class _SplashScreenState extends State<SplashScreen>
                     color: colorScheme.onPrimary,
                   ),
                   const SizedBox(height: 24),
-                  // App Name
                   Text(
                     'Grace Portal',
                     style: TextStyle(
@@ -125,18 +176,7 @@ class _SplashScreenState extends State<SplashScreen>
                       letterSpacing: 1.2,
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Church Management System',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color:
-                          colorScheme.onPrimary.withAlpha((0.8 * 255).round()),
-                      letterSpacing: 0.5,
-                    ),
-                  ),
                   const SizedBox(height: 40),
-                  // Loading Indicator
                   CircularProgressIndicator(
                     valueColor:
                         AlwaysStoppedAnimation<Color>(colorScheme.onPrimary),

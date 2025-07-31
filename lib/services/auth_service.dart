@@ -45,85 +45,6 @@ class AuthService extends ChangeNotifier {
     }
   }
 
-  /// Load the current user's profile from the database
-  Future<void> _loadUserProfile() async {
-    if (currentUser == null) return;
-
-    try {
-      final response = await _supabase
-          .from('users')
-          .select()
-          .eq('id', currentUser!.id)
-          .single();
-
-      _currentUserProfile = UserModel.fromJson(response);
-      notifyListeners();
-    } catch (e) {
-      debugPrint('Error loading user profile: $e');
-      // If profile doesn't exist, create one
-      await _createUserProfile();
-    }
-  }
-
-  /// Create a user profile in the public.users table with enhanced data
-  Future<void> _createUserProfile({
-    String? displayName,
-    String? phoneNumber,
-    String? location,
-    String? role,
-    String? branchId,
-  }) async {
-    if (currentUser == null) return;
-
-    try {
-      final userData = {
-        'id': currentUser!.id,
-        'email': currentUser!.email,
-        'display_name': displayName ??
-            currentUser!.userMetadata?['display_name'] ??
-            currentUser!.email?.split('@').first ??
-            'User',
-        'phone_number':
-            phoneNumber ?? currentUser!.userMetadata?['phone_number'],
-        'photo_url': currentUser!.userMetadata?['photo_url'],
-        'role': role ?? 'member',
-        'is_active': true,
-        'email_verified': currentUser!.emailConfirmedAt != null,
-        'departments': [],
-        'settings': {
-          'notifications': {'push': true, 'email': true}
-        },
-        'metadata': {},
-        'created_at': DateTime.now().toIso8601String(),
-        'updated_at': DateTime.now().toIso8601String(),
-      };
-
-      // Add location if provided
-      if (location != null && location.isNotEmpty) {
-        // Parse location string into JSONB format
-        final locationParts = location.split(',').map((e) => e.trim()).toList();
-        if (locationParts.length >= 2) {
-          userData['location'] = {
-            'city': locationParts[0],
-            'country':
-                locationParts.length > 1 ? locationParts[1] : locationParts[0],
-          };
-        }
-      }
-
-      // Add branch if provided
-      if (branchId != null) {
-        userData['branch_id'] = branchId;
-      }
-
-      await _supabase.from('users').insert(userData);
-      await _loadUserProfile();
-    } catch (e) {
-      debugPrint('Error creating user profile: $e');
-      rethrow;
-    }
-  }
-
   /// Enhanced registration method with all required fields
   Future<void> registerWithEmailAndPassword(
     String email,
@@ -138,58 +59,50 @@ class AuthService extends ChangeNotifier {
     notifyListeners();
 
     try {
+      // Prepare location data as JSONB
+      Map<String, dynamic>? locationData;
+      if (location.isNotEmpty) {
+        final locationParts = location.split(',').map((e) => e.trim()).toList();
+        locationData = {
+          'city': locationParts[0],
+          'country':
+              locationParts.length > 1 ? locationParts[1] : locationParts[0],
+        };
+      }
+
+      // Prepare notification settings
+      final notificationSettings = {
+        'push_enabled': true,
+        'email_enabled': true,
+        'task_notifications': true,
+        'general_notifications': true,
+        'meeting_notifications': true
+      };
+
+      // Sign up with all metadata - let the database trigger handle profile creation
       final response = await _supabase.auth.signUp(
         email: email,
         password: password,
         data: {
           'display_name': displayName,
-          'phone_number': phoneNumber,
-          'location': location,
+          'phone_number': phoneNumber.isNotEmpty ? phoneNumber : null,
+          'location': locationData,
           'role': role,
-          'branch_id': branchId,
+          'branch_id':
+              (branchId != null && branchId.isNotEmpty) ? branchId : null,
+          'notification_settings': notificationSettings,
+          'preferences': {},
         },
       );
 
       if (response.user != null) {
-        // Don't create profile here - let the database trigger handle it
-        // This prevents issues with unconfirmed users
-        debugPrint('User registered successfully. Profile will be created upon email confirmation.');
+        debugPrint(
+            'User registered successfully. Profile created by database trigger.');
+        // The database trigger will automatically create the user profile
+        // No need for manual profile creation
       }
     } on AuthException catch (e) {
       debugPrint("Registration error: ${e.message}");
-      rethrow;
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
-  }
-
-  /// Attempts to sign up a new user with email, password, and display name.
-  Future<void> signUp({
-    required String email,
-    required String password,
-    required String displayName,
-    String? phoneNumber,
-  }) async {
-    _isLoading = true;
-    notifyListeners();
-
-    try {
-      final response = await _supabase.auth.signUp(
-        email: email,
-        password: password,
-        data: {
-          'display_name': displayName,
-          'phone_number': phoneNumber,
-        },
-      );
-
-      if (response.user != null) {
-        // Don't create profile here - let the database trigger handle it
-        debugPrint('User signed up successfully. Profile will be created upon email confirmation.');
-      }
-    } on AuthException catch (e) {
-      debugPrint("Sign up error: ${e.message}");
       rethrow;
     } finally {
       _isLoading = false;
@@ -224,16 +137,16 @@ class AuthService extends ChangeNotifier {
         await prefs.remove('saved_password');
       }
 
-      // Try to load user profile, create if doesn't exist
-      await _loadUserProfileWithFallback();
+      // Load user profile - it should exist from registration
+      await _loadUserProfile();
 
       // Update last login time if profile exists
       if (currentUser != null && _currentUserProfile != null) {
         try {
           await _supabase
               .from('users')
-              .update({'last_login': DateTime.now().toIso8601String()})
-              .eq('id', currentUser!.id);
+              .update({'last_login': DateTime.now().toIso8601String()}).eq(
+                  'id', currentUser!.id);
         } catch (e) {
           debugPrint('Error updating last login: $e');
           // Don't fail sign-in for this
@@ -257,8 +170,8 @@ class AuthService extends ChangeNotifier {
     }
   }
 
-  /// Load user profile with fallback to create if missing
-  Future<void> _loadUserProfileWithFallback() async {
+  /// Load the current user's profile from the database
+  Future<void> _loadUserProfile() async {
     if (currentUser == null) return;
 
     try {
@@ -271,22 +184,42 @@ class AuthService extends ChangeNotifier {
       _currentUserProfile = UserModel.fromJson(response);
       notifyListeners();
     } catch (e) {
-      debugPrint('User profile not found, creating new profile: $e');
-      
-      // Create profile with data from auth.users metadata
-      try {
-        await _createUserProfile(
-          displayName: currentUser!.userMetadata?['display_name'],
-          phoneNumber: currentUser!.userMetadata?['phone_number'],
-          location: currentUser!.userMetadata?['location'],
-          role: currentUser!.userMetadata?['role'] ?? 'member',
-          branchId: currentUser!.userMetadata?['branch_id'],
-        );
-      } catch (createError) {
-        debugPrint('Failed to create user profile: $createError');
-        // This is a critical error - user can't proceed without a profile
-        throw Exception('Unable to create user profile. Please contact support.');
+      debugPrint('Error loading user profile: $e');
+      throw Exception('User profile not found. Please contact support.');
+    }
+  }
+
+  /// Attempts to sign up a new user with email, password, and display name.
+  Future<void> signUp({
+    required String email,
+    required String password,
+    required String displayName,
+    String? phoneNumber,
+  }) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final response = await _supabase.auth.signUp(
+        email: email,
+        password: password,
+        data: {
+          'display_name': displayName,
+          'phone_number': phoneNumber,
+        },
+      );
+
+      if (response.user != null) {
+        // Don't create profile here - let the database trigger handle it
+        debugPrint(
+            'User signed up successfully. Profile will be created upon email confirmation.');
       }
+    } on AuthException catch (e) {
+      debugPrint("Sign up error: ${e.message}");
+      rethrow;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
   }
 
@@ -324,13 +257,12 @@ class AuthService extends ChangeNotifier {
 
       await _supabase.auth.signOut();
       _currentUserProfile = null;
-      
+
       // Clear remember me data from SharedPreferences
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove('remember_me');
       await prefs.remove('saved_email');
       await prefs.remove('saved_password');
-      
     } catch (e) {
       debugPrint("Sign out error: $e");
       rethrow;

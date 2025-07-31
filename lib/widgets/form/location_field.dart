@@ -288,7 +288,7 @@ class _LocationFieldState extends State<LocationField>
                             : null,
                         onTap: () => onSelected(option),
                         hoverColor: Colors.grey.shade100,
-                        splashColor: AppTheme.primaryColor.withOpacity(0.1),
+                        splashColor: AppTheme.primaryColor.withValues(alpha: 0.1),
                       );
                     },
                   ),
@@ -381,7 +381,7 @@ class _LocationFieldState extends State<LocationField>
                         ),
                         onTap: () => onSelected(option),
                         hoverColor: Colors.grey.shade100,
-                        splashColor: AppTheme.primaryColor.withOpacity(0.1),
+                        splashColor: AppTheme.primaryColor.withValues(alpha: 0.1),
                       );
                     },
                   ),

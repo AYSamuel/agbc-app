@@ -113,7 +113,7 @@ class _CustomDropdownState<T> extends State<CustomDropdown<T>> {
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       decoration: BoxDecoration(
                         color: isSelected 
-                            ? AppTheme.primaryColor.withOpacity(0.1)
+                            ? AppTheme.primaryColor.withValues(alpha: 0.1)
                             : Colors.transparent,
                         border: index < widget.items.length - 1
                             ? Border(
@@ -132,7 +132,7 @@ class _CustomDropdownState<T> extends State<CustomDropdown<T>> {
                               size: 16,
                               color: isSelected 
                                   ? AppTheme.primaryColor
-                                  : AppTheme.neutralColor.withOpacity(0.6),
+                                  : AppTheme.neutralColor.withValues(alpha: 0.6),
                             ),
                             const SizedBox(width: 12),
                           ],

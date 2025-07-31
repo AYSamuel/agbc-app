@@ -110,24 +110,14 @@ class _BranchManagementScreenState extends State<BranchManagementScreen> {
                             final deviceId =
                                 await notificationService.getDeviceId();
                             final user = authService.currentUser;
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                      'Device ID: ${deviceId ?? 'null'}\nUser ID: ${user?.id ?? 'null'}'),
-                                  duration: const Duration(seconds: 5),
-                                ),
-                              );
-                            }
+                            _safeShowSnackBar(
+                              'Device ID: ${deviceId ?? 'null'}\nUser ID: ${user?.id ?? 'null'}',
+                            );
                           } catch (e) {
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('Error: ${e.toString()}'),
-                                  backgroundColor: AppTheme.errorColor,
-                                ),
-                              );
-                            }
+                            _safeShowSnackBar(
+                              'Error: ${e.toString()}',
+                              backgroundColor: AppTheme.errorColor,
+                            );
                           }
                         },
                         icon: const Icon(Icons.info),
@@ -230,6 +220,26 @@ class _BranchManagementScreenState extends State<BranchManagementScreen> {
     );
   }
 
+  // Add this helper method at the top of the class
+  void _safeShowSnackBar(String message, {Color? backgroundColor}) {
+    if (!mounted) return;
+    
+    try {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(message),
+            backgroundColor: backgroundColor,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      // Silently fail if we can't show the snackbar
+      debugPrint('Failed to show snackbar: $e');
+    }
+  }
+
   Future<void> _deleteBranch(BuildContext context, ChurchBranch branch) async {
     try {
       final supabaseProvider =
@@ -241,7 +251,7 @@ class _BranchManagementScreenState extends State<BranchManagementScreen> {
           users.where((user) => user.branchId == branch.id).toList();
 
       if (usersInBranch.isNotEmpty) {
-        if (!context.mounted) return;
+        if (!mounted || !context.mounted) return;
         // Show warning dialog
         final result = await _showWarningDialog(context, usersInBranch.length);
         if (result != true) return;
@@ -254,22 +264,16 @@ class _BranchManagementScreenState extends State<BranchManagementScreen> {
       }
 
       // Proceed with deletion
-      if (!context.mounted) return;
+      if (!mounted || !context.mounted) return;
       final confirm = await _showDeleteConfirmationDialog(context, branch.name);
       if (confirm == true) {
         await supabaseProvider.deleteBranch(branch.id);
-        if (!context.mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Branch deleted successfully')),
-        );
+        _safeShowSnackBar('Branch deleted successfully');
       }
     } catch (e) {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error deleting branch: ${e.toString()}'),
-          backgroundColor: AppTheme.errorColor,
-        ),
+      _safeShowSnackBar(
+        'Error deleting branch: ${e.toString()}',
+        backgroundColor: AppTheme.errorColor,
       );
     }
   }

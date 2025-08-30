@@ -67,7 +67,7 @@ class SupabaseProvider extends ChangeNotifier {
   /// Get all branches stream
   Stream<List<ChurchBranch>> getAllBranches() {
     return _supabase
-        .from('church_branch')
+        .from('church_branches')  // Corrected table name
         .stream(primaryKey: ['id'])
         .order('name')
         .map(
@@ -78,7 +78,18 @@ class SupabaseProvider extends ChangeNotifier {
   Future<bool> createBranch(ChurchBranch branch) async {
     _setLoading(true);
     try {
-      await _supabase.from('church_branch').insert(branch.toJson());
+      // 1. Create the branch first
+      await _supabase.from('church_branches').insert(branch.toJson());
+      
+      // 2. If a pastor is assigned, update their profile
+      if (branch.pastorId != null) {
+        await _supabase.from('users').update({
+          'branch_id': branch.id,
+          'role': 'pastor',
+          'updated_at': DateTime.now().toIso8601String(),
+        }).eq('id', branch.pastorId!);
+      }
+      
       return true;
     } catch (e) {
       _setError('Failed to create branch: $e');
@@ -92,7 +103,7 @@ class SupabaseProvider extends ChangeNotifier {
   Future<bool> deleteBranch(String branchId) async {
     _setLoading(true);
     try {
-      await _supabase.from('church_branch').delete().eq('id', branchId);
+      await _supabase.from('church_branches').delete().eq('id', branchId);  // Corrected table name
       return true;
     } catch (e) {
       _setError('Failed to delete branch: $e');

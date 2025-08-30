@@ -30,12 +30,15 @@ class _LocationFieldState extends State<LocationField>
     with LocationValidationMixin {
   late TextEditingController _cityController;
   late TextEditingController _countryController;
-  late FocusNode _cityFocusNode;
   late FocusNode _countryFocusNode;
 
   Timer? _debounceTimer;
   String? _errorMessage;
   bool _isValidating = false;
+
+  // Remove the custom city focus node and listener since we'll use the autocomplete's focus node
+  // late FocusNode _cityFocusNode;
+  // late VoidCallback _cityFocusListener;
 
   @override
   void initState() {
@@ -46,33 +49,22 @@ class _LocationFieldState extends State<LocationField>
     _countryController = TextEditingController(
       text: widget.initialLocation?['country'] ?? '',
     );
-    _cityFocusNode = FocusNode();
+    // Only initialize country focus node
     _countryFocusNode = FocusNode();
 
-    // Add focus listener to trigger validation when city field loses focus
-    _cityFocusNode.addListener(() {
-      if (!_cityFocusNode.hasFocus) {
-        // City field lost focus, trigger validation immediately
-        final city = _cityController.text.trim();
-        final country = _countryController.text.trim();
-
-        if (city.isNotEmpty && country.isNotEmpty && widget.enableGeocoding) {
-          // Cancel any pending debounced validation
-          _debounceTimer?.cancel();
-          // Trigger immediate validation
-          _validateWithGeocoding();
-        }
-      }
-    });
+    // Remove city focus listener setup since we'll handle focus differently
   }
 
   @override
   void dispose() {
+    // Cancel any pending timer first
+    _debounceTimer?.cancel();
+    
+    // Dispose controllers and focus nodes
     _cityController.dispose();
     _countryController.dispose();
-    _cityFocusNode.dispose();
     _countryFocusNode.dispose();
-    _debounceTimer?.cancel();
+    
     super.dispose();
   }
 
@@ -167,8 +159,8 @@ class _LocationFieldState extends State<LocationField>
         // City Field with Autocomplete
         Autocomplete<Map<String, String>>(
           optionsBuilder: (TextEditingValue textEditingValue) async {
-            // Only show options if the field is focused and has sufficient text
-            if (!_cityFocusNode.hasFocus || textEditingValue.text.length < 2) {
+            // Only show options if has sufficient text (remove focus check since we'll use the autocomplete's focus)
+            if (textEditingValue.text.length < 2) {
               return const Iterable<Map<String, String>>.empty();
             }
 
@@ -189,13 +181,9 @@ class _LocationFieldState extends State<LocationField>
             if (selection['country']?.isNotEmpty == true) {
               _countryController.text = selection['country'] ?? '';
             }
-            _cityFocusNode.unfocus();
             _onLocationChanged();
           },
           fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
-            // Store the focus node reference
-            _cityFocusNode = focusNode;
-
             // Use a post-frame callback to sync controllers safely
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (controller.text != _cityController.text) {
@@ -203,44 +191,44 @@ class _LocationFieldState extends State<LocationField>
               }
             });
 
+            // Add focus listener for validation when field loses focus
+            focusNode.addListener(() {
+              if (!focusNode.hasFocus) {
+                // City field lost focus, trigger validation immediately
+                final city = _cityController.text.trim();
+                final country = _countryController.text.trim();
+
+                if (city.isNotEmpty && country.isNotEmpty && widget.enableGeocoding) {
+                  // Cancel any pending debounced validation
+                  _debounceTimer?.cancel();
+                  // Trigger immediate validation
+                  _validateWithGeocoding();
+                }
+              }
+            });
+
             return CustomInput(
               label: 'City',
               controller: controller,
-              focusNode: focusNode,
+              focusNode: focusNode, // Use the autocomplete's provided focus node
               hint: 'Enter your city',
-              prefixIcon:
-                  Icon(Icons.location_city, color: AppTheme.primaryColor),
-              suffixIcon: _isValidating
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : null,
+              prefixIcon: Icon(Icons.location_city, color: AppTheme.primaryColor),
               textInputAction: TextInputAction.next,
               onChanged: (value) {
                 _cityController.text = value;
                 _onCityChanged();
               },
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'City is required';
-                }
-
-                // If we're currently validating, don't show old errors
-                if (_isValidating) {
-                  return null;
-                }
-
-                // Check if we have an async validation error
-                if (_errorMessage != null) {
-                  return _errorMessage;
-                }
-
-                // Basic format validation
-                return validateCityInput(value,
-                    country: _countryController.text);
-              },
+              validator: widget.validator != null 
+                  ? (String? value) {
+                      // Convert the string value to a map for the LocationField validator
+                      final locationMap = {
+                        'city': _cityController.text,
+                        'country': _countryController.text,
+                      };
+                      return widget.validator!(locationMap);
+                    }
+                  : null,
+              errorText: _errorMessage,
             );
           },
           optionsViewBuilder: (context, onSelected, options) {

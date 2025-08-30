@@ -1,18 +1,15 @@
-/// Enhanced ChurchBranch model with new schema features including location JSONB and settings.
 class ChurchBranch {
   final String id;
   final String name;
-  final Map<String, dynamic> location; // Now JSONB for structured location data
+  final Map<String, dynamic> location;
   final String address;
   final String? description;
   final String? pastorId;
-  final List<String> departments;
-  final List<String> members;
-  final DateTime createdAt;
-  final DateTime updatedAt; // New field for tracking updates
   final String createdBy;
   final bool isActive;
-  final Map<String, dynamic> settings; // Branch-specific settings
+  final Map<String, dynamic> settings;
+  final DateTime createdAt;
+  final DateTime updatedAt;
 
   ChurchBranch({
     required this.id,
@@ -22,41 +19,51 @@ class ChurchBranch {
     required this.createdBy,
     this.description,
     this.pastorId,
-    List<String>? departments,
-    List<String>? members,
     DateTime? createdAt,
     DateTime? updatedAt,
     this.isActive = true,
     Map<String, dynamic>? settings,
-  })  : departments = departments ?? [],
-        members = members ?? [],
-        createdAt = createdAt ?? DateTime.now(),
-        updatedAt = updatedAt ?? DateTime.now(),
-        settings = settings ?? {};
+  }) : createdAt = createdAt ?? DateTime.now(),
+       updatedAt = updatedAt ?? DateTime.now(),
+       settings = settings ?? {};
 
+  // Add locationString getter
+  String get locationString {
+    final parts = <String>[];
+    if (location['city']?.toString().isNotEmpty == true) {
+      parts.add(location['city'].toString());
+    }
+    if (location['state']?.toString().isNotEmpty == true) {
+      parts.add(location['state'].toString());
+    }
+    if (location['country']?.toString().isNotEmpty == true) {
+      parts.add(location['country'].toString());
+    }
+    return parts.isEmpty ? 'Location not specified' : parts.join(', ');
+  }
+
+  // Add fromJson factory constructor
   factory ChurchBranch.fromJson(Map<String, dynamic> json) {
     return ChurchBranch(
-      id: json['id'] ?? '',
-      name: json['name'] ?? '',
-      location: Map<String, dynamic>.from(json['location'] as Map? ?? {}),
-      address: json['address'] ?? '',
-      description: json['description'],
-      pastorId: json['pastor_id'],
-      departments:
-          (json['departments'] as List<dynamic>?)?.cast<String>() ?? [],
-      members: (json['members'] as List<dynamic>?)?.cast<String>() ?? [],
-      createdAt: json['created_at'] != null
-          ? DateTime.parse(json['created_at'])
+      id: json['id'] as String,
+      name: json['name'] as String,
+      location: json['location'] as Map<String, dynamic>? ?? {},
+      address: json['address'] as String? ?? '',
+      description: json['description'] as String?,
+      pastorId: json['pastor_id'] as String?,
+      createdBy: json['created_by'] as String,
+      isActive: json['is_active'] as bool? ?? true,
+      settings: json['settings'] as Map<String, dynamic>? ?? {},
+      createdAt: json['created_at'] != null 
+          ? DateTime.parse(json['created_at'] as String)
           : DateTime.now(),
-      updatedAt: json['updated_at'] != null
-          ? DateTime.parse(json['updated_at'])
+      updatedAt: json['updated_at'] != null 
+          ? DateTime.parse(json['updated_at'] as String)
           : DateTime.now(),
-      createdBy: json['created_by'] ?? '',
-      isActive: json['is_active'] ?? true,
-      settings: Map<String, dynamic>.from(json['settings'] as Map? ?? {}),
     );
   }
 
+  // Add toJson method
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -65,40 +72,15 @@ class ChurchBranch {
       'address': address,
       'description': description,
       'pastor_id': pastorId,
-      'departments': departments,
-      'members': members,
-      'created_at': createdAt.toIso8601String(),
-      'updated_at': updatedAt.toIso8601String(),
       'created_by': createdBy,
       'is_active': isActive,
       'settings': settings,
+      'created_at': createdAt.toIso8601String(),
+      'updated_at': updatedAt.toIso8601String(),
     };
   }
 
-  /// Gets location as a formatted string
-  String get locationString {
-    final city = location['city'];
-    final state = location['state'];
-    final country = location['country'];
-    
-    List<String> parts = [];
-    if (city != null) parts.add(city);
-    if (state != null) parts.add(state);
-    if (country != null) parts.add(country);
-    
-    return parts.isEmpty ? address : parts.join(', ');
-  }
-
-  /// Gets branch timezone from settings
-  String get timezone {
-    return settings['timezone'] ?? 'UTC';
-  }
-
-  /// Checks if branch allows online meetings
-  bool get allowsOnlineMeetings {
-    return settings['allow_online_meetings'] ?? true;
-  }
-
+  // Add copyWith method for immutable updates
   ChurchBranch copyWith({
     String? id,
     String? name,
@@ -106,13 +88,11 @@ class ChurchBranch {
     String? address,
     String? description,
     String? pastorId,
-    List<String>? departments,
-    List<String>? members,
-    DateTime? createdAt,
-    DateTime? updatedAt,
     String? createdBy,
     bool? isActive,
     Map<String, dynamic>? settings,
+    DateTime? createdAt,
+    DateTime? updatedAt,
   }) {
     return ChurchBranch(
       id: id ?? this.id,
@@ -121,23 +101,11 @@ class ChurchBranch {
       address: address ?? this.address,
       description: description ?? this.description,
       pastorId: pastorId ?? this.pastorId,
-      departments: departments ?? this.departments,
-      members: members ?? this.members,
-      createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? DateTime.now(),
       createdBy: createdBy ?? this.createdBy,
       isActive: isActive ?? this.isActive,
       settings: settings ?? this.settings,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
     );
   }
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is ChurchBranch &&
-          runtimeType == other.runtimeType &&
-          id == other.id;
-
-  @override
-  int get hashCode => id.hashCode;
 }

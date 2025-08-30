@@ -1,4 +1,5 @@
 import 'package:grace_portal/models/task_model.dart';
+import 'package:grace_portal/models/user_model.dart';
 import 'package:grace_portal/screens/tasks_screen.dart';
 import 'package:grace_portal/services/auth_service.dart';
 import 'package:grace_portal/utils/theme.dart';
@@ -29,8 +30,8 @@ class _TaskStatusCardState extends State<TaskStatusCard> {
         .length;
     final hasTasks = taskCount > 0;
 
-    // For members, only show the card if they have active tasks
-    if (user?.role == 'member' && !hasTasks) {
+    // For members, never show the card (completely hide it)
+    if (user?.role == UserRole.member) {
       return const SizedBox.shrink();
     }
 

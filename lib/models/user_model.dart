@@ -140,6 +140,9 @@ class UserModel {
     return parts.isEmpty ? null : parts.join(', ');
   }
 
+  /// Gets user's full name (alias for displayName)
+  String get fullName => displayName;
+
   /// Creates a copy of the user with updated fields
   UserModel copyWith({
     String? id,

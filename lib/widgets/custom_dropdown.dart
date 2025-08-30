@@ -54,7 +54,13 @@ class _CustomDropdownState<T> extends State<CustomDropdown<T>> {
 
   @override
   void dispose() {
-    _removeOverlay();
+    // Remove overlay before disposing to prevent setState on disposed widget
+    if (_overlayEntry != null) {
+      _overlayEntry?.remove();
+      _overlayEntry = null;
+      _isOpen = false; // Update state without setState since we're disposing
+    }
+    
     if (widget.focusNode == null) {
       _focusNode.dispose();
     }
@@ -176,12 +182,19 @@ class _CustomDropdownState<T> extends State<CustomDropdown<T>> {
   }
 
   void _removeOverlay() {
-    _overlayEntry?.remove();
-    _overlayEntry = null;
-    if (mounted) {
-      setState(() {
+    if (_overlayEntry != null) {
+      _overlayEntry?.remove();
+      _overlayEntry = null;
+      
+      // Only call setState if the widget is still mounted
+      if (mounted) {
+        setState(() {
+          _isOpen = false;
+        });
+      } else {
+        // If not mounted, just update the state variable
         _isOpen = false;
-      });
+      }
     }
   }
 

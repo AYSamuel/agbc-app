@@ -305,6 +305,139 @@ COMMENT ON FUNCTION "public"."get_pending_notifications"("batch_size" integer) I
 
 
 
+CREATE OR REPLACE FUNCTION "public"."handle_email_verification"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO ''
+    AS $$
+BEGIN
+  -- Check if email_confirmed_at was just set (changed from NULL to a timestamp)
+  IF OLD.email_confirmed_at IS NULL AND NEW.email_confirmed_at IS NOT NULL THEN
+    -- Update the corresponding record in public.users
+    UPDATE public.users 
+    SET 
+      email_verified = true,
+      updated_at = NOW()
+    WHERE id = NEW.id;
+  END IF;
+  
+  RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."handle_email_verification"() OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."handle_new_user"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+BEGIN
+    INSERT INTO public.users (
+        id, 
+        display_name, 
+        email, 
+        phone_number, 
+        location, 
+        role, 
+        branch_id, 
+        photo_url,
+        notification_settings,
+        preferences,
+        is_active,
+        email_verified
+    )
+    VALUES (
+        NEW.id,
+        COALESCE(NEW.raw_user_meta_data->>'display_name', ''),
+        NEW.email,
+        NEW.raw_user_meta_data->>'phone_number',
+        CASE 
+            WHEN NEW.raw_user_meta_data->>'location' IS NOT NULL 
+            THEN (NEW.raw_user_meta_data->>'location')::jsonb
+            ELSE NULL 
+        END,
+        COALESCE((NEW.raw_user_meta_data->>'role')::public.user_role, 'member'::public.user_role),
+        CASE 
+            WHEN NEW.raw_user_meta_data->>'branch_id' IS NOT NULL 
+            AND NEW.raw_user_meta_data->>'branch_id' != ''
+            THEN (NEW.raw_user_meta_data->>'branch_id')::uuid 
+            ELSE NULL 
+        END,
+        NEW.raw_user_meta_data->>'photo_url',
+        COALESCE(
+            (NEW.raw_user_meta_data->>'notification_settings')::jsonb,
+            '{"push_enabled": true, "email_enabled": true, "task_notifications": true, "general_notifications": true, "meeting_notifications": true}'::jsonb
+        ),
+        COALESCE(
+            (NEW.raw_user_meta_data->>'preferences')::jsonb,
+            '{}'::jsonb
+        ),
+        true,
+        NEW.email_confirmed_at IS NOT NULL
+    );
+    RETURN NEW;
+EXCEPTION
+    WHEN OTHERS THEN
+        -- Log the error for debugging
+        RAISE LOG 'Error in handle_new_user: %', SQLERRM;
+        -- Re-raise the exception to prevent the auth user creation if profile creation fails
+        RAISE;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."handle_new_user"() OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."handle_new_user_signup"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+BEGIN
+  -- If user is immediately confirmed, create profile
+  IF NEW.email_confirmed_at IS NOT NULL THEN
+    -- Check if profile already exists
+    IF NOT EXISTS (SELECT 1 FROM public.users WHERE id = NEW.id) THEN
+      INSERT INTO public.users (
+        id,
+        email,
+        display_name,
+        phone_number,
+        photo_url,
+        role,
+        is_active,
+        email_verified,
+        profile_completed,
+        created_at,
+        updated_at
+      ) VALUES (
+        NEW.id,
+        NEW.email,
+        COALESCE(NEW.raw_user_meta_data->>'display_name', NEW.email),
+        NEW.raw_user_meta_data->>'phone_number',
+        NEW.raw_user_meta_data->>'photo_url',
+        'member',
+        true,
+        true,
+        false,
+        NOW(),
+        NOW()
+      );
+    END IF;
+  END IF;
+  
+  RETURN NEW;
+EXCEPTION
+  WHEN OTHERS THEN
+    -- Log error but don't fail the auth process
+    RAISE WARNING 'Failed to create user profile for %: %', NEW.id, SQLERRM;
+    RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."handle_new_user_signup"() OWNER TO "postgres";
+
+
 CREATE OR REPLACE FUNCTION "public"."schedule_meeting_notifications"("meeting_id" "uuid", "meeting_title" "text", "meeting_datetime" timestamp with time zone, "branch_id" "uuid" DEFAULT NULL::"uuid") RETURNS integer
     LANGUAGE "plpgsql" SECURITY DEFINER
     AS $$
@@ -474,7 +607,7 @@ CREATE TABLE IF NOT EXISTS "public"."audit_logs" (
 ALTER TABLE "public"."audit_logs" OWNER TO "postgres";
 
 
-CREATE TABLE IF NOT EXISTS "public"."branches" (
+CREATE TABLE IF NOT EXISTS "public"."church_branches" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "name" "text" NOT NULL,
     "description" "text",
@@ -491,7 +624,7 @@ CREATE TABLE IF NOT EXISTS "public"."branches" (
 );
 
 
-ALTER TABLE "public"."branches" OWNER TO "postgres";
+ALTER TABLE "public"."church_branches" OWNER TO "postgres";
 
 
 CREATE TABLE IF NOT EXISTS "public"."meetings" (
@@ -555,7 +688,7 @@ CREATE TABLE IF NOT EXISTS "public"."notifications" (
 ALTER TABLE "public"."notifications" OWNER TO "postgres";
 
 
-CREATE OR REPLACE VIEW "public"."notification_analytics" AS
+CREATE OR REPLACE VIEW "public"."notification_analytics" WITH ("security_invoker"='true') AS
  SELECT "date_trunc"('day'::"text", "notifications"."created_at") AS "date",
     "notifications"."type",
     "notifications"."delivery_status",
@@ -570,7 +703,7 @@ CREATE OR REPLACE VIEW "public"."notification_analytics" AS
 ALTER TABLE "public"."notification_analytics" OWNER TO "postgres";
 
 
-COMMENT ON VIEW "public"."notification_analytics" IS 'Provides analytics data for notification delivery and performance';
+COMMENT ON VIEW "public"."notification_analytics" IS 'Provides analytics data for notification delivery and performance (with security invoker)';
 
 
 
@@ -669,12 +802,12 @@ ALTER TABLE ONLY "public"."audit_logs"
 
 
 
-ALTER TABLE ONLY "public"."branches"
+ALTER TABLE ONLY "public"."church_branches"
     ADD CONSTRAINT "branches_name_unique" UNIQUE ("name");
 
 
 
-ALTER TABLE ONLY "public"."branches"
+ALTER TABLE ONLY "public"."church_branches"
     ADD CONSTRAINT "branches_pkey" PRIMARY KEY ("id");
 
 
@@ -839,7 +972,7 @@ CREATE INDEX "idx_users_role" ON "public"."users" USING "btree" ("role");
 
 
 
-CREATE OR REPLACE TRIGGER "update_branches_updated_at" BEFORE UPDATE ON "public"."branches" FOR EACH ROW EXECUTE FUNCTION "public"."update_updated_at_column"();
+CREATE OR REPLACE TRIGGER "update_branches_updated_at" BEFORE UPDATE ON "public"."church_branches" FOR EACH ROW EXECUTE FUNCTION "public"."update_updated_at_column"();
 
 
 
@@ -868,13 +1001,13 @@ ALTER TABLE ONLY "public"."audit_logs"
 
 
 
-ALTER TABLE ONLY "public"."branches"
+ALTER TABLE ONLY "public"."church_branches"
     ADD CONSTRAINT "branches_created_by_fkey" FOREIGN KEY ("created_by") REFERENCES "auth"."users"("id");
 
 
 
 ALTER TABLE ONLY "public"."meetings"
-    ADD CONSTRAINT "meetings_branch_id_fkey" FOREIGN KEY ("branch_id") REFERENCES "public"."branches"("id");
+    ADD CONSTRAINT "meetings_branch_id_fkey" FOREIGN KEY ("branch_id") REFERENCES "public"."church_branches"("id");
 
 
 
@@ -909,7 +1042,7 @@ ALTER TABLE ONLY "public"."tasks"
 
 
 ALTER TABLE ONLY "public"."tasks"
-    ADD CONSTRAINT "tasks_branch_id_fkey" FOREIGN KEY ("branch_id") REFERENCES "public"."branches"("id");
+    ADD CONSTRAINT "tasks_branch_id_fkey" FOREIGN KEY ("branch_id") REFERENCES "public"."church_branches"("id");
 
 
 
@@ -924,7 +1057,7 @@ ALTER TABLE ONLY "public"."user_devices"
 
 
 ALTER TABLE ONLY "public"."users"
-    ADD CONSTRAINT "users_branch_id_fkey" FOREIGN KEY ("branch_id") REFERENCES "public"."branches"("id");
+    ADD CONSTRAINT "users_branch_id_fkey" FOREIGN KEY ("branch_id") REFERENCES "public"."church_branches"("id");
 
 
 
@@ -944,19 +1077,19 @@ CREATE POLICY "audit_logs_select_own" ON "public"."audit_logs" FOR SELECT USING 
 
 
 
-ALTER TABLE "public"."branches" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "branches_admin_all" ON "public"."branches" USING ("public"."user_has_permission"(ARRAY['admin'::"text"]));
+CREATE POLICY "branches_admin_all" ON "public"."church_branches" USING ("public"."user_has_permission"(ARRAY['admin'::"text"]));
 
 
 
-CREATE POLICY "branches_pastor_own_branch" ON "public"."branches" FOR SELECT USING (("pastor_id" = "auth"."uid"()));
+CREATE POLICY "branches_pastor_own_branch" ON "public"."church_branches" FOR SELECT USING (("pastor_id" = "auth"."uid"()));
 
 
 
-CREATE POLICY "branches_select_all" ON "public"."branches" FOR SELECT USING (true);
+CREATE POLICY "branches_select_all" ON "public"."church_branches" FOR SELECT USING (true);
 
+
+
+ALTER TABLE "public"."church_branches" ENABLE ROW LEVEL SECURITY;
 
 
 ALTER TABLE "public"."meetings" ENABLE ROW LEVEL SECURITY;
@@ -1303,6 +1436,24 @@ GRANT ALL ON FUNCTION "public"."get_pending_notifications"("batch_size" integer)
 
 
 
+GRANT ALL ON FUNCTION "public"."handle_email_verification"() TO "anon";
+GRANT ALL ON FUNCTION "public"."handle_email_verification"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."handle_email_verification"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."handle_new_user"() TO "anon";
+GRANT ALL ON FUNCTION "public"."handle_new_user"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."handle_new_user"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."handle_new_user_signup"() TO "anon";
+GRANT ALL ON FUNCTION "public"."handle_new_user_signup"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."handle_new_user_signup"() TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."schedule_meeting_notifications"("meeting_id" "uuid", "meeting_title" "text", "meeting_datetime" timestamp with time zone, "branch_id" "uuid") TO "anon";
 GRANT ALL ON FUNCTION "public"."schedule_meeting_notifications"("meeting_id" "uuid", "meeting_title" "text", "meeting_datetime" timestamp with time zone, "branch_id" "uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."schedule_meeting_notifications"("meeting_id" "uuid", "meeting_title" "text", "meeting_datetime" timestamp with time zone, "branch_id" "uuid") TO "service_role";
@@ -1348,9 +1499,9 @@ GRANT ALL ON TABLE "public"."audit_logs" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."branches" TO "anon";
-GRANT ALL ON TABLE "public"."branches" TO "authenticated";
-GRANT ALL ON TABLE "public"."branches" TO "service_role";
+GRANT ALL ON TABLE "public"."church_branches" TO "anon";
+GRANT ALL ON TABLE "public"."church_branches" TO "authenticated";
+GRANT ALL ON TABLE "public"."church_branches" TO "service_role";
 
 
 

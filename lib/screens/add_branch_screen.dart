@@ -4,6 +4,8 @@ import '../providers/supabase_provider.dart';
 import 'package:grace_portal/models/church_branch_model.dart';
 import 'package:grace_portal/widgets/custom_input.dart';
 import 'package:grace_portal/widgets/custom_button.dart';
+import 'package:grace_portal/widgets/custom_card.dart';
+import 'package:grace_portal/widgets/form/location_field.dart'; // Add this import
 import 'package:grace_portal/utils/theme.dart';
 import 'package:uuid/uuid.dart';
 import 'package:grace_portal/widgets/custom_back_button.dart';
@@ -21,17 +23,16 @@ class AddBranchScreen extends StatefulWidget {
 class _AddBranchScreenState extends State<AddBranchScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  final _cityController = TextEditingController();
   final _stateController = TextEditingController();
-  final _countryController = TextEditingController();
   final _addressController = TextEditingController();
   final _descriptionController = TextEditingController();
 
-  // Focus nodes for keyboard navigation
+  // Location data for the LocationField
+  Map<String, String> _locationData = {'city': '', 'country': ''};
+
+  // Focus nodes for keyboard navigation (removed city and country focus nodes)
   final _nameFocus = FocusNode();
-  final _cityFocus = FocusNode();
   final _stateFocus = FocusNode();
-  final _countryFocus = FocusNode();
   final _addressFocus = FocusNode();
   final _descriptionFocus = FocusNode();
 
@@ -42,20 +43,13 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
   @override
   void dispose() {
     _nameController.dispose();
-    _cityController.dispose();
     _stateController.dispose();
-    _countryController.dispose();
     _addressController.dispose();
     _descriptionController.dispose();
-
-    // Dispose focus nodes
     _nameFocus.dispose();
-    _cityFocus.dispose();
     _stateFocus.dispose();
-    _countryFocus.dispose();
     _addressFocus.dispose();
     _descriptionFocus.dispose();
-
     super.dispose();
   }
 
@@ -72,16 +66,16 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
         throw Exception('No authenticated user found');
       }
 
-      // Create location map from individual fields
+      // Create location map from LocationField data and state field
       final location = <String, dynamic>{};
-      if (_cityController.text.trim().isNotEmpty) {
-        location['city'] = _cityController.text.trim();
+      if (_locationData['city']?.trim().isNotEmpty == true) {
+        location['city'] = _locationData['city']!.trim();
       }
       if (_stateController.text.trim().isNotEmpty) {
         location['state'] = _stateController.text.trim();
       }
-      if (_countryController.text.trim().isNotEmpty) {
-        location['country'] = _countryController.text.trim();
+      if (_locationData['country']?.trim().isNotEmpty == true) {
+        location['country'] = _locationData['country']!.trim();
       }
 
       final branch = ChurchBranch(
@@ -95,18 +89,26 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
             : null,
         createdBy: currentUserId.toLowerCase(),
         isActive: _isActive,
-        departments: [],
-        members: [],
       );
 
-      await Provider.of<SupabaseProvider>(context, listen: false)
-          .createBranch(branch);
+      final success =
+          await Provider.of<SupabaseProvider>(context, listen: false)
+              .createBranch(branch);
 
-      if (mounted) {
+      if (!mounted) return; // Add this check
+
+      if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Branch created successfully')),
         );
         Navigator.pop(context);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to create branch. Please try again.'),
+            backgroundColor: AppTheme.errorColor,
+          ),
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -126,223 +128,281 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       body: SafeArea(
         child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Header Section
-                  Row(
-                    children: [
-                      CustomBackButton(
-                        onPressed: () => Navigator.pop(context),
-                      ),
-                      const SizedBox(width: 16),
-                      const Text(
-                        'Create New Branch',
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.primaryColor,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 32),
-
-                  // Basic Information Section
-                  Container(
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: AppTheme.cardColor,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color:
-                              AppTheme.darkNeutralColor.withValues(alpha: 0.05),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
+          padding: const EdgeInsets.all(20),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Enhanced Header Section using existing components
+                Row(
+                  children: [
+                    CustomBackButton(
+                      onPressed: () => Navigator.pop(context),
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Branch Details',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.primaryColor,
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Create New Branch',
+                            style: theme.textTheme.headlineSmall?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.darkNeutralColor,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Add a new church branch to expand your ministry',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: AppTheme.neutralColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 32),
+
+                // Form using CustomCard for better visual grouping
+                CustomCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildSectionHeader(
+                        'Branch Details',
+                        'Basic information about the new branch',
+                        Icons.business,
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Branch Name using existing CustomInput
+                      CustomInput(
+                        label: 'Branch Name',
+                        hint: 'Enter the branch name',
+                        controller: _nameController,
+                        focusNode: _nameFocus,
+                        nextFocusNode:
+                            _stateFocus, // Changed from _cityFocus to _stateFocus
+                        prefixIcon: const Icon(Icons.church),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Branch name is required';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Location Section Header
+                      _buildSectionHeader(
+                        'Location',
+                        'Where is this branch located?',
+                        Icons.location_on,
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Location Field with Autocomplete (replaces City and Country fields)
+                      LocationField(
+                        initialLocation: _locationData,
+                        onLocationChanged: (location) {
+                          setState(() {
+                            _locationData = location;
+                          });
+                        },
+                        validator: (location) {
+                          if (location['city']?.isEmpty == true ||
+                              location['country']?.isEmpty == true) {
+                            return 'Both city and country are required';
+                          }
+                          return null;
+                        },
+                        formKey: _formKey,
+                      ),
+                      const SizedBox(height: 16),
+
+                      // State/Province Input (kept as separate field)
+                      CustomInput(
+                        label: 'State/Province',
+                        hint: 'Enter state or province',
+                        controller: _stateController,
+                        focusNode: _stateFocus,
+                        nextFocusNode: _addressFocus,
+                        prefixIcon: const Icon(Icons.map),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'State/Province is required';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Address Input
+                      CustomInput(
+                        label: 'Address',
+                        hint: 'Enter full address',
+                        controller: _addressController,
+                        focusNode: _addressFocus,
+                        nextFocusNode: _descriptionFocus,
+                        prefixIcon: const Icon(Icons.home),
+                        maxLines: 2,
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Address is required';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Description Section
+                      _buildSectionHeader(
+                        'Description',
+                        'Tell us more about this branch',
+                        Icons.description,
+                      ),
+                      const SizedBox(height: 16),
+
+                      CustomInput(
+                        label: 'Description',
+                        hint: 'Enter branch description (optional)',
+                        controller: _descriptionController,
+                        focusNode: _descriptionFocus,
+                        prefixIcon: const Icon(Icons.notes),
+                        maxLines: 3,
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Pastor Selection Section
+                      _buildSectionHeader(
+                        'Pastor Assignment',
+                        'Select a pastor for this branch',
+                        Icons.person,
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Pastor Dropdown (using corrected method and property names)
+                      StreamBuilder<List<UserModel>>(
+                        stream: Provider.of<SupabaseProvider>(context,
+                                listen: false)
+                            .getAllUsers(),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return const Center(
+                                child: CircularProgressIndicator());
+                          }
+
+                          final pastors = snapshot.data
+                                  ?.where(
+                                      (user) => user.role == UserRole.pastor)
+                                  .toList() ??
+                              [];
+
+                          return CustomDropdown<String>(
+                            value: _selectedPastorId,
+                            hint: 'Select a pastor',
+                            items: pastors.map((pastor) {
+                              return DropdownMenuItem<String>(
+                                value: pastor.id,
+                                child: Row(
+                                  children: [
+                                    CircleAvatar(
+                                      radius: 16,
+                                      backgroundColor: AppTheme.primaryColor
+                                          .withValues(alpha: 0.1),
+                                      child: Icon(
+                                        Icons.person,
+                                        size: 16,
+                                        color: AppTheme.primaryColor,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Text(
+                                        pastor.displayName,
+                                        style: const TextStyle(
+                                            fontWeight: FontWeight.w500),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }).toList(),
+                            onChanged: (value) {
+                              setState(() {
+                                _selectedPastorId = value;
+                              });
+                            },
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please select a pastor';
+                              }
+                              return null;
+                            },
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Active Status Section
+                      _buildSectionHeader(
+                        'Status',
+                        'Set the initial status of this branch',
+                        Icons.toggle_on,
+                      ),
+                      const SizedBox(height: 16),
+
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryColor.withValues(alpha: 0.05),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: AppTheme.primaryColor.withValues(alpha: 0.1),
                           ),
                         ),
-                        const SizedBox(height: 24),
-                        CustomInput(
-                          label: 'Branch Name',
-                          controller: _nameController,
-                          hint: 'Enter branch name',
-                          prefixIcon:
-                              Icon(Icons.church, color: AppTheme.neutralColor),
-                          focusNode: _nameFocus,
-                          nextFocusNode: _cityFocus,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter a branch name';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 16),
-                        // Location fields
-                        Row(
-                          children: [
-                            Expanded(
-                              child: CustomInput(
-                                label: 'City',
-                                controller: _cityController,
-                                hint: 'Enter city',
-                                prefixIcon: Icon(Icons.location_city,
-                                    color: AppTheme.neutralColor),
-                                focusNode: _cityFocus,
-                                nextFocusNode: _stateFocus,
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: CustomInput(
-                                label: 'State/Province',
-                                controller: _stateController,
-                                hint: 'Enter state',
-                                prefixIcon: Icon(Icons.map,
-                                    color: AppTheme.neutralColor),
-                                focusNode: _stateFocus,
-                                nextFocusNode: _countryFocus,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        CustomInput(
-                          label: 'Country',
-                          controller: _countryController,
-                          hint: 'Enter country',
-                          prefixIcon: Icon(Icons.public,
-                              color: AppTheme.neutralColor),
-                          focusNode: _countryFocus,
-                          nextFocusNode: _addressFocus,
-                        ),
-                        const SizedBox(height: 16),
-                        CustomInput(
-                          label: 'Address',
-                          controller: _addressController,
-                          hint: 'Enter branch address',
-                          prefixIcon:
-                              Icon(Icons.home, color: AppTheme.neutralColor),
-                          focusNode: _addressFocus,
-                          nextFocusNode: _descriptionFocus,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter an address';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 16),
-                        CustomInput(
-                          label: 'Description',
-                          controller: _descriptionController,
-                          hint: 'Enter branch description',
-                          prefixIcon: Icon(Icons.description,
-                              color: AppTheme.neutralColor),
-                          focusNode: _descriptionFocus,
-                          maxLines: 3,
-                        ),
-                        const SizedBox(height: 16),
-                        // Pastor Selection
-                        StreamBuilder<List<UserModel>>(
-                          stream: Provider.of<SupabaseProvider>(context,
-                                  listen: false)
-                              .getAllUsers(),
-                          builder: (context, snapshot) {
-                            if (snapshot.hasError) {
-                              return Text('Error: ${snapshot.error}');
-                            }
-
-                            if (!snapshot.hasData) {
-                              return const CircularProgressIndicator();
-                            }
-
-                            final users = snapshot.data!;
-                            final pastors = users
-                                .where((user) => user.role == UserRole.pastor)
-                                .toList();
-                            pastors.sort((a, b) =>
-                                a.displayName.compareTo(b.displayName));
-
-                            return Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Branch Pastor',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: AppTheme.darkNeutralColor,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                CustomDropdown<String>(
-                                  value: _selectedPastorId,
-                                  label: 'Select Pastor',
-                                  hint: 'Choose a pastor for this branch',
-                                  prefixIcon: Icons.person,
-                                  items: [
-                                    const DropdownMenuItem<String>(
-                                      value: null,
-                                      child: Text('No Pastor Assigned'),
-                                    ),
-                                    ...pastors.map(
-                                        (pastor) => DropdownMenuItem<String>(
-                                              value: pastor.id,
-                                              child: Text(pastor.displayName),
-                                            )),
-                                  ],
-                                  onChanged: (String? value) {
-                                    setState(() {
-                                      _selectedPastorId = value;
-                                    });
-                                  },
-                                ),
-                              ],
-                            );
-                          },
-                        ),
-                        const SizedBox(height: 16),
-                        // Active Status Toggle
-                        Row(
+                        child: Row(
                           children: [
                             Icon(
-                              Icons.toggle_on,
+                              _isActive
+                                  ? Icons.check_circle
+                                  : Icons.radio_button_unchecked,
                               color: _isActive
-                                  ? AppTheme.accentColor
+                                  ? AppTheme.successColor
                                   : AppTheme.neutralColor,
-                              size: 40,
                             ),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Active Branch',
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: AppTheme.darkNeutralColor,
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Active Branch',
+                                    style: theme.textTheme.titleSmall?.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  Text(
+                                    _isActive
+                                        ? 'This branch will be immediately available'
+                                        : 'This branch will be created as inactive',
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: AppTheme.neutralColor,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                            const Spacer(),
                             Switch(
                               value: _isActive,
                               onChanged: (value) {
@@ -350,36 +410,77 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
                                   _isActive = value;
                                 });
                               },
-                              activeColor: AppTheme.accentColor,
+                              activeThumbColor: AppTheme.primaryColor,
                             ),
                           ],
                         ),
-                      ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 32),
+
+                // Submit Button using CustomButton
+                CustomButton(
+                  onPressed: _isLoading ? null : _addBranch,
+                  isLoading: _isLoading,
+                  width: double.infinity,
+                  height: 56,
+                  backgroundColor: AppTheme.primaryColor,
+                  child: Text(
+                    'Create Branch',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const SizedBox(height: 32),
-
-                  // Submit Button
-                  CustomButton(
-                    onPressed: _isLoading ? null : _addBranch,
-                    backgroundColor: AppTheme.accentColor,
-                    child: _isLoading
-                        ? const CircularProgressIndicator(color: Colors.white)
-                        : const Text(
-                            'Create Branch',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                  ),
-                ],
-              ),
+                ),
+                const SizedBox(height: 20),
+              ],
             ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title, String subtitle, IconData icon) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: AppTheme.primaryColor.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(
+            icon,
+            size: 20,
+            color: AppTheme.primaryColor,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.darkNeutralColor,
+                    ),
+              ),
+              Text(
+                subtitle,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppTheme.neutralColor,
+                    ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

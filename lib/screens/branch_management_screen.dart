@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/supabase_provider.dart';
 import '../models/church_branch_model.dart';
+import '../models/user_model.dart';
 import '../services/auth_service.dart';
 import '../utils/theme.dart';
 import '../widgets/custom_back_button.dart';
@@ -73,8 +74,7 @@ class _BranchManagementScreenState extends State<BranchManagementScreen> {
                       ElevatedButton.icon(
                         onPressed: () async {
                           try {
-                            await notificationService
-                                .sendBroadcastNotification(
+                            await notificationService.sendBroadcastNotification(
                               title: 'Test Notification',
                               message:
                                   'This is a test notification from the app',
@@ -223,7 +223,7 @@ class _BranchManagementScreenState extends State<BranchManagementScreen> {
   // Add this helper method at the top of the class
   void _safeShowSnackBar(String message, {Color? backgroundColor}) {
     if (!mounted) return;
-    
+
     try {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -335,60 +335,151 @@ class _BranchManagementScreenState extends State<BranchManagementScreen> {
     );
   }
 
-  void _showBranchDetails(BuildContext context, ChurchBranch branch) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(branch.name),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Location:',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
-            ),
-            Text(branch.locationString),
-            const SizedBox(height: 16),
-            const Text(
-              'Address:',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
-            ),
-            Text(branch.address),
-            const SizedBox(height: 16),
-            if (branch.description != null) ...[
-              const Text(
-                'Description:',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
+  // Updated method to show branch details with members
+  void _showBranchDetails(BuildContext context, ChurchBranch branch) async {
+    try {
+      final supabaseProvider =
+          Provider.of<SupabaseProvider>(context, listen: false);
+
+      // Get all users in this branch
+      final users = await supabaseProvider.getAllUsers().first;
+      final branchMembers =
+          users.where((user) => user.branchId == branch.id).toList();
+
+      if (!context.mounted) return;
+
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(branch.name),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Location:',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
                 ),
-              ),
-              Text(branch.description!),
-              const SizedBox(height: 16),
-            ],
-            Text(
-              'Members: ${branch.members.length}',
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
+                Text(branch.locationString),
+                const SizedBox(height: 16),
+                const Text(
+                  'Address:',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+                Text(branch.address),
+                const SizedBox(height: 16),
+                if (branch.description != null) ...[
+                  const Text(
+                    'Description:',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                  Text(branch.description!),
+                  const SizedBox(height: 16),
+                ],
+                Text(
+                  'Members (${branchMembers.length}):',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                if (branchMembers.isEmpty)
+                  const Text(
+                    'No members in this branch yet.',
+                    style: TextStyle(
+                      color: Colors.grey,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  )
+                else
+                  SizedBox(
+                    height: 200, // Constrain height for scrolling
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: branchMembers.length,
+                      itemBuilder: (context, index) {
+                        final member = branchMembers[index];
+                        return Card(
+                          margin: const EdgeInsets.symmetric(vertical: 2),
+                          child: ListTile(
+                            dense: true,
+                            leading: CircleAvatar(
+                              backgroundColor: AppTheme.primaryColor,
+                              child: Text(
+                                member.fullName.isNotEmpty
+                                    ? member.fullName[0].toUpperCase()
+                                    : 'U',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            title: Text(
+                              member.fullName.isNotEmpty
+                                  ? member.fullName
+                                  : 'Unknown User',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            trailing: Chip(
+                              label: Text(
+                                member.role.name.toUpperCase(),
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              backgroundColor: _getRoleColor(member.role),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Close'),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
-    );
+      );
+    } catch (e) {
+      _safeShowSnackBar(
+        'Error loading branch details: ${e.toString()}',
+        backgroundColor: AppTheme.errorColor,
+      );
+    }
+  }
+
+  // Helper method to get role colors
+  Color _getRoleColor(UserRole role) {
+    switch (role) {
+      case UserRole.admin:
+        return AppTheme.errorColor;
+      case UserRole.pastor:
+        return AppTheme.secondaryColor;
+      case UserRole.worker:
+        return AppTheme.accentColor;
+      case UserRole.member:
+        return AppTheme.successColor;
+    }
   }
 }

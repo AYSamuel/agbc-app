@@ -302,11 +302,7 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
                                 child: CircularProgressIndicator());
                           }
 
-                          final pastors = snapshot.data
-                                  ?.where(
-                                      (user) => user.role == UserRole.pastor)
-                                  .toList() ??
-                              [];
+                          final pastors = snapshot.data ?? [];
 
                           return CustomDropdown<String>(
                             value: _selectedPastorId,

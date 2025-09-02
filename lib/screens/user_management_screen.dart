@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/supabase_provider.dart';
+import '../providers/branches_provider.dart';
 import '../models/user_model.dart';
 import '../utils/theme.dart';
 import '../widgets/custom_back_button.dart';
@@ -23,6 +24,12 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
   @override
   void initState() {
     super.initState();
+    // Initialize branches when screen is opened
+    Future.microtask(() {
+      if (mounted) {
+        Provider.of<BranchesProvider>(context, listen: false).fetchBranches();
+      }
+    });
   }
 
   @override

@@ -1,6 +1,7 @@
 // lib/main.dart
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:grace_portal/providers/notification_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:app_links/app_links.dart';
@@ -9,11 +10,13 @@ import 'services/auth_service.dart';
 import 'services/notification_service.dart';
 import 'providers/branches_provider.dart';
 import 'providers/supabase_provider.dart'; // Add this import
+import 'providers/navigation_provider.dart'; // Add this missing import
 import 'screens/splash_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/main_navigation_screen.dart';
 import 'utils/theme.dart';
+import 'utils/notification_helper.dart';
 
 Future<void> main() async {
   try {
@@ -60,6 +63,29 @@ Future<void> main() async {
           ChangeNotifierProvider(create: (_) => BranchesProvider()),
           // Provide SupabaseProvider - Add this line
           ChangeNotifierProvider(create: (_) => SupabaseProvider()),
+          // Add NotificationProvider with SupabaseProvider dependency
+          ChangeNotifierProxyProvider<SupabaseProvider, NotificationProvider>(
+            create: (context) => NotificationProvider(
+              Provider.of<SupabaseProvider>(context, listen: false),
+            ),
+            update: (context, supabaseProvider, previous) =>
+                previous ?? NotificationProvider(supabaseProvider),
+          ),
+          // Add NotificationHelper as a provider
+          ProxyProvider2<SupabaseProvider, NotificationService,
+              NotificationHelper>(
+            create: (context) => NotificationHelper(
+              supabaseProvider:
+                  Provider.of<SupabaseProvider>(context, listen: false),
+              notificationService: NotificationService(),
+            ),
+            update:
+                (context, supabaseProvider, notificationService, previous) =>
+                    NotificationHelper(
+              supabaseProvider: supabaseProvider,
+              notificationService: notificationService,
+            ),
+          ),
         ],
         child: const GracePortalApp(),
       ),
@@ -168,5 +194,52 @@ class AuthGate extends StatelessWidget {
   Widget build(BuildContext context) {
     // ALWAYS show splash screen first - let it handle all initialization
     return const SplashScreen();
+  }
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => SupabaseProvider()),
+        ChangeNotifierProvider(create: (_) => BranchesProvider()),
+        ChangeNotifierProvider(create: (_) => NavigationProvider()),
+        ChangeNotifierProxyProvider<SupabaseProvider, NotificationProvider>(
+          create: (context) => NotificationProvider(
+            Provider.of<SupabaseProvider>(context, listen: false),
+          ),
+          update: (context, supabaseProvider, previous) {
+            // Always create a new instance to ensure proper user isolation
+            final newProvider = NotificationProvider(supabaseProvider);
+            // If there was a previous provider, dispose it properly
+            previous?.dispose();
+            return newProvider;
+          },
+        ),
+        // Add NotificationHelper as a provider
+        ProxyProvider2<SupabaseProvider, NotificationService,
+            NotificationHelper>(
+          create: (context) => NotificationHelper(
+            supabaseProvider:
+                Provider.of<SupabaseProvider>(context, listen: false),
+            notificationService: NotificationService(),
+          ),
+          update: (context, supabaseProvider, notificationService, previous) =>
+              NotificationHelper(
+            supabaseProvider: supabaseProvider,
+            notificationService: notificationService,
+          ),
+        ),
+      ],
+      child: MaterialApp(
+        title: 'AGBC App',
+        theme: AppTheme.lightTheme,
+        home: const SplashScreen(),
+        debugShowCheckedModeBanner: false,
+      ),
+    );
   }
 }

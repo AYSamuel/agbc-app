@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:grace_portal/providers/supabase_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -91,7 +92,7 @@ class NotificationService extends ChangeNotifier {
       final deviceState = OneSignal.User.pushSubscription;
       final oneSignalUserId = deviceState.id;
       final pushToken = deviceState.token;
-      
+
       debugPrint('=== DEVICE REGISTRATION DEBUG ===');
       debugPrint('Registering device for user: $userId');
       debugPrint('OneSignal Device ID: $oneSignalUserId');
@@ -105,23 +106,18 @@ class NotificationService extends ChangeNotifier {
         debugPrint('Using OneSignal device ID: $deviceId');
       } else {
         // Generate a fallback device ID using user ID and platform
-        deviceId = '${userId}_${platform}_${DateTime.now().millisecondsSinceEpoch}';
+        deviceId =
+            '${userId}_${platform}_${DateTime.now().millisecondsSinceEpoch}';
         debugPrint('Generated fallback device ID: $deviceId');
       }
 
       // CLEAN UP: Remove ALL existing entries for this user to avoid duplicates
       debugPrint('Cleaning up any existing device registrations for user...');
-      await _supabase
-          .from('user_devices')
-          .delete()
-          .eq('user_id', userId);
+      await _supabase.from('user_devices').delete().eq('user_id', userId);
       debugPrint('Existing registrations cleaned up');
 
       // Also clean up any entries with the same device_id from other users
-      await _supabase
-          .from('user_devices')
-          .delete()
-          .eq('device_id', deviceId);
+      await _supabase.from('user_devices').delete().eq('device_id', deviceId);
       debugPrint('Existing device_id registrations cleaned up');
 
       // Prepare the device data
@@ -151,7 +147,6 @@ class NotificationService extends ChangeNotifier {
 
       debugPrint('✅ Device registration verified in database: $verifyResult');
       debugPrint('Device registered successfully for user: $userId');
-
     } catch (e) {
       debugPrint('❌ Error registering device: $e');
       await logError('register_device', e.toString());
@@ -222,6 +217,15 @@ class NotificationService extends ChangeNotifier {
     try {
       debugPrint('Sending notification to users: $userIds');
       debugPrint('Title: $title, Message: $message');
+
+      // Create notification records in database first
+      final supabaseProvider = SupabaseProvider();
+      await supabaseProvider.createNotificationRecords(
+        userIds: userIds,
+        title: title,
+        message: message,
+        data: data,
+      );
 
       final response =
           await _supabase.functions.invoke('send-notification', body: {

@@ -12,6 +12,8 @@ import '../services/auth_service.dart';
 import '../providers/supabase_provider.dart';
 import '../models/task_model.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../providers/notification_provider.dart';
+import '../widgets/notification_panel.dart';
 
 import 'add_branch_screen.dart';
 import 'add_task_screen.dart';
@@ -25,6 +27,8 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  OverlayEntry? _overlayEntry;
+
   @override
   void initState() {
     super.initState();
@@ -40,6 +44,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void dispose() {
+    _removeOverlay();
     // Reset status bar to default when leaving the screen
     SystemChrome.setSystemUIOverlayStyle(
       const SystemUiOverlayStyle(
@@ -49,6 +54,76 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
     super.dispose();
+  }
+
+  // Add refresh method to reload all data
+  Future<void> _onRefresh() async {
+    try {
+      // Get providers
+      final notificationProvider =
+          Provider.of<NotificationProvider>(context, listen: false);
+      final supabaseProvider =
+          Provider.of<SupabaseProvider>(context, listen: false);
+      final authService = Provider.of<AuthService>(context, listen: false);
+
+      // Clear any existing errors
+      notificationProvider.clearError();
+      supabaseProvider.clearError();
+
+      // Refresh user profile data
+      if (authService.isAuthenticated) {
+        await authService
+            .initialize(); // This calls _loadUserProfile internally
+      }
+
+      // Refresh notifications - load fresh data from database
+      await notificationProvider.loadNotifications();
+      await notificationProvider.refreshNotificationCount();
+
+      // Reinitialize notification provider to get latest real-time updates
+      notificationProvider.reinitialize();
+
+      // Add a small delay to show the refresh indicator
+      await Future.delayed(const Duration(milliseconds: 500));
+    } catch (e) {
+      debugPrint('Error during refresh: $e');
+      // Show error message to user
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to refresh data: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
+  }
+
+  void _showNotificationPanel() {
+    if (_overlayEntry != null) return;
+
+    // Mark notifications as seen (Facebook-style behavior)
+    final notificationProvider =
+        Provider.of<NotificationProvider>(context, listen: false);
+    notificationProvider.markAsSeen();
+
+    _overlayEntry = OverlayEntry(
+      builder: (context) => Positioned(
+        top: 100, // Position below the nav bar
+        right: 16,
+        child: NotificationPanel(
+          onClose: _removeOverlay,
+        ),
+      ),
+    );
+
+    Overlay.of(context).insert(_overlayEntry!);
+  }
+
+  void _removeOverlay() {
+    _overlayEntry?.remove();
+    _overlayEntry = null;
   }
 
   @override
@@ -62,224 +137,247 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           children: [
             // Navigation Bar
-            const AppNavBar(
-              onNotificationTap: null, // TODO: Implement notification handling
-              notificationCount: 3, // TODO: Get actual notification count
+            Consumer<NotificationProvider>(
+              builder: (context, notificationProvider, child) {
+                return AppNavBar(
+                  onNotificationTap: _showNotificationPanel,
+                  notificationCount: notificationProvider.unreadCount,
+                );
+              },
             ),
             // Main Content
             Expanded(
-              child: SingleChildScrollView(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Welcome Section
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 20.0),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Welcome back,',
-                                  style: GoogleFonts.inter(
-                                    fontSize: 16,
-                                    color: Colors.grey[600],
+              child: RefreshIndicator(
+                onRefresh: _onRefresh,
+                color: AppTheme.primaryColor,
+                backgroundColor: Colors.white,
+                strokeWidth: 2.5,
+                displacement: 40.0,
+                child: SingleChildScrollView(
+                  physics:
+                      const AlwaysScrollableScrollPhysics(), // Ensures pull-to-refresh works even when content doesn't fill screen
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Welcome Section
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 20.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Welcome back,',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 16,
+                                      color: Colors.grey[600],
+                                    ),
                                   ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  userProfile?.displayName ?? 'User',
-                                  style: GoogleFonts.inter(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.grey[800],
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    userProfile?.displayName ?? 'User',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.grey[800],
+                                    ),
                                   ),
+                                ],
+                              ),
+                              Container(
+                                width: 48,
+                                height: 48,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: AppTheme.primaryColor,
+                                    width: 2,
+                                  ),
+                                  image: (userProfile != null &&
+                                          userProfile.photoUrl != null &&
+                                          userProfile.photoUrl!.isNotEmpty)
+                                      ? DecorationImage(
+                                          image: NetworkImage(
+                                              userProfile.photoUrl!),
+                                          fit: BoxFit.cover,
+                                        )
+                                      : null,
                                 ),
-                              ],
-                            ),
-                            Container(
-                              width: 48,
-                              height: 48,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: AppTheme.primaryColor,
-                                  width: 2,
-                                ),
-                                image: (userProfile != null &&
-                                        userProfile.photoUrl != null &&
-                                        userProfile.photoUrl!.isNotEmpty)
-                                    ? DecorationImage(
-                                        image:
-                                            NetworkImage(userProfile.photoUrl!),
-                                        fit: BoxFit.cover,
-                                      )
+                                child: (userProfile == null ||
+                                        userProfile.photoUrl == null ||
+                                        userProfile.photoUrl!.isEmpty)
+                                    ? Icon(Icons.person,
+                                        size: 32, color: AppTheme.primaryColor)
                                     : null,
                               ),
-                              child: (userProfile == null ||
-                                      userProfile.photoUrl == null ||
-                                      userProfile.photoUrl!.isEmpty)
-                                  ? Icon(Icons.person,
-                                      size: 32, color: AppTheme.primaryColor)
-                                  : null,
+                            ],
+                          ),
+                        ),
+
+                        // Daily Verse Card
+                        const DailyVerseCard(
+                          verse:
+                              '"For I know the plans I have for you," declares the LORD, "plans to prosper you and not to harm you, plans to give you hope and a future."',
+                          reference: 'Jeremiah 29:11',
+                        ),
+
+                        const SizedBox(height: 14),
+
+                        // Task Status Card
+                        StreamBuilder<List<TaskModel>>(
+                          stream: Provider.of<SupabaseProvider>(context)
+                              .getUserTasks(userProfile?.id ?? ''),
+                          builder: (context, snapshot) {
+                            if (snapshot.hasError || !snapshot.hasData) {
+                              return const SizedBox.shrink();
+                            }
+
+                            final tasks = snapshot.data!;
+                            final hasTasks = tasks.isNotEmpty;
+
+                            // Hide card for members without tasks
+                            if (userProfile?.role == UserRole.member &&
+                                !hasTasks) {
+                              return const SizedBox.shrink();
+                            }
+
+                            return TaskStatusCard(tasks: tasks);
+                          },
+                        ),
+
+                        const SizedBox(height: 24),
+
+                        // Quick Actions
+                        Text(
+                          'Quick Actions',
+                          style: GoogleFonts.inter(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.grey[800],
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        GridView.count(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          crossAxisCount: 3,
+                          mainAxisSpacing: 12,
+                          crossAxisSpacing: 12,
+                          children: [
+                            QuickActionCard(
+                              icon: Icons.calendar_today_rounded,
+                              label: 'Sunday Service',
+                            ),
+                            QuickActionCard(
+                              icon: Icons.favorite_rounded,
+                              label: 'Prayer Requests',
+                            ),
+                            QuickActionCard(
+                              icon: Icons.book_rounded,
+                              label: 'Bible Study',
+                            ),
+                            QuickActionCard(
+                              icon: Icons.volunteer_activism_rounded,
+                              label: 'Donate',
+                            ),
+                            QuickActionCard(
+                              icon: Icons.people_rounded,
+                              label: 'Community',
+                            ),
+                            QuickActionCard(
+                              icon: Icons.more_horiz_rounded,
+                              label: 'More',
                             ),
                           ],
                         ),
-                      ),
 
-                      // Daily Verse Card
-                      const DailyVerseCard(
-                        verse:
-                            '"For I know the plans I have for you," declares the LORD, "plans to prosper you and not to harm you, plans to give you hope and a future."',
-                        reference: 'Jeremiah 29:11',
-                      ),
+                        const SizedBox(height: 24),
 
-                      const SizedBox(height: 14),
-
-                      // Task Status Card
-                      StreamBuilder<List<TaskModel>>(
-                        stream: Provider.of<SupabaseProvider>(context)
-                            .getUserTasks(userProfile?.id ?? ''),
-                        builder: (context, snapshot) {
-                          if (snapshot.hasError || !snapshot.hasData) {
-                            return const SizedBox.shrink();
-                          }
-                          return TaskStatusCard(tasks: snapshot.data!);
-                        },
-                      ),
-
-                      const SizedBox(height: 24),
-
-                      // Quick Actions
-                      Text(
-                        'Quick Actions',
-                        style: GoogleFonts.inter(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.grey[800],
+                        // Church News
+                        Text(
+                          'Church News',
+                          style: GoogleFonts.inter(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.grey[800],
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 12),
-                      GridView.count(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        crossAxisCount: 3,
-                        mainAxisSpacing: 12,
-                        crossAxisSpacing: 12,
-                        children: [
-                          QuickActionCard(
-                            icon: Icons.calendar_today_rounded,
-                            label: 'Sunday Service',
-                          ),
-                          QuickActionCard(
-                            icon: Icons.favorite_rounded,
-                            label: 'Prayer Requests',
-                          ),
-                          QuickActionCard(
-                            icon: Icons.book_rounded,
-                            label: 'Bible Study',
-                          ),
-                          QuickActionCard(
-                            icon: Icons.volunteer_activism_rounded,
-                            label: 'Donate',
-                          ),
-                          QuickActionCard(
-                            icon: Icons.people_rounded,
-                            label: 'Community',
-                          ),
-                          QuickActionCard(
-                            icon: Icons.more_horiz_rounded,
-                            label: 'More',
-                          ),
-                        ],
-                      ),
-
-                      const SizedBox(height: 24),
-
-                      // Church News
-                      Text(
-                        'Church News',
-                        style: GoogleFonts.inter(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.grey[800],
+                        const SizedBox(height: 12),
+                        _buildNewsCard(
+                          'Choir Rehearsal Schedule Update',
+                          'The choir rehearsal has been rescheduled to Thursday evenings at 6:30 PM starting next week.',
+                          'May 11, 2025',
                         ),
-                      ),
-                      const SizedBox(height: 12),
-                      _buildNewsCard(
-                        'Choir Rehearsal Schedule Update',
-                        'The choir rehearsal has been rescheduled to Thursday evenings at 6:30 PM starting next week.',
-                        'May 11, 2025',
-                      ),
-                      const SizedBox(height: 12),
-                      _buildNewsCard(
-                        'Food Drive Success',
-                        'Thanks to your generosity, we collected over 500 items for the local food bank last weekend!',
-                        'May 10, 2025',
-                      ),
+                        const SizedBox(height: 12),
+                        _buildNewsCard(
+                          'Food Drive Success',
+                          'Thanks to your generosity, we collected over 500 items for the local food bank last weekend!',
+                          'May 10, 2025',
+                        ),
 
-                      const SizedBox(height: 24),
+                        const SizedBox(height: 24),
 
-                      // Upcoming Events
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Upcoming Events',
-                            style: GoogleFonts.inter(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.grey[800],
-                            ),
-                          ),
-                          TextButton(
-                            onPressed: () {},
-                            child: Text(
-                              'View all',
+                        // Upcoming Events
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Upcoming Events',
                               style: GoogleFonts.inter(
-                                fontSize: 14,
+                                fontSize: 16,
                                 fontWeight: FontWeight.w600,
-                                color: AppTheme.primaryColor,
+                                color: Colors.grey[800],
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      SizedBox(
-                        height: 180,
-                        child: ListView(
-                          scrollDirection: Axis.horizontal,
-                          children: [
-                            _buildEventCard(
-                              'May 12',
-                              'Sunday, 10:00 AM',
-                              'Sunday Worship Service',
-                              'Join us for praise, worship and an inspiring message from Pastor David.',
-                              'Main Sanctuary',
-                            ),
-                            _buildEventCard(
-                              'May 15',
-                              'Wednesday, 7:00 PM',
-                              'Midweek Bible Study',
-                              'Dive deeper into God\'s word with our interactive Bible study session.',
-                              'Fellowship Hall',
+                            TextButton(
+                              onPressed: () {},
+                              child: Text(
+                                'View all',
+                                style: GoogleFonts.inter(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppTheme.primaryColor,
+                                ),
+                              ),
                             ),
                           ],
                         ),
-                      ),
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          height: 180,
+                          child: ListView(
+                            scrollDirection: Axis.horizontal,
+                            children: [
+                              _buildEventCard(
+                                'May 12',
+                                'Sunday, 10:00 AM',
+                                'Sunday Worship Service',
+                                'Join us for praise, worship and an inspiring message from Pastor David.',
+                                'Main Sanctuary',
+                              ),
+                              _buildEventCard(
+                                'May 15',
+                                'Wednesday, 7:00 PM',
+                                'Midweek Bible Study',
+                                'Dive deeper into God\'s word with our interactive Bible study session.',
+                                'Fellowship Hall',
+                              ),
+                            ],
+                          ),
+                        ),
 
-                      const SizedBox(
-                          height: 90), // Bottom padding for the nav bar
-                    ],
+                        const SizedBox(
+                            height: 90), // Bottom padding for the nav bar
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
+            )
           ],
         ),
       ),

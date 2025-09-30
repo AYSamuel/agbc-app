@@ -5,16 +5,18 @@ import 'package:grace_portal/providers/notification_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:app_links/app_links.dart';
+import 'package:onesignal_flutter/onesignal_flutter.dart';
 import 'config/app_config.dart';
 import 'services/auth_service.dart';
 import 'services/notification_service.dart';
 import 'providers/branches_provider.dart';
-import 'providers/supabase_provider.dart'; // Add this import
-import 'providers/navigation_provider.dart'; // Add this missing import
+import 'providers/supabase_provider.dart';
+import 'providers/navigation_provider.dart';
 import 'screens/splash_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/main_navigation_screen.dart';
+import 'screens/meetings_screen.dart';
 import 'utils/theme.dart';
 import 'utils/notification_helper.dart';
 
@@ -43,6 +45,9 @@ Future<void> main() async {
       }
     }
 
+    // Initialize OneSignal
+    OneSignal.initialize(AppConfig.oneSignalAppId);
+
     // Initialize services
     final authService = AuthService();
     final notificationService = NotificationService();
@@ -50,6 +55,9 @@ Future<void> main() async {
     // Initialize services in sequence
     await authService.initialize();
     await notificationService.initialize();
+
+    // Capture OneSignal Player ID for existing logged-in users
+    await _capturePlayerIdForExistingUser();
 
     // Run the main application widget.
     runApp(
@@ -61,27 +69,52 @@ Future<void> main() async {
           ChangeNotifierProvider(create: (_) => notificationService),
           // Provide BranchesProvider
           ChangeNotifierProvider(create: (_) => BranchesProvider()),
-          // Provide SupabaseProvider - Add this line
+          // Provide SupabaseProvider
           ChangeNotifierProvider(create: (_) => SupabaseProvider()),
+          // Provide NavigationProvider
+          ChangeNotifierProvider(create: (_) => NavigationProvider()),
           // Add NotificationProvider with SupabaseProvider dependency
           ChangeNotifierProxyProvider<SupabaseProvider, NotificationProvider>(
             create: (context) => NotificationProvider(
               Provider.of<SupabaseProvider>(context, listen: false),
             ),
-            update: (context, supabaseProvider, previous) =>
-                previous ?? NotificationProvider(supabaseProvider),
+            update: (context, supabaseProvider, previous) {
+              // Only create new instance if supabaseProvider actually changed
+              if (previous != null) {
+                // Check if the provider is still valid and the supabase provider hasn't changed
+                try {
+                  if (previous.supabaseProvider == supabaseProvider && !previous.disposed) {
+                    return previous;
+                  }
+                } catch (e) {
+                  // Previous provider is disposed, create new one
+                }
+              }
+
+              // Create new instance and dispose old one properly
+              final newProvider = NotificationProvider(supabaseProvider);
+              // Dispose previous provider after a delay to avoid "used after disposed" errors
+              if (previous != null) {
+                Future.delayed(const Duration(milliseconds: 100), () {
+                  try {
+                    previous.dispose();
+                  } catch (e) {
+                    // Ignore disposal errors
+                  }
+                });
+              }
+              return newProvider;
+            },
           ),
           // Add NotificationHelper as a provider
           ProxyProvider2<SupabaseProvider, NotificationService,
               NotificationHelper>(
             create: (context) => NotificationHelper(
-              supabaseProvider:
-                  Provider.of<SupabaseProvider>(context, listen: false),
-              notificationService: NotificationService(),
+              supabaseProvider: Provider.of<SupabaseProvider>(context, listen: false),
+              notificationService: Provider.of<NotificationService>(context, listen: false),
             ),
-            update:
-                (context, supabaseProvider, notificationService, previous) =>
-                    NotificationHelper(
+            update: (context, supabaseProvider, notificationService, previous) =>
+                NotificationHelper(
               supabaseProvider: supabaseProvider,
               notificationService: notificationService,
             ),
@@ -92,6 +125,40 @@ Future<void> main() async {
     );
   } catch (e) {
     debugPrint('Error initializing app: $e');
+  }
+}
+
+/// Capture OneSignal Player ID for existing logged-in users
+Future<void> _capturePlayerIdForExistingUser() async {
+  try {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user != null) {
+      // Wait for OneSignal to initialize
+      await Future.delayed(const Duration(seconds: 2));
+
+      final playerId = OneSignal.User.pushSubscription.id;
+      if (playerId != null && playerId.isNotEmpty) {
+        // Check if we already have this player ID stored
+        final existingUser = await Supabase.instance.client
+            .from('users')
+            .select('onesignal_player_id')
+            .eq('id', user.id)
+            .single();
+
+        if (existingUser['onesignal_player_id'] == null ||
+            existingUser['onesignal_player_id'] != playerId) {
+          // Update with new player ID
+          await Supabase.instance.client
+              .from('users')
+              .update({'onesignal_player_id': playerId}).eq('id', user.id);
+
+          debugPrint(
+              'Updated OneSignal Player ID for existing user: $playerId');
+        }
+      }
+    }
+  } catch (e) {
+    debugPrint('Error capturing Player ID for existing user: $e');
   }
 }
 
@@ -142,26 +209,29 @@ class _GracePortalAppState extends State<GracePortalApp> {
   }
 
   void _handleDeepLink(Uri uri) {
-    debugPrint('Received deep link: $uri');
-
     if (uri.scheme == 'agbcapp') {
       switch (uri.host) {
         case 'login':
-          // Navigate to login screen
-          _navigatorKey.currentState?.pushNamedAndRemoveUntil(
-            '/login',
-            (route) => false,
-          );
+          Navigator.pushNamed(context, '/login');
           break;
         case 'callback':
-          // Handle general callback (legacy support)
-          _navigatorKey.currentState?.pushNamedAndRemoveUntil(
-            '/login',
-            (route) => false,
-          );
+          // Handle auth callback
           break;
-        default:
-          debugPrint('Unknown deep link path: ${uri.host}');
+        case 'task':
+          final taskId =
+              uri.pathSegments.isNotEmpty ? uri.pathSegments[0] : null;
+          if (taskId != null) {
+            Navigator.pushNamed(context, '/task-details', arguments: taskId);
+          }
+          break;
+        case 'meeting':
+          final meetingId =
+              uri.pathSegments.isNotEmpty ? uri.pathSegments[0] : null;
+          if (meetingId != null) {
+            Navigator.pushNamed(context, '/meeting-details',
+                arguments: meetingId);
+          }
+          break;
       }
     }
   }
@@ -180,6 +250,7 @@ class _GracePortalAppState extends State<GracePortalApp> {
         '/login': (context) => const LoginScreen(),
         '/register': (context) => const RegisterScreen(),
         '/home': (context) => const MainNavigationScreen(),
+        '/meetings': (context) => const MeetingsScreen(),
       },
     );
   }
@@ -194,52 +265,5 @@ class AuthGate extends StatelessWidget {
   Widget build(BuildContext context) {
     // ALWAYS show splash screen first - let it handle all initialization
     return const SplashScreen();
-  }
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => SupabaseProvider()),
-        ChangeNotifierProvider(create: (_) => BranchesProvider()),
-        ChangeNotifierProvider(create: (_) => NavigationProvider()),
-        ChangeNotifierProxyProvider<SupabaseProvider, NotificationProvider>(
-          create: (context) => NotificationProvider(
-            Provider.of<SupabaseProvider>(context, listen: false),
-          ),
-          update: (context, supabaseProvider, previous) {
-            // Always create a new instance to ensure proper user isolation
-            final newProvider = NotificationProvider(supabaseProvider);
-            // If there was a previous provider, dispose it properly
-            previous?.dispose();
-            return newProvider;
-          },
-        ),
-        // Add NotificationHelper as a provider
-        ProxyProvider2<SupabaseProvider, NotificationService,
-            NotificationHelper>(
-          create: (context) => NotificationHelper(
-            supabaseProvider:
-                Provider.of<SupabaseProvider>(context, listen: false),
-            notificationService: NotificationService(),
-          ),
-          update: (context, supabaseProvider, notificationService, previous) =>
-              NotificationHelper(
-            supabaseProvider: supabaseProvider,
-            notificationService: notificationService,
-          ),
-        ),
-      ],
-      child: MaterialApp(
-        title: 'AGBC App',
-        theme: AppTheme.lightTheme,
-        home: const SplashScreen(),
-        debugShowCheckedModeBanner: false,
-      ),
-    );
   }
 }

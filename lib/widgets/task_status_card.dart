@@ -24,7 +24,7 @@ class TaskStatusCard extends StatefulWidget {
 class _TaskStatusCardState extends State<TaskStatusCard> {
   @override
   Widget build(BuildContext context) {
-    final user = Provider.of<AuthService>(context).currentUser;
+    final user = Provider.of<AuthService>(context).currentUserProfile;
     final taskCount = widget.tasks
         .where((task) => task.status != TaskStatus.completed)
         .length;

@@ -35,12 +35,12 @@ class NotificationService extends ChangeNotifier {
 
       // Request permission for notifications
       final permission = await OneSignal.Notifications.requestPermission(true);
-      debugPrint('Notification permission result: $permission');
+      debugPrint('OneSignal notification permission result: $permission');
 
       _isInitialized = true;
-      debugPrint('OneSignal initialized successfully');
+      debugPrint('Notification service initialized successfully');
     } catch (e) {
-      debugPrint('Error initializing OneSignal: $e');
+      debugPrint('Error initializing notification service: $e');
       await logError('initialize', e.toString());
       rethrow;
     }
@@ -285,6 +285,42 @@ class NotificationService extends ChangeNotifier {
     } catch (e) {
       debugPrint('Error sending broadcast notification: $e');
       await logError('send_broadcast_notification', e.toString());
+      rethrow;
+    }
+  }
+
+  Future<void> scheduleNotification({
+    required List<String> userIds,
+    required String title,
+    required String message,
+    required DateTime scheduledDate,
+    Map<String, dynamic>? data,
+  }) async {
+    try {
+      debugPrint('Scheduling notification for: $scheduledDate');
+      debugPrint('Users: $userIds');
+      debugPrint('Title: $title');
+
+      final response = await _supabase.functions.invoke(
+        'send-scheduled-notification',
+        body: {
+          'userIds': userIds,
+          'title': title,
+          'message': message,
+          'sendAfter': scheduledDate.toUtc().toIso8601String(),
+          'data': data,
+        },
+      );
+
+      debugPrint('Scheduled notification response: ${response.status}');
+      debugPrint('Response data: ${response.data}');
+
+      if (response.status != 200) {
+        throw Exception('Failed to schedule notification: ${response.data}');
+      }
+    } catch (e) {
+      debugPrint('Error scheduling notification: $e');
+      await logError('schedule_notification', e.toString());
       rethrow;
     }
   }

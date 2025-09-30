@@ -14,7 +14,9 @@ class AppConfig {
   static String get supabaseAnonKey => dotenv.env['SUPABASE_ANON_KEY'] ?? (throw Exception('SUPABASE_ANON_KEY not found in .env'));
 
   /// Returns the OneSignal App ID from environment variables.
-  static String get oneSignalAppId => dotenv.env['ONESIGNAL_APP_ID'] ?? (throw Exception('ONESIGNAL_APP_ID not found in .env'));
+  static String get oneSignalAppId {
+    return dotenv.env['ONESIGNAL_APP_ID'] ?? '';
+  }
 
   /// Loads environment variables from the .env file.
   /// This method must be called before accessing any environment variables.

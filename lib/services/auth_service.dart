@@ -4,8 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:onesignal_flutter/onesignal_flutter.dart';
 import '../models/user_model.dart';
-import 'notification_service.dart'; // Add this import
+import 'notification_service.dart';
 
 /// A service class to manage user authentication (sign-up, sign-in, sign-out)
 /// and notify listeners about authentication state changes.
@@ -98,6 +99,10 @@ class AuthService extends ChangeNotifier {
       if (response.user != null) {
         debugPrint(
             'User registered successfully. Profile created by database trigger.');
+        
+        // Capture OneSignal Player ID after successful registration
+        await _captureOneSignalPlayerId();
+        
         // The database trigger will automatically create the user profile
         // No need for manual profile creation
       }
@@ -152,6 +157,9 @@ class AuthService extends ChangeNotifier {
           // Don't fail sign-in for this
         }
 
+        // Capture OneSignal Player ID after successful login
+        await _captureOneSignalPlayerId();
+
         // Register device for notifications
         try {
           await NotificationService().registerDevice(currentUser!.id);
@@ -167,6 +175,62 @@ class AuthService extends ChangeNotifier {
     } finally {
       _isLoading = false;
       notifyListeners();
+    }
+  }
+
+  /// Capture and store OneSignal Player ID for the current user
+  Future<void> _captureOneSignalPlayerId() async {
+    try {
+      final user = _supabase.auth.currentUser;
+      if (user != null) {
+        // Wait a bit for OneSignal to initialize
+        await Future.delayed(const Duration(seconds: 1));
+        
+        // Updated OneSignal API usage
+        final playerId = OneSignal.User.pushSubscription.id;
+        if (playerId != null && playerId.isNotEmpty) {
+          // Update user record with OneSignal Player ID
+          await _supabase
+              .from('users')
+              .update({'onesignal_player_id': playerId})
+              .eq('id', user.id);
+          
+          debugPrint('OneSignal Player ID captured: $playerId');
+        } else {
+          debugPrint('OneSignal Player ID not available yet');
+          // Retry after a longer delay
+          await Future.delayed(const Duration(seconds: 3));
+          await _retryPlayerIdCapture(user.id);
+        }
+      }
+    } catch (e) {
+      debugPrint('Error capturing OneSignal Player ID: $e');
+      // Try alternative method if the first one fails
+      final user = _supabase.auth.currentUser;
+      if (user != null) {
+        await _retryPlayerIdCapture(user.id);
+      }
+    }
+  }
+
+  /// Retry capturing OneSignal Player ID
+  Future<void> _retryPlayerIdCapture(String userId) async {
+    try {
+      // Alternative method to get player ID
+      final playerId = OneSignal.User.pushSubscription.id;
+      
+      if (playerId != null && playerId.isNotEmpty) {
+        await _supabase
+            .from('users')
+            .update({'onesignal_player_id': playerId})
+            .eq('id', userId);
+            
+        debugPrint('OneSignal Player ID captured on retry: $playerId');
+      } else {
+        debugPrint('OneSignal Player ID still not available after retry');
+      }
+    } catch (e) {
+      debugPrint('Error retrying OneSignal Player ID capture: $e');
     }
   }
 

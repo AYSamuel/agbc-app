@@ -438,13 +438,12 @@ $$;
 ALTER FUNCTION "public"."handle_new_user_signup"() OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "public"."schedule_meeting_notifications"("meeting_id" "uuid", "meeting_title" "text", "meeting_datetime" timestamp with time zone, "branch_id" "uuid" DEFAULT NULL::"uuid") RETURNS integer
+CREATE OR REPLACE FUNCTION "public"."schedule_meeting_notifications"("meeting_id" "uuid", "meeting_title" "text", "meeting_datetime" timestamp with time zone, "branch_id" "uuid" DEFAULT NULL::"uuid", "reminder_minutes" integer[] DEFAULT ARRAY[1440, 60, 15]) RETURNS integer
     LANGUAGE "plpgsql" SECURITY DEFINER
     AS $$
 DECLARE
     user_record RECORD;
     notification_count INTEGER := 0;
-    reminder_times INTEGER[] := ARRAY[1440, 60, 15]; -- 24 hours, 1 hour, 15 minutes before
     reminder_time INTEGER;
     scheduled_time TIMESTAMPTZ;
 BEGIN
@@ -456,8 +455,8 @@ BEGIN
           AND u.notification_settings->>'meeting_notifications' != 'false'
           AND (branch_id IS NULL OR u.branch_id = schedule_meeting_notifications.branch_id)
     LOOP
-        -- Create notifications for each reminder time
-        FOREACH reminder_time IN ARRAY reminder_times
+        -- Create notifications for each custom reminder time
+        FOREACH reminder_time IN ARRAY reminder_minutes
         LOOP
             scheduled_time := meeting_datetime - (reminder_time || ' minutes')::INTERVAL;
             
@@ -478,13 +477,13 @@ BEGIN
                     'meeting_reminder',
                     CASE 
                         WHEN reminder_time >= 1440 THEN 'Meeting Tomorrow'
-                        WHEN reminder_time >= 60 THEN 'Meeting in 1 Hour'
+                        WHEN reminder_time >= 60 THEN 'Meeting in ' || (reminder_time / 60) || ' Hour(s)'
                         ELSE 'Meeting Starting Soon'
                     END,
                     CASE 
-                        WHEN reminder_time >= 1440 THEN meeting_title || ' is scheduled for tomorrow'
-                        WHEN reminder_time >= 60 THEN meeting_title || ' starts in 1 hour'
-                        ELSE meeting_title || ' starts in 15 minutes'
+                        WHEN reminder_time >= 1440 THEN meeting_title || ' is scheduled for ' || (reminder_time / 1440) || ' day(s)'
+                        WHEN reminder_time >= 60 THEN meeting_title || ' starts in ' || (reminder_time / 60) || ' hour(s)'
+                        ELSE meeting_title || ' starts in ' || reminder_time || ' minutes'
                     END,
                     jsonb_build_object(
                         'meeting_id', meeting_id,

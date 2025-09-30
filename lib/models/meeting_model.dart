@@ -15,7 +15,8 @@ class MeetingModel {
   final String category;
 
   // Organizational details
-  final String organizer;
+  final String organizerId; // Changed from 'organizer' to match DB
+  final String organizerName; // Keep this for display purposes
   final String location;
   final bool isVirtual;
   final String? meetingLink;
@@ -40,7 +41,8 @@ class MeetingModel {
     DateTime? updatedAt,
     this.endTime,
     this.category = 'general',
-    required this.organizer,
+    required this.organizerId,
+    required this.organizerName,
     required this.location,
     this.isVirtual = false,
     this.meetingLink,
@@ -48,10 +50,10 @@ class MeetingModel {
     Map<String, dynamic>? attendees,
     this.status = MeetingStatus.scheduled,
     Map<String, dynamic>? metadata,
-  }) : createdAt = createdAt ?? DateTime.now(),
-       updatedAt = updatedAt ?? DateTime.now(),
-       attendees = attendees ?? {},
-       metadata = metadata ?? {};
+  })  : createdAt = createdAt ?? DateTime.now(),
+        updatedAt = updatedAt ?? DateTime.now(),
+        attendees = attendees ?? {},
+        metadata = metadata ?? {};
 
   /// Creates a MeetingModel instance from JSON data
   factory MeetingModel.fromJson(Map<String, dynamic> json) {
@@ -59,24 +61,26 @@ class MeetingModel {
       id: json['id'] ?? '',
       title: json['title'] ?? '',
       description: json['description'] ?? '',
-      dateTime: DateTime.parse(json['date_time']),
+      dateTime: DateTime.parse(json['start_time']),
+      type: json['type'] ?? 'local',
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'])
           : DateTime.now(),
       updatedAt: json['updated_at'] != null
           ? DateTime.parse(json['updated_at'])
           : DateTime.now(),
-      endTime:
-          json['end_time'] != null ? DateTime.parse(json['end_time']) : null,
-      type: json['type'] ?? 'local',
+      endTime: DateTime.parse(json['end_time']),
       branchId: json['branch_id'],
-      category: json['category'] ?? 'general',
-      organizer: json['organizer'] ?? '',
+      organizerId: json['organizer_id'] ?? '',
+      organizerName: json['organizer_name'] ?? '',
       location: json['location'] ?? '',
       isVirtual: json['is_virtual'] ?? false,
       meetingLink: json['meeting_link'],
-      expectedAttendance: json['expected_attendance'] ?? 0,
-      attendees: Map<String, dynamic>.from(json['attendees'] as Map? ?? {}),
+      expectedAttendance: json['max_attendees'] ?? 0,
+      attendees: {
+        'confirmed': List<String>.from(json['attendees'] ?? []),
+        'pending': <String>[]
+      }, // Convert array to map format for internal use
       status: MeetingStatus.values.firstWhere(
         (e) => e.toString().split('.').last == json['status'],
         orElse: () => MeetingStatus.scheduled,
@@ -87,26 +91,30 @@ class MeetingModel {
 
   /// Converts the MeetingModel instance to JSON format
   Map<String, dynamic> toJson() {
-    return {
-      'id': id,
+    final json = {
       'title': title,
       'description': description,
-      'date_time': dateTime.toIso8601String(),
+      'start_time': dateTime.toIso8601String(),
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
       'end_time': endTime?.toIso8601String(),
-      'type': type,
+      'organizer_id': organizerId,
       'branch_id': branchId,
-      'category': category,
-      'organizer': organizer,
       'location': location,
       'is_virtual': isVirtual,
       'meeting_link': meetingLink,
-      'expected_attendance': expectedAttendance,
-      'attendees': attendees,
+      'max_attendees': expectedAttendance,
+      'attendees': [], // Send as empty array for new meetings
       'status': status.toString().split('.').last,
       'metadata': metadata,
     };
+
+    // Only include ID if it's not empty (for updates)
+    if (id.isNotEmpty) {
+      json['id'] = id;
+    }
+
+    return json;
   }
 
   /// Determines if a meeting should be visible to a user based on their branch affiliation
@@ -124,12 +132,12 @@ class MeetingModel {
         status != MeetingStatus.cancelled;
   }
 
-  /// Gets list of attendee user IDs
+  /// Get list of confirmed attendee IDs
   List<String> get attendeeIds {
     return List<String>.from(attendees['confirmed'] ?? []);
   }
 
-  /// Gets list of pending attendee user IDs
+  /// Get list of pending attendee IDs
   List<String> get pendingAttendeeIds {
     return List<String>.from(attendees['pending'] ?? []);
   }
@@ -139,7 +147,7 @@ class MeetingModel {
     switch (status) {
       case MeetingStatus.scheduled:
         return '#2196F3'; // Blue
-      case MeetingStatus.ongoing:
+      case MeetingStatus.inprogress: // Updated from 'ongoing'
         return '#4CAF50'; // Green
       case MeetingStatus.completed:
         return '#9E9E9E'; // Gray
@@ -160,7 +168,8 @@ class MeetingModel {
     String? type,
     String? branchId,
     String? category,
-    String? organizer,
+    String? organizerId,
+    String? organizerName,
     String? location,
     bool? isVirtual,
     String? meetingLink,
@@ -180,7 +189,8 @@ class MeetingModel {
       type: type ?? this.type,
       branchId: branchId ?? this.branchId,
       category: category ?? this.category,
-      organizer: organizer ?? this.organizer,
+      organizerId: organizerId ?? this.organizerId,
+      organizerName: organizerName ?? this.organizerName,
       location: location ?? this.location,
       isVirtual: isVirtual ?? this.isVirtual,
       meetingLink: meetingLink ?? this.meetingLink,
@@ -205,7 +215,7 @@ class MeetingModel {
 /// Enum for meeting status matching the database schema
 enum MeetingStatus {
   scheduled,
-  ongoing,
+  inprogress, // Changed from 'ongoing' to match database
   completed,
   cancelled,
 }

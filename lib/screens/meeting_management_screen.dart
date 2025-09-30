@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../providers/supabase_provider.dart';
 import '../models/meeting_model.dart';
 import '../utils/theme.dart';
@@ -122,7 +123,8 @@ class MeetingManagementScreen extends StatelessWidget {
                                 children: [
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           meeting.title,
@@ -150,14 +152,15 @@ class MeetingManagementScreen extends StatelessWidget {
                                 ],
                               ),
                               const SizedBox(height: 16),
-                              _buildMeetingDetails(meeting),
+                              _buildMeetingDetails(context, meeting),
                               const SizedBox(height: 12),
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.end,
                                 children: [
                                   IconButton(
                                     icon: const Icon(Icons.edit),
-                                    onPressed: () => _showEditMeetingDialog(context, meeting),
+                                    onPressed: () => _showEditMeetingDialog(
+                                        context, meeting),
                                     color: AppTheme.primaryColor,
                                     tooltip: 'Edit Meeting',
                                   ),
@@ -196,7 +199,7 @@ class MeetingManagementScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildMeetingDetails(MeetingModel meeting) {
+  Widget _buildMeetingDetails(BuildContext context, MeetingModel meeting) {
     return Column(
       children: [
         _buildDetailRow(
@@ -218,10 +221,12 @@ class MeetingManagementScreen extends StatelessWidget {
         ),
         if (meeting.isVirtual && meeting.meetingLink != null) ...[
           const SizedBox(height: 8),
-          _buildDetailRow(
+          _buildClickableLinkRow(
+            context: context,
             icon: Icons.video_call,
             label: 'Meeting Link',
             value: meeting.meetingLink!,
+            url: meeting.meetingLink!,
           ),
         ],
       ],
@@ -263,6 +268,78 @@ class MeetingManagementScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildClickableLinkRow({
+    required BuildContext context,
+    required IconData icon,
+    required String label,
+    required String value,
+    required String url,
+  }) {
+    return Row(
+      children: [
+        Icon(
+          icon,
+          size: 16,
+          color: AppTheme.neutralColor,
+        ),
+        const SizedBox(width: 8),
+        Text(
+          '$label: ',
+          style: GoogleFonts.inter(
+            fontSize: 12,
+            color: AppTheme.neutralColor,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        Expanded(
+          child: InkWell(
+            onTap: () async {
+              try {
+                final uri = Uri.parse(url);
+                if (await canLaunchUrl(uri)) {
+                  await launchUrl(
+                    uri,
+                    mode: LaunchMode.externalApplication,
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        'Could not launch meeting link',
+                        style: GoogleFonts.inter(),
+                      ),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      'Error opening meeting link: ${e.toString()}',
+                      style: GoogleFonts.inter(),
+                    ),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            },
+            child: Text(
+              value,
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                color: Colors.blue,
+                decoration: TextDecoration.underline,
+                decorationColor: Colors.blue,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   void _showEditMeetingDialog(BuildContext context, MeetingModel meeting) {
     // TODO: Implement meeting edit dialog
     ScaffoldMessenger.of(context).showSnackBar(
@@ -280,7 +357,7 @@ class MeetingManagementScreen extends StatelessWidget {
     switch (status) {
       case MeetingStatus.scheduled:
         return 'SCHEDULED';
-      case MeetingStatus.ongoing:
+      case MeetingStatus.inprogress:
         return 'ONGOING';
       case MeetingStatus.completed:
         return 'COMPLETED';
@@ -293,7 +370,7 @@ class MeetingManagementScreen extends StatelessWidget {
     switch (status) {
       case MeetingStatus.scheduled:
         return Colors.blue;
-      case MeetingStatus.ongoing:
+      case MeetingStatus.inprogress:
         return Colors.green;
       case MeetingStatus.completed:
         return AppTheme.neutralColor;

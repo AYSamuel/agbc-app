@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:grace_portal/services/notification_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/user_model.dart';
 import '../models/task_model.dart';
@@ -12,6 +13,8 @@ class SupabaseProvider extends ChangeNotifier {
 
   bool _isLoading = false;
   String? _error;
+
+  SupabaseClient get supabase => _supabase;
 
   bool get isLoading => _isLoading;
   String? get error => _error;
@@ -174,16 +177,54 @@ class SupabaseProvider extends ChangeNotifier {
     return _supabase
         .from('meetings')
         .stream(primaryKey: ['id'])
-        .order('scheduled_date', ascending: false)
+        .order('start_time', ascending: false)
         .map(
             (data) => data.map((json) => MeetingModel.fromJson(json)).toList());
   }
 
   /// Create new meeting
-  Future<bool> createMeeting(MeetingModel meeting) async {
+  Future<bool> createMeetingWithNotifications(
+    MeetingModel meeting,
+    List<int> reminderMinutes, {
+    NotificationHelper? notificationHelper,
+  }) async {
     _setLoading(true);
     try {
-      await _supabase.from('meetings').insert(meeting.toJson());
+      // Create the meeting
+      final response = await _supabase
+          .from('meetings')
+          .insert(meeting.toJson())
+          .select()
+          .single();
+
+      final meetingId = response['id'];
+
+      // Use provided notification helper or create one if not provided
+      final helper = notificationHelper ?? NotificationHelper(
+        supabaseProvider: this,
+        notificationService: NotificationService(),
+      );
+      
+      // Send immediate notification to branch members
+      await helper.notifyMeetingCreated(
+        meetingId: meetingId,
+        meetingTitle: meeting.title,
+        meetingDateTime: meeting.dateTime,
+        branchId: meeting.branchId!,
+        organizerName: meeting.organizerId,
+      );
+
+      // Schedule reminder notifications
+      if (reminderMinutes.isNotEmpty) {
+        await helper.scheduleMeetingReminders(
+          meetingId: meetingId,
+          meetingTitle: meeting.title,
+          meetingDateTime: meeting.dateTime,
+          branchId: meeting.branchId!,
+          reminderMinutes: reminderMinutes,
+        );
+      }
+
       return true;
     } catch (e) {
       _setError('Failed to create meeting: $e');
@@ -193,7 +234,40 @@ class SupabaseProvider extends ChangeNotifier {
     }
   }
 
-  // ==================== NOTIFICATIONS ====================
+  /// Get users by branch ID
+  Future<List<UserModel>> getUsersByBranch(String branchId) async {
+    try {
+      final response =
+          await _supabase.from('users').select().eq('branch_id', branchId);
+
+      return response.map((json) => UserModel.fromJson(json)).toList();
+    } catch (e) {
+      debugPrint('Error getting users by branch: $e');
+      return [];
+    }
+  }
+
+  /// Schedule meeting notifications using database function
+  Future<void> scheduleMeetingNotifications({
+    required String meetingId,
+    required String meetingTitle,
+    required DateTime meetingDateTime,
+    required String branchId,
+    required List<int> reminderMinutes,
+  }) async {
+    try {
+      // Call the function with custom reminder times
+      await _supabase.rpc('schedule_meeting_notifications', params: {
+        'meeting_id': meetingId,
+        'meeting_title': meetingTitle,
+        'meeting_datetime': meetingDateTime.toIso8601String(),
+        'branch_id': branchId,
+        'reminder_minutes': reminderMinutes, // Pass the custom reminder times
+      });
+    } catch (e) {
+      debugPrint('Error scheduling meeting notifications: $e');
+    }
+  }
 
   /// Get unread notification count for current user
   Future<int> getUnreadNotificationCount() async {
@@ -282,10 +356,7 @@ class SupabaseProvider extends ChangeNotifier {
       final userId = _supabase.auth.currentUser?.id;
       if (userId == null) return false;
 
-      await _supabase
-          .from('notifications')
-          .delete()
-          .eq('user_id', userId);
+      await _supabase.from('notifications').delete().eq('user_id', userId);
       return true;
     } catch (e) {
       _setError('Failed to clear all notifications: $e');
@@ -308,9 +379,12 @@ class SupabaseProvider extends ChangeNotifier {
         'title': title,
         'message': message,
         'type': type,
-        'related_id': relatedId,
+        'related_entity_id': relatedId,  // Changed from 'related_id'
+        'related_entity_type': 'meeting', // Add the entity type
         'data': data,
         'is_read': false,
+        'delivery_status': 'pending',
+        'is_push_sent': false,
         'created_at': DateTime.now().toIso8601String(),
         'updated_at': DateTime.now().toIso8601String(),
       });
@@ -338,6 +412,8 @@ class SupabaseProvider extends ChangeNotifier {
                 'type': type,
                 'data': data,
                 'is_read': false,
+                'delivery_status': 'pending',
+                'is_push_sent': false,
                 'created_at': DateTime.now().toIso8601String(),
                 'updated_at': DateTime.now().toIso8601String(),
               })
@@ -374,7 +450,7 @@ class SupabaseProvider extends ChangeNotifier {
   void _setError(String error) {
     _error = error;
     if (kDebugMode) {
-      print('SupabaseProvider Error: $error');
+      debugPrint('SupabaseProvider Error: $error');
     }
     notifyListeners();
   }
@@ -537,4 +613,11 @@ class SupabaseProvider extends ChangeNotifier {
       rethrow;
     }
   }
+
+  /// Get current authenticated user
+  User? get currentUser => _supabase.auth.currentUser;
+
+  /// Get current user's full name
+  String get currentUserName =>
+      currentUser?.userMetadata?['full_name'] ?? 'Unknown';
 }

@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../providers/navigation_provider.dart';
+import '../providers/notification_provider.dart';
 import '../widgets/bottom_nav_bar.dart';
+import '../widgets/app_nav_bar.dart';
+import '../widgets/notification_panel.dart';
 import 'home_screen.dart';
 import 'meetings_screen.dart';
 import 'pray_screen.dart';
@@ -13,8 +16,47 @@ import 'settings_screen.dart';
 import 'help_support_screen.dart';
 import 'about_screen.dart';
 
-class MainNavigationScreen extends StatelessWidget {
+class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
+
+  @override
+  State<MainNavigationScreen> createState() => _MainNavigationScreenState();
+}
+
+class _MainNavigationScreenState extends State<MainNavigationScreen> {
+  OverlayEntry? _overlayEntry;
+
+  @override
+  void dispose() {
+    _removeOverlay();
+    super.dispose();
+  }
+
+  void _showNotificationPanel() {
+    if (_overlayEntry != null) return;
+
+    // Mark notifications as seen (Facebook-style behavior)
+    final notificationProvider =
+        Provider.of<NotificationProvider>(context, listen: false);
+    notificationProvider.markAsSeen();
+
+    _overlayEntry = OverlayEntry(
+      builder: (context) => Positioned(
+        top: 100, // Position below the nav bar
+        right: 16,
+        child: NotificationPanel(
+          onClose: _removeOverlay,
+        ),
+      ),
+    );
+
+    Overlay.of(context).insert(_overlayEntry!);
+  }
+
+  void _removeOverlay() {
+    _overlayEntry?.remove();
+    _overlayEntry = null;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -34,18 +76,34 @@ class MainNavigationScreen extends StatelessWidget {
         builder: (context, navigationProvider, _) {
           return Scaffold(
             body: SafeArea(
-              child: IndexedStack(
-                index: navigationProvider.currentIndex,
+              child: Column(
                 children: [
-                  const HomeScreen(),
-                  const MeetingsScreen(),
-                  const PrayScreen(),
-                  const ReadScreen(),
-                  const ProfileScreen(),
-                  const AdminCenterScreen(),
-                  const SettingsScreen(),
-                  const HelpSupportScreen(),
-                  const AboutScreen(),
+                  // Persistent Navigation Bar with Notification Bell
+                  Consumer<NotificationProvider>(
+                    builder: (context, notificationProvider, child) {
+                      return AppNavBar(
+                        onNotificationTap: _showNotificationPanel,
+                        notificationCount: notificationProvider.unreadCount,
+                      );
+                    },
+                  ),
+                  // Main Content Area
+                  Expanded(
+                    child: IndexedStack(
+                      index: navigationProvider.currentIndex,
+                      children: [
+                        const HomeScreen(),
+                        const MeetingsScreen(),
+                        const PrayScreen(),
+                        const ReadScreen(),
+                        const ProfileScreen(),
+                        const AdminCenterScreen(),
+                        const SettingsScreen(),
+                        const HelpSupportScreen(),
+                        const AboutScreen(),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),

@@ -1,23 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:grace_portal/models/meeting_model.dart';
 import 'package:grace_portal/models/user_model.dart';
+import 'package:grace_portal/screens/meeting_creation_screen.dart';
 import 'package:grace_portal/utils/theme.dart';
+import 'package:grace_portal/widgets/meeting_card.dart';
 import 'package:grace_portal/widgets/task_status_card.dart';
 import 'package:grace_portal/widgets/daily_verse_card.dart';
 import 'package:grace_portal/widgets/quick_action_card.dart';
 import 'package:grace_portal/widgets/radial_menu.dart';
-import 'package:grace_portal/widgets/app_nav_bar.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 import '../providers/supabase_provider.dart';
 import '../models/task_model.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../providers/notification_provider.dart';
-import '../widgets/notification_panel.dart';
 
 import 'add_branch_screen.dart';
 import 'add_task_screen.dart';
-import 'meetings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -27,7 +27,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  OverlayEntry? _overlayEntry;
+  // Remove the _overlayEntry and notification-related methods since they're now in MainNavigationScreen
 
   @override
   void initState() {
@@ -44,7 +44,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void dispose() {
-    _removeOverlay();
     // Reset status bar to default when leaving the screen
     SystemChrome.setSystemUIOverlayStyle(
       const SystemUiOverlayStyle(
@@ -100,32 +99,6 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  void _showNotificationPanel() {
-    if (_overlayEntry != null) return;
-
-    // Mark notifications as seen (Facebook-style behavior)
-    final notificationProvider =
-        Provider.of<NotificationProvider>(context, listen: false);
-    notificationProvider.markAsSeen();
-
-    _overlayEntry = OverlayEntry(
-      builder: (context) => Positioned(
-        top: 100, // Position below the nav bar
-        right: 16,
-        child: NotificationPanel(
-          onClose: _removeOverlay,
-        ),
-      ),
-    );
-
-    Overlay.of(context).insert(_overlayEntry!);
-  }
-
-  void _removeOverlay() {
-    _overlayEntry?.remove();
-    _overlayEntry = null;
-  }
-
   @override
   Widget build(BuildContext context) {
     final authService = Provider.of<AuthService>(context, listen: true);
@@ -133,252 +106,283 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Navigation Bar
-            Consumer<NotificationProvider>(
-              builder: (context, notificationProvider, child) {
-                return AppNavBar(
-                  onNotificationTap: _showNotificationPanel,
-                  notificationCount: notificationProvider.unreadCount,
-                );
-              },
-            ),
-            // Main Content
-            Expanded(
-              child: RefreshIndicator(
-                onRefresh: _onRefresh,
-                color: AppTheme.primaryColor,
-                backgroundColor: Colors.white,
-                strokeWidth: 2.5,
-                displacement: 40.0,
-                child: SingleChildScrollView(
-                  physics:
-                      const AlwaysScrollableScrollPhysics(), // Ensures pull-to-refresh works even when content doesn't fill screen
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Welcome Section
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 20.0),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Welcome back,',
-                                    style: GoogleFonts.inter(
-                                      fontSize: 16,
-                                      color: Colors.grey[600],
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    userProfile?.displayName ?? 'User',
-                                    style: GoogleFonts.inter(
-                                      fontSize: 24,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.grey[800],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              Container(
-                                width: 48,
-                                height: 48,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: AppTheme.primaryColor,
-                                    width: 2,
-                                  ),
-                                  image: (userProfile != null &&
-                                          userProfile.photoUrl != null &&
-                                          userProfile.photoUrl!.isNotEmpty)
-                                      ? DecorationImage(
-                                          image: NetworkImage(
-                                              userProfile.photoUrl!),
-                                          fit: BoxFit.cover,
-                                        )
-                                      : null,
-                                ),
-                                child: (userProfile == null ||
-                                        userProfile.photoUrl == null ||
-                                        userProfile.photoUrl!.isEmpty)
-                                    ? Icon(Icons.person,
-                                        size: 32, color: AppTheme.primaryColor)
-                                    : null,
-                              ),
-                            ],
+      body: RefreshIndicator(
+        onRefresh: _onRefresh,
+        color: AppTheme.primaryColor,
+        backgroundColor: Colors.white,
+        strokeWidth: 2.5,
+        displacement: 40.0,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Welcome Section
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 20.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Welcome back,',
+                            style: GoogleFonts.inter(
+                              fontSize: 16,
+                              color: Colors.grey[600],
+                            ),
                           ),
-                        ),
-
-                        // Daily Verse Card
-                        const DailyVerseCard(
-                          verse:
-                              '"For I know the plans I have for you," declares the LORD, "plans to prosper you and not to harm you, plans to give you hope and a future."',
-                          reference: 'Jeremiah 29:11',
-                        ),
-
-                        const SizedBox(height: 14),
-
-                        // Task Status Card
-                        StreamBuilder<List<TaskModel>>(
-                          stream: Provider.of<SupabaseProvider>(context)
-                              .getUserTasks(userProfile?.id ?? ''),
-                          builder: (context, snapshot) {
-                            if (snapshot.hasError || !snapshot.hasData) {
-                              return const SizedBox.shrink();
-                            }
-
-                            final tasks = snapshot.data!;
-                            final hasTasks = tasks.isNotEmpty;
-
-                            // Hide card for members without tasks
-                            if (userProfile?.role == UserRole.member &&
-                                !hasTasks) {
-                              return const SizedBox.shrink();
-                            }
-
-                            return TaskStatusCard(tasks: tasks);
-                          },
-                        ),
-
-                        const SizedBox(height: 24),
-
-                        // Quick Actions
-                        Text(
-                          'Quick Actions',
-                          style: GoogleFonts.inter(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.grey[800],
+                          const SizedBox(height: 4),
+                          Text(
+                            userProfile?.displayName ?? 'User',
+                            style: GoogleFonts.inter(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey[800],
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 12),
-                        GridView.count(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          crossAxisCount: 3,
-                          mainAxisSpacing: 12,
-                          crossAxisSpacing: 12,
-                          children: [
-                            QuickActionCard(
-                              icon: Icons.calendar_today_rounded,
-                              label: 'Sunday Service',
-                            ),
-                            QuickActionCard(
-                              icon: Icons.favorite_rounded,
-                              label: 'Prayer Requests',
-                            ),
-                            QuickActionCard(
-                              icon: Icons.book_rounded,
-                              label: 'Bible Study',
-                            ),
-                            QuickActionCard(
-                              icon: Icons.volunteer_activism_rounded,
-                              label: 'Donate',
-                            ),
-                            QuickActionCard(
-                              icon: Icons.people_rounded,
-                              label: 'Community',
-                            ),
-                            QuickActionCard(
-                              icon: Icons.more_horiz_rounded,
-                              label: 'More',
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(height: 24),
-
-                        // Church News
-                        Text(
-                          'Church News',
-                          style: GoogleFonts.inter(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.grey[800],
+                        ],
+                      ),
+                      Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: AppTheme.primaryColor,
+                            width: 2,
                           ),
+                          image: (userProfile != null &&
+                                  userProfile.photoUrl != null &&
+                                  userProfile.photoUrl!.isNotEmpty)
+                              ? DecorationImage(
+                                  image: NetworkImage(userProfile.photoUrl!),
+                                  fit: BoxFit.cover,
+                                )
+                              : null,
                         ),
-                        const SizedBox(height: 12),
-                        _buildNewsCard(
-                          'Choir Rehearsal Schedule Update',
-                          'The choir rehearsal has been rescheduled to Thursday evenings at 6:30 PM starting next week.',
-                          'May 11, 2025',
-                        ),
-                        const SizedBox(height: 12),
-                        _buildNewsCard(
-                          'Food Drive Success',
-                          'Thanks to your generosity, we collected over 500 items for the local food bank last weekend!',
-                          'May 10, 2025',
-                        ),
-
-                        const SizedBox(height: 24),
-
-                        // Upcoming Events
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Upcoming Events',
-                              style: GoogleFonts.inter(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.grey[800],
-                              ),
-                            ),
-                            TextButton(
-                              onPressed: () {},
-                              child: Text(
-                                'View all',
-                                style: GoogleFonts.inter(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppTheme.primaryColor,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        SizedBox(
-                          height: 180,
-                          child: ListView(
-                            scrollDirection: Axis.horizontal,
-                            children: [
-                              _buildEventCard(
-                                'May 12',
-                                'Sunday, 10:00 AM',
-                                'Sunday Worship Service',
-                                'Join us for praise, worship and an inspiring message from Pastor David.',
-                                'Main Sanctuary',
-                              ),
-                              _buildEventCard(
-                                'May 15',
-                                'Wednesday, 7:00 PM',
-                                'Midweek Bible Study',
-                                'Dive deeper into God\'s word with our interactive Bible study session.',
-                                'Fellowship Hall',
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        const SizedBox(
-                            height: 90), // Bottom padding for the nav bar
-                      ],
-                    ),
+                        child: (userProfile == null ||
+                                userProfile.photoUrl == null ||
+                                userProfile.photoUrl!.isEmpty)
+                            ? Icon(Icons.person,
+                                size: 32, color: AppTheme.primaryColor)
+                            : null,
+                      ),
+                    ],
                   ),
                 ),
-              ),
-            )
-          ],
+
+                // Daily Verse Card
+                const DailyVerseCard(
+                  verse:
+                      '"For I know the plans I have for you," declares the LORD, "plans to prosper you and not to harm you, plans to give you hope and a future."',
+                  reference: 'Jeremiah 29:11',
+                ),
+
+                const SizedBox(height: 14),
+
+                // Task Status Card
+                StreamBuilder<List<TaskModel>>(
+                  stream: Provider.of<SupabaseProvider>(context)
+                      .getUserTasks(userProfile?.id ?? ''),
+                  builder: (context, snapshot) {
+                    if (snapshot.hasError || !snapshot.hasData) {
+                      return const SizedBox.shrink();
+                    }
+
+                    final tasks = snapshot.data!;
+                    final hasTasks = tasks.isNotEmpty;
+
+                    // Hide card for members without tasks
+                    if (userProfile?.role == UserRole.member && !hasTasks) {
+                      return const SizedBox.shrink();
+                    }
+
+                    return TaskStatusCard(tasks: tasks);
+                  },
+                ),
+
+                const SizedBox(height: 24),
+
+                // Quick Actions
+                Text(
+                  'Quick Actions',
+                  style: GoogleFonts.inter(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[800],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                GridView.count(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisCount: 3,
+                  mainAxisSpacing: 12,
+                  crossAxisSpacing: 12,
+                  children: [
+                    QuickActionCard(
+                      icon: Icons.calendar_today_rounded,
+                      label: 'Sunday Service',
+                    ),
+                    QuickActionCard(
+                      icon: Icons.favorite_rounded,
+                      label: 'Prayer Requests',
+                    ),
+                    QuickActionCard(
+                      icon: Icons.book_rounded,
+                      label: 'Bible Study',
+                    ),
+                    QuickActionCard(
+                      icon: Icons.volunteer_activism_rounded,
+                      label: 'Donate',
+                    ),
+                    QuickActionCard(
+                      icon: Icons.people_rounded,
+                      label: 'Community',
+                    ),
+                    QuickActionCard(
+                      icon: Icons.more_horiz_rounded,
+                      label: 'More',
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 24),
+
+                // Church News
+                Text(
+                  'Church News',
+                  style: GoogleFonts.inter(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[800],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                _buildNewsCard(
+                  'Choir Rehearsal Schedule Update',
+                  'The choir rehearsal has been rescheduled to Thursday evenings at 6:30 PM starting next week.',
+                  'May 11, 2025',
+                ),
+                const SizedBox(height: 12),
+                _buildNewsCard(
+                  'Food Drive Success',
+                  'Thanks to your generosity, we collected over 500 items for the local food bank last weekend!',
+                  'May 10, 2025',
+                ),
+
+                const SizedBox(height: 24),
+
+                // Upcoming Events
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Upcoming Events',
+                      style: GoogleFonts.inter(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey[800],
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        // Navigate to meetings screen
+                        Navigator.pushNamed(context, '/meetings');
+                      },
+                      child: Text(
+                        'View all',
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.primaryColor,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                StreamBuilder<List<MeetingModel>>(
+                  stream:
+                      Provider.of<SupabaseProvider>(context).getAllMeetings(),
+                  builder: (context, snapshot) {
+                    if (snapshot.hasError || !snapshot.hasData) {
+                      return SizedBox(
+                        height: 180,
+                        child: ListView(
+                          scrollDirection: Axis.horizontal,
+                          children: [
+                            _buildEventCard(
+                              'May 12',
+                              'Sunday, 10:00 AM',
+                              'Sunday Worship Service',
+                              'Join us for praise, worship and an inspiring message from Pastor David.',
+                              'Main Sanctuary',
+                            ),
+                            _buildEventCard(
+                              'May 15',
+                              'Wednesday, 7:00 PM',
+                              'Midweek Bible Study',
+                              'Dive deeper into God\'s word with our interactive Bible study session.',
+                              'Fellowship Hall',
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+
+                    final meetings = snapshot.data!;
+                    final upcomingMeetings = meetings
+                        .where((meeting) =>
+                            meeting.dateTime.isAfter(DateTime.now()) &&
+                            meeting.status == MeetingStatus.scheduled)
+                        .take(5)
+                        .toList();
+
+                    if (upcomingMeetings.isEmpty) {
+                      return SizedBox(
+                        height: 180,
+                        child: Center(
+                          child: Text(
+                            'No upcoming meetings',
+                            style: GoogleFonts.inter(
+                              fontSize: 14,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ),
+                      );
+                    }
+
+                    return SizedBox(
+                      height: 180,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: upcomingMeetings.length,
+                        itemBuilder: (context, index) {
+                          final meeting = upcomingMeetings[index];
+                          return MeetingCard(
+                            meeting: meeting,
+                            showStatus: false,
+                            onTap: () {
+                              // Navigate to meeting details or meetings screen
+                              Navigator.pushNamed(context, '/meetings');
+                            },
+                          );
+                        },
+                      ),
+                    );
+                  },
+                ),
+
+                const SizedBox(height: 90), // Bottom padding for the nav bar
+              ],
+            ),
+          ),
         ),
       ),
       floatingActionButton: userProfile?.role == UserRole.member
@@ -422,7 +426,9 @@ class _HomeScreenState extends State<HomeScreen> {
   void _showMeetingCreationDialog(BuildContext context) {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => const MeetingsScreen()),
+      MaterialPageRoute(
+        builder: (context) => const MeetingCreationScreen(),
+      ),
     );
   }
 
@@ -449,7 +455,7 @@ class _HomeScreenState extends State<HomeScreen> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -466,7 +472,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   vertical: 4,
                 ),
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                  color: AppTheme.primaryColor.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
@@ -538,7 +544,7 @@ class _HomeScreenState extends State<HomeScreen> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -550,7 +556,7 @@ class _HomeScreenState extends State<HomeScreen> {
             width: 64,
             height: 64,
             decoration: BoxDecoration(
-              color: AppTheme.primaryColor.withValues(alpha: 0.1),
+              color: AppTheme.primaryColor.withOpacity(0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(

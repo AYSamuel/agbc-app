@@ -1,48 +1,129 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../models/meeting_model.dart';
+import '../widgets/meeting_card.dart';
 import '../utils/theme.dart';
+import '../providers/supabase_provider.dart';
 
-class MeetingsScreen extends StatelessWidget {
+class MeetingsScreen extends StatefulWidget {
   const MeetingsScreen({super.key});
+
+  @override
+  State<MeetingsScreen> createState() => _MeetingsScreenState();
+}
+
+class _MeetingsScreenState extends State<MeetingsScreen> {
+  final SupabaseProvider _supabaseProvider = SupabaseProvider();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.calendar_today_rounded,
-                      size: 64,
-                      color: AppTheme.primaryColor.withValues(alpha: 0.5),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Meetings Coming Soon',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.primaryColor,
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 20),
+              Expanded(
+                child: StreamBuilder<List<MeetingModel>>(
+                  stream: _supabaseProvider.getAllMeetings(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(
+                        child: CircularProgressIndicator(),
+                      );
+                    }
+
+                    if (snapshot.hasError) {
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.error_outline,
+                              size: 64,
+                              color: Colors.red[300],
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Error loading meetings',
+                              style: GoogleFonts.poppins(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w500,
+                                color: AppTheme.neutralColor,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Please try again later',
+                              style: GoogleFonts.poppins(
+                                fontSize: 14,
+                                color: Colors.red[300],
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+
+                    final meetings = snapshot.data ?? [];
+
+                    if (meetings.isEmpty) {
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.event_note,
+                              size: 64,
+                              color: AppTheme.neutralColor.withOpacity(0.5),
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'No meetings scheduled',
+                              style: GoogleFonts.poppins(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w500,
+                                color: AppTheme.neutralColor,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Meetings will appear here when they are created',
+                              style: GoogleFonts.poppins(
+                                fontSize: 14,
+                                color: AppTheme.neutralColor.withOpacity(0.7),
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+
+                    return RefreshIndicator(
+                      onRefresh: () async {
+                        setState(() {});
+                      },
+                      child: ListView.builder(
+                        padding: const EdgeInsets.all(8.0),
+                        itemCount: meetings.length,
+                        itemBuilder: (context, index) {
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 16.0),
+                            child: MeetingCard(meeting: meetings[index]),
+                          );
+                        },
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Stay tuned for upcoming meetings and events',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                  ],
+                    );
+                  },
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

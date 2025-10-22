@@ -253,30 +253,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
                 const SizedBox(height: 24),
 
-                // Church News
-                Text(
-                  'Church News',
-                  style: GoogleFonts.inter(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.grey[800],
-                  ),
-                ),
-                const SizedBox(height: 12),
-                _buildNewsCard(
-                  'Choir Rehearsal Schedule Update',
-                  'The choir rehearsal has been rescheduled to Thursday evenings at 6:30 PM starting next week.',
-                  'May 11, 2025',
-                ),
-                const SizedBox(height: 12),
-                _buildNewsCard(
-                  'Food Drive Success',
-                  'Thanks to your generosity, we collected over 500 items for the local food bank last weekend!',
-                  'May 10, 2025',
-                ),
-
-                const SizedBox(height: 24),
-
                 // Upcoming Events
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -289,20 +265,23 @@ class _HomeScreenState extends State<HomeScreen> {
                         color: Colors.grey[800],
                       ),
                     ),
-                    TextButton(
-                      onPressed: () {
-                        // Navigate to meetings screen
-                        Navigator.pushNamed(context, '/meetings');
-                      },
-                      child: Text(
-                        'View all',
-                        style: GoogleFonts.inter(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: AppTheme.primaryColor,
+                    // Only show "View all" button for admins and pastors
+                    if (userProfile?.role == UserRole.admin || 
+                        userProfile?.role == UserRole.pastor)
+                      TextButton(
+                        onPressed: () {
+                          // Navigate to meetings screen
+                          Navigator.pushNamed(context, '/meetings');
+                        },
+                        child: Text(
+                          'View all',
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.primaryColor,
+                          ),
                         ),
                       ),
-                    ),
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -536,71 +515,5 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildNewsCard(String title, String description, String date) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 64,
-            height: 64,
-            decoration: BoxDecoration(
-              color: AppTheme.primaryColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(
-              Icons.newspaper_rounded,
-              color: AppTheme.primaryColor,
-              size: 32,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.grey[800],
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  description,
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  date,
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    color: Colors.grey[400],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+
 }

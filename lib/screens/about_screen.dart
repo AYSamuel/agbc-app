@@ -22,7 +22,7 @@ class AboutScreen extends StatelessWidget {
                       color: AppTheme.primaryColor.withValues(alpha: 0.5),
                     ),
                     const SizedBox(height: 16),
-                    Text(
+                    const Text(
                       'About Coming Soon',
                       style: TextStyle(
                         fontSize: 20,

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import '../utils/theme.dart';
 
-class SettingsScreen extends StatelessWidget {
-  const SettingsScreen({super.key});
+class SermonScreen extends StatelessWidget {
+  const SermonScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -17,13 +17,13 @@ class SettingsScreen extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(
-                      Icons.settings_rounded,
+                      Icons.play_circle_outline,
                       size: 64,
                       color: AppTheme.primaryColor.withValues(alpha: 0.5),
                     ),
                     const SizedBox(height: 16),
                     const Text(
-                      'Settings Coming Soon',
+                      'Sermons Coming Soon',
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
@@ -32,7 +32,7 @@ class SettingsScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Customize your app preferences and account settings',
+                      'Stay tuned for inspiring sermons and messages',
                       style: TextStyle(
                         fontSize: 16,
                         color: Colors.grey[600],

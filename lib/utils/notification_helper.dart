@@ -195,7 +195,7 @@ class NotificationHelper {
     }
   }
 
-  /// Notify branch members about a new meeting
+  /// Notify branch members about a new meeting (immediate notification)
   Future<void> notifyMeetingCreated({
     required String meetingId,
     required String meetingTitle,
@@ -246,6 +246,74 @@ class NotificationHelper {
     }
   }
 
+  /// Schedule initial notification for a meeting at a specific date/time
+  Future<void> scheduleInitialMeetingNotification({
+    required String meetingId,
+    required String meetingTitle,
+    required DateTime meetingDateTime,
+    required String branchId,
+    required String organizerName,
+    required DateTime scheduledDateTime,
+  }) async {
+    try {
+      // Get all users in the branch
+      final branchUsers = await _supabaseProvider.getUsersByBranch(branchId);
+
+      if (branchUsers.isNotEmpty) {
+        // Only schedule if the scheduled time is in the future
+        if (scheduledDateTime.isAfter(DateTime.now())) {
+          // Use the proper title format for initial notification
+          final title = formatMeetingNotificationTitle(1440); // Initial notification
+
+          // Schedule individual personalized notifications to each user
+          for (final user in branchUsers) {
+            final userName = user.fullName; // Simplified - no null check needed
+
+            // Create a personalized message for each user
+            final message = formatMeetingNotificationMessage(
+              userName: userName,
+              meetingTitle: meetingTitle,
+              meetingDateTime: meetingDateTime,
+              reminderMinutes: 1440, // Initial notification (1 day)
+              isInitialNotification: true,
+            );
+
+            // Schedule notification via OneSignal
+            await _notificationService.scheduleNotification(
+              userIds: [user.id], // Send to individual user
+              title: title,
+              message: message,
+              scheduledDate: scheduledDateTime,
+              data: {
+                'type': 'meeting',
+                'meeting_id': meetingId,
+                'screen': 'meeting_details',
+                'is_initial_notification': true,
+              },
+            );
+
+            // Create notification record for tracking
+            await _supabaseProvider.createNotificationRecord(
+              userId: user.id,
+              title: title,
+              message: message,
+              type: 'meeting_initial',
+              relatedId: meetingId,
+            );
+          }
+
+          debugPrint(
+              'Successfully scheduled initial meeting notifications for ${branchUsers.length} users at $scheduledDateTime');
+        } else {
+          debugPrint(
+              'Skipping initial notification scheduling - scheduled time is in the past');
+        }
+      }
+    } catch (e) {
+      debugPrint('Error scheduling initial meeting notification: $e');
+    }
+  }
+
   /// Schedule meeting reminder notifications using OneSignal's native scheduling
   Future<void> scheduleMeetingReminders({
     required String meetingId,
@@ -262,6 +330,7 @@ class NotificationHelper {
       for (final reminderMinute in reminderMinutes) {
         await _scheduleNotificationViaOneSignal(
           supabaseProvider: _supabaseProvider,
+          notificationService: _notificationService,
           meetingId: meetingId,
           meetingTitle: meetingTitle,
           meetingDateTime: meetingDateTime,
@@ -277,6 +346,7 @@ class NotificationHelper {
   /// Schedule a single notification via OneSignal
   static Future<void> _scheduleNotificationViaOneSignal({
     required SupabaseProvider supabaseProvider,
+    required NotificationService notificationService,
     required String meetingId,
     required String meetingTitle,
     required DateTime meetingDateTime,

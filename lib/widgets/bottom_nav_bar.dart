@@ -59,8 +59,8 @@ class BottomNavBar extends StatelessWidget {
               children: [
                 _buildNavItem(context, NavigationProvider.homeIndex,
                     Icons.home_rounded, 'Home'),
-                _buildNavItem(context, NavigationProvider.meetingsIndex,
-                    Icons.calendar_today_rounded, 'Meetings'),
+                _buildNavItem(context, NavigationProvider.sermonIndex,
+                    Icons.play_circle_outline, 'Sermon'),
                 const SizedBox(width: 48), // Space for the Pray button
                 _buildNavItem(context, NavigationProvider.readIndex,
                     Icons.menu_book_rounded, 'Read'),

@@ -75,7 +75,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                     );
                   }
                   if (!snapshot.hasData) {
-                    return Center(
+                    return const Center(
                       child: CircularProgressIndicator(
                         color: AppTheme.primaryColor,
                       ),
@@ -99,7 +99,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(
+                          const Icon(
                             Icons.group_off,
                             size: 64,
                             color: AppTheme.primaryColor,

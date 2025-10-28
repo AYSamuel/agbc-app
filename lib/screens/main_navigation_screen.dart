@@ -7,7 +7,7 @@ import '../widgets/bottom_nav_bar.dart';
 import '../widgets/app_nav_bar.dart';
 import '../widgets/notification_panel.dart';
 import 'home_screen.dart';
-import 'meetings_screen.dart';
+import 'sermon_screen.dart';
 import 'pray_screen.dart';
 import 'read_screen.dart';
 import 'profile_screen.dart';
@@ -91,16 +91,16 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                   Expanded(
                     child: IndexedStack(
                       index: navigationProvider.currentIndex,
-                      children: [
-                        const HomeScreen(),
-                        const MeetingsScreen(),
-                        const PrayScreen(),
-                        const ReadScreen(),
-                        const ProfileScreen(),
-                        const AdminCenterScreen(),
-                        const SettingsScreen(),
-                        const HelpSupportScreen(),
-                        const AboutScreen(),
+                      children: const [
+                        HomeScreen(),
+                        SermonScreen(),
+                        PrayScreen(),
+                        ReadScreen(),
+                        ProfileScreen(),
+                        AdminCenterScreen(),
+                        SettingsScreen(),
+                        HelpSupportScreen(),
+                        AboutScreen(),
                       ],
                     ),
                   ),

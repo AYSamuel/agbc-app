@@ -59,12 +59,12 @@ class _LocationFieldState extends State<LocationField>
   void dispose() {
     // Cancel any pending timer first
     _debounceTimer?.cancel();
-    
+
     // Dispose controllers and focus nodes
     _cityController.dispose();
     _countryController.dispose();
     _countryFocusNode.dispose();
-    
+
     super.dispose();
   }
 
@@ -198,7 +198,9 @@ class _LocationFieldState extends State<LocationField>
                 final city = _cityController.text.trim();
                 final country = _countryController.text.trim();
 
-                if (city.isNotEmpty && country.isNotEmpty && widget.enableGeocoding) {
+                if (city.isNotEmpty &&
+                    country.isNotEmpty &&
+                    widget.enableGeocoding) {
                   // Cancel any pending debounced validation
                   _debounceTimer?.cancel();
                   // Trigger immediate validation
@@ -210,15 +212,17 @@ class _LocationFieldState extends State<LocationField>
             return CustomInput(
               label: 'City',
               controller: controller,
-              focusNode: focusNode, // Use the autocomplete's provided focus node
+              focusNode:
+                  focusNode, // Use the autocomplete's provided focus node
               hint: 'Enter your city',
-              prefixIcon: Icon(Icons.location_city, color: AppTheme.primaryColor),
+              prefixIcon:
+                  const Icon(Icons.location_city, color: AppTheme.primaryColor),
               textInputAction: TextInputAction.next,
               onChanged: (value) {
                 _cityController.text = value;
                 _onCityChanged();
               },
-              validator: widget.validator != null 
+              validator: widget.validator != null
                   ? (String? value) {
                       // Convert the string value to a map for the LocationField validator
                       final locationMap = {
@@ -252,7 +256,7 @@ class _LocationFieldState extends State<LocationField>
                       final option = options.elementAt(index);
                       return ListTile(
                         dense: true,
-                        leading: Icon(
+                        leading: const Icon(
                           Icons.location_city,
                           size: 16,
                           color: AppTheme.primaryColor,
@@ -276,7 +280,8 @@ class _LocationFieldState extends State<LocationField>
                             : null,
                         onTap: () => onSelected(option),
                         hoverColor: Colors.grey.shade100,
-                        splashColor: AppTheme.primaryColor.withValues(alpha: 0.1),
+                        splashColor:
+                            AppTheme.primaryColor.withValues(alpha: 0.1),
                       );
                     },
                   ),
@@ -317,9 +322,11 @@ class _LocationFieldState extends State<LocationField>
             return CustomInput(
               label: 'Country',
               controller: controller,
-              focusNode: _countryFocusNode, // Use our own focus node instead of the provided one
+              focusNode:
+                  _countryFocusNode, // Use our own focus node instead of the provided one
               hint: 'Enter your country',
-              prefixIcon: Icon(Icons.public, color: AppTheme.primaryColor),
+              prefixIcon:
+                  const Icon(Icons.public, color: AppTheme.primaryColor),
               textInputAction: TextInputAction.done,
               onChanged: (value) {
                 _countryController.text = value;
@@ -354,7 +361,7 @@ class _LocationFieldState extends State<LocationField>
                       final option = options.elementAt(index);
                       return ListTile(
                         dense: true,
-                        leading: Icon(
+                        leading: const Icon(
                           Icons.public,
                           size: 16,
                           color: AppTheme.primaryColor,
@@ -369,7 +376,8 @@ class _LocationFieldState extends State<LocationField>
                         ),
                         onTap: () => onSelected(option),
                         hoverColor: Colors.grey.shade100,
-                        splashColor: AppTheme.primaryColor.withValues(alpha: 0.1),
+                        splashColor:
+                            AppTheme.primaryColor.withValues(alpha: 0.1),
                       );
                     },
                   ),
@@ -382,14 +390,14 @@ class _LocationFieldState extends State<LocationField>
         // Validation Status
         if (_isValidating) ...[
           const SizedBox(height: 8),
-          Row(
+          const Row(
             children: [
-              const SizedBox(
+              SizedBox(
                 width: 12,
                 height: 12,
                 child: CircularProgressIndicator(strokeWidth: 2),
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: 8),
               Text(
                 'Validating location...',
                 style: TextStyle(
@@ -407,7 +415,7 @@ class _LocationFieldState extends State<LocationField>
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(
+              const Icon(
                 Icons.error_outline,
                 color: AppTheme.errorColor,
                 size: 16,
@@ -416,7 +424,7 @@ class _LocationFieldState extends State<LocationField>
               Expanded(
                 child: Text(
                   _errorMessage!,
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: AppTheme.errorColor,
                     fontSize: 12,
                   ),
@@ -432,14 +440,14 @@ class _LocationFieldState extends State<LocationField>
             _cityController.text.isNotEmpty &&
             _countryController.text.isNotEmpty) ...[
           const SizedBox(height: 8),
-          Row(
+          const Row(
             children: [
               Icon(
                 Icons.check_circle_outline,
                 color: Colors.green,
                 size: 16,
               ),
-              const SizedBox(width: 4),
+              SizedBox(width: 4),
               Text(
                 'Location verified',
                 style: TextStyle(

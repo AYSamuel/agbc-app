@@ -90,25 +90,25 @@ class _RegisterFormState extends State<RegisterForm> with FormValidationMixin {
   }
 
   Future<void> _register() async {
-    print('--- Registration Attempt ---');
-    print('Name: \'${_nameController.text}\'');
-    print('Email: \'${_emailController.text}\'');
-    print('Phone: \'${_phoneController.text}\'');
-    print('Location: \'${_formatLocationString()}\'');
-    print('BranchId: \'$_selectedBranchId\'');
-    print('Password: (length: \'${_passwordController.text.length}\')');
-    print(
+    debugPrint('--- Registration Attempt ---');
+    debugPrint('Name: \'${_nameController.text}\'');
+    debugPrint('Email: \'${_emailController.text}\'');
+    debugPrint('Phone: \'${_phoneController.text}\'');
+    debugPrint('Location: \'${_formatLocationString()}\'');
+    debugPrint('BranchId: \'$_selectedBranchId\'');
+    debugPrint('Password: (length: \'${_passwordController.text.length}\')');
+    debugPrint(
         'Confirm Password: (length: \'${_confirmPasswordController.text.length}\')');
 
     if (!_formKey.currentState!.validate()) {
-      print('Form validation failed');
+      debugPrint('Form validation failed');
       _showErrorSnackBar('Please fill in all required fields correctly');
       return;
     }
 
     // Validate branch selection
     if (_selectedBranchId == null) {
-      print('No branch selected');
+      debugPrint('No branch selected');
       _showErrorSnackBar('Please select a branch');
       return;
     }
@@ -116,7 +116,7 @@ class _RegisterFormState extends State<RegisterForm> with FormValidationMixin {
     // Validate location
     if (_locationData['city']?.isEmpty == true ||
         _locationData['country']?.isEmpty == true) {
-      print('Location validation failed');
+      debugPrint('Location validation failed');
       _showErrorSnackBar('Please provide both city and country');
       return;
     }
@@ -125,7 +125,7 @@ class _RegisterFormState extends State<RegisterForm> with FormValidationMixin {
 
     try {
       final authService = Provider.of<AuthService>(context, listen: false);
-      print('Calling registerWithEmailAndPassword...');
+      debugPrint('Calling registerWithEmailAndPassword...');
       await authService.registerWithEmailAndPassword(
         _emailController.text.trim(),
         _passwordController.text,
@@ -135,7 +135,7 @@ class _RegisterFormState extends State<RegisterForm> with FormValidationMixin {
         'member', // Default role for new registrations
         _selectedBranchId,
       );
-      print('Registration call succeeded');
+      debugPrint('Registration call succeeded');
 
       if (mounted) {
         // Show simple verification dialog
@@ -174,8 +174,8 @@ class _RegisterFormState extends State<RegisterForm> with FormValidationMixin {
         );
       }
     } catch (e, stack) {
-      print('Registration error: $e');
-      print(stack);
+      debugPrint('Registration error: $e');
+      debugPrint(stack.toString());
       if (mounted) {
         String errorMessage;
         if (e is AuthException) {
@@ -204,7 +204,7 @@ class _RegisterFormState extends State<RegisterForm> with FormValidationMixin {
             label: 'Full Name',
             controller: _nameController,
             hint: 'Enter your full name',
-            prefixIcon: Icon(Icons.person, color: AppTheme.primaryColor),
+            prefixIcon: const Icon(Icons.person, color: AppTheme.primaryColor),
             textInputAction: TextInputAction.next,
             onSubmitted: (_) => FocusScope.of(context).nextFocus(),
             validator: validateName,
@@ -216,7 +216,7 @@ class _RegisterFormState extends State<RegisterForm> with FormValidationMixin {
             label: 'Email',
             controller: _emailController,
             hint: 'Enter your email',
-            prefixIcon: Icon(Icons.email, color: AppTheme.primaryColor),
+            prefixIcon: const Icon(Icons.email, color: AppTheme.primaryColor),
             keyboardType: TextInputType.emailAddress,
             textInputAction: TextInputAction.next,
             onSubmitted: (_) => FocusScope.of(context).nextFocus(),
@@ -229,7 +229,7 @@ class _RegisterFormState extends State<RegisterForm> with FormValidationMixin {
             label: 'Phone Number',
             controller: _phoneController,
             hint: 'Enter your phone number',
-            prefixIcon: Icon(Icons.phone, color: AppTheme.primaryColor),
+            prefixIcon: const Icon(Icons.phone, color: AppTheme.primaryColor),
             keyboardType: TextInputType.phone,
             validator: validatePhone,
           ),

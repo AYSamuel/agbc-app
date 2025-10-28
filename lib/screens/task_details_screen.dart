@@ -149,7 +149,7 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                         children: [
                           Row(
                             children: [
-                              Icon(
+                              const Icon(
                                 Remix.file_text_line,
                                 size: 20,
                                 color: AppTheme.primaryColor,

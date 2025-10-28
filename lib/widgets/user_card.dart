@@ -143,7 +143,7 @@ class UserCard extends StatelessWidget {
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(
+                                const Icon(
                                   Icons.location_on,
                                   size: 14,
                                   color: AppTheme.neutralColor,
@@ -171,7 +171,7 @@ class UserCard extends StatelessWidget {
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(
+                                const Icon(
                                   Icons.church,
                                   size: 14,
                                   color: AppTheme.neutralColor,
@@ -225,7 +225,7 @@ class UserCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   IconButton(
-                    icon: Icon(
+                    icon: const Icon(
                       Icons.edit,
                       color: AppTheme.primaryColor,
                       size: 20,

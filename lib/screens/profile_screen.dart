@@ -307,7 +307,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     AppTheme.errorColor.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(10),
                               ),
-                              child: Icon(
+                              child: const Icon(
                                 Icons.logout,
                                 color: AppTheme.errorColor,
                                 size: 20,

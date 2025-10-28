@@ -89,7 +89,7 @@ class _TaskManagementScreenState extends State<TaskManagementScreen> {
                   }
 
                   if (!snapshot.hasData) {
-                    return Center(
+                    return const Center(
                       child: CircularProgressIndicator(
                         color: AppTheme.primaryColor,
                       ),
@@ -103,7 +103,7 @@ class _TaskManagementScreenState extends State<TaskManagementScreen> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(
+                          const Icon(
                             Remix.task_line,
                             size: 64,
                             color: AppTheme.primaryColor,
@@ -270,7 +270,7 @@ class _TaskManagementScreenState extends State<TaskManagementScreen> {
                 if (snapshot.hasData && snapshot.data != null) {
                   return Row(
                     children: [
-                      Icon(
+                      const Icon(
                         Remix.user_line,
                         size: 16,
                         color: AppTheme.neutralColor,

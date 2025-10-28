@@ -158,7 +158,7 @@ class _CustomDropdownState<T> extends State<CustomDropdown<T>> {
                             ),
                           ),
                           if (isSelected)
-                            Icon(
+                            const Icon(
                               Icons.check,
                               size: 16,
                               color: AppTheme.primaryColor,
@@ -301,7 +301,7 @@ class _CustomDropdownState<T> extends State<CustomDropdown<T>> {
           const SizedBox(height: 4),
           Text(
             widget.errorText!,
-            style: TextStyle(
+            style: const TextStyle(
               color: AppTheme.errorColor,
               fontSize: 12,
               fontWeight: FontWeight.w500,

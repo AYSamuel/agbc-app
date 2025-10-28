@@ -173,7 +173,7 @@ class _CustomInputState extends State<CustomInput>
           letterSpacing: 0.2,
         ),
         errorText: widget.errorText,
-        errorStyle: TextStyle(
+        errorStyle: const TextStyle(
           color: AppTheme.errorColor,
           fontWeight: FontWeight.w500,
           fontSize: 13,
@@ -212,14 +212,14 @@ class _CustomInputState extends State<CustomInput>
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(widget.borderRadius),
-          borderSide: BorderSide(
+          borderSide: const BorderSide(
             color: AppTheme.primaryColor,
             width: 2,
           ),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(widget.borderRadius),
-          borderSide: BorderSide(
+          borderSide: const BorderSide(
             color: AppTheme.errorColor,
             width: 1.5,
           ),
@@ -252,7 +252,7 @@ class _CustomInputState extends State<CustomInput>
       return Padding(
         padding: const EdgeInsets.only(right: 8),
         child: IconButton(
-          padding: EdgeInsets.zero,
+          padding: const EdgeInsets.all(0),
           constraints: const BoxConstraints(),
           icon: Icon(
             Icons.clear,

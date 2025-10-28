@@ -117,26 +117,6 @@ class MeetingCard extends StatelessWidget {
                 ),
               ],
             ),
-            if (meeting.expectedAttendance > 0) ...[
-              const SizedBox(height: 4),
-              Row(
-                children: [
-                  Icon(
-                    Icons.people,
-                    size: 14,
-                    color: Colors.grey[600],
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    '${meeting.expectedAttendance} expected',
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                ],
-              ),
-            ],
           ],
         ),
       ),

@@ -54,7 +54,7 @@ class _TaskStatusCardState extends State<TaskStatusCard> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
+              const Text(
                 'Current Tasks',
                 style: TextStyle(
                   fontSize: 16,
@@ -85,7 +85,7 @@ class _TaskStatusCardState extends State<TaskStatusCard> {
             hasTasks
                 ? 'You have $taskCount ${taskCount == 1 ? 'task' : 'tasks'} assigned to you'
                 : 'You don\'t have any tasks assigned to you',
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 14,
               color: AppTheme.neutralColor,
             ),
@@ -101,7 +101,7 @@ class _TaskStatusCardState extends State<TaskStatusCard> {
                 ),
               );
             },
-            child: Row(
+            child: const Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
@@ -112,7 +112,7 @@ class _TaskStatusCardState extends State<TaskStatusCard> {
                     color: AppTheme.primaryColor,
                   ),
                 ),
-                const SizedBox(width: 4),
+                SizedBox(width: 4),
                 Icon(
                   Remix.arrow_right_s_line,
                   size: 20,

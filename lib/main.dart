@@ -17,6 +17,7 @@ import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/main_navigation_screen.dart';
 import 'screens/meetings_screen.dart';
+import 'screens/upcoming_events_screen.dart';
 import 'utils/theme.dart';
 import 'utils/notification_helper.dart';
 
@@ -251,6 +252,7 @@ class _GracePortalAppState extends State<GracePortalApp> {
         '/register': (context) => const RegisterScreen(),
         '/home': (context) => const MainNavigationScreen(),
         '/meetings': (context) => const MeetingsScreen(),
+        '/upcoming-events': (context) => const UpcomingEventsScreen(),
       },
     );
   }

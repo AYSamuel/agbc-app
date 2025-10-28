@@ -1606,4 +1606,145 @@ ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TAB
 
 
 
+-- ==================== MEETING RESPONSES TABLE ====================
+
+CREATE TABLE IF NOT EXISTS "public"."meeting_responses" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "meeting_id" "uuid" NOT NULL,
+    "user_id" "uuid" NOT NULL,
+    "response_type" "text" NOT NULL,
+    "reason" "text",
+    "created_at" timestamp with time zone DEFAULT "now"(),
+    "updated_at" timestamp with time zone DEFAULT "now"(),
+    CONSTRAINT "meeting_responses_pkey" PRIMARY KEY ("id"),
+    CONSTRAINT "meeting_responses_unique" UNIQUE ("meeting_id", "user_id"),
+    CONSTRAINT "meeting_responses_type_check" CHECK (("response_type" = ANY (ARRAY['attending'::"text", 'maybe'::"text", 'not_attending'::"text"])))
+);
+
+ALTER TABLE "public"."meeting_responses" OWNER TO "postgres";
+
+-- Add foreign key constraints
+ALTER TABLE ONLY "public"."meeting_responses"
+    ADD CONSTRAINT "meeting_responses_meeting_id_fkey" FOREIGN KEY ("meeting_id") REFERENCES "public"."meetings"("id") ON DELETE CASCADE;
+
+ALTER TABLE ONLY "public"."meeting_responses"
+    ADD CONSTRAINT "meeting_responses_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE CASCADE;
+
+-- Add indexes for performance
+CREATE INDEX "idx_meeting_responses_meeting_id" ON "public"."meeting_responses" USING "btree" ("meeting_id");
+CREATE INDEX "idx_meeting_responses_user_id" ON "public"."meeting_responses" USING "btree" ("user_id");
+CREATE INDEX "idx_meeting_responses_type" ON "public"."meeting_responses" USING "btree" ("response_type");
+
+-- Add RLS policies
+ALTER TABLE "public"."meeting_responses" ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "meeting_responses_select_own" ON "public"."meeting_responses" FOR SELECT USING (("user_id" = "auth"."uid"()));
+
+CREATE POLICY "meeting_responses_select_admin" ON "public"."meeting_responses" FOR SELECT USING ("public"."user_has_permission"(ARRAY['admin'::"text", 'pastor'::"text"]));
+
+CREATE POLICY "meeting_responses_insert_own" ON "public"."meeting_responses" FOR INSERT WITH CHECK (("user_id" = "auth"."uid"()));
+
+CREATE POLICY "meeting_responses_update_own" ON "public"."meeting_responses" FOR UPDATE USING (("user_id" = "auth"."uid"()));
+
+CREATE POLICY "meeting_responses_delete_own" ON "public"."meeting_responses" FOR DELETE USING (("user_id" = "auth"."uid"()));
+
+-- ==================== MEETING ATTENDANCE FUNCTIONS ====================
+
+-- Function to check if user can view attendance data
+CREATE OR REPLACE FUNCTION "public"."can_view_attendance_data"("meeting_uuid" "uuid") RETURNS boolean
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+DECLARE
+    current_user_id UUID;
+    current_user_role TEXT;
+    meeting_organizer_id UUID;
+BEGIN
+    -- Get current user
+    current_user_id := auth.uid();
+    IF current_user_id IS NULL THEN
+        RETURN FALSE;
+    END IF;
+    
+    -- Get current user role
+    current_user_role := get_current_user_role();
+    
+    -- Admins and pastors can always view attendance data
+    IF current_user_role IN ('admin', 'pastor') THEN
+        RETURN TRUE;
+    END IF;
+    
+    -- Meeting organizers can view their own meeting attendance
+    SELECT organizer_id INTO meeting_organizer_id
+    FROM public.meetings
+    WHERE id = meeting_uuid;
+    
+    IF meeting_organizer_id = current_user_id THEN
+        RETURN TRUE;
+    END IF;
+    
+    RETURN FALSE;
+END;
+$$;
+
+ALTER FUNCTION "public"."can_view_attendance_data"("meeting_uuid" "uuid") OWNER TO "postgres";
+
+-- Function to get meeting attendance summary
+CREATE OR REPLACE FUNCTION "public"."get_meeting_attendance_summary"("meeting_uuid" "uuid") RETURNS "jsonb"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+DECLARE
+    result JSONB;
+    attending_count INTEGER := 0;
+    maybe_count INTEGER := 0;
+    not_attending_count INTEGER := 0;
+    total_responses INTEGER := 0;
+BEGIN
+    -- Check if user can view attendance data
+    IF NOT can_view_attendance_data(meeting_uuid) THEN
+        RETURN NULL;
+    END IF;
+    
+    -- Get response counts
+    SELECT 
+        COUNT(CASE WHEN response_type = 'attending' THEN 1 END),
+        COUNT(CASE WHEN response_type = 'maybe' THEN 1 END),
+        COUNT(CASE WHEN response_type = 'not_attending' THEN 1 END),
+        COUNT(*)
+    INTO attending_count, maybe_count, not_attending_count, total_responses
+    FROM public.meeting_responses
+    WHERE meeting_id = meeting_uuid;
+    
+    -- Build result JSON
+    result := jsonb_build_object(
+        'meeting_id', meeting_uuid,
+        'total_responses', total_responses,
+        'attending_count', attending_count,
+        'maybe_count', maybe_count,
+        'not_attending_count', not_attending_count,
+        'responses', (
+            SELECT jsonb_agg(
+                jsonb_build_object(
+                    'user_id', mr.user_id,
+                    'user_name', u.display_name,
+                    'user_email', u.email,
+                    'response_type', mr.response_type,
+                    'reason', mr.reason,
+                    'created_at', mr.created_at
+                )
+            )
+            FROM public.meeting_responses mr
+            JOIN public.users u ON mr.user_id = u.id
+            WHERE mr.meeting_id = meeting_uuid
+        )
+    );
+    
+    RETURN result;
+END;
+$$;
+
+ALTER FUNCTION "public"."get_meeting_attendance_summary"("meeting_uuid" "uuid") OWNER TO "postgres";
+
+-- Add trigger for updated_at on meeting_responses
+CREATE TRIGGER "update_meeting_responses_updated_at" BEFORE UPDATE ON "public"."meeting_responses" FOR EACH ROW EXECUTE FUNCTION "public"."update_updated_at_column"();
+
 RESET ALL;

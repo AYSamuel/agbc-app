@@ -115,7 +115,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               radius: 38,
                               backgroundColor:
                                   AppTheme.primaryColor.withValues(alpha: 0.08),
-                              child: Icon(
+                              child: const Icon(
                                 Icons.lock_outline_rounded,
                                 color: AppTheme.primaryColor,
                                 size: 48,

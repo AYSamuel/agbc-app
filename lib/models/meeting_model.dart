@@ -1,3 +1,5 @@
+import 'initial_notification_config.dart';
+
 /// Enhanced MeetingModel with new schema features including metadata and ENUM status.
 class MeetingModel {
   // Basic meeting information
@@ -20,7 +22,6 @@ class MeetingModel {
   final String location;
   final bool isVirtual;
   final String? meetingLink;
-  final int expectedAttendance;
   final Map<String, dynamic> attendees; // Now JSONB for structured data
 
   // Meeting status tracking using ENUM
@@ -28,6 +29,11 @@ class MeetingModel {
 
   // Enhanced features
   final Map<String, dynamic> metadata; // Additional meeting metadata
+
+  // Initial notification control
+  final InitialNotificationConfig? initialNotificationConfig;
+  final bool initialNotificationSent;
+  final DateTime? initialNotificationSentAt;
 
   /// Constructor for creating a new MeetingModel instance
   MeetingModel({
@@ -46,10 +52,12 @@ class MeetingModel {
     required this.location,
     this.isVirtual = false,
     this.meetingLink,
-    this.expectedAttendance = 0,
     Map<String, dynamic>? attendees,
     this.status = MeetingStatus.scheduled,
     Map<String, dynamic>? metadata,
+    this.initialNotificationConfig,
+    this.initialNotificationSent = false,
+    this.initialNotificationSentAt,
   })  : createdAt = createdAt ?? DateTime.now(),
         updatedAt = updatedAt ?? DateTime.now(),
         attendees = attendees ?? {},
@@ -76,7 +84,6 @@ class MeetingModel {
       location: json['location'] ?? '',
       isVirtual: json['is_virtual'] ?? false,
       meetingLink: json['meeting_link'],
-      expectedAttendance: json['max_attendees'] ?? 0,
       attendees: {
         'confirmed': List<String>.from(json['attendees'] ?? []),
         'pending': <String>[]
@@ -86,6 +93,14 @@ class MeetingModel {
         orElse: () => MeetingStatus.scheduled,
       ),
       metadata: Map<String, dynamic>.from(json['metadata'] as Map? ?? {}),
+      initialNotificationConfig: json['initial_notification_config'] != null
+          ? InitialNotificationConfig.fromJson(
+              Map<String, dynamic>.from(json['initial_notification_config']))
+          : null,
+      initialNotificationSent: json['initial_notification_sent'] ?? false,
+      initialNotificationSentAt: json['initial_notification_sent_at'] != null
+          ? DateTime.parse(json['initial_notification_sent_at'])
+          : null,
     );
   }
 
@@ -103,10 +118,12 @@ class MeetingModel {
       'location': location,
       'is_virtual': isVirtual,
       'meeting_link': meetingLink,
-      'max_attendees': expectedAttendance,
       'attendees': [], // Send as empty array for new meetings
       'status': status.toString().split('.').last,
       'metadata': metadata,
+      'initial_notification_config': initialNotificationConfig?.toJson(),
+      'initial_notification_sent': initialNotificationSent,
+      'initial_notification_sent_at': initialNotificationSentAt?.toIso8601String(),
     };
 
     // Only include ID if it's not empty (for updates)
@@ -173,10 +190,12 @@ class MeetingModel {
     String? location,
     bool? isVirtual,
     String? meetingLink,
-    int? expectedAttendance,
     Map<String, dynamic>? attendees,
     MeetingStatus? status,
     Map<String, dynamic>? metadata,
+    InitialNotificationConfig? initialNotificationConfig,
+    bool? initialNotificationSent,
+    DateTime? initialNotificationSentAt,
   }) {
     return MeetingModel(
       id: id ?? this.id,
@@ -194,10 +213,12 @@ class MeetingModel {
       location: location ?? this.location,
       isVirtual: isVirtual ?? this.isVirtual,
       meetingLink: meetingLink ?? this.meetingLink,
-      expectedAttendance: expectedAttendance ?? this.expectedAttendance,
       attendees: attendees ?? this.attendees,
       status: status ?? this.status,
       metadata: metadata ?? this.metadata,
+      initialNotificationConfig: initialNotificationConfig ?? this.initialNotificationConfig,
+      initialNotificationSent: initialNotificationSent ?? this.initialNotificationSent,
+      initialNotificationSentAt: initialNotificationSentAt ?? this.initialNotificationSentAt,
     );
   }
 

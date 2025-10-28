@@ -236,7 +236,7 @@ class _LoginFormState extends State<LoginForm> with FormValidationMixin {
             label: 'Email',
             controller: _emailController,
             hint: 'Enter your email',
-            prefixIcon: Icon(Icons.email, color: AppTheme.primaryColor),
+            prefixIcon: const Icon(Icons.email, color: AppTheme.primaryColor),
             keyboardType: TextInputType.emailAddress,
             validator: validateEmail,
           ),
@@ -258,7 +258,7 @@ class _LoginFormState extends State<LoginForm> with FormValidationMixin {
                 value: _rememberMe,
                 activeColor: AppTheme.primaryColor,
                 checkColor: Colors.white,
-                side: BorderSide(color: AppTheme.primaryColor, width: 1),
+                side: const BorderSide(color: AppTheme.primaryColor, width: 1),
                 onChanged: (value) {
                   setState(() {
                     _rememberMe = value ?? false;

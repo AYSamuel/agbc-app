@@ -30,7 +30,7 @@ class BranchesProvider extends ChangeNotifier {
     } catch (e) {
       _error = 'Failed to fetch branches: $e';
       if (kDebugMode) {
-        print('Error fetching branches: $e');
+        debugPrint('Error fetching branches: $e');
       }
     } finally {
       _setLoading(false);
@@ -72,7 +72,7 @@ class BranchesProvider extends ChangeNotifier {
     } catch (e) {
       _error = 'Failed to add branch: $e';
       if (kDebugMode) {
-        print('Error adding branch: $e');
+        debugPrint('Error adding branch: $e');
       }
       return false;
     } finally {
@@ -100,7 +100,7 @@ class BranchesProvider extends ChangeNotifier {
     } catch (e) {
       _error = 'Failed to update branch: $e';
       if (kDebugMode) {
-        print('Error updating branch: $e');
+        debugPrint('Error updating branch: $e');
       }
       return false;
     } finally {
@@ -122,7 +122,7 @@ class BranchesProvider extends ChangeNotifier {
     } catch (e) {
       _error = 'Failed to delete branch: $e';
       if (kDebugMode) {
-        print('Error deleting branch: $e');
+        debugPrint('Error deleting branch: $e');
       }
       return false;
     } finally {

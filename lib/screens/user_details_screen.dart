@@ -113,7 +113,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                                 : null,
                             child: widget.user.photoUrl == null ||
                                     widget.user.photoUrl!.isEmpty
-                                ? Icon(
+                                ? const Icon(
                                     Icons.person,
                                     size: 48,
                                     color: AppTheme.primaryColor,
@@ -185,7 +185,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                         if (widget.user.phoneNumber != null) ...[
                           Row(
                             children: [
-                              Icon(
+                              const Icon(
                                 Icons.phone,
                                 size: 24,
                                 color: AppTheme.neutralColor,
@@ -203,7 +203,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                         ],
                         Row(
                           children: [
-                            Icon(
+                            const Icon(
                               Icons.location_on,
                               size: 24,
                               color: AppTheme.neutralColor,
@@ -404,7 +404,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
       // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
+          content: const Text(
             'User updated successfully',
             style: TextStyle(
               color: Colors.white,
@@ -428,7 +428,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
         SnackBar(
           content: Text(
             'Error updating user: $e',
-            style: TextStyle(
+            style: const TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.bold,
             ),

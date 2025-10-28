@@ -7,7 +7,7 @@ import 'package:timeago/timeago.dart' as timeago;
 class NotificationPanel extends StatefulWidget {
   final VoidCallback? onClose;
 
-  const NotificationPanel({Key? key, this.onClose}) : super(key: key);
+  const NotificationPanel({super.key, this.onClose});
 
   @override
   State<NotificationPanel> createState() => _NotificationPanelState();
@@ -28,13 +28,13 @@ class _NotificationPanelState extends State<NotificationPanel> {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.15),
+              color: Colors.black.withValues(alpha: 0.15),
               blurRadius: 20,
               offset: const Offset(0, 8),
               spreadRadius: 2,
             ),
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 5,
               offset: const Offset(0, 2),
             ),
@@ -61,7 +61,7 @@ class _NotificationPanelState extends State<NotificationPanel> {
     return Positioned.fill(
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.5),
+          color: Colors.black.withValues(alpha: 0.5),
           borderRadius: BorderRadius.circular(16),
         ),
         child: Center(
@@ -73,7 +73,7 @@ class _NotificationPanelState extends State<NotificationPanel> {
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.2),
+                  color: Colors.black.withValues(alpha: 0.2),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -85,7 +85,7 @@ class _NotificationPanelState extends State<NotificationPanel> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.red.withOpacity(0.1),
+                    color: Colors.red.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
@@ -146,7 +146,9 @@ class _NotificationPanelState extends State<NotificationPanel> {
                     Expanded(
                       child: ElevatedButton(
                         onPressed: () async {
-                          final provider = Provider.of<NotificationProvider>(context, listen: false);
+                          final provider = Provider.of<NotificationProvider>(
+                              context,
+                              listen: false);
                           await provider.clearAllNotifications();
                           setState(() {
                             _showConfirmation = false;
@@ -190,13 +192,13 @@ class _NotificationPanelState extends State<NotificationPanel> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Theme.of(context).primaryColor.withOpacity(0.05),
+            Theme.of(context).primaryColor.withValues(alpha: 0.05),
             Colors.white,
           ],
         ),
         border: Border(
           bottom: BorderSide(
-            color: Colors.grey.withOpacity(0.2),
+            color: Colors.grey.withValues(alpha: 0.2),
             width: 1,
           ),
         ),
@@ -260,7 +262,7 @@ class _NotificationPanelState extends State<NotificationPanel> {
               ),
               Container(
                 decoration: BoxDecoration(
-                  color: Colors.grey.withOpacity(0.1),
+                  color: Colors.grey.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: IconButton(
@@ -295,7 +297,7 @@ class _NotificationPanelState extends State<NotificationPanel> {
                 Container(
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
-                    color: Colors.grey.withOpacity(0.1),
+                    color: Colors.grey.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
@@ -349,12 +351,12 @@ class _NotificationPanelState extends State<NotificationPanel> {
       decoration: BoxDecoration(
         color: notification.isRead
             ? Colors.transparent
-            : Theme.of(context).primaryColor.withOpacity(0.03),
+            : Theme.of(context).primaryColor.withValues(alpha: 0.03),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: notification.isRead
               ? Colors.transparent
-              : Theme.of(context).primaryColor.withOpacity(0.1),
+              : Theme.of(context).primaryColor.withValues(alpha: 0.1),
           width: 1,
         ),
       ),
@@ -430,8 +432,9 @@ class _NotificationPanelState extends State<NotificationPanel> {
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color:
-                                Theme.of(context).primaryColor.withOpacity(0.3),
+                            color: Theme.of(context)
+                                .primaryColor
+                                .withValues(alpha: 0.3),
                             blurRadius: 4,
                             spreadRadius: 1,
                           ),
@@ -498,10 +501,10 @@ class _NotificationPanelState extends State<NotificationPanel> {
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         shape: BoxShape.circle,
         border: Border.all(
-          color: color.withOpacity(0.2),
+          color: color.withValues(alpha: 0.2),
           width: 1,
         ),
       ),

@@ -1,12 +1,14 @@
 import 'package:flutter/foundation.dart';
-import 'package:grace_portal/services/notification_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/user_model.dart';
 import '../models/task_model.dart';
 import '../models/meeting_model.dart';
 import '../models/notification_model.dart';
+import '../models/initial_notification_config.dart';
 import '../utils/notification_helper.dart';
+import '../services/notification_service.dart';
 import '../models/church_branch_model.dart';
+import '../models/meeting_response_model.dart';
 
 class SupabaseProvider extends ChangeNotifier {
   final SupabaseClient _supabase = Supabase.instance.client;
@@ -199,29 +201,21 @@ class SupabaseProvider extends ChangeNotifier {
 
       final meetingId = response['id'];
 
-      // Use provided notification helper or create one if not provided
-      final helper = notificationHelper ?? NotificationHelper(
-        supabaseProvider: this,
-        notificationService: NotificationService(),
-      );
-      
-      // Send immediate notification to branch members
-      await helper.notifyMeetingCreated(
-        meetingId: meetingId,
-        meetingTitle: meeting.title,
-        meetingDateTime: meeting.dateTime,
-        branchId: meeting.branchId!,
-        organizerName: meeting.organizerId,
-      );
-
-      // Schedule reminder notifications
+      // Schedule notifications if reminder minutes are provided
       if (reminderMinutes.isNotEmpty) {
-        await helper.scheduleMeetingReminders(
+        // Create NotificationHelper if none provided
+        final helper = notificationHelper ?? 
+            NotificationHelper(
+              supabaseProvider: this,
+              notificationService: NotificationService(),
+            );
+        
+        await scheduleMeetingNotifications(
           meetingId: meetingId,
           meetingTitle: meeting.title,
-          meetingDateTime: meeting.dateTime,
-          branchId: meeting.branchId!,
+          startTime: meeting.dateTime,
           reminderMinutes: reminderMinutes,
+          notificationHelper: helper,
         );
       }
 
@@ -231,6 +225,300 @@ class SupabaseProvider extends ChangeNotifier {
       return false;
     } finally {
       _setLoading(false);
+    }
+  }
+
+  /// Create new meeting with enhanced initial notification control
+  Future<bool> createMeetingWithInitialNotification(
+    MeetingModel meeting,
+    List<int> reminderMinutes, {
+    NotificationHelper? notificationHelper,
+  }) async {
+    _setLoading(true);
+    try {
+      // Create the meeting with initial notification config
+      final response = await _supabase
+          .from('meetings')
+          .insert(meeting.toJson())
+          .select()
+          .single();
+
+      final meetingId = response['id'];
+
+      // Create NotificationHelper if none provided
+      final helper = notificationHelper ?? 
+          NotificationHelper(
+            supabaseProvider: this,
+            notificationService: NotificationService(),
+          );
+
+      // Handle initial notification based on configuration
+      if (meeting.initialNotificationConfig != null && 
+          meeting.initialNotificationConfig!.enabled) {
+        
+        final config = meeting.initialNotificationConfig!;
+        
+        switch (config.timing) {
+          case NotificationTiming.immediate:
+            // Send immediate notification (only if branchId is available)
+            if (meeting.branchId != null) {
+              await helper.notifyMeetingCreated(
+                meetingId: meetingId,
+                meetingTitle: meeting.title,
+                meetingDateTime: meeting.dateTime,
+                organizerName: meeting.organizerName,
+                branchId: meeting.branchId!,
+              );
+            }
+            
+            // Mark initial notification as sent
+            await _updateInitialNotificationStatus(meetingId, true);
+            break;
+            
+          case NotificationTiming.scheduled:
+            if (config.scheduledDateTime != null && meeting.branchId != null) {
+              // Schedule initial notification for later
+              await helper.scheduleInitialMeetingNotification(
+                meetingId: meetingId,
+                meetingTitle: meeting.title,
+                meetingDateTime: meeting.dateTime,
+                organizerName: meeting.organizerName,
+                branchId: meeting.branchId!,
+                scheduledDateTime: config.scheduledDateTime!,
+              );
+            }
+            break;
+            
+          case NotificationTiming.none:
+            // No initial notification - do nothing
+            break;
+        }
+      }
+
+      // Schedule reminder notifications if provided
+      if (reminderMinutes.isNotEmpty) {
+        await scheduleMeetingNotifications(
+          meetingId: meetingId,
+          meetingTitle: meeting.title,
+          startTime: meeting.dateTime,
+          reminderMinutes: reminderMinutes,
+          notificationHelper: helper,
+          branchId: meeting.branchId,
+        );
+      }
+
+      return true;
+    } catch (e) {
+      _setError('Failed to create meeting with initial notification: $e');
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  /// Update initial notification status for a meeting
+  Future<bool> _updateInitialNotificationStatus(String meetingId, bool sent) async {
+    try {
+      await _supabase.from('meetings').update({
+        'initial_notification_sent': sent,
+        'initial_notification_sent_at': sent ? DateTime.now().toIso8601String() : null,
+        'updated_at': DateTime.now().toIso8601String(),
+      }).eq('id', meetingId);
+      return true;
+    } catch (e) {
+      debugPrint('Error updating initial notification status: $e');
+      return false;
+    }
+  }
+
+  // ==================== MEETING RSVP ====================
+
+  /// Submit or update a meeting response (RSVP)
+  Future<bool> submitMeetingResponse({
+    required String meetingId,
+    required ResponseType responseType,
+    String? reason,
+  }) async {
+    _setLoading(true);
+    try {
+      final currentUser = _supabase.auth.currentUser;
+      if (currentUser == null) {
+        _setError('User not authenticated');
+        return false;
+      }
+
+      // Check if user already has a response for this meeting
+      final existingResponse = await _supabase
+          .from('meeting_responses')
+          .select()
+          .eq('meeting_id', meetingId)
+          .eq('user_id', currentUser.id)
+          .maybeSingle();
+
+      if (existingResponse != null) {
+        // Update existing response
+        await _supabase.from('meeting_responses').update({
+          'response_type': responseType.value,
+          'reason': reason,
+          'updated_at': DateTime.now().toIso8601String(),
+        }).eq('id', existingResponse['id']);
+      } else {
+        // Create new response
+        await _supabase.from('meeting_responses').insert({
+          'meeting_id': meetingId,
+          'user_id': currentUser.id,
+          'response_type': responseType.value,
+          'reason': reason,
+          'created_at': DateTime.now().toIso8601String(),
+          'updated_at': DateTime.now().toIso8601String(),
+        });
+      }
+
+      return true;
+    } catch (e) {
+      _setError('Failed to submit meeting response: $e');
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  /// Get current user's response for a specific meeting
+  Future<MeetingResponseModel?> getUserMeetingResponse(String meetingId) async {
+    try {
+      final currentUser = _supabase.auth.currentUser;
+      if (currentUser == null) return null;
+
+      final response = await _supabase
+          .from('meeting_responses')
+          .select()
+          .eq('meeting_id', meetingId)
+          .eq('user_id', currentUser.id)
+          .maybeSingle();
+
+      if (response != null) {
+        return MeetingResponseModel.fromJson(response);
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Error getting user meeting response: $e');
+      return null;
+    }
+  }
+
+  /// Get meeting attendance summary (for Pastors/Admins)
+  Future<MeetingAttendanceSummary?> getMeetingAttendanceSummary(
+      String meetingId) async {
+    try {
+      final currentUser = _supabase.auth.currentUser;
+      if (currentUser == null) return null;
+
+      // Check if user can view attendance data
+      final canView = await canViewAttendanceData(meetingId);
+      if (!canView) return null;
+
+      final response = await _supabase.rpc('get_meeting_attendance_summary',
+          params: {'meeting_uuid': meetingId});
+
+      if (response != null) {
+        return MeetingAttendanceSummary.fromJson(response);
+      }
+      return null;
+    } on PostgrestException catch (e) {
+      // Handle specific database errors
+      if (e.code == '42703' || e.message.contains('column') || e.message.contains('does not exist')) {
+        debugPrint('Database schema error in getMeetingAttendanceSummary: ${e.message}');
+        debugPrint('This usually means the database functions need to be updated.');
+        return null;
+      } else if (e.code == '42883' || e.message.contains('function') || e.message.contains('does not exist')) {
+        debugPrint('Database function error in getMeetingAttendanceSummary: ${e.message}');
+        debugPrint('The get_meeting_attendance_summary function may not exist in the database.');
+        return null;
+      }
+      debugPrint('PostgrestException in getMeetingAttendanceSummary: ${e.message} (Code: ${e.code})');
+      return null;
+    } catch (e) {
+      debugPrint('Unexpected error getting meeting attendance summary: $e');
+      return null;
+    }
+  }
+
+  /// Check if current user can view attendance data for a meeting
+  Future<bool> canViewAttendanceData(String meetingId) async {
+    try {
+      final currentUser = _supabase.auth.currentUser;
+      if (currentUser == null) return false;
+
+      final response = await _supabase.rpc('can_view_attendance_data', params: {
+        'meeting_uuid': meetingId,
+      });
+
+      return response == true;
+    } on PostgrestException catch (e) {
+      // Handle specific database errors
+      if (e.code == '42883' || e.message.contains('function') || e.message.contains('does not exist')) {
+        debugPrint('Database function error in canViewAttendanceData: ${e.message}');
+        debugPrint('The can_view_attendance_data function may not exist in the database.');
+        return false;
+      }
+      debugPrint('PostgrestException in canViewAttendanceData: ${e.message} (Code: ${e.code})');
+      return false;
+    } catch (e) {
+      debugPrint('Unexpected error checking attendance data permissions: $e');
+      return false;
+    }
+  }
+
+  /// Get all responses for a meeting with user details (for Pastors/Admins)
+  Future<List<MeetingResponseWithUser>> getMeetingResponsesWithUsers(
+      String meetingId) async {
+    try {
+      final canView = await canViewAttendanceData(meetingId);
+      if (!canView) return [];
+
+      final response = await _supabase
+          .from('meeting_responses')
+          .select('''
+            *,
+            users:user_id (
+              id,
+              display_name,
+              email,
+              photo_url
+            )
+          ''')
+          .eq('meeting_id', meetingId)
+          .order('created_at', ascending: false);
+
+      return response
+          .map((json) => MeetingResponseWithUser.fromJson(json))
+          .toList();
+    } catch (e) {
+      debugPrint('Error getting meeting responses with users: $e');
+      return [];
+    }
+  }
+
+  /// Schedule meeting notifications using database function
+  Future<void> scheduleMeetingNotifications({
+    required String meetingId,
+    required String meetingTitle,
+    required DateTime startTime,
+    required List<int> reminderMinutes,
+    required NotificationHelper notificationHelper,
+    String? branchId,
+  }) async {
+    try {
+      // Use the notification helper to schedule reminders
+      await notificationHelper.scheduleMeetingReminders(
+        meetingId: meetingId,
+        meetingTitle: meetingTitle,
+        meetingDateTime: startTime,
+        branchId: branchId ?? '',
+        reminderMinutes: reminderMinutes,
+      );
+    } catch (e) {
+      debugPrint('Error scheduling meeting notifications: $e');
     }
   }
 
@@ -244,28 +532,6 @@ class SupabaseProvider extends ChangeNotifier {
     } catch (e) {
       debugPrint('Error getting users by branch: $e');
       return [];
-    }
-  }
-
-  /// Schedule meeting notifications using database function
-  Future<void> scheduleMeetingNotifications({
-    required String meetingId,
-    required String meetingTitle,
-    required DateTime meetingDateTime,
-    required String branchId,
-    required List<int> reminderMinutes,
-  }) async {
-    try {
-      // Call the function with custom reminder times
-      await _supabase.rpc('schedule_meeting_notifications', params: {
-        'meeting_id': meetingId,
-        'meeting_title': meetingTitle,
-        'meeting_datetime': meetingDateTime.toIso8601String(),
-        'branch_id': branchId,
-        'reminder_minutes': reminderMinutes, // Pass the custom reminder times
-      });
-    } catch (e) {
-      debugPrint('Error scheduling meeting notifications: $e');
     }
   }
 
@@ -379,7 +645,7 @@ class SupabaseProvider extends ChangeNotifier {
         'title': title,
         'message': message,
         'type': type,
-        'related_entity_id': relatedId,  // Changed from 'related_id'
+        'related_entity_id': relatedId, // Changed from 'related_id'
         'related_entity_type': 'meeting', // Add the entity type
         'data': data,
         'is_read': false,

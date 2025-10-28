@@ -3,14 +3,14 @@ import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
   static ThemeData get lightTheme {
-    final ColorScheme colorScheme = ColorScheme.light(
-      primary: const Color(0xFF8B2E3C), // Deep Burgundy
-      secondary: const Color(0xFFD4AF37), // Warm Gold
-      error: const Color(0xFFC62828), // Soft Red
-      surface: const Color(0xFFF0EDE6), // Light Beige
+    const ColorScheme colorScheme = ColorScheme.light(
+      primary: Color(0xFF8B2E3C), // Deep Burgundy
+      secondary: Color(0xFFD4AF37), // Warm Gold
+      error: Color(0xFFC62828), // Soft Red
+      surface: Color(0xFFF0EDE6), // Light Beige
       onPrimary: Colors.white,
-      onSecondary: const Color(0xFF2C2C2C), // Deep Charcoal
-      onSurface: const Color(0xFF2C2C2C), // Deep Charcoal
+      onSecondary: Color(0xFF2C2C2C), // Deep Charcoal
+      onSurface: Color(0xFF2C2C2C), // Deep Charcoal
     );
 
     return ThemeData(
@@ -69,11 +69,11 @@ class AppTheme {
   }
 
   static ThemeData get darkTheme {
-    final ColorScheme colorScheme = ColorScheme.dark(
-      primary: const Color(0xFF8B2E3C), // Deep Burgundy
-      secondary: const Color(0xFFD4AF37), // Warm Gold
-      error: const Color(0xFFC62828), // Soft Red
-      surface: const Color(0xFF3A3A3A), // Dark Surface
+    const ColorScheme colorScheme = ColorScheme.dark(
+      primary: Color(0xFF8B2E3C), // Deep Burgundy
+      secondary: Color(0xFFD4AF37), // Warm Gold
+      error: Color(0xFFC62828), // Soft Red
+      surface: Color(0xFF3A3A3A), // Dark Surface
       onPrimary: Colors.white,
       onSecondary: Colors.white,
       onSurface: Colors.white,

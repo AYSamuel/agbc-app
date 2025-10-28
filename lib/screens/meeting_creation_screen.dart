@@ -5,6 +5,7 @@ import '../providers/supabase_provider.dart';
 import '../providers/branches_provider.dart';
 import '../models/meeting_model.dart';
 import '../models/church_branch_model.dart';
+import '../models/initial_notification_config.dart';
 import '../utils/theme.dart';
 import '../widgets/custom_back_button.dart';
 import '../widgets/custom_button.dart';
@@ -24,7 +25,6 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
   final _descriptionController = TextEditingController();
   final _locationController = TextEditingController();
   final _meetingLinkController = TextEditingController();
-  final _expectedAttendanceController = TextEditingController();
 
   DateTime? _selectedDateTime;
   DateTime? _selectedEndTime;
@@ -34,6 +34,10 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
   // Add these missing state variables for the loading overlay
   bool _isCreating = false;
   bool _showSuccess = false;
+
+  // Initial notification configuration
+  NotificationTiming? _initialNotificationTiming = NotificationTiming.immediate;
+  DateTime? _scheduledNotificationDateTime;
 
   // Notification scheduling
   final List<int> _reminderMinutes = [];
@@ -117,50 +121,50 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
 
                           // Branch Selection
                           Builder(
-                            builder: (context) {
-                              final branchesProvider =
-                                  Provider.of<BranchesProvider>(context);
-                              final branches = branchesProvider.branches;
+                              builder: (context) {
+                                final branchesProvider =
+                                    Provider.of<BranchesProvider>(context);
+                                final branches = branchesProvider.branches;
 
-                              // Reset selected branch if it's not in the current list
-                              if (_selectedBranch != null &&
-                                  !branches.any((branch) =>
-                                      branch.id == _selectedBranch!.id)) {
-                                WidgetsBinding.instance
-                                    .addPostFrameCallback((_) {
-                                  setState(() {
-                                    _selectedBranch = null;
-                                  });
-                                });
-                              }
-
-                              return CustomDropdown<ChurchBranch>(
-                                label: 'Select Branch',
-                                value: _selectedBranch,
-                                items: branches
-                                    .map<DropdownMenuItem<ChurchBranch>>(
-                                        (ChurchBranch branch) {
-                                  return DropdownMenuItem<ChurchBranch>(
-                                    value: branch,
-                                    child: Text(branch.name),
-                                  );
-                                }).toList(),
-                                onChanged: (branch) {
-                                  if (branch != null) {
+                                // Reset selected branch if it's not in the current list
+                                if (_selectedBranch != null &&
+                                    !branches.any((branch) =>
+                                        branch.id == _selectedBranch!.id)) {
+                                  WidgetsBinding.instance
+                                      .addPostFrameCallback((_) {
                                     setState(() {
-                                      _selectedBranch = branch;
+                                      _selectedBranch = null;
                                     });
-                                  }
-                                },
-                                validator: (value) {
-                                  if (value == null) {
-                                    return 'Please select a branch';
-                                  }
-                                  return null;
-                                },
-                              );
-                            },
-                          ),
+                                  });
+                                }
+
+                                return CustomDropdown<ChurchBranch>(
+                                  label: 'Select Branch',
+                                  value: _selectedBranch,
+                                  items: branches
+                                      .map<DropdownMenuItem<ChurchBranch>>(
+                                          (ChurchBranch branch) {
+                                    return DropdownMenuItem<ChurchBranch>(
+                                      value: branch,
+                                      child: Text(branch.name),
+                                    );
+                                  }).toList(),
+                                  onChanged: (branch) {
+                                    if (branch != null) {
+                                      setState(() {
+                                        _selectedBranch = branch;
+                                      });
+                                    }
+                                  },
+                                  validator: (value) {
+                                    if (value == null) {
+                                      return 'Please select a branch';
+                                    }
+                                    return null;
+                                  },
+                                );
+                              },
+                            ),
                           const SizedBox(height: 16),
 
                           // Date and Time Selection
@@ -303,14 +307,214 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
                                 return null;
                               },
                             ),
+                          const SizedBox(height: 24),
+
+                          const SizedBox(height: 24),
+
+                          // Initial Notification Section
+                          Text(
+                            'Initial Notification',
+                            style: GoogleFonts.inter(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.darkNeutralColor,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Choose when to notify branch members about this meeting:',
+                            style: GoogleFonts.inter(
+                              fontSize: 14,
+                              color: AppTheme.neutralColor,
+                            ),
+                          ),
                           const SizedBox(height: 16),
 
-                          // Expected Attendance
-                          CustomInput(
-                            controller: _expectedAttendanceController,
-                            label: 'Expected Attendance',
-                            keyboardType: TextInputType.number,
+                          // Initial Notification Timing Options
+                          Column(
+                            children: [
+                              ListTile(
+                                leading: Container(
+                                  width: 20,
+                                  height: 20,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: _initialNotificationTiming == NotificationTiming.immediate 
+                                        ? AppTheme.primaryColor 
+                                        : Colors.grey,
+                                      width: 2,
+                                    ),
+                                  ),
+                                  child: _initialNotificationTiming == NotificationTiming.immediate
+                                    ? Center(
+                                        child: Container(
+                                          width: 10,
+                                          height: 10,
+                                          decoration: const BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            color: AppTheme.primaryColor,
+                                          ),
+                                        ),
+                                      )
+                                    : null,
+                                ),
+                                title: Text(
+                                  'Notify immediately',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 16,
+                                    color: AppTheme.darkNeutralColor,
+                                  ),
+                                ),
+                                subtitle: Text(
+                                  'Send notification as soon as the meeting is created',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 14,
+                                    color: AppTheme.neutralColor,
+                                  ),
+                                ),
+                                onTap: () {
+                                  setState(() {
+                                    _initialNotificationTiming = NotificationTiming.immediate;
+                                    _scheduledNotificationDateTime = null;
+                                  });
+                                },
+                              ),
+                              ListTile(
+                                leading: Container(
+                                  width: 20,
+                                  height: 20,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: _initialNotificationTiming == NotificationTiming.scheduled 
+                                        ? AppTheme.primaryColor 
+                                        : Colors.grey,
+                                      width: 2,
+                                    ),
+                                  ),
+                                  child: _initialNotificationTiming == NotificationTiming.scheduled
+                                    ? Center(
+                                        child: Container(
+                                          width: 10,
+                                          height: 10,
+                                          decoration: const BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            color: AppTheme.primaryColor,
+                                          ),
+                                        ),
+                                      )
+                                    : null,
+                                ),
+                                title: Text(
+                                  'Schedule notification',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 16,
+                                    color: AppTheme.darkNeutralColor,
+                                  ),
+                                ),
+                                subtitle: Text(
+                                  'Send notification at a specific date and time',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 14,
+                                    color: AppTheme.neutralColor,
+                                  ),
+                                ),
+                                onTap: () {
+                                  setState(() {
+                                    _initialNotificationTiming = NotificationTiming.scheduled;
+                                  });
+                                },
+                              ),
+                              ListTile(
+                                leading: Container(
+                                  width: 20,
+                                  height: 20,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: _initialNotificationTiming == NotificationTiming.none 
+                                        ? AppTheme.primaryColor 
+                                        : Colors.grey,
+                                      width: 2,
+                                    ),
+                                  ),
+                                  child: _initialNotificationTiming == NotificationTiming.none
+                                    ? Center(
+                                        child: Container(
+                                          width: 10,
+                                          height: 10,
+                                          decoration: const BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            color: AppTheme.primaryColor,
+                                          ),
+                                        ),
+                                      )
+                                    : null,
+                                ),
+                                title: Text(
+                                  'No initial notification',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 16,
+                                    color: AppTheme.darkNeutralColor,
+                                  ),
+                                ),
+                                subtitle: Text(
+                                  'Don\'t send any notification when meeting is created',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 14,
+                                    color: AppTheme.neutralColor,
+                                  ),
+                                ),
+                                onTap: () {
+                                  setState(() {
+                                    _initialNotificationTiming = NotificationTiming.none;
+                                    _scheduledNotificationDateTime = null;
+                                  });
+                                },
+                              ),
+                            ],
                           ),
+
+                          // Scheduled Notification Date/Time Picker
+                          if (_initialNotificationTiming == NotificationTiming.scheduled) ...[
+                            const SizedBox(height: 16),
+                            InkWell(
+                              onTap: _selectScheduledNotificationDateTime,
+                              child: Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  border: Border.all(color: AppTheme.neutralColor),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Notification Date & Time',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 14,
+                                        color: AppTheme.neutralColor,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      _scheduledNotificationDateTime != null
+                                          ? _formatDateTime(_scheduledNotificationDateTime!)
+                                          : 'Select when to send notification',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 16,
+                                        color: _scheduledNotificationDateTime != null
+                                            ? AppTheme.darkNeutralColor
+                                            : AppTheme.neutralColor,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+
                           const SizedBox(height: 24),
 
                           // Notification Reminders Section
@@ -366,7 +570,7 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
                           CustomButton(
                             onPressed: _isCreating ? null : _createMeeting,
                             isLoading: false,
-                            child: Text('Create Meeting'),
+                            child: const Text('Create Meeting'),
                           ),
                         ],
                       ),
@@ -380,16 +584,16 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
           // Loading Overlay
           if (_isCreating)
             Container(
-              color: Colors.black.withOpacity(0.5),
+              color: Colors.black.withValues(alpha: 0.5),
               child: Center(
                 child: Container(
                   padding: const EdgeInsets.all(32),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
+                    boxShadow: const [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
+                        color: Colors.black12,
                         blurRadius: 10,
                         spreadRadius: 2,
                       ),
@@ -401,13 +605,13 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
                       AnimatedSwitcher(
                         duration: const Duration(milliseconds: 300),
                         child: _showSuccess
-                            ? Icon(
+                            ? const Icon(
                                 Icons.check_circle,
                                 key: ValueKey('success'),
                                 color: Colors.green,
                                 size: 64,
                               )
-                            : CircularProgressIndicator(
+                            : const CircularProgressIndicator(
                                 key: ValueKey('loading'),
                                 valueColor: AlwaysStoppedAnimation<Color>(
                                   AppTheme.primaryColor,
@@ -524,6 +728,47 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
     return '${dateTime.day}/${dateTime.month}/${dateTime.year} at ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
   }
 
+  Future<void> _selectScheduledNotificationDateTime() async {
+    final date = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now().add(const Duration(hours: 1)),
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+    );
+
+    if (date != null) {
+      final time = await showTimePicker(
+        context: context,
+        initialTime: TimeOfDay.fromDateTime(DateTime.now().add(const Duration(hours: 1))),
+      );
+
+      if (time != null) {
+        final scheduledDateTime = DateTime(
+          date.year,
+          date.month,
+          date.day,
+          time.hour,
+          time.minute,
+        );
+
+        // Validate that scheduled time is in the future
+        if (scheduledDateTime.isBefore(DateTime.now())) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Scheduled notification time must be in the future'),
+              backgroundColor: Colors.red,
+            ),
+          );
+          return;
+        }
+
+        setState(() {
+          _scheduledNotificationDateTime = scheduledDateTime;
+        });
+      }
+    }
+  }
+
   Future<void> _createMeeting() async {
     if (!_formKey.currentState!.validate() ||
         _selectedDateTime == null ||
@@ -532,6 +777,18 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
         const SnackBar(
           content: Text(
               'Please fill in all required fields including start and end times'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Validate scheduled notification if selected
+    if (_initialNotificationTiming == NotificationTiming.scheduled &&
+        _scheduledNotificationDateTime == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select a date and time for the scheduled notification'),
           backgroundColor: Colors.red,
         ),
       );
@@ -558,12 +815,19 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
       _showSuccess = false;
     });
 
+    // Create initial notification config
+    final initialNotificationConfig = InitialNotificationConfig(
+      enabled: _initialNotificationTiming != NotificationTiming.none,
+      timing: _initialNotificationTiming ?? NotificationTiming.immediate,
+      scheduledDateTime: _scheduledNotificationDateTime,
+    );
+
     final meeting = MeetingModel(
       id: '', // Will be generated by database
       title: _titleController.text,
       description: _descriptionController.text,
       dateTime: _selectedDateTime!,
-      type: _selectedBranch != null ? 'local' : 'global',
+      type: 'local',
       endTime: _selectedEndTime!,
       branchId: _selectedBranch?.id,
       organizerId: supabaseProvider.currentUser!.id,
@@ -572,10 +836,12 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
       location: _isVirtual ? 'Virtual Meeting' : _locationController.text,
       isVirtual: _isVirtual,
       meetingLink: _isVirtual ? _meetingLinkController.text : null,
-      expectedAttendance: int.tryParse(_expectedAttendanceController.text) ?? 0,
+      initialNotificationConfig: initialNotificationConfig,
+      initialNotificationSent: false,
+      initialNotificationSentAt: null,
     );
 
-    final success = await supabaseProvider.createMeetingWithNotifications(
+    final success = await supabaseProvider.createMeetingWithInitialNotification(
       meeting,
       _reminderMinutes,
     );
@@ -622,7 +888,6 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
     _descriptionController.dispose();
     _locationController.dispose();
     _meetingLinkController.dispose();
-    _expectedAttendanceController.dispose();
     super.dispose();
   }
 }

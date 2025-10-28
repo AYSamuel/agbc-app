@@ -54,7 +54,7 @@ class CommentModel {
 
   /// Checks if the comment has been edited
   bool get isEdited {
-    return updatedAt.isAfter(createdAt.add(Duration(seconds: 1)));
+    return updatedAt.isAfter(createdAt.add(const Duration(seconds: 1)));
   }
 
   /// Gets the comment type from metadata

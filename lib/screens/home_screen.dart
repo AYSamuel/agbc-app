@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:grace_portal/models/meeting_model.dart';
 import 'package:grace_portal/models/user_model.dart';
 import 'package:grace_portal/screens/meeting_creation_screen.dart';
+import 'package:grace_portal/screens/meeting_details_screen.dart';
 import 'package:grace_portal/utils/theme.dart';
 import 'package:grace_portal/widgets/meeting_card.dart';
 import 'package:grace_portal/widgets/task_status_card.dart';
@@ -167,7 +168,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: (userProfile == null ||
                                 userProfile.photoUrl == null ||
                                 userProfile.photoUrl!.isEmpty)
-                            ? Icon(Icons.person,
+                            ? const Icon(Icons.person,
                                 size: 32, color: AppTheme.primaryColor)
                             : null,
                       ),
@@ -223,7 +224,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   crossAxisCount: 3,
                   mainAxisSpacing: 12,
                   crossAxisSpacing: 12,
-                  children: [
+                  children: const [
                     QuickActionCard(
                       icon: Icons.calendar_today_rounded,
                       label: 'Sunday Service',
@@ -270,8 +271,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         userProfile?.role == UserRole.pastor)
                       TextButton(
                         onPressed: () {
-                          // Navigate to meetings screen
-                          Navigator.pushNamed(context, '/meetings');
+                          // Navigate to upcoming events screen
+                          Navigator.pushNamed(context, '/upcoming-events');
                         },
                         child: Text(
                           'View all',
@@ -348,8 +349,13 @@ class _HomeScreenState extends State<HomeScreen> {
                             meeting: meeting,
                             showStatus: false,
                             onTap: () {
-                              // Navigate to meeting details or meetings screen
-                              Navigator.pushNamed(context, '/meetings');
+                              // Navigate to meeting details screen
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => MeetingDetailsScreen(meeting: meeting),
+                                ),
+                              );
                             },
                           );
                         },
@@ -434,7 +440,7 @@ class _HomeScreenState extends State<HomeScreen> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -451,7 +457,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   vertical: 4,
                 ),
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withOpacity(0.1),
+                  color: AppTheme.primaryColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(

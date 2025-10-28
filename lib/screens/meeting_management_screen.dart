@@ -57,7 +57,7 @@ class MeetingManagementScreen extends StatelessWidget {
                   }
 
                   if (!snapshot.hasData) {
-                    return Center(
+                    return const Center(
                       child: CircularProgressIndicator(
                         color: AppTheme.primaryColor,
                       ),
@@ -71,7 +71,7 @@ class MeetingManagementScreen extends StatelessWidget {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(
+                          const Icon(
                             Icons.event_note,
                             size: 64,
                             color: AppTheme.primaryColor,
@@ -212,12 +212,6 @@ class MeetingManagementScreen extends StatelessWidget {
           icon: Icons.location_on,
           label: 'Location',
           value: meeting.location,
-        ),
-        const SizedBox(height: 8),
-        _buildDetailRow(
-          icon: Icons.people,
-          label: 'Expected Attendance',
-          value: meeting.expectedAttendance.toString(),
         ),
         if (meeting.isVirtual && meeting.meetingLink != null) ...[
           const SizedBox(height: 8),

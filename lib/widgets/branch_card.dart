@@ -21,18 +21,21 @@ class BranchCard extends StatelessWidget {
 
   String _formatLocation(Map<String, dynamic> location) {
     if (location.isEmpty) return 'No location set';
-    
+
     final city = location['city']?.toString().trim();
     final country = location['country']?.toString().trim();
-    
-    if (city != null && country != null && city.isNotEmpty && country.isNotEmpty) {
+
+    if (city != null &&
+        country != null &&
+        city.isNotEmpty &&
+        country.isNotEmpty) {
       return '$city, $country';
     } else if (city != null && city.isNotEmpty) {
       return city;
     } else if (country != null && country.isNotEmpty) {
       return country;
     }
-    
+
     return 'No location set';
   }
 
@@ -70,7 +73,7 @@ class BranchCard extends StatelessWidget {
                         color: AppTheme.primaryColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: Icon(
+                      child: const Icon(
                         Icons.church,
                         color: AppTheme.primaryColor,
                         size: 24,
@@ -91,7 +94,7 @@ class BranchCard extends StatelessWidget {
                           const SizedBox(height: 4),
                           Row(
                             children: [
-                              Icon(
+                              const Icon(
                                 Icons.location_on,
                                 size: 16,
                                 color: AppTheme.neutralColor,
@@ -110,7 +113,7 @@ class BranchCard extends StatelessWidget {
                           const SizedBox(height: 4),
                           Row(
                             children: [
-                              Icon(
+                              const Icon(
                                 Icons.home,
                                 size: 16,
                                 color: AppTheme.neutralColor,
@@ -143,7 +146,7 @@ class BranchCard extends StatelessWidget {
                           onPressed: onEdit,
                           height: 36,
                           backgroundColor: AppTheme.cardColor,
-                          child: Row(
+                          child: const Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(
@@ -151,7 +154,7 @@ class BranchCard extends StatelessWidget {
                                 size: 16,
                                 color: AppTheme.primaryColor,
                               ),
-                              const SizedBox(width: 4),
+                              SizedBox(width: 4),
                               Text(
                                 'Edit',
                                 style: TextStyle(
@@ -170,16 +173,16 @@ class BranchCard extends StatelessWidget {
                           onPressed: onDelete,
                           height: 36,
                           backgroundColor: AppTheme.errorColor,
-                          child: Row(
+                          child: const Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(
+                              Icon(
                                 Icons.delete,
                                 size: 16,
                                 color: Colors.white,
                               ),
-                              const SizedBox(width: 4),
-                              const Text(
+                              SizedBox(width: 4),
+                              Text(
                                 'Delete',
                                 style: TextStyle(
                                   color: Colors.white,

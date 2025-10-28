@@ -104,7 +104,7 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
         Navigator.pop(context);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          const SnackBar(
             content: Text('Failed to create branch. Please try again.'),
             backgroundColor: AppTheme.errorColor,
           ),
@@ -316,7 +316,7 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
                                       radius: 16,
                                       backgroundColor: AppTheme.primaryColor
                                           .withValues(alpha: 0.1),
-                                      child: Icon(
+                                      child: const Icon(
                                         Icons.person,
                                         size: 16,
                                         color: AppTheme.primaryColor,

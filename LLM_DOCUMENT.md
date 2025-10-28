@@ -41,7 +41,7 @@ The AGBC App offers a suite of features tailored to the needs of a church commun
 
 **2.3. Advanced Meeting Scheduling & Management:**
 
-- **Scheduling:** (Partially Implemented) Admins/Pastors can schedule one-time or recurring meetings/events. The `MeetingModel` supports title, description, date/time, end time, type (global/local), branch, category, organizer, location (physical/virtual), meeting link, and expected attendance.
+- **Scheduling:** (Partially Implemented) Admins/Pastors can schedule one-time or recurring meetings/events. The `MeetingModel` supports title, description, date/time, end time, type (global/local), branch, category, organizer, location (physical/virtual), and meeting link.
 - **Viewing:** A `MeetingsScreen` exists but currently shows a "Coming Soon" placeholder. An admin-focused `MeetingManagementScreen` lists all meetings.
 - **Attendance & RSVPs:** The `MeetingModel` includes an `attendees` list, but UI for RSVP and detailed attendance tracking is not yet fully implemented.
 - **Notifications:** Planned for meeting reminders.

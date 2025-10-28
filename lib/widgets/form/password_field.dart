@@ -37,7 +37,7 @@ class _PasswordFieldState extends State<PasswordField> {
       label: widget.label,
       controller: widget.controller,
       hint: widget.hint,
-      prefixIcon: Icon(Icons.lock, color: AppTheme.primaryColor),
+      prefixIcon: const Icon(Icons.lock, color: AppTheme.primaryColor),
       obscureText: _obscurePassword,
       textInputAction: widget.textInputAction,
       onSubmitted: widget.onSubmitted,

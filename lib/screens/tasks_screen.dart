@@ -251,7 +251,7 @@ class _TasksScreenState extends State<TasksScreen> {
                                   AppTheme.warningColor.withValues(alpha: 0.1),
                               shape: BoxShape.circle,
                             ),
-                            child: Icon(
+                            child: const Icon(
                               Remix.task_line,
                               color: AppTheme.warningColor,
                               size: 40,

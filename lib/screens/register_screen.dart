@@ -120,7 +120,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                     radius: 38,
                                     backgroundColor: AppTheme.primaryColor
                                         .withValues(alpha: 0.08),
-                                    child: Icon(
+                                    child: const Icon(
                                       Icons.person_add_rounded,
                                       color: AppTheme.primaryColor,
                                       size: 48,

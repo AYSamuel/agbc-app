@@ -79,7 +79,7 @@ class _MeetingsScreenState extends State<MeetingsScreen> {
                             Icon(
                               Icons.event_note,
                               size: 64,
-                              color: AppTheme.neutralColor.withOpacity(0.5),
+                              color: AppTheme.neutralColor.withValues(alpha: 0.5),
                             ),
                             const SizedBox(height: 16),
                             Text(
@@ -95,7 +95,7 @@ class _MeetingsScreenState extends State<MeetingsScreen> {
                               'Meetings will appear here when they are created',
                               style: GoogleFonts.poppins(
                                 fontSize: 14,
-                                color: AppTheme.neutralColor.withOpacity(0.7),
+                                color: AppTheme.neutralColor.withValues(alpha: 0.7),
                               ),
                               textAlign: TextAlign.center,
                             ),

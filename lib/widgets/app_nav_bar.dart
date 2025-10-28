@@ -43,7 +43,7 @@ class AppNavBar extends StatelessWidget {
                     color: AppTheme.primaryColor.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(
+                  child: const Icon(
                     Remix.notification_3_line,
                     size: 20,
                     color: AppTheme.primaryColor,

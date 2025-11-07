@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:remixicon/remixicon.dart';
 import '../providers/supabase_provider.dart';
 import '../providers/branches_provider.dart';
 import '../models/meeting_model.dart';
@@ -53,6 +54,12 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
     '1 day before': 1440,
     '1 week before': 10080
   };
+
+  // Recurring meeting configuration
+  bool _isRecurring = false;
+  RecurrenceFrequency _recurrenceFrequency = RecurrenceFrequency.weekly;
+  int _recurrenceInterval = 1;
+  DateTime? _recurrenceEndDate;
 
   @override
   Widget build(BuildContext context) {
@@ -566,6 +573,200 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
 
                           const SizedBox(height: 32),
 
+                          // Recurring Meeting Section
+                          Text(
+                            'Recurring Meeting',
+                            style: GoogleFonts.inter(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.darkNeutralColor,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Set up this meeting to repeat automatically',
+                            style: GoogleFonts.inter(
+                              fontSize: 14,
+                              color: AppTheme.neutralColor,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Recurring Toggle
+                          Row(
+                            children: [
+                              Switch(
+                                value: _isRecurring,
+                                onChanged: (value) {
+                                  setState(() {
+                                    _isRecurring = value;
+                                  });
+                                },
+                                activeTrackColor: AppTheme.primaryColor,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Enable Recurring',
+                                style: GoogleFonts.inter(
+                                  fontSize: 16,
+                                  color: AppTheme.darkNeutralColor,
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          // Recurring Configuration (shown when enabled)
+                          if (_isRecurring) ...[
+                            const SizedBox(height: 16),
+
+                            // Frequency Selector
+                            CustomDropdown<RecurrenceFrequency>(
+                              label: 'Repeat',
+                              value: _recurrenceFrequency,
+                              items: RecurrenceFrequency.values
+                                  .where((freq) => freq != RecurrenceFrequency.none)
+                                  .map<DropdownMenuItem<RecurrenceFrequency>>(
+                                      (RecurrenceFrequency freq) {
+                                return DropdownMenuItem<RecurrenceFrequency>(
+                                  value: freq,
+                                  child: Text(_getFrequencyLabel(freq)),
+                                );
+                              }).toList(),
+                              onChanged: (freq) {
+                                if (freq != null) {
+                                  setState(() {
+                                    _recurrenceFrequency = freq;
+                                  });
+                                }
+                              },
+                              validator: null,
+                            ),
+                            const SizedBox(height: 16),
+
+                            // Interval Selector (Every X weeks/months, etc.)
+                            CustomInput(
+                              controller: TextEditingController(
+                                  text: _recurrenceInterval.toString()),
+                              label: 'Every (interval)',
+                              keyboardType: TextInputType.number,
+                              onChanged: (value) {
+                                final interval = int.tryParse(value) ?? 1;
+                                setState(() {
+                                  _recurrenceInterval =
+                                      interval > 0 ? interval : 1;
+                                });
+                              },
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Please enter an interval';
+                                }
+                                final interval = int.tryParse(value);
+                                if (interval == null || interval < 1) {
+                                  return 'Interval must be at least 1';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              _getIntervalHint(),
+                              style: GoogleFonts.inter(
+                                fontSize: 12,
+                                color: AppTheme.neutralColor,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+
+                            // End Date or Count
+                            Text(
+                              'Ends',
+                              style: GoogleFonts.inter(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: AppTheme.darkNeutralColor,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: InkWell(
+                                    onTap: _selectRecurrenceEndDate,
+                                    child: Container(
+                                      padding: const EdgeInsets.all(16),
+                                      decoration: BoxDecoration(
+                                        border: Border.all(
+                                            color: AppTheme.neutralColor),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'End Date',
+                                            style: GoogleFonts.inter(
+                                              fontSize: 14,
+                                              color: AppTheme.neutralColor,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            _recurrenceEndDate != null
+                                                ? _formatDate(_recurrenceEndDate!)
+                                                : 'Never',
+                                            style: GoogleFonts.inter(
+                                              fontSize: 16,
+                                              color: _recurrenceEndDate != null
+                                                  ? AppTheme.darkNeutralColor
+                                                  : AppTheme.neutralColor,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            // Info message about "Never" end date
+                            if (_recurrenceEndDate == null)
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.blue.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: Colors.blue.withValues(alpha: 0.3),
+                                  ),
+                                ),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Icon(
+                                      Remix.information_line,
+                                      size: 20,
+                                      color: Colors.blue[700],
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        'When set to "Never", only 3 months of future instances will be created. You can manually extend the series later as needed.',
+                                        style: GoogleFonts.inter(
+                                          fontSize: 12,
+                                          color: Colors.blue[700],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                          ],
+
+                          const SizedBox(height: 32),
+
                           // Create Meeting Button
                           CustomButton(
                             onPressed: _isCreating ? null : _createMeeting,
@@ -649,13 +850,13 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
       lastDate: DateTime.now().add(const Duration(days: 365)),
     );
 
-    if (date != null) {
+    if (date != null && mounted) {
       final time = await showTimePicker(
         context: context,
         initialTime: TimeOfDay.now(),
       );
 
-      if (time != null) {
+      if (time != null && mounted) {
         setState(() {
           _selectedDateTime = DateTime(
             date.year,
@@ -688,7 +889,7 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
       lastDate: _selectedDateTime!.add(const Duration(days: 7)),
     );
 
-    if (date != null) {
+    if (date != null && mounted) {
       final time = await showTimePicker(
         context: context,
         initialTime: TimeOfDay.fromDateTime(
@@ -696,7 +897,7 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
         ),
       );
 
-      if (time != null) {
+      if (time != null && mounted) {
         final endDateTime = DateTime(
           date.year,
           date.month,
@@ -708,12 +909,14 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
         // Validate that end time is after start time
         if (endDateTime.isBefore(_selectedDateTime!) ||
             endDateTime.isAtSameMomentAs(_selectedDateTime!)) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('End time must be after start time'),
-              backgroundColor: Colors.red,
-            ),
-          );
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('End time must be after start time'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
           return;
         }
 
@@ -728,6 +931,63 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
     return '${dateTime.day}/${dateTime.month}/${dateTime.year} at ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
   }
 
+  String _formatDate(DateTime dateTime) {
+    return '${dateTime.day}/${dateTime.month}/${dateTime.year}';
+  }
+
+  String _getFrequencyLabel(RecurrenceFrequency frequency) {
+    switch (frequency) {
+      case RecurrenceFrequency.daily:
+        return 'Daily';
+      case RecurrenceFrequency.weekly:
+        return 'Weekly';
+      case RecurrenceFrequency.monthly:
+        return 'Monthly';
+      case RecurrenceFrequency.yearly:
+        return 'Yearly';
+      case RecurrenceFrequency.none:
+        return 'None';
+    }
+  }
+
+  String _getIntervalHint() {
+    switch (_recurrenceFrequency) {
+      case RecurrenceFrequency.daily:
+        return _recurrenceInterval == 1
+            ? 'Repeats every day'
+            : 'Repeats every $_recurrenceInterval days';
+      case RecurrenceFrequency.weekly:
+        return _recurrenceInterval == 1
+            ? 'Repeats every week'
+            : 'Repeats every $_recurrenceInterval weeks';
+      case RecurrenceFrequency.monthly:
+        return _recurrenceInterval == 1
+            ? 'Repeats every month'
+            : 'Repeats every $_recurrenceInterval months';
+      case RecurrenceFrequency.yearly:
+        return _recurrenceInterval == 1
+            ? 'Repeats every year'
+            : 'Repeats every $_recurrenceInterval years';
+      case RecurrenceFrequency.none:
+        return '';
+    }
+  }
+
+  Future<void> _selectRecurrenceEndDate() async {
+    final date = await showDatePicker(
+      context: context,
+      initialDate: _selectedDateTime ?? DateTime.now().add(const Duration(days: 7)),
+      firstDate: _selectedDateTime ?? DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 730)), // 2 years
+    );
+
+    if (date != null) {
+      setState(() {
+        _recurrenceEndDate = date;
+      });
+    }
+  }
+
   Future<void> _selectScheduledNotificationDateTime() async {
     final date = await showDatePicker(
       context: context,
@@ -736,13 +996,13 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
       lastDate: DateTime.now().add(const Duration(days: 365)),
     );
 
-    if (date != null) {
+    if (date != null && mounted) {
       final time = await showTimePicker(
         context: context,
         initialTime: TimeOfDay.fromDateTime(DateTime.now().add(const Duration(hours: 1))),
       );
 
-      if (time != null) {
+      if (time != null && mounted) {
         final scheduledDateTime = DateTime(
           date.year,
           date.month,
@@ -753,12 +1013,14 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
 
         // Validate that scheduled time is in the future
         if (scheduledDateTime.isBefore(DateTime.now())) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Scheduled notification time must be in the future'),
-              backgroundColor: Colors.red,
-            ),
-          );
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Scheduled notification time must be in the future'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
           return;
         }
 
@@ -822,14 +1084,17 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
       scheduledDateTime: _scheduledNotificationDateTime,
     );
 
+    // Determine if this is a global meeting based on selected branch
+    final isGlobalMeeting = _selectedBranch?.isGlobalBranch ?? false;
+
     final meeting = MeetingModel(
       id: '', // Will be generated by database
       title: _titleController.text,
       description: _descriptionController.text,
       dateTime: _selectedDateTime!,
-      type: 'local',
+      type: isGlobalMeeting ? 'global' : 'local',
       endTime: _selectedEndTime!,
-      branchId: _selectedBranch?.id,
+      branchId: isGlobalMeeting ? null : _selectedBranch?.id,
       organizerId: supabaseProvider.currentUser!.id,
       organizerName:
           supabaseProvider.currentUser?.userMetadata?['full_name'] ?? 'Unknown',
@@ -839,6 +1104,17 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
       initialNotificationConfig: initialNotificationConfig,
       initialNotificationSent: false,
       initialNotificationSentAt: null,
+      // Recurring meeting fields
+      isRecurring: _isRecurring,
+      recurrenceFrequency: _isRecurring ? _recurrenceFrequency : RecurrenceFrequency.none,
+      recurrenceInterval: _isRecurring ? _recurrenceInterval : 1,
+      recurrenceEndDate: _isRecurring ? _recurrenceEndDate : null,
+      recurrenceDayOfWeek: _isRecurring && _selectedDateTime != null
+          ? _selectedDateTime!.weekday % 7  // 0=Sunday, 6=Saturday
+          : null,
+      recurrenceDayOfMonth: _isRecurring && _selectedDateTime != null
+          ? _selectedDateTime!.day
+          : null,
     );
 
     final success = await supabaseProvider.createMeetingWithInitialNotification(

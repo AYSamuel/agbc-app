@@ -290,7 +290,7 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: const Text('RSVP updated successfully!'),
+            content: Text('RSVP updated successfully!'),
             backgroundColor: Colors.green,
           ),
         );
@@ -570,7 +570,7 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
           _showSuccessMessage();
         }
       } catch (e) {
-        print('External application launch failed: $e');
+        debugPrint('External application launch failed: $e');
       }
 
       // 2. If external app failed, try platform default
@@ -580,7 +580,7 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
           launched = true;
           _showSuccessMessage();
         } catch (e) {
-          print('Platform default launch failed: $e');
+          debugPrint('Platform default launch failed: $e');
         }
       }
 
@@ -591,7 +591,7 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
           launched = true;
           _showSuccessMessage();
         } catch (e) {
-          print('In-app web view launch failed: $e');
+          debugPrint('In-app web view launch failed: $e');
         }
       }
 
@@ -601,7 +601,7 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
       }
 
     } catch (e) {
-      print('URL parsing error: $e');
+      debugPrint('URL parsing error: $e');
       _showErrorWithFallback(url, 'Error processing meeting link: ${e.toString()}');
     }
   }
@@ -658,7 +658,7 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
         return AlertDialog(
           title: Row(
             children: [
-              Icon(Icons.warning, color: Colors.orange, size: 24),
+              const Icon(Icons.warning, color: Colors.orange, size: 24),
               const SizedBox(width: 8),
               Text(
                 'Meeting Link Issue',
@@ -915,6 +915,100 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
     );
   }
 
+  Widget _buildRecurringInfo() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Remix.repeat_line,
+                size: 20,
+                color: Colors.purple[700],
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Recurring Meeting',
+                style: GoogleFonts.inter(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.purple[700],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          _buildRecurringInfoRow(
+            'Frequency',
+            _getFrequencyText(),
+          ),
+          const SizedBox(height: 8),
+          if (_meeting.recurrenceEndDate != null)
+            _buildRecurringInfoRow(
+              'Ends',
+              DateFormat('MMM dd, yyyy').format(_meeting.recurrenceEndDate!),
+            )
+          else
+            _buildRecurringInfoRow(
+              'Ends',
+              'Never (3 months of instances created)',
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRecurringInfoRow(String label, String value) {
+    return Row(
+      children: [
+        Text(
+          '$label: ',
+          style: GoogleFonts.inter(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: AppTheme.darkNeutralColor,
+          ),
+        ),
+        Text(
+          value,
+          style: GoogleFonts.inter(
+            fontSize: 14,
+            color: AppTheme.neutralColor,
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _getFrequencyText() {
+    final interval = _meeting.recurrenceInterval;
+    switch (_meeting.recurrenceFrequency) {
+      case RecurrenceFrequency.daily:
+        return interval == 1 ? 'Daily' : 'Every $interval days';
+      case RecurrenceFrequency.weekly:
+        return interval == 1 ? 'Weekly' : 'Every $interval weeks';
+      case RecurrenceFrequency.monthly:
+        return interval == 1 ? 'Monthly' : 'Every $interval months';
+      case RecurrenceFrequency.yearly:
+        return interval == 1 ? 'Yearly' : 'Every $interval years';
+      case RecurrenceFrequency.none:
+        return 'Not recurring';
+    }
+  }
+
   Widget _buildNotificationStatus() {
     final config = _meeting.initialNotificationConfig;
     
@@ -1146,6 +1240,12 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
                     ),
                     const SizedBox(height: 16),
 
+                    // Recurring Meeting Info
+                    if (_meeting.isRecurring)
+                      _buildRecurringInfo(),
+                    if (_meeting.isRecurring)
+                      const SizedBox(height: 16),
+
                     // Date, Time, and Location
                     Row(
                       children: [
@@ -1341,14 +1441,14 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
                 ],
               )
             else if (_autoSaveSuccess)
-              Row(
+              const Row(
                 children: [
                   Icon(
                     Icons.check_circle,
                     size: 14,
                     color: Colors.green,
                   ),
-                  const SizedBox(width: 6),
+                  SizedBox(width: 6),
                   Text(
                     'Saved',
                     style: TextStyle(
@@ -1362,7 +1462,7 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
             else if (_autoSaveError != null)
               Row(
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.error_outline,
                     size: 14,
                     color: Colors.red,
@@ -1371,7 +1471,7 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
                   Flexible(
                     child: Text(
                       _autoSaveError!,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 12,
                         color: Colors.red,
                         fontWeight: FontWeight.w500,

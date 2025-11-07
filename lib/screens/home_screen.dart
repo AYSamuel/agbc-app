@@ -319,7 +319,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     final upcomingMeetings = meetings
                         .where((meeting) =>
                             meeting.dateTime.isAfter(DateTime.now()) &&
-                            meeting.status == MeetingStatus.scheduled)
+                            meeting.status == MeetingStatus.scheduled &&
+                            meeting.parentMeetingId == null) // Only show parent meetings
                         .take(5)
                         .toList();
 

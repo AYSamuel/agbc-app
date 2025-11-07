@@ -196,24 +196,27 @@ class NotificationHelper {
   }
 
   /// Notify branch members about a new meeting (immediate notification)
+  /// If branchId is null, notifies all users (global meeting)
   Future<void> notifyMeetingCreated({
     required String meetingId,
     required String meetingTitle,
     required DateTime meetingDateTime,
-    required String branchId,
+    String? branchId,
     required String organizerName,
   }) async {
     try {
-      // Get all users in the branch
-      final branchUsers = await _supabaseProvider.getUsersByBranch(branchId);
+      // Get users: all users for global meetings, or branch-specific users
+      final users = branchId != null
+          ? await _supabaseProvider.getUsersByBranch(branchId)
+          : await _supabaseProvider.getAllUsersList();
 
-      if (branchUsers.isNotEmpty) {
+      if (users.isNotEmpty) {
         // Use the proper title format for initial notification
         final title =
             formatMeetingNotificationTitle(1440); // Initial notification
 
         // Send individual personalized notifications to each user
-        for (final user in branchUsers) {
+        for (final user in users) {
           final userName = user.fullName; // Simplified - no null check needed
 
           // Create a personalized message for each user
@@ -239,7 +242,7 @@ class NotificationHelper {
         }
 
         debugPrint(
-            'Successfully sent meeting creation notifications to ${branchUsers.length} users');
+            'Successfully sent meeting creation notifications to ${users.length} users${branchId != null ? " in branch" : " (global)"}');
       }
     } catch (e) {
       debugPrint('Error sending meeting creation notifications: $e');
@@ -247,26 +250,29 @@ class NotificationHelper {
   }
 
   /// Schedule initial notification for a meeting at a specific date/time
+  /// If branchId is null, schedules notifications for all users (global meeting)
   Future<void> scheduleInitialMeetingNotification({
     required String meetingId,
     required String meetingTitle,
     required DateTime meetingDateTime,
-    required String branchId,
+    String? branchId,
     required String organizerName,
     required DateTime scheduledDateTime,
   }) async {
     try {
-      // Get all users in the branch
-      final branchUsers = await _supabaseProvider.getUsersByBranch(branchId);
+      // Get users: all users for global meetings, or branch-specific users
+      final users = branchId != null
+          ? await _supabaseProvider.getUsersByBranch(branchId)
+          : await _supabaseProvider.getAllUsersList();
 
-      if (branchUsers.isNotEmpty) {
+      if (users.isNotEmpty) {
         // Only schedule if the scheduled time is in the future
         if (scheduledDateTime.isAfter(DateTime.now())) {
           // Use the proper title format for initial notification
           final title = formatMeetingNotificationTitle(1440); // Initial notification
 
           // Schedule individual personalized notifications to each user
-          for (final user in branchUsers) {
+          for (final user in users) {
             final userName = user.fullName; // Simplified - no null check needed
 
             // Create a personalized message for each user
@@ -303,7 +309,7 @@ class NotificationHelper {
           }
 
           debugPrint(
-              'Successfully scheduled initial meeting notifications for ${branchUsers.length} users at $scheduledDateTime');
+              'Successfully scheduled initial meeting notifications for ${users.length} users${branchId != null ? " in branch" : " (global)"} at $scheduledDateTime');
         } else {
           debugPrint(
               'Skipping initial notification scheduling - scheduled time is in the past');
@@ -315,16 +321,20 @@ class NotificationHelper {
   }
 
   /// Schedule meeting reminder notifications using OneSignal's native scheduling
+  /// Schedule meeting reminders for branch members or all users (if global)
+  /// If branchId is null, schedules reminders for all users (global meeting)
   Future<void> scheduleMeetingReminders({
     required String meetingId,
     required String meetingTitle,
     required DateTime meetingDateTime,
-    required String branchId,
+    String? branchId,
     required List<int> reminderMinutes,
   }) async {
     try {
-      // Get all users in the branch
-      final branchUsers = await _supabaseProvider.getUsersByBranch(branchId);
+      // Get users: all users for global meetings, or branch-specific users
+      final users = branchId != null
+          ? await _supabaseProvider.getUsersByBranch(branchId)
+          : await _supabaseProvider.getAllUsersList();
 
       // Schedule reminders for each time using OneSignal's native scheduling
       for (final reminderMinute in reminderMinutes) {
@@ -334,7 +344,7 @@ class NotificationHelper {
           meetingId: meetingId,
           meetingTitle: meetingTitle,
           meetingDateTime: meetingDateTime,
-          branchUsers: branchUsers,
+          branchUsers: users,
           reminderMinutes: reminderMinute,
         );
       }

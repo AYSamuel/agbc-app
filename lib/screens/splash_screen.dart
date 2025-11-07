@@ -52,11 +52,14 @@ class _SplashScreenState extends State<SplashScreen>
     final initializationStart = DateTime.now();
 
     try {
+      if (!mounted) return;
       final authService = Provider.of<AuthService>(context, listen: false);
       while (authService.isLoading) {
         await Future.delayed(const Duration(milliseconds: 100));
+        if (!mounted) return;
       }
 
+      if (!mounted) return;
       final notificationService =
           Provider.of<NotificationService>(context, listen: false);
       try {
@@ -65,22 +68,26 @@ class _SplashScreenState extends State<SplashScreen>
         debugPrint('Notification service initialization warning: $e');
       }
 
+      if (!mounted) return;
       final supabaseProvider =
           Provider.of<SupabaseProvider>(context, listen: false);
       while (supabaseProvider.isLoading) {
         await Future.delayed(const Duration(milliseconds: 100));
+        if (!mounted) return;
       }
 
       if (supabaseProvider.error != null) {
         supabaseProvider.clearError();
       }
 
+      if (!mounted) return;
       final branchesProvider =
           Provider.of<BranchesProvider>(context, listen: false);
       await branchesProvider.fetchBranches();
 
       while (branchesProvider.isLoading) {
         await Future.delayed(const Duration(milliseconds: 100));
+        if (!mounted) return;
       }
 
       final initializationDuration =
@@ -116,18 +123,21 @@ class _SplashScreenState extends State<SplashScreen>
 
     if (authService.isAuthenticated) {
       if (authService.currentUser?.emailConfirmedAt == null) {
+        if (!mounted) return;
         Navigator.of(context).pushReplacementNamed('/login');
       } else {
         // Check if user had "Remember Me" enabled
         final prefs = await SharedPreferences.getInstance();
         final rememberMe = prefs.getBool('remember_me') ?? false;
 
+        if (!mounted) return;
         if (rememberMe) {
           // User chose to stay logged in
           Navigator.of(context).pushReplacementNamed('/home');
         } else {
           // User didn't choose "Remember Me", so sign them out and go to login
           await authService.signOut();
+          if (!mounted) return;
           Navigator.of(context).pushReplacementNamed('/login');
         }
       }

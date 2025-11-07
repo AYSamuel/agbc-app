@@ -296,6 +296,7 @@ class MeetingManagementScreen extends StatelessWidget {
                     mode: LaunchMode.externalApplication,
                   );
                 } else {
+                  if (!context.mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(
@@ -307,6 +308,7 @@ class MeetingManagementScreen extends StatelessWidget {
                   );
                 }
               } catch (e) {
+                if (!context.mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(

@@ -1,5 +1,14 @@
 import 'initial_notification_config.dart';
 
+/// Enum for recurrence frequency matching the database schema
+enum RecurrenceFrequency {
+  none,
+  daily,
+  weekly,
+  monthly,
+  yearly,
+}
+
 /// Enhanced MeetingModel with new schema features including metadata and ENUM status.
 class MeetingModel {
   // Basic meeting information
@@ -35,6 +44,17 @@ class MeetingModel {
   final bool initialNotificationSent;
   final DateTime? initialNotificationSentAt;
 
+  // Recurring meeting fields
+  final bool isRecurring;
+  final RecurrenceFrequency recurrenceFrequency;
+  final int recurrenceInterval;
+  final DateTime? recurrenceEndDate;
+  final int? recurrenceCount;
+  final String? parentMeetingId;
+  final int? recurrenceDayOfWeek;
+  final int? recurrenceDayOfMonth;
+  final List<DateTime> recurrenceExceptions;
+
   /// Constructor for creating a new MeetingModel instance
   MeetingModel({
     required this.id,
@@ -58,10 +78,21 @@ class MeetingModel {
     this.initialNotificationConfig,
     this.initialNotificationSent = false,
     this.initialNotificationSentAt,
+    // Recurring meeting parameters
+    this.isRecurring = false,
+    this.recurrenceFrequency = RecurrenceFrequency.none,
+    this.recurrenceInterval = 1,
+    this.recurrenceEndDate,
+    this.recurrenceCount,
+    this.parentMeetingId,
+    this.recurrenceDayOfWeek,
+    this.recurrenceDayOfMonth,
+    List<DateTime>? recurrenceExceptions,
   })  : createdAt = createdAt ?? DateTime.now(),
         updatedAt = updatedAt ?? DateTime.now(),
         attendees = attendees ?? {},
-        metadata = metadata ?? {};
+        metadata = metadata ?? {},
+        recurrenceExceptions = recurrenceExceptions ?? [];
 
   /// Creates a MeetingModel instance from JSON data
   factory MeetingModel.fromJson(Map<String, dynamic> json) {
@@ -101,6 +132,27 @@ class MeetingModel {
       initialNotificationSentAt: json['initial_notification_sent_at'] != null
           ? DateTime.parse(json['initial_notification_sent_at'])
           : null,
+      // Recurring meeting fields
+      isRecurring: json['is_recurring'] ?? false,
+      recurrenceFrequency: json['recurrence_frequency'] != null
+          ? RecurrenceFrequency.values.firstWhere(
+              (e) => e.toString().split('.').last == json['recurrence_frequency'],
+              orElse: () => RecurrenceFrequency.none,
+            )
+          : RecurrenceFrequency.none,
+      recurrenceInterval: json['recurrence_interval'] ?? 1,
+      recurrenceEndDate: json['recurrence_end_date'] != null
+          ? DateTime.parse(json['recurrence_end_date'])
+          : null,
+      recurrenceCount: json['recurrence_count'],
+      parentMeetingId: json['parent_meeting_id'],
+      recurrenceDayOfWeek: json['recurrence_day_of_week'],
+      recurrenceDayOfMonth: json['recurrence_day_of_month'],
+      recurrenceExceptions: json['recurrence_exceptions'] != null
+          ? (json['recurrence_exceptions'] as List)
+              .map((e) => DateTime.parse(e as String))
+              .toList()
+          : [],
     );
   }
 
@@ -113,6 +165,7 @@ class MeetingModel {
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
       'end_time': endTime?.toIso8601String(),
+      'type': type, // Add type field for global/local distinction
       'organizer_id': organizerId,
       'branch_id': branchId,
       'location': location,
@@ -124,6 +177,16 @@ class MeetingModel {
       'initial_notification_config': initialNotificationConfig?.toJson(),
       'initial_notification_sent': initialNotificationSent,
       'initial_notification_sent_at': initialNotificationSentAt?.toIso8601String(),
+      // Recurring meeting fields
+      'is_recurring': isRecurring,
+      'recurrence_frequency': recurrenceFrequency.toString().split('.').last,
+      'recurrence_interval': recurrenceInterval,
+      'recurrence_end_date': recurrenceEndDate?.toIso8601String(),
+      'recurrence_count': recurrenceCount,
+      'parent_meeting_id': parentMeetingId,
+      'recurrence_day_of_week': recurrenceDayOfWeek,
+      'recurrence_day_of_month': recurrenceDayOfMonth,
+      'recurrence_exceptions': recurrenceExceptions.map((e) => e.toIso8601String()).toList(),
     };
 
     // Only include ID if it's not empty (for updates)
@@ -196,6 +259,15 @@ class MeetingModel {
     InitialNotificationConfig? initialNotificationConfig,
     bool? initialNotificationSent,
     DateTime? initialNotificationSentAt,
+    bool? isRecurring,
+    RecurrenceFrequency? recurrenceFrequency,
+    int? recurrenceInterval,
+    DateTime? recurrenceEndDate,
+    int? recurrenceCount,
+    String? parentMeetingId,
+    int? recurrenceDayOfWeek,
+    int? recurrenceDayOfMonth,
+    List<DateTime>? recurrenceExceptions,
   }) {
     return MeetingModel(
       id: id ?? this.id,
@@ -219,6 +291,15 @@ class MeetingModel {
       initialNotificationConfig: initialNotificationConfig ?? this.initialNotificationConfig,
       initialNotificationSent: initialNotificationSent ?? this.initialNotificationSent,
       initialNotificationSentAt: initialNotificationSentAt ?? this.initialNotificationSentAt,
+      isRecurring: isRecurring ?? this.isRecurring,
+      recurrenceFrequency: recurrenceFrequency ?? this.recurrenceFrequency,
+      recurrenceInterval: recurrenceInterval ?? this.recurrenceInterval,
+      recurrenceEndDate: recurrenceEndDate ?? this.recurrenceEndDate,
+      recurrenceCount: recurrenceCount ?? this.recurrenceCount,
+      parentMeetingId: parentMeetingId ?? this.parentMeetingId,
+      recurrenceDayOfWeek: recurrenceDayOfWeek ?? this.recurrenceDayOfWeek,
+      recurrenceDayOfMonth: recurrenceDayOfMonth ?? this.recurrenceDayOfMonth,
+      recurrenceExceptions: recurrenceExceptions ?? this.recurrenceExceptions,
     );
   }
 

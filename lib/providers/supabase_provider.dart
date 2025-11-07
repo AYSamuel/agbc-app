@@ -260,30 +260,28 @@ class SupabaseProvider extends ChangeNotifier {
         
         switch (config.timing) {
           case NotificationTiming.immediate:
-            // Send immediate notification (only if branchId is available)
-            if (meeting.branchId != null) {
-              await helper.notifyMeetingCreated(
-                meetingId: meetingId,
-                meetingTitle: meeting.title,
-                meetingDateTime: meeting.dateTime,
-                organizerName: meeting.organizerName,
-                branchId: meeting.branchId!,
-              );
-            }
-            
+            // Send immediate notification (for both global and branch-specific meetings)
+            await helper.notifyMeetingCreated(
+              meetingId: meetingId,
+              meetingTitle: meeting.title,
+              meetingDateTime: meeting.dateTime,
+              organizerName: meeting.organizerName,
+              branchId: meeting.branchId, // null for global, specific ID for branch
+            );
+
             // Mark initial notification as sent
             await _updateInitialNotificationStatus(meetingId, true);
             break;
-            
+
           case NotificationTiming.scheduled:
-            if (config.scheduledDateTime != null && meeting.branchId != null) {
-              // Schedule initial notification for later
+            if (config.scheduledDateTime != null) {
+              // Schedule initial notification for later (for both global and branch-specific)
               await helper.scheduleInitialMeetingNotification(
                 meetingId: meetingId,
                 meetingTitle: meeting.title,
                 meetingDateTime: meeting.dateTime,
                 organizerName: meeting.organizerName,
-                branchId: meeting.branchId!,
+                branchId: meeting.branchId, // null for global, specific ID for branch
                 scheduledDateTime: config.scheduledDateTime!,
               );
             }
@@ -514,7 +512,7 @@ class SupabaseProvider extends ChangeNotifier {
         meetingId: meetingId,
         meetingTitle: meetingTitle,
         meetingDateTime: startTime,
-        branchId: branchId ?? '',
+        branchId: branchId, // null for global, specific ID for branch
         reminderMinutes: reminderMinutes,
       );
     } catch (e) {
@@ -531,6 +529,18 @@ class SupabaseProvider extends ChangeNotifier {
       return response.map((json) => UserModel.fromJson(json)).toList();
     } catch (e) {
       debugPrint('Error getting users by branch: $e');
+      return [];
+    }
+  }
+
+  /// Get all users as a list (for global meetings/notifications)
+  Future<List<UserModel>> getAllUsersList() async {
+    try {
+      final response = await _supabase.from('users').select();
+
+      return response.map((json) => UserModel.fromJson(json)).toList();
+    } catch (e) {
+      debugPrint('Error getting all users: $e');
       return [];
     }
   }

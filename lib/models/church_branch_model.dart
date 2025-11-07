@@ -42,6 +42,11 @@ class ChurchBranch {
     return parts.isEmpty ? 'Location not specified' : parts.join(', ');
   }
 
+  // Check if this is the global branch
+  bool get isGlobalBranch {
+    return name.toLowerCase() == 'global';
+  }
+
   // Add fromJson factory constructor
   factory ChurchBranch.fromJson(Map<String, dynamic> json) {
     return ChurchBranch(

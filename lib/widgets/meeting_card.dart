@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:remixicon/remixicon.dart';
 import '../models/meeting_model.dart';
 import '../utils/theme.dart';
 
@@ -61,6 +62,39 @@ class MeetingCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 8),
+                // Add recurring badge if this is a recurring meeting
+                if (meeting.isRecurring) ...[
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.purple.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Remix.repeat_line,
+                          size: 12,
+                          color: Colors.purple[700],
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          _getRecurrenceLabel(),
+                          style: GoogleFonts.inter(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.purple[700],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                ],
                 Expanded(
                   child: Text(
                     _formatTime(meeting.dateTime),
@@ -173,5 +207,20 @@ class MeetingCard extends StatelessWidget {
 
   String _formatTime(DateTime dateTime) {
     return DateFormat('h:mm a').format(dateTime);
+  }
+
+  String _getRecurrenceLabel() {
+    switch (meeting.recurrenceFrequency) {
+      case RecurrenceFrequency.daily:
+        return 'Daily';
+      case RecurrenceFrequency.weekly:
+        return 'Weekly';
+      case RecurrenceFrequency.monthly:
+        return 'Monthly';
+      case RecurrenceFrequency.yearly:
+        return 'Yearly';
+      case RecurrenceFrequency.none:
+        return '';
+    }
   }
 }

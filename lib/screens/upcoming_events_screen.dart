@@ -91,12 +91,14 @@ class _UpcomingEventsScreenState extends State<UpcomingEventsScreen> {
                   }
 
                   final meetings = snapshot.data ?? [];
-                  
+
                   // Filter for upcoming events only
+                  // Exclude recurring instances - only show parent meetings
                   final upcomingMeetings = meetings
                       .where((meeting) =>
                           meeting.dateTime.isAfter(DateTime.now()) &&
-                          meeting.status == MeetingStatus.scheduled)
+                          meeting.status == MeetingStatus.scheduled &&
+                          meeting.parentMeetingId == null) // Only show parent meetings, not instances
                       .toList();
 
                   // Sort by date (earliest first)

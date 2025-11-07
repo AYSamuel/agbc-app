@@ -69,7 +69,12 @@ class _MeetingsScreenState extends State<MeetingsScreen> {
                       );
                     }
 
-                    final meetings = snapshot.data ?? [];
+                    final allMeetings = snapshot.data ?? [];
+
+                    // Filter to show only parent meetings (exclude recurring instances)
+                    final meetings = allMeetings
+                        .where((meeting) => meeting.parentMeetingId == null)
+                        .toList();
 
                     if (meetings.isEmpty) {
                       return Center(

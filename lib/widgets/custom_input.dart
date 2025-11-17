@@ -79,7 +79,6 @@ class _CustomInputState extends State<CustomInput>
 
   void _setupListeners() {
     _focusNode.addListener(_handleFocusChange);
-    widget.controller.addListener(_handleTextChange);
   }
 
   @override
@@ -90,14 +89,9 @@ class _CustomInputState extends State<CustomInput>
 
   void _cleanupListeners() {
     _focusNode.removeListener(_handleFocusChange);
-    widget.controller.removeListener(_handleTextChange);
     if (widget.focusNode == null) {
       _focusNode.dispose();
     }
-  }
-
-  void _handleTextChange() {
-    setState(() {});
   }
 
   void _handleFocusChange() {
@@ -247,30 +241,33 @@ class _CustomInputState extends State<CustomInput>
       );
     }
 
-    // Show clear button whenever there's text
-    if (widget.controller.text.isNotEmpty) {
-      return Padding(
-        padding: const EdgeInsets.only(right: 8),
-        child: IconButton(
-          padding: const EdgeInsets.all(0),
-          constraints: const BoxConstraints(),
-          icon: Icon(
-            Icons.clear,
-            color: _isFocused
-                ? AppTheme.primaryColor
-                : AppTheme.neutralColor.withValues(alpha: 0.6),
-            size: 20,
-          ),
-          onPressed: () {
-            widget.controller.clear();
-            if (widget.onChanged != null) {
-              widget.onChanged!('');
-            }
-          },
-        ),
-      );
-    }
+    // Use ValueListenableBuilder to avoid rebuilding the entire widget
+    return ValueListenableBuilder<TextEditingValue>(
+      valueListenable: widget.controller,
+      builder: (context, value, child) {
+        if (value.text.isEmpty) return const SizedBox.shrink();
 
-    return null;
+        return Padding(
+          padding: const EdgeInsets.only(right: 8),
+          child: IconButton(
+            padding: const EdgeInsets.all(0),
+            constraints: const BoxConstraints(),
+            icon: Icon(
+              Icons.clear,
+              color: _isFocused
+                  ? AppTheme.primaryColor
+                  : AppTheme.neutralColor.withValues(alpha: 0.6),
+              size: 20,
+            ),
+            onPressed: () {
+              widget.controller.clear();
+              if (widget.onChanged != null) {
+                widget.onChanged!('');
+              }
+            },
+          ),
+        );
+      },
+    );
   }
 }

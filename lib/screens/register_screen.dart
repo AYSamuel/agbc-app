@@ -3,8 +3,6 @@ import 'package:flutter/material.dart';
 import '../widgets/register_form.dart';
 import '../utils/theme.dart';
 import '../widgets/custom_back_button.dart';
-import 'package:provider/provider.dart';
-import '../providers/branches_provider.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -14,21 +12,14 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
-  @override
-  void initState() {
-    super.initState();
-    // Initialize branches when screen is opened
-    Future.microtask(() {
-      if (mounted) {
-        Provider.of<BranchesProvider>(context, listen: false).fetchBranches();
-      }
-    });
-  }
+  // Branch data is already cached from splash screen initialization
+  // No need to fetch again
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
+      resizeToAvoidBottomInset: true, // Ensure content resizes when keyboard appears
       body: Stack(
         children: [
           // Gorgeous layered gradient background

@@ -396,6 +396,12 @@ class AuthService extends ChangeNotifier {
   /// Check if current user can manage tasks (admin, pastor, or worker)
   bool get canManageTasks => isAdmin || isPastor || isWorker;
 
+  /// Check if user should stay logged in based on remember me setting
+  Future<bool> shouldStayLoggedIn() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool('remember_me') ?? false;
+  }
+
   /// Reset password for the given email
   Future<void> resetPassword(String email) async {
     try {

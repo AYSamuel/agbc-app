@@ -135,22 +135,27 @@ class _CustomButtonState extends State<CustomButton>
     super.dispose();
   }
 
-  Future<void> _handleTap() async {
+  void _handleTap() {
     if (widget.onPressed == null || widget.isLoading) return;
 
-    await _controller.forward();
-    await _controller.reverse();
+    // Play animation without blocking the callback
+    _controller.forward().then((_) => _controller.reverse());
+
+    // Call onPressed immediately for better responsiveness
     widget.onPressed!();
   }
 
   @override
   Widget build(BuildContext context) {
     final isDisabled = widget.onPressed == null || widget.isLoading;
-    final backgroundColor = isDisabled
+
+    // When loading, keep button solid so spinner is visible
+    final backgroundColor = isDisabled && !widget.isLoading
         ? (widget.backgroundColor ?? AppTheme.primaryColor)
             .withValues(alpha: 0.5)
         : widget.backgroundColor ?? AppTheme.primaryColor;
-    final foregroundColor = isDisabled
+
+    final foregroundColor = isDisabled && !widget.isLoading
         ? (widget.foregroundColor ?? Colors.white).withValues(alpha: 0.5)
         : widget.foregroundColor ?? Colors.white;
 
@@ -201,6 +206,8 @@ class _CustomButtonState extends State<CustomButton>
           style: ElevatedButton.styleFrom(
             backgroundColor: backgroundColor,
             foregroundColor: foregroundColor,
+            disabledBackgroundColor: backgroundColor, // Keep same background when loading
+            disabledForegroundColor: foregroundColor, // Keep same text color when loading
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(widget.borderRadius),
             ),

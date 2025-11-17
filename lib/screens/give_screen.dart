@@ -3,8 +3,8 @@ import 'package:google_fonts/google_fonts.dart';
 import '../utils/theme.dart';
 import '../widgets/custom_back_button.dart';
 
-class PrayScreen extends StatelessWidget {
-  const PrayScreen({super.key});
+class GiveScreen extends StatelessWidget {
+  const GiveScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +23,7 @@ class PrayScreen extends StatelessWidget {
                   ),
                   const SizedBox(width: 16),
                   Text(
-                    'Prayer Wall',
+                    'Give',
                     style: GoogleFonts.inter(
                       fontSize: 20,
                       fontWeight: FontWeight.w600,
@@ -39,13 +39,13 @@ class PrayScreen extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(
-                      Icons.favorite_rounded,
+                      Icons.volunteer_activism_rounded,
                       size: 64,
                       color: AppTheme.primaryColor.withValues(alpha: 0.5),
                     ),
                     const SizedBox(height: 16),
                     const Text(
-                      'Prayer Wall Coming Soon',
+                      'Give Coming Soon',
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
@@ -54,11 +54,12 @@ class PrayScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Share your prayer requests and support others',
+                      'Support the church with your generous contributions',
                       style: TextStyle(
                         fontSize: 16,
                         color: Colors.grey[600],
                       ),
+                      textAlign: TextAlign.center,
                     ),
                   ],
                 ),

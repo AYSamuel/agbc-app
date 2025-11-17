@@ -26,6 +26,7 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
   final _descriptionController = TextEditingController();
   final _locationController = TextEditingController();
   final _meetingLinkController = TextEditingController();
+  final _recurrenceIntervalController = TextEditingController(text: '1');
 
   DateTime? _selectedDateTime;
   DateTime? _selectedEndTime;
@@ -126,52 +127,38 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
                           ),
                           const SizedBox(height: 16),
 
-                          // Branch Selection
-                          Builder(
-                              builder: (context) {
-                                final branchesProvider =
-                                    Provider.of<BranchesProvider>(context);
-                                final branches = branchesProvider.branches;
+                          // Branch Selection - optimized to only listen when needed
+                          Consumer<BranchesProvider>(
+                            builder: (context, branchesProvider, child) {
+                              final branches = branchesProvider.branches;
 
-                                // Reset selected branch if it's not in the current list
-                                if (_selectedBranch != null &&
-                                    !branches.any((branch) =>
-                                        branch.id == _selectedBranch!.id)) {
-                                  WidgetsBinding.instance
-                                      .addPostFrameCallback((_) {
+                              return CustomDropdown<ChurchBranch>(
+                                label: 'Select Branch',
+                                value: _selectedBranch,
+                                items: branches
+                                    .map<DropdownMenuItem<ChurchBranch>>(
+                                        (ChurchBranch branch) {
+                                  return DropdownMenuItem<ChurchBranch>(
+                                    value: branch,
+                                    child: Text(branch.name),
+                                  );
+                                }).toList(),
+                                onChanged: (branch) {
+                                  if (branch != null) {
                                     setState(() {
-                                      _selectedBranch = null;
+                                      _selectedBranch = branch;
                                     });
-                                  });
-                                }
-
-                                return CustomDropdown<ChurchBranch>(
-                                  label: 'Select Branch',
-                                  value: _selectedBranch,
-                                  items: branches
-                                      .map<DropdownMenuItem<ChurchBranch>>(
-                                          (ChurchBranch branch) {
-                                    return DropdownMenuItem<ChurchBranch>(
-                                      value: branch,
-                                      child: Text(branch.name),
-                                    );
-                                  }).toList(),
-                                  onChanged: (branch) {
-                                    if (branch != null) {
-                                      setState(() {
-                                        _selectedBranch = branch;
-                                      });
-                                    }
-                                  },
-                                  validator: (value) {
-                                    if (value == null) {
-                                      return 'Please select a branch';
-                                    }
-                                    return null;
-                                  },
-                                );
-                              },
-                            ),
+                                  }
+                                },
+                                validator: (value) {
+                                  if (value == null) {
+                                    return 'Please select a branch';
+                                  }
+                                  return null;
+                                },
+                              );
+                            },
+                          ),
                           const SizedBox(height: 16),
 
                           // Date and Time Selection
@@ -314,8 +301,6 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
                                 return null;
                               },
                             ),
-                          const SizedBox(height: 24),
-
                           const SizedBox(height: 24),
 
                           // Initial Notification Section
@@ -568,6 +553,13 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
                                 });
                               },
                               activeColor: AppTheme.primaryColor,
+                              checkColor: Colors.white,
+                              side: BorderSide(
+                                color: isSelected
+                                    ? AppTheme.primaryColor
+                                    : AppTheme.neutralColor,
+                                width: 2,
+                              ),
                             );
                           }),
 
@@ -645,8 +637,7 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
 
                             // Interval Selector (Every X weeks/months, etc.)
                             CustomInput(
-                              controller: TextEditingController(
-                                  text: _recurrenceInterval.toString()),
+                              controller: _recurrenceIntervalController,
                               label: 'Every (interval)',
                               keyboardType: TextInputType.number,
                               onChanged: (value) {
@@ -770,7 +761,7 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
                           // Create Meeting Button
                           CustomButton(
                             onPressed: _isCreating ? null : _createMeeting,
-                            isLoading: false,
+                            isLoading: _isCreating,
                             child: const Text('Create Meeting'),
                           ),
                         ],
@@ -848,12 +839,50 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
       initialDate: DateTime.now().add(const Duration(days: 1)),
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365)),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: AppTheme.primaryColor,
+              onPrimary: Colors.white,
+              onSurface: AppTheme.darkNeutralColor,
+            ),
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(
+                foregroundColor: AppTheme.primaryColor,
+              ),
+            ),
+            dialogTheme: const DialogThemeData(
+              backgroundColor: AppTheme.cardColor,
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
 
     if (date != null && mounted) {
       final time = await showTimePicker(
         context: context,
         initialTime: TimeOfDay.now(),
+        initialEntryMode: TimePickerEntryMode.dialOnly,
+        builder: (context, child) {
+          return Theme(
+            data: Theme.of(context).copyWith(
+              colorScheme: const ColorScheme.light(
+                primary: AppTheme.primaryColor,
+                onPrimary: Colors.white,
+                onSurface: AppTheme.darkNeutralColor,
+              ),
+              textButtonTheme: TextButtonThemeData(
+                style: TextButton.styleFrom(
+                  foregroundColor: AppTheme.primaryColor,
+                ),
+              ),
+            ),
+            child: child!,
+          );
+        },
       );
 
       if (time != null && mounted) {
@@ -887,6 +916,26 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
       initialDate: _selectedDateTime!,
       firstDate: _selectedDateTime!,
       lastDate: _selectedDateTime!.add(const Duration(days: 7)),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: AppTheme.primaryColor,
+              onPrimary: Colors.white,
+              onSurface: AppTheme.darkNeutralColor,
+            ),
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(
+                foregroundColor: AppTheme.primaryColor,
+              ),
+            ),
+            dialogTheme: const DialogThemeData(
+              backgroundColor: AppTheme.cardColor,
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
 
     if (date != null && mounted) {
@@ -895,6 +944,24 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
         initialTime: TimeOfDay.fromDateTime(
           _selectedDateTime!.add(const Duration(hours: 1)),
         ),
+        initialEntryMode: TimePickerEntryMode.dialOnly,
+        builder: (context, child) {
+          return Theme(
+            data: Theme.of(context).copyWith(
+              colorScheme: const ColorScheme.light(
+                primary: AppTheme.primaryColor,
+                onPrimary: Colors.white,
+                onSurface: AppTheme.darkNeutralColor,
+              ),
+              textButtonTheme: TextButtonThemeData(
+                style: TextButton.styleFrom(
+                  foregroundColor: AppTheme.primaryColor,
+                ),
+              ),
+            ),
+            child: child!,
+          );
+        },
       );
 
       if (time != null && mounted) {
@@ -979,6 +1046,26 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
       initialDate: _selectedDateTime ?? DateTime.now().add(const Duration(days: 7)),
       firstDate: _selectedDateTime ?? DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 730)), // 2 years
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: AppTheme.primaryColor,
+              onPrimary: Colors.white,
+              onSurface: AppTheme.darkNeutralColor,
+            ),
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(
+                foregroundColor: AppTheme.primaryColor,
+              ),
+            ),
+            dialogTheme: const DialogThemeData(
+              backgroundColor: AppTheme.cardColor,
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
 
     if (date != null) {
@@ -994,12 +1081,50 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
       initialDate: DateTime.now().add(const Duration(hours: 1)),
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365)),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: AppTheme.primaryColor,
+              onPrimary: Colors.white,
+              onSurface: AppTheme.darkNeutralColor,
+            ),
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(
+                foregroundColor: AppTheme.primaryColor,
+              ),
+            ),
+            dialogTheme: const DialogThemeData(
+              backgroundColor: AppTheme.cardColor,
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
 
     if (date != null && mounted) {
       final time = await showTimePicker(
         context: context,
         initialTime: TimeOfDay.fromDateTime(DateTime.now().add(const Duration(hours: 1))),
+        initialEntryMode: TimePickerEntryMode.dialOnly,
+        builder: (context, child) {
+          return Theme(
+            data: Theme.of(context).copyWith(
+              colorScheme: const ColorScheme.light(
+                primary: AppTheme.primaryColor,
+                onPrimary: Colors.white,
+                onSurface: AppTheme.darkNeutralColor,
+              ),
+              textButtonTheme: TextButtonThemeData(
+                style: TextButton.styleFrom(
+                  foregroundColor: AppTheme.primaryColor,
+                ),
+              ),
+            ),
+            child: child!,
+          );
+        },
       );
 
       if (time != null && mounted) {
@@ -1032,6 +1157,9 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
   }
 
   Future<void> _createMeeting() async {
+    // Dismiss keyboard before validation
+    FocusScope.of(context).unfocus();
+
     if (!_formKey.currentState!.validate() ||
         _selectedDateTime == null ||
         _selectedEndTime == null) {
@@ -1164,6 +1292,7 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
     _descriptionController.dispose();
     _locationController.dispose();
     _meetingLinkController.dispose();
+    _recurrenceIntervalController.dispose();
     super.dispose();
   }
 }

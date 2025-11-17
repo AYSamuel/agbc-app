@@ -2,7 +2,6 @@ import 'package:flutter/foundation.dart';
 import 'package:grace_portal/providers/supabase_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'dart:io' show Platform;
 
 class NotificationService extends ChangeNotifier {
@@ -27,13 +26,15 @@ class NotificationService extends ChangeNotifier {
   }
 
   Future<void> initialize() async {
-    if (_isInitialized) return;
+    if (_isInitialized) {
+      debugPrint('Notification service already initialized, skipping...');
+      return;
+    }
 
     try {
-      // Initialize OneSignal with our App ID
-      OneSignal.initialize(dotenv.env['ONESIGNAL_APP_ID']!);
-
-      // Request permission for notifications
+      // OneSignal is already initialized in main.dart
+      // Just request permission here
+      debugPrint('Requesting notification permissions...');
       final permission = await OneSignal.Notifications.requestPermission(true);
       debugPrint('OneSignal notification permission result: $permission');
 
@@ -42,7 +43,8 @@ class NotificationService extends ChangeNotifier {
     } catch (e) {
       debugPrint('Error initializing notification service: $e');
       await logError('initialize', e.toString());
-      rethrow;
+      // Don't rethrow - allow app to continue without notifications
+      _isInitialized = true; // Mark as initialized to prevent retry loops
     }
   }
 

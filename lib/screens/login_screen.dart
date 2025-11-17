@@ -1,8 +1,6 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../providers/branches_provider.dart';
 import '../widgets/login_form.dart';
 import '../utils/theme.dart';
 
@@ -21,16 +19,8 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  @override
-  void initState() {
-    super.initState();
-    // Initialize branches data when login screen loads
-    Future.microtask(() {
-      if (mounted) {
-        Provider.of<BranchesProvider>(context, listen: false).fetchBranches();
-      }
-    });
-  }
+  // Branch data is already cached from splash screen initialization
+  // No need to fetch again
 
   @override
   Widget build(BuildContext context) {
@@ -41,6 +31,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
+      resizeToAvoidBottomInset: true, // Ensure content resizes when keyboard appears
       body: Stack(
         children: [
           // Gorgeous layered gradient background

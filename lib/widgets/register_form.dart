@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -90,42 +91,21 @@ class _RegisterFormState extends State<RegisterForm> with FormValidationMixin {
   }
 
   Future<void> _register() async {
-    debugPrint('--- Registration Attempt ---');
-    debugPrint('Name: \'${_nameController.text}\'');
-    debugPrint('Email: \'${_emailController.text}\'');
-    debugPrint('Phone: \'${_phoneController.text}\'');
-    debugPrint('Location: \'${_formatLocationString()}\'');
-    debugPrint('BranchId: \'$_selectedBranchId\'');
-    debugPrint('Password: (length: \'${_passwordController.text.length}\')');
-    debugPrint(
-        'Confirm Password: (length: \'${_confirmPasswordController.text.length}\')');
-
     if (!_formKey.currentState!.validate()) {
-      debugPrint('Form validation failed');
       _showErrorSnackBar('Please fill in all required fields correctly');
       return;
     }
 
-    // Validate branch selection
-    if (_selectedBranchId == null) {
-      debugPrint('No branch selected');
-      _showErrorSnackBar('Please select a branch');
-      return;
-    }
-
-    // Validate location
-    if (_locationData['city']?.isEmpty == true ||
-        _locationData['country']?.isEmpty == true) {
-      debugPrint('Location validation failed');
-      _showErrorSnackBar('Please provide both city and country');
-      return;
-    }
+    // Dismiss keyboard before registration
+    FocusScope.of(context).unfocus();
 
     setState(() => _isLoading = true);
 
     try {
       final authService = Provider.of<AuthService>(context, listen: false);
-      debugPrint('Calling registerWithEmailAndPassword...');
+      if (kDebugMode) {
+        debugPrint('Calling registerWithEmailAndPassword...');
+      }
       await authService.registerWithEmailAndPassword(
         _emailController.text.trim(),
         _passwordController.text,
@@ -135,7 +115,9 @@ class _RegisterFormState extends State<RegisterForm> with FormValidationMixin {
         'member', // Default role for new registrations
         _selectedBranchId,
       );
-      debugPrint('Registration call succeeded');
+      if (kDebugMode) {
+        debugPrint('Registration call succeeded');
+      }
 
       if (mounted) {
         // Show simple verification dialog
@@ -174,8 +156,10 @@ class _RegisterFormState extends State<RegisterForm> with FormValidationMixin {
         );
       }
     } catch (e, stack) {
-      debugPrint('Registration error: $e');
-      debugPrint(stack.toString());
+      if (kDebugMode) {
+        debugPrint('Registration error: $e');
+        debugPrint(stack.toString());
+      }
       if (mounted) {
         String errorMessage;
         if (e is AuthException) {
@@ -194,46 +178,50 @@ class _RegisterFormState extends State<RegisterForm> with FormValidationMixin {
 
   @override
   Widget build(BuildContext context) {
-    return Form(
-      key: _formKey,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Name Field
-          CustomInput(
-            label: 'Full Name',
-            controller: _nameController,
-            hint: 'Enter your full name',
-            prefixIcon: const Icon(Icons.person, color: AppTheme.primaryColor),
-            textInputAction: TextInputAction.next,
-            onSubmitted: (_) => FocusScope.of(context).nextFocus(),
-            validator: validateName,
-          ),
-          const FormSpacing(),
+    return AutofillGroup(
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Name Field
+            CustomInput(
+              label: 'Full Name',
+              controller: _nameController,
+              hint: 'Enter your full name',
+              prefixIcon: const Icon(Icons.person, color: AppTheme.primaryColor),
+              textInputAction: TextInputAction.next,
+              onSubmitted: (_) => FocusScope.of(context).nextFocus(),
+              validator: validateName,
+              autofillHints: const [AutofillHints.name],
+            ),
+            const FormSpacing(),
 
-          // Email Field
-          CustomInput(
-            label: 'Email',
-            controller: _emailController,
-            hint: 'Enter your email',
-            prefixIcon: const Icon(Icons.email, color: AppTheme.primaryColor),
-            keyboardType: TextInputType.emailAddress,
-            textInputAction: TextInputAction.next,
-            onSubmitted: (_) => FocusScope.of(context).nextFocus(),
-            validator: validateEmail,
-          ),
-          const FormSpacing(),
+            // Email Field
+            CustomInput(
+              label: 'Email',
+              controller: _emailController,
+              hint: 'Enter your email',
+              prefixIcon: const Icon(Icons.email, color: AppTheme.primaryColor),
+              keyboardType: TextInputType.emailAddress,
+              textInputAction: TextInputAction.next,
+              onSubmitted: (_) => FocusScope.of(context).nextFocus(),
+              validator: validateEmail,
+              autofillHints: const [AutofillHints.email],
+            ),
+            const FormSpacing(),
 
-          // Phone Field
-          CustomInput(
-            label: 'Phone Number',
-            controller: _phoneController,
-            hint: 'Enter your phone number',
-            prefixIcon: const Icon(Icons.phone, color: AppTheme.primaryColor),
-            keyboardType: TextInputType.phone,
-            validator: validatePhone,
-          ),
-          const FormSpacing(),
+            // Phone Field
+            CustomInput(
+              label: 'Phone Number',
+              controller: _phoneController,
+              hint: 'Enter your phone number',
+              prefixIcon: const Icon(Icons.phone, color: AppTheme.primaryColor),
+              keyboardType: TextInputType.phone,
+              validator: validatePhone,
+              autofillHints: const [AutofillHints.telephoneNumber],
+            ),
+            const FormSpacing(),
 
           // Location Field
           LocationField(
@@ -309,6 +297,7 @@ class _RegisterFormState extends State<RegisterForm> with FormValidationMixin {
             textInputAction: TextInputAction.next,
             onSubmitted: (_) => FocusScope.of(context).nextFocus(),
             validator: validatePassword,
+            autofillHints: const [AutofillHints.newPassword],
           ),
           const FormSpacing(),
 
@@ -322,6 +311,7 @@ class _RegisterFormState extends State<RegisterForm> with FormValidationMixin {
             validator: validatePassword,
             isConfirmField: true,
             confirmController: _passwordController,
+            autofillHints: const [AutofillHints.newPassword],
           ),
           const FormSpacing(height: 32),
 
@@ -339,7 +329,8 @@ class _RegisterFormState extends State<RegisterForm> with FormValidationMixin {
                     ),
                   ),
           ),
-        ],
+          ],
+        ),
       ),
     );
   }

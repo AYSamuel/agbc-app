@@ -8,17 +8,32 @@ class BranchesProvider extends ChangeNotifier {
   List<ChurchBranch> _branches = [];
   bool _isLoading = false;
   String? _error;
+  DateTime? _lastFetchTime;
+  static const _cacheDuration = Duration(minutes: 30);
 
   List<ChurchBranch> get branches => _branches;
   bool get isLoading => _isLoading;
   String? get error => _error;
 
+  /// Check if cache is still valid
+  bool get _isCacheValid {
+    if (_lastFetchTime == null || _branches.isEmpty) return false;
+    return DateTime.now().difference(_lastFetchTime!) < _cacheDuration;
+  }
+
   /// Fetch all branches from the church_branches table
-  Future<void> fetchBranches() async {
+  Future<void> fetchBranches({bool forceRefresh = false}) async {
+    // Return cached data if valid and not forcing refresh
+    if (!forceRefresh && _isCacheValid) {
+      debugPrint('Using cached branches data');
+      return;
+    }
+
     _setLoading(true);
     _error = null;
 
     try {
+      debugPrint('Fetching branches from database...');
       final response =
           await _supabase.from('church_branches').select('*').order('name');
 
@@ -26,6 +41,8 @@ class BranchesProvider extends ChangeNotifier {
           .map((json) => ChurchBranch.fromJson(json))
           .toList();
 
+      _lastFetchTime = DateTime.now();
+      debugPrint('Branches fetched successfully: ${_branches.length} branches');
       notifyListeners();
     } catch (e) {
       _error = 'Failed to fetch branches: $e';
@@ -169,7 +186,7 @@ class BranchesProvider extends ChangeNotifier {
 
   /// Refresh branches data
   Future<void> refresh() async {
-    await fetchBranches();
+    await fetchBranches(forceRefresh: true);
   }
 
   void _setLoading(bool loading) {

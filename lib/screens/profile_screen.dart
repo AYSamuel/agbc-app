@@ -5,7 +5,6 @@ import 'package:grace_portal/services/auth_service.dart';
 import 'package:grace_portal/providers/branches_provider.dart';
 import 'package:grace_portal/widgets/custom_back_button.dart';
 import 'package:grace_portal/models/user_model.dart';
-import 'login_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -45,10 +44,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
       await authService.signOut();
       if (!mounted) return;
       if (!currentContext.mounted) return;
-      Navigator.of(currentContext).pushReplacement(
-        MaterialPageRoute(
-          builder: (context) => const LoginScreen(isLoggingOut: true),
-        ),
+
+      // Use pushNamedAndRemoveUntil to clear entire navigation stack
+      // This prevents back button from accessing authenticated screens
+      Navigator.of(currentContext).pushNamedAndRemoveUntil(
+        '/login',
+        (route) => false, // Remove all previous routes
+        arguments: {'clearForm': true},
       );
     } catch (e) {
       if (!mounted) return;

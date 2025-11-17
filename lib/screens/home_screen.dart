@@ -10,6 +10,7 @@ import 'package:grace_portal/widgets/task_status_card.dart';
 import 'package:grace_portal/widgets/daily_verse_card.dart';
 import 'package:grace_portal/widgets/quick_action_card.dart';
 import 'package:grace_portal/widgets/radial_menu.dart';
+import 'package:grace_portal/widgets/custom_drawer.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 import '../providers/supabase_provider.dart';
@@ -19,6 +20,17 @@ import '../providers/notification_provider.dart';
 
 import 'add_branch_screen.dart';
 import 'add_task_screen.dart';
+import 'upcoming_events_screen.dart';
+import 'pray_screen.dart';
+import 'read_screen.dart';
+import 'give_screen.dart';
+import 'profile_screen.dart';
+import 'tasks_screen.dart';
+import 'admin_screen.dart';
+import 'settings_screen.dart';
+import 'help_support_screen.dart';
+import 'about_screen.dart';
+import '../widgets/admin_route_guard.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -45,18 +57,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void dispose() {
-    // Reset status bar to default when leaving the screen
-    SystemChrome.setSystemUIOverlayStyle(
-      const SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.dark,
-        statusBarBrightness: Brightness.light,
-      ),
-    );
     super.dispose();
   }
 
-  // Add refresh method to reload all data
+  // Optimized refresh method with parallel loading
   Future<void> _onRefresh() async {
     try {
       // Get providers
@@ -70,21 +74,19 @@ class _HomeScreenState extends State<HomeScreen> {
       notificationProvider.clearError();
       supabaseProvider.clearError();
 
-      // Refresh user profile data
-      if (authService.isAuthenticated) {
-        await authService
-            .initialize(); // This calls _loadUserProfile internally
-      }
+      // Run all refresh operations in parallel for better performance
+      await Future.wait([
+        // Refresh user profile data
+        if (authService.isAuthenticated)
+          authService.initialize(), // This calls _loadUserProfile internally
 
-      // Refresh notifications - load fresh data from database
-      await notificationProvider.loadNotifications();
-      await notificationProvider.refreshNotificationCount();
+        // Refresh notifications in parallel
+        notificationProvider.loadNotifications(),
+        notificationProvider.refreshNotificationCount(),
+      ]);
 
       // Reinitialize notification provider to get latest real-time updates
       notificationProvider.reinitialize();
-
-      // Add a small delay to show the refresh indicator
-      await Future.delayed(const Duration(milliseconds: 500));
     } catch (e) {
       debugPrint('Error during refresh: $e');
       // Show error message to user
@@ -102,7 +104,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final authService = Provider.of<AuthService>(context, listen: true);
+    // Only listen to auth changes, not full rebuilds
+    final authService = Provider.of<AuthService>(context, listen: false);
     final userProfile = authService.currentUserProfile;
 
     return Scaffold(
@@ -156,21 +159,39 @@ class _HomeScreenState extends State<HomeScreen> {
                             color: AppTheme.primaryColor,
                             width: 2,
                           ),
-                          image: (userProfile != null &&
-                                  userProfile.photoUrl != null &&
-                                  userProfile.photoUrl!.isNotEmpty)
-                              ? DecorationImage(
-                                  image: NetworkImage(userProfile.photoUrl!),
-                                  fit: BoxFit.cover,
-                                )
-                              : null,
                         ),
-                        child: (userProfile == null ||
-                                userProfile.photoUrl == null ||
-                                userProfile.photoUrl!.isEmpty)
-                            ? const Icon(Icons.person,
-                                size: 32, color: AppTheme.primaryColor)
-                            : null,
+                        child: ClipOval(
+                          child: (userProfile?.photoUrl != null &&
+                                  userProfile!.photoUrl!.isNotEmpty)
+                              ? Image.network(
+                                  userProfile.photoUrl!,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    // Show default icon if image fails to load
+                                    return const Icon(
+                                      Icons.person,
+                                      size: 32,
+                                      color: AppTheme.primaryColor,
+                                    );
+                                  },
+                                  loadingBuilder:
+                                      (context, child, loadingProgress) {
+                                    if (loadingProgress == null) return child;
+                                    // Show loading indicator while image loads
+                                    return const Center(
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: AppTheme.primaryColor,
+                                      ),
+                                    );
+                                  },
+                                )
+                              : const Icon(
+                                  Icons.person,
+                                  size: 32,
+                                  color: AppTheme.primaryColor,
+                                ),
+                        ),
                       ),
                     ],
                   ),
@@ -224,30 +245,178 @@ class _HomeScreenState extends State<HomeScreen> {
                   crossAxisCount: 3,
                   mainAxisSpacing: 12,
                   crossAxisSpacing: 12,
-                  children: const [
+                  children: [
                     QuickActionCard(
                       icon: Icons.calendar_today_rounded,
                       label: 'Sunday Service',
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const UpcomingEventsScreen(),
+                          ),
+                        );
+                      },
                     ),
                     QuickActionCard(
                       icon: Icons.favorite_rounded,
                       label: 'Prayer Requests',
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const PrayScreen(),
+                          ),
+                        );
+                      },
                     ),
                     QuickActionCard(
                       icon: Icons.book_rounded,
                       label: 'Bible Study',
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const ReadScreen(),
+                          ),
+                        );
+                      },
                     ),
                     QuickActionCard(
                       icon: Icons.volunteer_activism_rounded,
-                      label: 'Donate',
+                      label: 'Give',
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const GiveScreen(),
+                          ),
+                        );
+                      },
                     ),
                     QuickActionCard(
                       icon: Icons.people_rounded,
                       label: 'Community',
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const PrayScreen(),
+                          ),
+                        );
+                      },
                     ),
                     QuickActionCard(
                       icon: Icons.more_horiz_rounded,
                       label: 'More',
+                      onTap: () {
+                        HapticFeedback.mediumImpact();
+                        final authService =
+                            Provider.of<AuthService>(context, listen: false);
+                        final isAdmin = authService.isAdmin;
+
+                        showModalBottomSheet(
+                          context: context,
+                          backgroundColor: Colors.transparent,
+                          isScrollControlled: true,
+                          builder: (context) => CustomDrawer(
+                            title: 'More Options',
+                            items: [
+                              DrawerItem(
+                                icon: Icons.person_outline_rounded,
+                                label: 'Profile',
+                                onTap: () {
+                                  Navigator.pop(context);
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          const ProfileScreen(),
+                                    ),
+                                  );
+                                },
+                              ),
+                              DrawerItem(
+                                icon: Icons.task_rounded,
+                                label: 'Tasks',
+                                onTap: () {
+                                  Navigator.pop(context);
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => const TasksScreen(
+                                          showBackButton: true),
+                                    ),
+                                  );
+                                },
+                              ),
+                              if (isAdmin)
+                                DrawerItem(
+                                  icon: Icons.admin_panel_settings_rounded,
+                                  label: 'Admin Center',
+                                  onTap: () {
+                                    Navigator.pop(context);
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            const AdminRouteGuard(
+                                          child: AdminScreen(),
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              DrawerItem(
+                                icon: Icons.settings_rounded,
+                                label: 'Settings',
+                                onTap: () {
+                                  Navigator.pop(context);
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          const SettingsScreen(),
+                                    ),
+                                  );
+                                },
+                              ),
+                              DrawerItem(
+                                icon: Icons.help_outline_rounded,
+                                label: 'Help & Support',
+                                onTap: () {
+                                  Navigator.pop(context);
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          const HelpSupportScreen(),
+                                    ),
+                                  );
+                                },
+                              ),
+                              DrawerItem(
+                                icon: Icons.info_outline_rounded,
+                                label: 'About',
+                                onTap: () {
+                                  Navigator.pop(context);
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => const AboutScreen(),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ],
+                          ),
+                        );
+                      },
                     ),
                   ],
                 ),
@@ -267,7 +436,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                     // Only show "View all" button for admins and pastors
-                    if (userProfile?.role == UserRole.admin || 
+                    if (userProfile?.role == UserRole.admin ||
                         userProfile?.role == UserRole.pastor)
                       TextButton(
                         onPressed: () {
@@ -290,27 +459,80 @@ class _HomeScreenState extends State<HomeScreen> {
                   stream:
                       Provider.of<SupabaseProvider>(context).getAllMeetings(),
                   builder: (context, snapshot) {
-                    if (snapshot.hasError || !snapshot.hasData) {
+                    // Show loading state while data is being fetched
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const SizedBox(
+                        height: 180,
+                        child: Center(
+                          child: CircularProgressIndicator(
+                            color: AppTheme.primaryColor,
+                          ),
+                        ),
+                      );
+                    }
+
+                    // Show error state if there's an error
+                    if (snapshot.hasError) {
                       return SizedBox(
                         height: 180,
-                        child: ListView(
-                          scrollDirection: Axis.horizontal,
-                          children: [
-                            _buildEventCard(
-                              'May 12',
-                              'Sunday, 10:00 AM',
-                              'Sunday Worship Service',
-                              'Join us for praise, worship and an inspiring message from Pastor David.',
-                              'Main Sanctuary',
-                            ),
-                            _buildEventCard(
-                              'May 15',
-                              'Wednesday, 7:00 PM',
-                              'Midweek Bible Study',
-                              'Dive deeper into God\'s word with our interactive Bible study session.',
-                              'Fellowship Hall',
-                            ),
-                          ],
+                        child: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.error_outline,
+                                size: 48,
+                                color: Colors.grey[400],
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Failed to load meetings',
+                                style: GoogleFonts.inter(
+                                  fontSize: 14,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              TextButton(
+                                onPressed: _onRefresh,
+                                child: Text(
+                                  'Retry',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 14,
+                                    color: AppTheme.primaryColor,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }
+
+                    // Show empty state if no data
+                    if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                      return SizedBox(
+                        height: 180,
+                        child: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.calendar_today_outlined,
+                                size: 48,
+                                color: Colors.grey[400],
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'No upcoming meetings',
+                                style: GoogleFonts.inter(
+                                  fontSize: 14,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       );
                     }
@@ -320,7 +542,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         .where((meeting) =>
                             meeting.dateTime.isAfter(DateTime.now()) &&
                             meeting.status == MeetingStatus.scheduled &&
-                            meeting.parentMeetingId == null) // Only show parent meetings
+                            meeting.parentMeetingId ==
+                                null) // Only show parent meetings
                         .take(5)
                         .toList();
 
@@ -328,12 +551,23 @@ class _HomeScreenState extends State<HomeScreen> {
                       return SizedBox(
                         height: 180,
                         child: Center(
-                          child: Text(
-                            'No upcoming meetings',
-                            style: GoogleFonts.inter(
-                              fontSize: 14,
-                              color: Colors.grey[600],
-                            ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.event_available,
+                                size: 48,
+                                color: Colors.grey[400],
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'No upcoming meetings scheduled',
+                                style: GoogleFonts.inter(
+                                  fontSize: 14,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       );
@@ -354,7 +588,8 @@ class _HomeScreenState extends State<HomeScreen> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => MeetingDetailsScreen(meeting: meeting),
+                                  builder: (context) =>
+                                      MeetingDetailsScreen(meeting: meeting),
                                 ),
                               );
                             },
@@ -424,103 +659,4 @@ class _HomeScreenState extends State<HomeScreen> {
       MaterialPageRoute(builder: (context) => const AddBranchScreen()),
     );
   }
-
-  Widget _buildEventCard(
-    String date,
-    String time,
-    String title,
-    String description,
-    String location,
-  ) {
-    return Container(
-      width: 280,
-      margin: const EdgeInsets.only(right: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  date,
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.primaryColor,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                time,
-                style: GoogleFonts.inter(
-                  fontSize: 12,
-                  color: Colors.grey[600],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            title,
-            style: GoogleFonts.inter(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey[800],
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            description,
-            style: GoogleFonts.inter(
-              fontSize: 12,
-              color: Colors.grey[600],
-            ),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Icon(
-                Icons.location_on,
-                size: 14,
-                color: Colors.grey[600],
-              ),
-              const SizedBox(width: 4),
-              Text(
-                location,
-                style: GoogleFonts.inter(
-                  fontSize: 12,
-                  color: Colors.grey[600],
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-
 }

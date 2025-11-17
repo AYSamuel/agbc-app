@@ -11,6 +11,7 @@ class PasswordField extends StatefulWidget {
   final String? Function(String?)? validator;
   final bool isConfirmField;
   final TextEditingController? confirmController;
+  final List<String>? autofillHints;
 
   const PasswordField({
     super.key,
@@ -22,6 +23,7 @@ class PasswordField extends StatefulWidget {
     this.validator,
     this.isConfirmField = false,
     this.confirmController,
+    this.autofillHints,
   });
 
   @override
@@ -41,6 +43,7 @@ class _PasswordFieldState extends State<PasswordField> {
       obscureText: _obscurePassword,
       textInputAction: widget.textInputAction,
       onSubmitted: widget.onSubmitted,
+      autofillHints: widget.autofillHints,
       suffixIcon: IconButton(
         icon: Icon(
           _obscurePassword ? Icons.visibility_off : Icons.visibility,

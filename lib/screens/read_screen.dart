@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../utils/theme.dart';
+import '../widgets/custom_back_button.dart';
 
 class ReadScreen extends StatelessWidget {
   const ReadScreen({super.key});
@@ -11,6 +13,26 @@ class ReadScreen extends StatelessWidget {
       body: SafeArea(
         child: Column(
           children: [
+            // Header with back button
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                children: [
+                  CustomBackButton(
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                  const SizedBox(width: 16),
+                  Text(
+                    'Bible Reading',
+                    style: GoogleFonts.inter(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey[800],
+                    ),
+                  ),
+                ],
+              ),
+            ),
             Expanded(
               child: Center(
                 child: Column(

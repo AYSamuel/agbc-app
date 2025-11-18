@@ -211,15 +211,30 @@ class _HomeScreenState extends State<HomeScreen> {
                   stream: Provider.of<SupabaseProvider>(context)
                       .getUserTasks(userProfile?.id ?? ''),
                   builder: (context, snapshot) {
-                    if (snapshot.hasError || !snapshot.hasData) {
+                    // Show loading state
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const SizedBox.shrink();
+                    }
+
+                    // Hide on error
+                    if (snapshot.hasError) {
+                      return const SizedBox.shrink();
+                    }
+
+                    // Hide if no data
+                    if (!snapshot.hasData) {
                       return const SizedBox.shrink();
                     }
 
                     final tasks = snapshot.data!;
-                    final hasTasks = tasks.isNotEmpty;
+                    // Count only uncompleted tasks
+                    final uncompletedTasks = tasks
+                        .where((task) => task.status != TaskStatus.completed)
+                        .toList();
+                    final hasUncompletedTasks = uncompletedTasks.isNotEmpty;
 
-                    // Hide card for members without tasks
-                    if (userProfile?.role == UserRole.member && !hasTasks) {
+                    // Hide card for members without uncompleted tasks
+                    if (userProfile?.role == UserRole.member && !hasUncompletedTasks) {
                       return const SizedBox.shrink();
                     }
 

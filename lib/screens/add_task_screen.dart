@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import '../providers/supabase_provider.dart';
+import '../providers/branches_provider.dart';
 import '../models/task_model.dart';
+import '../models/church_branch_model.dart';
+import '../models/user_model.dart';
 import '../widgets/custom_input.dart';
 import '../widgets/custom_button.dart';
 import '../widgets/custom_back_button.dart';
@@ -22,18 +26,14 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _deadlineController = TextEditingController();
-  final _reminderController = TextEditingController();
 
   // Focus nodes for keyboard navigation
   final _titleFocus = FocusNode();
   final _descriptionFocus = FocusNode();
   final _deadlineFocus = FocusNode();
-  final _reminderFocus = FocusNode();
 
-  String? _selectedAssigneeId;
-  String? _selectedBranchId;
-  String _selectedAssigneeName = '';
-  String _selectedBranchName = '';
+  UserModel? _selectedAssignee;
+  ChurchBranch? _selectedBranch;
   TaskPriority _selectedPriority = TaskPriority.medium;
   DateTime? _selectedDeadline;
 
@@ -43,6 +43,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   bool _isAssigneeValid = false;
   bool _isDeadlineValid = false;
   bool _isBranchValid = false;
+  bool _isCreating = false;
 
   @override
   void initState() {
@@ -74,13 +75,11 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     _titleController.dispose();
     _descriptionController.dispose();
     _deadlineController.dispose();
-    _reminderController.dispose();
 
     // Dispose focus nodes
     _titleFocus.dispose();
     _descriptionFocus.dispose();
     _deadlineFocus.dispose();
-    _reminderFocus.dispose();
 
     super.dispose();
   }
@@ -89,11 +88,33 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
       FocusNode focusNode, bool isDeadline) async {
     if (!mounted) return;
 
+    HapticFeedback.selectionClick();
+
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365)),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: AppTheme.primaryColor,
+              onPrimary: Colors.white,
+              onSurface: AppTheme.darkNeutralColor,
+            ),
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(
+                foregroundColor: AppTheme.primaryColor,
+              ),
+            ),
+            dialogTheme: const DialogThemeData(
+              backgroundColor: AppTheme.cardColor,
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
 
     if (!mounted) return;
@@ -102,6 +123,24 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
       final TimeOfDay? time = await showTimePicker(
         context: context,
         initialTime: TimeOfDay.now(),
+        initialEntryMode: TimePickerEntryMode.dialOnly,
+        builder: (context, child) {
+          return Theme(
+            data: Theme.of(context).copyWith(
+              colorScheme: const ColorScheme.light(
+                primary: AppTheme.primaryColor,
+                onPrimary: Colors.white,
+                onSurface: AppTheme.darkNeutralColor,
+              ),
+              textButtonTheme: TextButtonThemeData(
+                style: TextButton.styleFrom(
+                  foregroundColor: AppTheme.primaryColor,
+                ),
+              ),
+            ),
+            child: child!,
+          );
+        },
       );
 
       if (!mounted) return;
@@ -131,49 +170,54 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   }
 
   Future<void> _submitForm() async {
-    if (_formKey.currentState!.validate()) {
-      // Update validation states
-      _validateTitle();
-      _validateDescription();
+    // Dismiss keyboard before validation
+    FocusScope.of(context).unfocus();
 
-      final currentContext = context;
-      try {
-        final currentUser = currentContext.read<AuthService>().currentUser;
-        if (currentUser == null) {
-          throw Exception('User not authenticated');
-        }
+    if (!_formKey.currentState!.validate()) return;
 
-        final task = TaskModel(
-          id: const Uuid().v4(),
-          title: _titleController.text,
-          description: _descriptionController.text,
-          dueDate: _selectedDeadline!,
-          assignedTo: _selectedAssigneeId!,
-          createdBy: currentUser.id,
-          branchId: _selectedBranchId,
-          priority: _selectedPriority,
+    // Prevent duplicate submissions
+    if (_isCreating) return;
+
+    setState(() => _isCreating = true);
+
+    final currentContext = context;
+    try {
+      final currentUser = currentContext.read<AuthService>().currentUser;
+      if (currentUser == null) {
+        throw Exception('User not authenticated');
+      }
+
+      final task = TaskModel(
+        id: const Uuid().v4(),
+        title: _titleController.text.trim(),
+        description: _descriptionController.text.trim(),
+        dueDate: _selectedDeadline!,
+        assignedTo: _selectedAssignee!.id,
+        createdBy: currentUser.id,
+        branchId: _selectedBranch?.id,
+        priority: _selectedPriority,
+      );
+
+      await currentContext.read<SupabaseProvider>().createTask(task);
+
+      if (currentContext.mounted) {
+        ScaffoldMessenger.of(currentContext).showSnackBar(
+          const SnackBar(
+            content: Text('Task created successfully'),
+            backgroundColor: Colors.green,
+          ),
         );
-
-        await currentContext.read<SupabaseProvider>().createTask(task);
-
-        if (currentContext.mounted) {
-          ScaffoldMessenger.of(currentContext).showSnackBar(
-            const SnackBar(
-              content: Text('Task created successfully'),
-              backgroundColor: Colors.green,
-            ),
-          );
-          Navigator.pop(currentContext);
-        }
-      } catch (e) {
-        if (currentContext.mounted) {
-          ScaffoldMessenger.of(currentContext).showSnackBar(
-            SnackBar(
-              content: Text('Error creating task: $e'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
+        Navigator.pop(currentContext);
+      }
+    } catch (e) {
+      if (currentContext.mounted) {
+        setState(() => _isCreating = false);
+        ScaffoldMessenger.of(currentContext).showSnackBar(
+          SnackBar(
+            content: Text('Error creating task: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     }
   }
@@ -255,10 +299,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                           nextFocusNode: _descriptionFocus,
                           validator: (value) {
                             if (value == null || value.trim().isEmpty) {
-                              setState(() => _isTitleValid = false);
                               return 'Please enter a title';
                             }
-                            setState(() => _isTitleValid = true);
                             return null;
                           },
                         ),
@@ -273,10 +315,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                           maxLines: 3,
                           validator: (value) {
                             if (value == null || value.trim().isEmpty) {
-                              setState(() => _isDescriptionValid = false);
                               return 'Please enter a description';
                             }
-                            setState(() => _isDescriptionValid = true);
                             return null;
                           },
                         ),
@@ -284,196 +324,103 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                         Row(
                           children: [
                             Expanded(
-                              child: CustomInput(
-                                label: 'Assignee',
-                                controller: TextEditingController(
-                                    text: _selectedAssigneeName),
-                                hint: 'Select assignee',
-                                prefixIcon: const Icon(Icons.person,
-                                    color: Colors.grey),
-                                readOnly: true,
-                                onTap: () async {
-                                  if (!context.mounted) return;
-                                  final currentContext = context;
-                                  final SupabaseProvider provider =
-                                      Provider.of<SupabaseProvider>(
-                                          currentContext,
-                                          listen: false);
-
-                                  try {
-                                    final users =
-                                        await provider.getAllUsers().first;
-                                    if (!context.mounted) return;
-
-                                    final selectedUser =
-                                        await Navigator.of(context)
-                                            .push<dynamic>(
-                                      MaterialPageRoute(
-                                        builder: (context) => AlertDialog(
-                                          title: const Text('Select Assignee'),
-                                          content: SizedBox(
-                                            width: double.maxFinite,
-                                            child: ListView.builder(
-                                              shrinkWrap: true,
-                                              itemCount: users.length,
-                                              itemBuilder: (context, index) {
-                                                final user = users[index];
-                                                return ListTile(
-                                                  title: Text(user.displayName),
-                                                  subtitle: Text(user.email),
-                                                  onTap: () => Navigator.pop(
-                                                      context, user),
-                                                );
-                                              },
-                                            ),
-                                          ),
-                                        ),
-                                      ),
+                              child: StreamBuilder<List<UserModel>>(
+                                stream: Provider.of<SupabaseProvider>(context,
+                                        listen: false)
+                                    .getAllUsers(),
+                                builder: (context, snapshot) {
+                                  if (!snapshot.hasData) {
+                                    return const Center(
+                                      child: CircularProgressIndicator(),
                                     );
+                                  }
 
-                                    if (selectedUser != null) {
-                                      setState(() {
-                                        _selectedAssigneeId = selectedUser.id;
-                                        _selectedAssigneeName =
-                                            selectedUser.displayName;
-                                        _isAssigneeValid = true;
-                                      });
-                                    }
-                                  } catch (e) {
-                                    if (context.mounted) {
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
-                                        SnackBar(
-                                          content:
-                                              Text('Error loading users: $e'),
-                                          backgroundColor: Colors.red,
-                                        ),
+                                  final users = snapshot.data!;
+
+                                  return CustomDropdown<UserModel>(
+                                    label: 'Select Assignee',
+                                    value: _selectedAssignee,
+                                    items: users
+                                        .map<DropdownMenuItem<UserModel>>(
+                                            (UserModel user) {
+                                      return DropdownMenuItem<UserModel>(
+                                        value: user,
+                                        child: Text(user.displayName),
                                       );
-                                    }
-                                  }
-                                },
-                                validator: (value) {
-                                  if (_selectedAssigneeId == null) {
-                                    return 'Please select an assignee';
-                                  }
-                                  return null;
+                                    }).toList(),
+                                    onChanged: (user) {
+                                      if (user != null) {
+                                        HapticFeedback.selectionClick();
+                                        setState(() {
+                                          _selectedAssignee = user;
+                                          _isAssigneeValid = true;
+                                        });
+                                      }
+                                    },
+                                    validator: (value) {
+                                      if (value == null) {
+                                        return 'Please select an assignee';
+                                      }
+                                      return null;
+                                    },
+                                  );
                                 },
                               ),
                             ),
                             const SizedBox(width: 16),
                             Expanded(
-                              child: CustomInput(
-                                label: 'Branch',
-                                controller: TextEditingController(
-                                    text: _selectedBranchName),
-                                hint: 'Select branch',
-                                prefixIcon: const Icon(Icons.business,
-                                    color: Colors.grey),
-                                readOnly: true,
-                                onTap: () async {
-                                  if (!context.mounted) return;
-                                  final currentContext = context;
-                                  final SupabaseProvider provider =
-                                      Provider.of<SupabaseProvider>(
-                                          currentContext,
-                                          listen: false);
+                              child: Consumer<BranchesProvider>(
+                                builder: (context, branchesProvider, child) {
+                                  final branches = branchesProvider.branches;
 
-                                  try {
-                                    final branches =
-                                        await provider.getAllBranches().first;
-                                    if (!context.mounted) return;
-
-                                    final selectedBranch = await showDialog(
-                                      context: context,
-                                      builder: (context) => AlertDialog(
-                                        title: const Text('Select Branch'),
-                                        content: SizedBox(
-                                          width: double.maxFinite,
-                                          child: ListView.builder(
-                                            shrinkWrap: true,
-                                            itemCount: branches.length,
-                                            itemBuilder: (context, index) {
-                                              final branch = branches[index];
-                                              return ListTile(
-                                                title: Text(branch.name),
-                                                subtitle: Text(branch.address),
-                                                onTap: () => Navigator.pop(
-                                                    context, branch),
-                                              );
-                                            },
-                                          ),
-                                        ),
-                                      ),
-                                    );
-
-                                    if (selectedBranch != null) {
-                                      setState(() {
-                                        _selectedBranchId = selectedBranch.id;
-                                        _selectedBranchName =
-                                            selectedBranch.name;
-                                        _isBranchValid = true;
-                                      });
-                                    }
-                                  } catch (e) {
-                                    if (context.mounted) {
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
-                                        SnackBar(
-                                          content: Text(
-                                              'Error loading branches: $e'),
-                                          backgroundColor: Colors.red,
-                                        ),
+                                  return CustomDropdown<ChurchBranch>(
+                                    label: 'Select Branch',
+                                    value: _selectedBranch,
+                                    items: branches
+                                        .map<DropdownMenuItem<ChurchBranch>>(
+                                            (ChurchBranch branch) {
+                                      return DropdownMenuItem<ChurchBranch>(
+                                        value: branch,
+                                        child: Text(branch.name),
                                       );
-                                    }
-                                  }
-                                },
-                                validator: (value) {
-                                  if (_selectedBranchId == null) {
-                                    return 'Please select a branch';
-                                  }
-                                  return null;
+                                    }).toList(),
+                                    onChanged: (branch) {
+                                      if (branch != null) {
+                                        setState(() {
+                                          _selectedBranch = branch;
+                                          _isBranchValid = true;
+                                        });
+                                      }
+                                    },
+                                    validator: (value) {
+                                      if (value == null) {
+                                        return 'Please select a branch';
+                                      }
+                                      return null;
+                                    },
+                                  );
                                 },
                               ),
                             ),
                           ],
                         ),
                         const SizedBox(height: 16),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: CustomInput(
-                                label: 'Deadline',
-                                controller: _deadlineController,
-                                hint: 'Select deadline',
-                                prefixIcon: const Icon(Icons.calendar_today,
-                                    color: Colors.grey),
-                                focusNode: _deadlineFocus,
-                                readOnly: true,
-                                onTap: () => _selectDate(
-                                    _deadlineController, _deadlineFocus, true),
-                                validator: (value) {
-                                  if (_selectedDeadline == null) {
-                                    return 'Please select a deadline';
-                                  }
-                                  return null;
-                                },
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: CustomInput(
-                                label: 'Reminder (Optional)',
-                                controller: _reminderController,
-                                hint: 'Select reminder time',
-                                prefixIcon: const Icon(Icons.notifications,
-                                    color: Colors.grey),
-                                focusNode: _reminderFocus,
-                                readOnly: true,
-                                onTap: () => _selectDate(
-                                    _reminderController, _reminderFocus, false),
-                              ),
-                            ),
-                          ],
+                        CustomInput(
+                          label: 'Deadline',
+                          controller: _deadlineController,
+                          hint: 'Select deadline',
+                          prefixIcon: const Icon(Icons.calendar_today,
+                              color: Colors.grey),
+                          focusNode: _deadlineFocus,
+                          readOnly: true,
+                          onTap: () => _selectDate(
+                              _deadlineController, _deadlineFocus, true),
+                          validator: (value) {
+                            if (_selectedDeadline == null) {
+                              return 'Please select a deadline';
+                            }
+                            return null;
+                          },
                         ),
                         const SizedBox(height: 16),
                         Row(
@@ -514,7 +461,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
 
                   // Submit Button
                   CustomButton(
-                    onPressed: _submitForm,
+                    onPressed: _isCreating ? null : _submitForm,
+                    isLoading: _isCreating,
                     child: const Text('Create Task'),
                   ),
                 ],

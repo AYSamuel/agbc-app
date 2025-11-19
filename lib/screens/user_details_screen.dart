@@ -5,7 +5,6 @@ import '../models/user_model.dart';
 import '../utils/theme.dart';
 import '../widgets/custom_back_button.dart';
 import '../providers/branches_provider.dart';
-import '../widgets/custom_card.dart';
 import '../widgets/custom_dropdown.dart';
 import 'package:logging/logging.dart';
 import '../models/church_branch_model.dart';
@@ -41,183 +40,204 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final roleColor = _getRoleColor(widget.user.role);
+
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       body: SafeArea(
         child: Column(
           children: [
-            // Header
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
-                children: [
-                  CustomBackButton(
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                  const SizedBox(width: 16),
-                  Text(
-                    'User Details',
-                    style: AppTheme.titleStyle.copyWith(
-                      color: AppTheme.primaryColor,
-                    ),
-                  ),
-                  const Spacer(),
-                  IconButton(
-                    icon: Icon(
-                      isEditing ? Icons.close : Icons.edit,
-                      color: AppTheme.primaryColor,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        isEditing = !isEditing;
-                        if (!isEditing) {
-                          // Reset values when canceling edit
-                          selectedRole = widget.user.role;
-                          selectedBranchId = widget.user.branchId;
-                        }
-                      });
-                    },
-                  ),
-                ],
+            // Modern Header
+            Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: AppTheme.primaryColor,
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(32),
+                  bottomRight: Radius.circular(32),
+                ),
               ),
-            ),
-
-            // Content
-            Expanded(
-              child: ListView(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              child: Column(
                 children: [
-                  // Profile Section
-                  CustomCard(
-                    child: Column(
+                  // Back button and edit button row
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                    child: Row(
                       children: [
-                        // Profile Picture
                         Container(
-                          padding: const EdgeInsets.all(3),
                           decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color:
-                                  AppTheme.primaryColor.withValues(alpha: 0.3),
-                              width: 2,
-                            ),
+                            color: Colors.white.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                          child: CircleAvatar(
-                            radius: 48,
-                            backgroundColor:
-                                AppTheme.primaryColor.withValues(alpha: 0.1),
-                            backgroundImage: widget.user.photoUrl != null &&
-                                    widget.user.photoUrl!.isNotEmpty
-                                ? NetworkImage(widget.user.photoUrl!)
-                                : null,
-                            child: widget.user.photoUrl == null ||
-                                    widget.user.photoUrl!.isEmpty
-                                ? const Icon(
-                                    Icons.person,
-                                    size: 48,
-                                    color: AppTheme.primaryColor,
-                                  )
-                                : null,
+                          child: CustomBackButton(
+                            onPressed: () => Navigator.pop(context),
+                            color: Colors.white,
+                            showBackground: false,
+                            showShadow: false,
                           ),
                         ),
-                        const SizedBox(height: 24),
-
-                        // User Info
-                        Text(
-                          widget.user.displayName,
-                          style: AppTheme.titleStyle.copyWith(
-                            fontSize: 24,
-                            color: AppTheme.primaryColor,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          widget.user.email,
-                          style: AppTheme.subtitleStyle.copyWith(
-                            color: AppTheme.neutralColor,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
+                        const Spacer(),
                         Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 20,
-                            vertical: 10,
-                          ),
                           decoration: BoxDecoration(
-                            color: _getRoleColor(widget.user.role)
-                                .withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: _getRoleColor(widget.user.role)
-                                  .withValues(alpha: 0.3),
-                              width: 1,
-                            ),
+                            color: Colors.white.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                          child: Text(
-                            widget.user.role.name.toUpperCase(),
-                            style: TextStyle(
-                              color: _getRoleColor(widget.user.role),
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
-                              letterSpacing: 0.5,
+                          child: IconButton(
+                            icon: Icon(
+                              isEditing ? Icons.close_rounded : Icons.edit_rounded,
+                              color: Colors.white,
                             ),
+                            onPressed: () {
+                              setState(() {
+                                isEditing = !isEditing;
+                                if (!isEditing) {
+                                  // Reset values when canceling edit
+                                  selectedRole = widget.user.role;
+                                  selectedBranchId = widget.user.branchId;
+                                }
+                              });
+                            },
                           ),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 16),
-
-                  // Contact Information
-                  CustomCard(
+                  // Profile section in header
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'Contact Information',
-                          style: AppTheme.titleStyle.copyWith(
-                            fontSize: 18,
-                            color: AppTheme.primaryColor,
+                        // Profile Picture
+                        Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: LinearGradient(
+                              colors: [
+                                Colors.white.withValues(alpha: 0.4),
+                                Colors.white.withValues(alpha: 0.2),
+                              ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                          ),
+                          child: CircleAvatar(
+                            radius: 52,
+                            backgroundColor: Colors.white,
+                            child: CircleAvatar(
+                              radius: 48,
+                              backgroundColor: Colors.white.withValues(alpha: 0.9),
+                              backgroundImage: widget.user.photoUrl != null &&
+                                      widget.user.photoUrl!.isNotEmpty
+                                  ? NetworkImage(widget.user.photoUrl!)
+                                  : null,
+                              child: widget.user.photoUrl == null ||
+                                      widget.user.photoUrl!.isEmpty
+                                  ? Icon(
+                                      Icons.person_rounded,
+                                      size: 52,
+                                      color: AppTheme.primaryColor,
+                                    )
+                                  : null,
+                            ),
                           ),
                         ),
+                        const SizedBox(height: 20),
+                        // User Info
+                        Text(
+                          widget.user.displayName,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.5,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          widget.user.email,
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.9),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w400,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
                         const SizedBox(height: 16),
-                        if (widget.user.phoneNumber != null) ...[
-                          Row(
-                            children: [
-                              const Icon(
-                                Icons.phone,
-                                size: 24,
-                                color: AppTheme.neutralColor,
+                        // Role Badge
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.1),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
                               ),
-                              const SizedBox(width: 12),
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 8,
+                                height: 8,
+                                decoration: BoxDecoration(
+                                  color: roleColor,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
                               Text(
-                                widget.user.phoneNumber!,
-                                style: AppTheme.subtitleStyle.copyWith(
-                                  color: AppTheme.neutralColor,
+                                widget.user.role.name.toUpperCase(),
+                                style: TextStyle(
+                                  color: roleColor,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                  letterSpacing: 0.8,
                                 ),
                               ),
                             ],
                           ),
-                          const SizedBox(height: 12),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Content
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                children: [
+                  // Contact Information
+                  _buildModernSection(
+                    icon: Icons.contact_mail_rounded,
+                    title: 'Contact Information',
+                    accentColor: AppTheme.primaryColor,
+                    child: Column(
+                      children: [
+                        if (widget.user.phoneNumber != null) ...[
+                          _buildInfoRow(
+                            icon: Icons.phone_rounded,
+                            label: 'Phone',
+                            value: widget.user.phoneNumber!,
+                          ),
+                          const SizedBox(height: 16),
                         ],
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.location_on,
-                              size: 24,
-                              color: AppTheme.neutralColor,
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                widget.user.locationString ?? 'Not set',
-                                style: AppTheme.subtitleStyle.copyWith(
-                                  color: AppTheme.neutralColor,
-                                ),
-                              ),
-                            ),
-                          ],
+                        _buildInfoRow(
+                          icon: Icons.location_on_rounded,
+                          label: 'Location',
+                          value: widget.user.locationString ?? 'Not set',
                         ),
                       ],
                     ),
@@ -226,24 +246,20 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
 
                   // Role and Branch Selection (only visible when editing)
                   if (isEditing) ...[
-                    CustomCard(
+                    _buildModernSection(
+                      icon: Icons.admin_panel_settings_rounded,
+                      title: 'Edit Role & Branch',
+                      accentColor: AppTheme.secondaryColor,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            'Edit Role & Branch',
-                            style: AppTheme.titleStyle.copyWith(
-                              fontSize: 18,
-                              color: AppTheme.primaryColor,
-                            ),
-                          ),
-                          const SizedBox(height: 24),
                           // Role Selection
                           Text(
                             'Role',
-                            style: AppTheme.subtitleStyle.copyWith(
-                              color: AppTheme.primaryColor,
-                              fontWeight: FontWeight.bold,
+                            style: TextStyle(
+                              color: AppTheme.darkNeutralColor,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
                             ),
                           ),
                           const SizedBox(height: 8),
@@ -275,13 +291,14 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                               }
                             },
                           ),
-                          const SizedBox(height: 24),
+                          const SizedBox(height: 20),
                           // Branch Selection
                           Text(
                             'Branch',
-                            style: AppTheme.subtitleStyle.copyWith(
-                              color: AppTheme.primaryColor,
-                              fontWeight: FontWeight.bold,
+                            style: TextStyle(
+                              color: AppTheme.darkNeutralColor,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
                             ),
                           ),
                           const SizedBox(height: 8),
@@ -333,26 +350,46 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                     const SizedBox(height: 16),
 
                     // Save Button
-                    ElevatedButton(
-                      onPressed: () => _saveChanges(context),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.primaryColor,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                    Container(
+                      width: double.infinity,
+                      height: 56,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            AppTheme.primaryColor,
+                            AppTheme.primaryColor.withValues(alpha: 0.8),
+                          ],
                         ),
-                        elevation: 0,
-                        minimumSize: const Size(double.infinity, 56),
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppTheme.primaryColor.withValues(alpha: 0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
                       ),
-                      child: const Text(
-                        'Save Changes',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
+                      child: ElevatedButton(
+                        onPressed: () => _saveChanges(context),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.transparent,
+                          shadowColor: Colors.transparent,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                        child: const Text(
+                          'Save Changes',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                            letterSpacing: 0.5,
+                          ),
                         ),
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 24),
                   ],
                 ],
               ),
@@ -360,6 +397,123 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildModernSection({
+    required IconData icon,
+    required String title,
+    required Color accentColor,
+    required Widget child,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Colored header
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: accentColor.withValues(alpha: 0.1),
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(20),
+                topRight: Radius.circular(20),
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: accentColor.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    icon,
+                    color: accentColor,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: accentColor,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Content
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: child,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoRow({
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: AppTheme.primaryColor.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(
+            icon,
+            size: 18,
+            color: AppTheme.primaryColor,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppTheme.neutralColor,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 15,
+                  color: AppTheme.darkNeutralColor,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 

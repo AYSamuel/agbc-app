@@ -71,236 +71,308 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
           SafeArea(
             child: Column(
               children: [
-                // Header
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Row(
-                    children: [
-                      CustomBackButton(
-                        onPressed: () => Navigator.pop(context),
-                      ),
-                      const SizedBox(width: 16),
-                      Text(
-                        'Create Meeting',
-                        style: GoogleFonts.inter(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.darkNeutralColor,
-                        ),
+                // Modern Header
+                Container(
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryColor,
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppTheme.primaryColor.withValues(alpha: 0.2),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
                       ),
                     ],
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                    child: Row(
+                      children: [
+                        CustomBackButton(
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Create Meeting',
+                                style: AppTheme.titleStyle.copyWith(
+                                  color: Colors.white,
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Schedule a new meeting event',
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.9),
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
                 // Form
                 Expanded(
                   child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(16),
+                    physics: const BouncingScrollPhysics(),
+                    padding: const EdgeInsets.all(20),
                     child: Form(
                       key: _formKey,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Meeting Title
-                          CustomInput(
-                            controller: _titleController,
-                            label: 'Meeting Title',
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Please enter a meeting title';
-                              }
-                              return null;
-                            },
+                          // Meeting Details Card
+                          _buildModernSection(
+                            icon: Icons.event,
+                            title: 'Meeting Details',
+                            accentColor: AppTheme.primaryColor,
+                            child: Column(
+                              children: [
+                                CustomInput(
+                                  controller: _titleController,
+                                  label: 'Meeting Title',
+                                  hint: 'Enter meeting title',
+                                  prefixIcon: const Icon(Icons.title),
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return 'Please enter a meeting title';
+                                    }
+                                    return null;
+                                  },
+                                ),
+                                const SizedBox(height: 20),
+                                CustomInput(
+                                  controller: _descriptionController,
+                                  label: 'Description',
+                                  hint: 'Provide meeting description',
+                                  prefixIcon: const Icon(Icons.description),
+                                  maxLines: 3,
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return 'Please enter a description';
+                                    }
+                                    return null;
+                                  },
+                                ),
+                                const SizedBox(height: 20),
+                                Consumer<BranchesProvider>(
+                                  builder: (context, branchesProvider, child) {
+                                    final branches = branchesProvider.branches;
+
+                                    return CustomDropdown<ChurchBranch>(
+                                      label: 'Branch',
+                                      value: _selectedBranch,
+                                      items: branches
+                                          .map<DropdownMenuItem<ChurchBranch>>(
+                                              (ChurchBranch branch) {
+                                        return DropdownMenuItem<ChurchBranch>(
+                                          value: branch,
+                                          child: Text(branch.name),
+                                        );
+                                      }).toList(),
+                                      onChanged: (branch) {
+                                        if (branch != null) {
+                                          setState(() {
+                                            _selectedBranch = branch;
+                                          });
+                                        }
+                                      },
+                                      validator: (value) {
+                                        if (value == null) {
+                                          return 'Please select a branch';
+                                        }
+                                        return null;
+                                      },
+                                    );
+                                  },
+                                ),
+                              ],
+                            ),
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 20),
 
-                          // Description
-                          CustomInput(
-                            controller: _descriptionController,
-                            label: 'Description',
-                            maxLines: 3,
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Please enter a description';
-                              }
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Branch Selection - optimized to only listen when needed
-                          Consumer<BranchesProvider>(
-                            builder: (context, branchesProvider, child) {
-                              final branches = branchesProvider.branches;
-
-                              return CustomDropdown<ChurchBranch>(
-                                label: 'Select Branch',
-                                value: _selectedBranch,
-                                items: branches
-                                    .map<DropdownMenuItem<ChurchBranch>>(
-                                        (ChurchBranch branch) {
-                                  return DropdownMenuItem<ChurchBranch>(
-                                    value: branch,
-                                    child: Text(branch.name),
-                                  );
-                                }).toList(),
-                                onChanged: (branch) {
-                                  if (branch != null) {
-                                    setState(() {
-                                      _selectedBranch = branch;
-                                    });
-                                  }
-                                },
-                                validator: (value) {
-                                  if (value == null) {
-                                    return 'Please select a branch';
-                                  }
-                                  return null;
-                                },
-                              );
-                            },
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Date and Time Selection
-                          Row(
-                            children: [
-                              Expanded(
-                                child: InkWell(
+                          // Date & Time Card
+                          _buildModernSection(
+                            icon: Icons.access_time,
+                            title: 'Date & Time',
+                            accentColor: AppTheme.secondaryColor,
+                            child: Column(
+                              children: [
+                                InkWell(
                                   onTap: _selectDateTime,
                                   child: Container(
                                     padding: const EdgeInsets.all(16),
                                     decoration: BoxDecoration(
                                       border: Border.all(
-                                          color: AppTheme.neutralColor),
-                                      borderRadius: BorderRadius.circular(8),
+                                          color: AppTheme.neutralColor.withValues(alpha: 0.15),
+                                          width: 1.5),
+                                      borderRadius: BorderRadius.circular(12),
+                                      color: Colors.white,
                                     ),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
+                                    child: Row(
                                       children: [
-                                        Text(
-                                          'Meeting Start Time',
-                                          style: GoogleFonts.inter(
-                                            fontSize: 14,
-                                            color: AppTheme.neutralColor,
-                                          ),
+                                        Icon(
+                                          Icons.event_available,
+                                          color: AppTheme.secondaryColor,
+                                          size: 24,
                                         ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          _selectedDateTime != null
-                                              ? _formatDateTime(
-                                                  _selectedDateTime!)
-                                              : 'Select start date and time',
-                                          style: GoogleFonts.inter(
-                                            fontSize: 16,
-                                            color: _selectedDateTime != null
-                                                ? AppTheme.darkNeutralColor
-                                                : AppTheme.neutralColor,
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                'Meeting Start Time',
+                                                style: GoogleFonts.inter(
+                                                  fontSize: 13,
+                                                  color: AppTheme.neutralColor,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                _selectedDateTime != null
+                                                    ? _formatDateTime(_selectedDateTime!)
+                                                    : 'Select start date and time',
+                                                style: GoogleFonts.inter(
+                                                  fontSize: 15,
+                                                  color: _selectedDateTime != null
+                                                      ? AppTheme.darkNeutralColor
+                                                      : AppTheme.neutralColor,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                            ],
                                           ),
                                         ),
                                       ],
                                     ),
                                   ),
                                 ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-
-                          // End Time Selection
-                          Row(
-                            children: [
-                              Expanded(
-                                child: InkWell(
+                                const SizedBox(height: 16),
+                                InkWell(
                                   onTap: _selectEndTime,
                                   child: Container(
                                     padding: const EdgeInsets.all(16),
                                     decoration: BoxDecoration(
                                       border: Border.all(
-                                          color: AppTheme.neutralColor),
-                                      borderRadius: BorderRadius.circular(8),
+                                          color: AppTheme.neutralColor.withValues(alpha: 0.15),
+                                          width: 1.5),
+                                      borderRadius: BorderRadius.circular(12),
+                                      color: Colors.white,
                                     ),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
+                                    child: Row(
                                       children: [
-                                        Text(
-                                          'Meeting End Time',
-                                          style: GoogleFonts.inter(
-                                            fontSize: 14,
-                                            color: AppTheme.neutralColor,
-                                          ),
+                                        Icon(
+                                          Icons.event_busy,
+                                          color: AppTheme.secondaryColor,
+                                          size: 24,
                                         ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          _selectedEndTime != null
-                                              ? _formatDateTime(
-                                                  _selectedEndTime!)
-                                              : 'Select end date and time',
-                                          style: GoogleFonts.inter(
-                                            fontSize: 16,
-                                            color: _selectedEndTime != null
-                                                ? AppTheme.darkNeutralColor
-                                                : AppTheme.neutralColor,
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                'Meeting End Time',
+                                                style: GoogleFonts.inter(
+                                                  fontSize: 13,
+                                                  color: AppTheme.neutralColor,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                _selectedEndTime != null
+                                                    ? _formatDateTime(_selectedEndTime!)
+                                                    : 'Select end date and time',
+                                                style: GoogleFonts.inter(
+                                                  fontSize: 15,
+                                                  color: _selectedEndTime != null
+                                                      ? AppTheme.darkNeutralColor
+                                                      : AppTheme.neutralColor,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                            ],
                                           ),
                                         ),
                                       ],
                                     ),
                                   ),
                                 ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Virtual Meeting Toggle
-                          Row(
-                            children: [
-                              Switch(
-                                value: _isVirtual,
-                                onChanged: (value) {
-                                  setState(() {
-                                    _isVirtual = value;
-                                  });
-                                },
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                'Virtual Meeting',
-                                style: GoogleFonts.inter(
-                                  fontSize: 16,
-                                  color: AppTheme.darkNeutralColor,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Location or Meeting Link
-                          if (_isVirtual)
-                            CustomInput(
-                              controller: _meetingLinkController,
-                              label: 'Meeting Link',
-                              validator: (value) {
-                                if (_isVirtual &&
-                                    (value == null || value.isEmpty)) {
-                                  return 'Please enter a meeting link';
-                                }
-                                return null;
-                              },
-                            )
-                          else
-                            CustomInput(
-                              controller: _locationController,
-                              label: 'Location',
-                              validator: (value) {
-                                if (!_isVirtual &&
-                                    (value == null || value.isEmpty)) {
-                                  return 'Please enter a location';
-                                }
-                                return null;
-                              },
+                              ],
                             ),
+                          ),
+                          const SizedBox(height: 20),
+
+                          // Location Card
+                          _buildModernSection(
+                            icon: Icons.location_on,
+                            title: 'Location',
+                            accentColor: AppTheme.accentColor,
+                            child: Column(
+                              children: [
+                                Row(
+                                  children: [
+                                    Switch(
+                                      value: _isVirtual,
+                                      onChanged: (value) {
+                                        setState(() {
+                                          _isVirtual = value;
+                                        });
+                                      },
+                                      activeColor: AppTheme.accentColor,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'Virtual Meeting',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 16,
+                                        color: AppTheme.darkNeutralColor,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 16),
+                                if (_isVirtual)
+                                  CustomInput(
+                                    controller: _meetingLinkController,
+                                    label: 'Meeting Link',
+                                    hint: 'Enter virtual meeting URL',
+                                    prefixIcon: const Icon(Icons.link),
+                                    validator: (value) {
+                                      if (_isVirtual && (value == null || value.isEmpty)) {
+                                        return 'Please enter a meeting link';
+                                      }
+                                      return null;
+                                    },
+                                  )
+                                else
+                                  CustomInput(
+                                    controller: _locationController,
+                                    label: 'Physical Location',
+                                    hint: 'Enter meeting location',
+                                    prefixIcon: const Icon(Icons.place),
+                                    validator: (value) {
+                                      if (!_isVirtual && (value == null || value.isEmpty)) {
+                                        return 'Please enter a location';
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                              ],
+                            ),
+                          ),
                           const SizedBox(height: 24),
 
                           // Initial Notification Section
@@ -762,8 +834,17 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
                           CustomButton(
                             onPressed: _isCreating ? null : _createMeeting,
                             isLoading: _isCreating,
-                            child: const Text('Create Meeting'),
+                            height: 56,
+                            child: Text(
+                              _isCreating ? 'Creating Meeting...' : 'Create Meeting',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
                           ),
+                          const SizedBox(height: 24),
                         ],
                       ),
                     ),
@@ -1284,6 +1365,74 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
         );
       }
     }
+  }
+
+  Widget _buildModernSection({
+    required IconData icon,
+    required String title,
+    required Color accentColor,
+    required Widget child,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Section Header with colored accent
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: accentColor.withValues(alpha: 0.08),
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(20),
+                topRight: Radius.circular(20),
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: accentColor.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    icon,
+                    color: accentColor,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.darkNeutralColor,
+                    letterSpacing: 0.2,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Section Content
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: child,
+          ),
+        ],
+      ),
+    );
   }
 
   @override

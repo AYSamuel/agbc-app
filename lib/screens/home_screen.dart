@@ -597,7 +597,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           final meeting = upcomingMeetings[index];
                           return MeetingCard(
                             meeting: meeting,
-                            showStatus: false,
+                            width: 280,
                             onTap: () {
                               // Navigate to meeting details screen
                               Navigator.push(

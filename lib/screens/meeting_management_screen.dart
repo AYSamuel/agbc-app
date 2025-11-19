@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../providers/supabase_provider.dart';
 import '../models/meeting_model.dart';
@@ -19,26 +18,88 @@ class MeetingManagementScreen extends StatelessWidget {
       body: SafeArea(
         child: Column(
           children: [
-            // Header with Back button
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
+            // Modern Header
+            Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: AppTheme.secondaryColor,
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(32),
+                  bottomRight: Radius.circular(32),
+                ),
+              ),
+              child: Column(
                 children: [
-                  CustomBackButton(
-                    onPressed: () => Navigator.pop(context),
+                  // Back button row
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                    child: Row(
+                      children: [
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: CustomBackButton(
+                            onPressed: () => Navigator.pop(context),
+                            color: Colors.white,
+                            showBackground: false,
+                            showShadow: false,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(width: 16),
-                  Text(
-                    'Meeting Management',
-                    style: GoogleFonts.inter(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.darkNeutralColor,
+                  // Title and subtitle
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: const Icon(
+                            Icons.event_note,
+                            color: Colors.white,
+                            size: 28,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Meeting Management',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                              SizedBox(height: 4),
+                              Text(
+                                'Schedule and manage meetings',
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
             ),
+            const SizedBox(height: 16),
             // Meetings List
             Expanded(
               child: StreamBuilder<List<MeetingModel>>(
@@ -48,7 +109,7 @@ class MeetingManagementScreen extends StatelessWidget {
                     return Center(
                       child: Text(
                         'Error: ${snapshot.error}',
-                        style: GoogleFonts.inter(
+                        style: const TextStyle(
                           color: Colors.red,
                           fontSize: 16,
                         ),
@@ -77,18 +138,18 @@ class MeetingManagementScreen extends StatelessWidget {
                             color: AppTheme.primaryColor,
                           ),
                           const SizedBox(height: 16),
-                          Text(
+                          const Text(
                             'No Meetings Found',
-                            style: GoogleFonts.inter(
+                            style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
                               color: AppTheme.primaryColor,
                             ),
                           ),
                           const SizedBox(height: 8),
-                          Text(
+                          const Text(
                             'There are currently no meetings in the system.',
-                            style: GoogleFonts.inter(
+                            style: TextStyle(
                               fontSize: 14,
                               color: AppTheme.neutralColor,
                             ),
@@ -105,71 +166,7 @@ class MeetingManagementScreen extends StatelessWidget {
                     padding: const EdgeInsets.all(16),
                     itemCount: meetings.length,
                     itemBuilder: (context, index) {
-                      final meeting = meetings[index];
-                      return Card(
-                        margin: const EdgeInsets.only(bottom: 16),
-                        color: AppTheme.cardColor,
-                        elevation: 2,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          meeting.title,
-                                          style: GoogleFonts.inter(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.bold,
-                                            color: AppTheme.darkNeutralColor,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 8),
-                                        Text(
-                                          meeting.description,
-                                          style: GoogleFonts.inter(
-                                            fontSize: 14,
-                                            color: AppTheme.neutralColor,
-                                          ),
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  _buildStatusChip(meeting.status),
-                                ],
-                              ),
-                              const SizedBox(height: 16),
-                              _buildMeetingDetails(context, meeting),
-                              const SizedBox(height: 12),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.end,
-                                children: [
-                                  IconButton(
-                                    icon: const Icon(Icons.edit),
-                                    onPressed: () => _showEditMeetingDialog(
-                                        context, meeting),
-                                    color: AppTheme.primaryColor,
-                                    tooltip: 'Edit Meeting',
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
+                      return _buildMeetingCard(context, meetings[index]);
                     },
                   );
                 },
@@ -181,172 +178,225 @@ class MeetingManagementScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildStatusChip(MeetingStatus status) {
+  Widget _buildMeetingCard(BuildContext context, MeetingModel meeting) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: _getStatusColor(status).withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Text(
-        _getStatusDisplayText(status),
-        style: GoogleFonts.inter(
-          color: _getStatusColor(status),
-          fontWeight: FontWeight.bold,
-          fontSize: 12,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMeetingDetails(BuildContext context, MeetingModel meeting) {
-    return Column(
-      children: [
-        _buildDetailRow(
-          icon: Icons.calendar_today,
-          label: 'Date',
-          value: _formatDateTime(meeting.dateTime),
-        ),
-        const SizedBox(height: 8),
-        _buildDetailRow(
-          icon: Icons.location_on,
-          label: 'Location',
-          value: meeting.location,
-        ),
-        if (meeting.isVirtual && meeting.meetingLink != null) ...[
-          const SizedBox(height: 8),
-          _buildClickableLinkRow(
-            context: context,
-            icon: Icons.video_call,
-            label: 'Meeting Link',
-            value: meeting.meetingLink!,
-            url: meeting.meetingLink!,
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
           ),
         ],
-      ],
-    );
-  }
-
-  Widget _buildDetailRow({
-    required IconData icon,
-    required String label,
-    required String value,
-  }) {
-    return Row(
-      children: [
-        Icon(
-          icon,
-          size: 16,
-          color: AppTheme.neutralColor,
-        ),
-        const SizedBox(width: 8),
-        Text(
-          '$label: ',
-          style: GoogleFonts.inter(
-            fontSize: 12,
-            color: AppTheme.neutralColor,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        Expanded(
-          child: Text(
-            value,
-            style: GoogleFonts.inter(
-              fontSize: 12,
-              color: AppTheme.darkNeutralColor,
-            ),
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildClickableLinkRow({
-    required BuildContext context,
-    required IconData icon,
-    required String label,
-    required String value,
-    required String url,
-  }) {
-    return Row(
-      children: [
-        Icon(
-          icon,
-          size: 16,
-          color: AppTheme.neutralColor,
-        ),
-        const SizedBox(width: 8),
-        Text(
-          '$label: ',
-          style: GoogleFonts.inter(
-            fontSize: 12,
-            color: AppTheme.neutralColor,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        Expanded(
-          child: InkWell(
-            onTap: () async {
-              try {
-                final uri = Uri.parse(url);
-                if (await canLaunchUrl(uri)) {
-                  await launchUrl(
-                    uri,
-                    mode: LaunchMode.externalApplication,
-                  );
-                } else {
-                  if (!context.mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        'Could not launch meeting link',
-                        style: GoogleFonts.inter(),
-                      ),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                }
-              } catch (e) {
-                if (!context.mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      'Error opening meeting link: ${e.toString()}',
-                      style: GoogleFonts.inter(),
-                    ),
-                    backgroundColor: Colors.red,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            // TODO: Navigate to meeting details if needed
+          },
+          borderRadius: BorderRadius.circular(20),
+          child: Column(
+            children: [
+              // Colored accent bar
+              Container(
+                height: 5,
+                decoration: BoxDecoration(
+                  color: _getStatusColor(meeting.status),
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(20),
+                    topRight: Radius.circular(20),
                   ),
-                );
-              }
-            },
-            child: Text(
-              value,
-              style: GoogleFonts.inter(
-                fontSize: 12,
-                color: Colors.blue,
-                decoration: TextDecoration.underline,
-                decorationColor: Colors.blue,
+                ),
               ),
-              overflow: TextOverflow.ellipsis,
-            ),
+              // Card content
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                meeting.title,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppTheme.darkNeutralColor,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                meeting.description,
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: AppTheme.neutralColor,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: _getStatusColor(meeting.status).withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            _getStatusDisplayText(meeting.status),
+                            style: TextStyle(
+                              color: _getStatusColor(meeting.status),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 10,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    // Date and time
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(
+                            Icons.calendar_today,
+                            size: 14,
+                            color: AppTheme.primaryColor,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          _formatDateTime(meeting.dateTime),
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: AppTheme.darkNeutralColor,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    // Location
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(
+                            Icons.location_on,
+                            size: 14,
+                            color: AppTheme.primaryColor,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            meeting.location,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: AppTheme.darkNeutralColor,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (meeting.isVirtual && meeting.meetingLink != null) ...[
+                      const SizedBox(height: 12),
+                      // Meeting link
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: Colors.blue.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(
+                              Icons.video_call,
+                              size: 14,
+                              color: Colors.blue,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: InkWell(
+                              onTap: () => _launchMeetingLink(context, meeting.meetingLink!),
+                              child: Text(
+                                meeting.meetingLink!,
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.blue,
+                                  decoration: TextDecoration.underline,
+                                  decorationColor: Colors.blue,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
-      ],
-    );
-  }
-
-  void _showEditMeetingDialog(BuildContext context, MeetingModel meeting) {
-    // TODO: Implement meeting edit dialog
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Meeting editing functionality coming soon',
-          style: GoogleFonts.inter(),
-        ),
-        backgroundColor: AppTheme.primaryColor,
       ),
     );
+  }
+
+  Future<void> _launchMeetingLink(BuildContext context, String url) async {
+    try {
+      final uri = Uri.parse(url);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(
+          uri,
+          mode: LaunchMode.externalApplication,
+        );
+      } else {
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not launch meeting link'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error opening meeting link: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   String _getStatusDisplayText(MeetingStatus status) {

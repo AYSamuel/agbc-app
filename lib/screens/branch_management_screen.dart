@@ -3,12 +3,10 @@ import 'package:provider/provider.dart';
 import '../providers/supabase_provider.dart';
 import '../models/church_branch_model.dart';
 import '../models/user_model.dart';
-import '../services/auth_service.dart';
 import '../utils/theme.dart';
 import '../widgets/custom_back_button.dart';
 import '../widgets/branch_card.dart';
 import 'add_branch_screen.dart';
-import '../services/notification_service.dart';
 
 class BranchManagementScreen extends StatefulWidget {
   const BranchManagementScreen({super.key});
@@ -21,117 +19,112 @@ class _BranchManagementScreenState extends State<BranchManagementScreen> {
   @override
   Widget build(BuildContext context) {
     final supabaseProvider = Provider.of<SupabaseProvider>(context);
-    final authService = Provider.of<AuthService>(context);
-    final notificationService = Provider.of<NotificationService>(context);
 
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       body: SafeArea(
         child: Column(
           children: [
-            // Header with Back button
-            Padding(
-              padding: const EdgeInsets.all(16.0),
+            // Modern Header
+            Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: AppTheme.successColor,
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(32),
+                  bottomRight: Radius.circular(32),
+                ),
+              ),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Title row
-                  Row(
-                    children: [
-                      CustomBackButton(
-                        onPressed: () => Navigator.pop(context),
-                      ),
-                      const SizedBox(width: 16),
-                      const Text(
-                        'Branches',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF1A237E),
-                        ),
-                      ),
-                      const Spacer(),
-                      // Add button - always visible since only admins can access this screen
-                      IconButton(
-                        icon: const Icon(Icons.add),
-                        onPressed: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const AddBranchScreen(),
-                            fullscreenDialog: true,
+                  // Back button and add button row
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                    child: Row(
+                      children: [
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: CustomBackButton(
+                            onPressed: () => Navigator.pop(context),
+                            color: Colors.white,
+                            showBackground: false,
+                            showShadow: false,
                           ),
                         ),
-                        color: AppTheme.primaryColor,
-                      ),
-                    ],
+                        const Spacer(),
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: IconButton(
+                            icon: const Icon(Icons.add_rounded),
+                            onPressed: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const AddBranchScreen(),
+                                fullscreenDialog: true,
+                              ),
+                            ),
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  // Admin buttons row - always visible since only admins can access this screen
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      ElevatedButton.icon(
-                        onPressed: () async {
-                          try {
-                            await notificationService.sendBroadcastNotification(
-                              title: 'Test Notification',
-                              message:
-                                  'This is a test notification from the app',
-                            );
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Test notification sent!'),
-                                ),
-                              );
-                            }
-                          } catch (e) {
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('Error: ${e.toString()}'),
-                                  backgroundColor: AppTheme.errorColor,
-                                ),
-                              );
-                            }
-                          }
-                        },
-                        icon: const Icon(Icons.notifications),
-                        label: const Text('Test Notification'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.primaryColor,
-                          foregroundColor: Colors.white,
+                  // Title and subtitle
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: const Icon(
+                            Icons.location_city,
+                            color: Colors.white,
+                            size: 28,
+                          ),
                         ),
-                      ),
-                      ElevatedButton.icon(
-                        onPressed: () async {
-                          try {
-                            final deviceId =
-                                await notificationService.getDeviceId();
-                            final user = authService.currentUser;
-                            _safeShowSnackBar(
-                              'Device ID: ${deviceId ?? 'null'}\nUser ID: ${user?.id ?? 'null'}',
-                            );
-                          } catch (e) {
-                            _safeShowSnackBar(
-                              'Error: ${e.toString()}',
-                              backgroundColor: AppTheme.errorColor,
-                            );
-                          }
-                        },
-                        icon: const Icon(Icons.info),
-                        label: const Text('Debug Device'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.orange,
-                          foregroundColor: Colors.white,
+                        const SizedBox(width: 16),
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Branch Management',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                              SizedBox(height: 4),
+                              Text(
+                                'Manage church branches',
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ],
               ),
             ),
+            const SizedBox(height: 16),
             // Branches List
             Expanded(
               child: StreamBuilder<List<ChurchBranch>>(

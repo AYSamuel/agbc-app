@@ -150,7 +150,6 @@ class _UpcomingEventsScreenState extends State<UpcomingEventsScreen> {
                           padding: const EdgeInsets.only(bottom: 16.0),
                           child: MeetingCard(
                             meeting: meeting,
-                            showStatus: false,
                             onTap: () {
                               Navigator.push(
                                 context,

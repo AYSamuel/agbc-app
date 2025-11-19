@@ -1,138 +1,222 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter/services.dart';
 import 'package:remixicon/remixicon.dart';
 import '../models/task_model.dart';
+import '../utils/theme.dart';
 
 class TaskCard extends StatelessWidget {
   final TaskModel task;
   final VoidCallback? onTap;
-  final ValueChanged<bool>? onStatusChanged;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
+  final bool showActions;
 
   const TaskCard({
     super.key,
     required this.task,
     this.onTap,
-    this.onStatusChanged,
+    this.onEdit,
+    this.onDelete,
+    this.showActions = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    final bool isCompleted = task.status == TaskStatus.completed;
-
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 10,
-            offset: const Offset(0, 4),
+            offset: const Offset(0, 2),
           ),
         ],
       ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap != null
+              ? () {
+                  HapticFeedback.lightImpact();
+                  onTap!();
+                }
+              : null,
+          borderRadius: BorderRadius.circular(20),
+          child: Column(
             children: [
-              // Checkbox
+              // Colored accent bar
               Container(
-                margin: const EdgeInsets.only(top: 2, right: 12),
-                child: Checkbox(
-                  value: isCompleted,
-                  onChanged: (value) {
-                    if (value != null && onStatusChanged != null) {
-                      onStatusChanged!(value);
-                    }
-                  },
-                  shape: const CircleBorder(),
-                  activeColor: const Color(0xFF5B7EBF),
-                  side: const BorderSide(
-                    color: Color(0xFF5B7EBF),
-                    width: 2,
+                height: 5,
+                decoration: BoxDecoration(
+                  color: _getStatusColor(task.status),
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(20),
+                    topRight: Radius.circular(20),
                   ),
                 ),
               ),
-
-              // Task Content
-              Expanded(
+              // Card content
+              Padding(
+                padding: const EdgeInsets.all(20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Title and Priority
                     Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                task.title,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppTheme.darkNeutralColor,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                task.description,
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: AppTheme.neutralColor,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: _getStatusColor(task.status).withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                           child: Text(
-                            task.title,
-                            style: GoogleFonts.inter(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                              color: isCompleted
-                                  ? const Color(0xFF9CA3AF)
-                                  : const Color(0xFF1F2937),
-                              decoration: isCompleted
-                                  ? TextDecoration.lineThrough
-                                  : null,
+                            _getStatusDisplayText(task.status),
+                            style: TextStyle(
+                              color: _getStatusColor(task.status),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 10,
+                              letterSpacing: 0.5,
                             ),
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        _buildPriorityBadge(task.priority),
                       ],
                     ),
-
-                    // Description
-                    const SizedBox(height: 4),
-                    Text(
-                      task.description,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        color: isCompleted
-                            ? const Color(0xFF9CA3AF)
-                            : const Color(0xFF6B7280),
-                        decoration:
-                            isCompleted ? TextDecoration.lineThrough : null,
-                      ),
-                    ),
-
-                    // Due Date and Status
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 16),
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        // Due Date
-                        Row(
-                          children: [
-                            const Icon(
-                              Remix.calendar_line,
-                              size: 14,
-                              color: Color(0xFF6B7280),
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              'Due: ${_formatDate(task.dueDate)}',
-                              style: GoogleFonts.inter(
-                                fontSize: 12,
-                                color: isCompleted
-                                    ? const Color(0xFF9CA3AF)
-                                    : const Color(0xFF6B7280),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: _getPriorityColor(task.priority).withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Remix.flag_line,
+                                size: 14,
+                                color: _getPriorityColor(task.priority),
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                _getPriorityDisplayText(task.priority),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: _getPriorityColor(task.priority),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        const Icon(
+                          Remix.calendar_line,
+                          size: 14,
+                          color: AppTheme.neutralColor,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          _formatDate(task.dueDate),
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: AppTheme.neutralColor,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (showActions && (onEdit != null || onDelete != null)) ...[
+                      const SizedBox(height: 16),
+                      const Divider(height: 1, color: AppTheme.neutralColor),
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          if (onEdit != null)
+                            TextButton.icon(
+                              onPressed: () {
+                                HapticFeedback.lightImpact();
+                                onEdit!();
+                              },
+                              icon: const Icon(
+                                Icons.edit_outlined,
+                                size: 16,
+                                color: AppTheme.primaryColor,
+                              ),
+                              label: const Text(
+                                'Edit',
+                                style: TextStyle(
+                                  color: AppTheme.primaryColor,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              style: TextButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 8),
                               ),
                             ),
-                          ],
-                        ),
-
-                        // Status
-                        _buildStatusBadge(task.status),
-                      ],
-                    ),
+                          if (onEdit != null && onDelete != null)
+                            const SizedBox(width: 8),
+                          if (onDelete != null)
+                            TextButton.icon(
+                              onPressed: () {
+                                HapticFeedback.lightImpact();
+                                onDelete!();
+                              },
+                              icon: const Icon(
+                                Icons.delete_outline,
+                                size: 16,
+                                color: AppTheme.errorColor,
+                              ),
+                              label: const Text(
+                                'Delete',
+                                style: TextStyle(
+                                  color: AppTheme.errorColor,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              style: TextButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 8),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -143,94 +227,56 @@ class TaskCard extends StatelessWidget {
     );
   }
 
-  Widget _buildPriorityBadge(TaskPriority priority) {
-    Color bgColor;
-    Color textColor;
-    String displayText;
-
-    switch (priority) {
-      case TaskPriority.high:
-        bgColor = const Color(0xFFFEE2E2);
-        textColor = const Color(0xFFDC2626);
-        displayText = 'HIGH';
-        break;
-      case TaskPriority.urgent:
-        bgColor = const Color(0xFFFDF2F8);
-        textColor = const Color(0xFF9D174D);
-        displayText = 'URGENT';
-        break;
-      case TaskPriority.medium:
-        bgColor = const Color(0xFFFEF3C7);
-        textColor = const Color(0xFFD97706);
-        displayText = 'MEDIUM';
-        break;
-      case TaskPriority.low:
-        bgColor = const Color(0xFFD1FAE5);
-        textColor = const Color(0xFF059669);
-        displayText = 'LOW';
-        break;
+  String _getStatusDisplayText(TaskStatus status) {
+    switch (status) {
+      case TaskStatus.pending:
+        return 'PENDING';
+      case TaskStatus.inProgress:
+        return 'IN PROGRESS';
+      case TaskStatus.completed:
+        return 'COMPLETED';
+      case TaskStatus.cancelled:
+        return 'CANCELLED';
     }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Text(
-        displayText,
-        style: GoogleFonts.inter(
-          fontSize: 12,
-          fontWeight: FontWeight.w500,
-          color: textColor,
-        ),
-      ),
-    );
   }
 
-  Widget _buildStatusBadge(TaskStatus status) {
-    Color bgColor;
-    Color textColor;
-    String displayText;
+  String _getPriorityDisplayText(TaskPriority priority) {
+    switch (priority) {
+      case TaskPriority.low:
+        return 'LOW';
+      case TaskPriority.medium:
+        return 'MEDIUM';
+      case TaskPriority.high:
+        return 'HIGH';
+      case TaskPriority.urgent:
+        return 'URGENT';
+    }
+  }
 
+  Color _getStatusColor(TaskStatus status) {
     switch (status) {
       case TaskStatus.completed:
-        bgColor = const Color(0xFFD1FAE5);
-        textColor = const Color(0xFF059669);
-        displayText = 'Completed';
-        break;
+        return Colors.green;
       case TaskStatus.inProgress:
-        bgColor = const Color(0xFFFEF3C7);
-        textColor = const Color(0xFFD97706);
-        displayText = 'In Progress';
-        break;
+        return Colors.orange;
       case TaskStatus.pending:
-        bgColor = const Color(0xFFF3F4F6);
-        textColor = const Color(0xFF6B7280);
-        displayText = 'Pending';
-        break;
+        return Colors.blue;
       case TaskStatus.cancelled:
-        bgColor = const Color(0xFFFEE2E2);
-        textColor = const Color(0xFFDC2626);
-        displayText = 'Cancelled';
-        break;
+        return Colors.red;
     }
+  }
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Text(
-        displayText,
-        style: GoogleFonts.inter(
-          fontSize: 12,
-          fontWeight: FontWeight.w500,
-          color: textColor,
-        ),
-      ),
-    );
+  Color _getPriorityColor(TaskPriority priority) {
+    switch (priority) {
+      case TaskPriority.urgent:
+        return const Color(0xFF9D174D);
+      case TaskPriority.high:
+        return Colors.red;
+      case TaskPriority.medium:
+        return Colors.orange;
+      case TaskPriority.low:
+        return Colors.green;
+    }
   }
 
   String _formatDate(DateTime date) {

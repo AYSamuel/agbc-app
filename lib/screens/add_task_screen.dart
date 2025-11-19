@@ -227,127 +227,214 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Header Section
-                  Row(
-                    children: [
-                      CustomBackButton(
-                        onPressed: () => Navigator.pop(context),
-                      ),
-                      const SizedBox(width: 16),
-                      Text(
-                        'Create New Task',
-                        style: AppTheme.titleStyle,
-                      ),
-                    ],
+        child: Column(
+          children: [
+            // Modern Header
+            Container(
+              decoration: BoxDecoration(
+                color: AppTheme.primaryColor,
+                boxShadow: [
+                  BoxShadow(
+                    color: AppTheme.primaryColor.withValues(alpha: 0.2),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
                   ),
-                  const SizedBox(height: 32),
-
-                  // Form Progress Indicator
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      _buildProgressIndicator('Title', _isTitleValid),
-                      _buildProgressIndicator('Details', _isDescriptionValid),
-                      _buildProgressIndicator('Assignee', _isAssigneeValid),
-                      _buildProgressIndicator('Deadline', _isDeadlineValid),
-                      _buildProgressIndicator('Branch', _isBranchValid),
-                    ],
-                  ),
-                  const SizedBox(height: 32),
-
-                  // Basic Information Section
-                  Container(
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.05),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
+                ],
+              ),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                child: Column(
+                  children: [
+                    // Header Row
+                    Row(
+                      children: [
+                        CustomBackButton(
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Create New Task',
+                                style: AppTheme.titleStyle.copyWith(
+                                  color: Colors.white,
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Fill in the details below',
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.9),
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
+                    const SizedBox(height: 24),
+
+                    // Modern Progress Indicators
+                    _buildModernProgressBar(),
+                  ],
+                ),
+              ),
+            ),
+
+            // Scrollable Form Content
+            Expanded(
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                child: Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Form(
+                    key: _formKey,
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        const Text(
-                          'Task Details',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF1A237E),
+                        // Task Information Card
+                        _buildModernSection(
+                          icon: Icons.edit_document,
+                          title: 'Task Information',
+                          accentColor: AppTheme.primaryColor,
+                          child: Column(
+                            children: [
+                              CustomInput(
+                                label: 'Task Title',
+                                controller: _titleController,
+                                hint: 'Enter a clear, descriptive title',
+                                prefixIcon: const Icon(Icons.title),
+                                focusNode: _titleFocus,
+                                nextFocusNode: _descriptionFocus,
+                                validator: (value) {
+                                  if (value == null || value.trim().isEmpty) {
+                                    return 'Please enter a title';
+                                  }
+                                  return null;
+                                },
+                              ),
+                              const SizedBox(height: 20),
+                              CustomInput(
+                                label: 'Description',
+                                controller: _descriptionController,
+                                hint: 'Provide detailed task description',
+                                prefixIcon: const Icon(Icons.description),
+                                focusNode: _descriptionFocus,
+                                maxLines: 4,
+                                validator: (value) {
+                                  if (value == null || value.trim().isEmpty) {
+                                    return 'Please enter a description';
+                                  }
+                                  return null;
+                                },
+                              ),
+                            ],
                           ),
                         ),
-                        const SizedBox(height: 24),
-                        CustomInput(
-                          label: 'Title',
-                          controller: _titleController,
-                          hint: 'Enter task title',
-                          prefixIcon:
-                              const Icon(Icons.title, color: Colors.grey),
-                          focusNode: _titleFocus,
-                          nextFocusNode: _descriptionFocus,
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return 'Please enter a title';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 16),
-                        CustomInput(
-                          label: 'Description',
-                          controller: _descriptionController,
-                          hint: 'Enter task description',
-                          prefixIcon:
-                              const Icon(Icons.description, color: Colors.grey),
-                          focusNode: _descriptionFocus,
-                          maxLines: 3,
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return 'Please enter a description';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 16),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: StreamBuilder<List<UserModel>>(
+                        const SizedBox(height: 20),
+
+                        // Assignment Card
+                        _buildModernSection(
+                          icon: Icons.people,
+                          title: 'Assignment',
+                          accentColor: AppTheme.secondaryColor,
+                          child: Column(
+                            children: [
+                              // Branch Selection First
+                              Consumer<BranchesProvider>(
+                                builder: (context, branchesProvider, child) {
+                                  final branches = branchesProvider.branches;
+
+                                  return CustomDropdown<ChurchBranch>(
+                                    label: 'Branch',
+                                    value: _selectedBranch,
+                                    items: branches
+                                        .map<DropdownMenuItem<ChurchBranch>>(
+                                            (ChurchBranch branch) {
+                                      return DropdownMenuItem<ChurchBranch>(
+                                        value: branch,
+                                        child: Text(branch.name),
+                                      );
+                                    }).toList(),
+                                    onChanged: (branch) {
+                                      if (branch != null) {
+                                        HapticFeedback.selectionClick();
+                                        setState(() {
+                                          _selectedBranch = branch;
+                                          _isBranchValid = true;
+                                          // Reset assignee when branch changes
+                                          _selectedAssignee = null;
+                                          _isAssigneeValid = false;
+                                        });
+                                      }
+                                    },
+                                    validator: (value) {
+                                      if (value == null) {
+                                        return 'Please select a branch';
+                                      }
+                                      return null;
+                                    },
+                                  );
+                                },
+                              ),
+                              const SizedBox(height: 20),
+                              // User Selection (filtered by branch)
+                              StreamBuilder<List<UserModel>>(
                                 stream: Provider.of<SupabaseProvider>(context,
                                         listen: false)
                                     .getAllUsers(),
                                 builder: (context, snapshot) {
                                   if (!snapshot.hasData) {
                                     return const Center(
-                                      child: CircularProgressIndicator(),
+                                      child: Padding(
+                                        padding: EdgeInsets.all(20),
+                                        child: CircularProgressIndicator(),
+                                      ),
                                     );
                                   }
 
-                                  final users = snapshot.data!;
+                                  final allUsers = snapshot.data!;
+
+                                  // Filter users based on selected branch
+                                  final List<UserModel> filteredUsers;
+                                  if (_selectedBranch == null) {
+                                    // No branch selected, show empty or all users
+                                    filteredUsers = [];
+                                  } else if (_selectedBranch!.name.toLowerCase() == 'global') {
+                                    // Global branch - show all users
+                                    filteredUsers = allUsers;
+                                  } else {
+                                    // Specific branch - show only users in that branch
+                                    filteredUsers = allUsers
+                                        .where((user) => user.branchId == _selectedBranch!.id)
+                                        .toList();
+                                  }
 
                                   return CustomDropdown<UserModel>(
-                                    label: 'Select Assignee',
+                                    label: 'Assign To',
                                     value: _selectedAssignee,
-                                    items: users
-                                        .map<DropdownMenuItem<UserModel>>(
-                                            (UserModel user) {
-                                      return DropdownMenuItem<UserModel>(
-                                        value: user,
-                                        child: Text(user.displayName),
-                                      );
-                                    }).toList(),
+                                    enabled: _selectedBranch != null && filteredUsers.isNotEmpty,
+                                    items: filteredUsers.isEmpty
+                                        ? [
+                                            const DropdownMenuItem<UserModel>(
+                                              value: null,
+                                              child: Text('No users available'),
+                                            ),
+                                          ]
+                                        : filteredUsers
+                                            .map<DropdownMenuItem<UserModel>>(
+                                                (UserModel user) {
+                                          return DropdownMenuItem<UserModel>(
+                                            value: user,
+                                            child: Text(user.displayName),
+                                          );
+                                        }).toList(),
                                     onChanged: (user) {
                                       if (user != null) {
                                         HapticFeedback.selectionClick();
@@ -366,137 +453,210 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                                   );
                                 },
                               ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Consumer<BranchesProvider>(
-                                builder: (context, branchesProvider, child) {
-                                  final branches = branchesProvider.branches;
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 20),
 
-                                  return CustomDropdown<ChurchBranch>(
-                                    label: 'Select Branch',
-                                    value: _selectedBranch,
-                                    items: branches
-                                        .map<DropdownMenuItem<ChurchBranch>>(
-                                            (ChurchBranch branch) {
-                                      return DropdownMenuItem<ChurchBranch>(
-                                        value: branch,
-                                        child: Text(branch.name),
-                                      );
-                                    }).toList(),
-                                    onChanged: (branch) {
-                                      if (branch != null) {
-                                        setState(() {
-                                          _selectedBranch = branch;
-                                          _isBranchValid = true;
-                                        });
-                                      }
-                                    },
-                                    validator: (value) {
-                                      if (value == null) {
-                                        return 'Please select a branch';
-                                      }
-                                      return null;
-                                    },
-                                  );
+                        // Scheduling Card
+                        _buildModernSection(
+                          icon: Icons.schedule,
+                          title: 'Scheduling',
+                          accentColor: AppTheme.accentColor,
+                          child: Column(
+                            children: [
+                              CustomInput(
+                                label: 'Deadline',
+                                controller: _deadlineController,
+                                hint: 'Select deadline date & time',
+                                prefixIcon: const Icon(Icons.calendar_today),
+                                focusNode: _deadlineFocus,
+                                readOnly: true,
+                                onTap: () => _selectDate(
+                                    _deadlineController, _deadlineFocus, true),
+                                validator: (value) {
+                                  if (_selectedDeadline == null) {
+                                    return 'Please select a deadline';
+                                  }
+                                  return null;
                                 },
                               ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        CustomInput(
-                          label: 'Deadline',
-                          controller: _deadlineController,
-                          hint: 'Select deadline',
-                          prefixIcon: const Icon(Icons.calendar_today,
-                              color: Colors.grey),
-                          focusNode: _deadlineFocus,
-                          readOnly: true,
-                          onTap: () => _selectDate(
-                              _deadlineController, _deadlineFocus, true),
-                          validator: (value) {
-                            if (_selectedDeadline == null) {
-                              return 'Please select a deadline';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 16),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: CustomDropdown<TaskPriority>(
+                              const SizedBox(height: 20),
+                              CustomDropdown<TaskPriority>(
                                 value: _selectedPriority,
-                                label: 'Priority',
+                                label: 'Priority Level',
                                 hint: 'Select priority',
-                                prefixIcon: Icons.priority_high,
+                                prefixIcon: Icons.flag,
                                 items: const [
                                   DropdownMenuItem(
                                       value: TaskPriority.urgent,
-                                      child: Text('Urgent')),
+                                      child: Text('🔴 Urgent')),
                                   DropdownMenuItem(
                                       value: TaskPriority.high,
-                                      child: Text('High')),
+                                      child: Text('🟠 High')),
                                   DropdownMenuItem(
                                       value: TaskPriority.medium,
-                                      child: Text('Medium')),
+                                      child: Text('🟡 Medium')),
                                   DropdownMenuItem(
                                       value: TaskPriority.low,
-                                      child: Text('Low')),
+                                      child: Text('🟢 Low')),
                                 ],
                                 onChanged: (value) {
+                                  HapticFeedback.selectionClick();
                                   setState(() {
                                     _selectedPriority = value!;
                                   });
                                 },
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
+                        const SizedBox(height: 32),
+
+                        // Submit Button
+                        CustomButton(
+                          onPressed: _isCreating ? null : _submitForm,
+                          isLoading: _isCreating,
+                          height: 56,
+                          child: Text(
+                            _isCreating ? 'Creating Task...' : 'Create Task',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 100),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 32),
-
-                  // Submit Button
-                  CustomButton(
-                    onPressed: _isCreating ? null : _submitForm,
-                    isLoading: _isCreating,
-                    child: const Text('Create Task'),
-                  ),
-                ],
+                ),
               ),
             ),
-          ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildProgressIndicator(String label, bool isComplete) {
+  Widget _buildModernProgressBar() {
+    final totalSteps = 5;
+    final completedSteps = [
+      _isTitleValid,
+      _isDescriptionValid,
+      _isAssigneeValid,
+      _isDeadlineValid,
+      _isBranchValid,
+    ].where((valid) => valid).length;
+
+    final progress = completedSteps / totalSteps;
+
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          width: 24,
-          height: 24,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: isComplete ? Colors.green : Colors.grey[300],
-          ),
-          child: isComplete
-              ? const Icon(Icons.check, color: Colors.white, size: 16)
-              : null,
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Progress',
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.9),
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            Text(
+              '$completedSteps of $totalSteps completed',
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.8),
+                fontSize: 12,
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            color: isComplete ? Colors.green : Colors.grey[600],
+        const SizedBox(height: 8),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: LinearProgressIndicator(
+            value: progress,
+            minHeight: 6,
+            backgroundColor: Colors.white.withValues(alpha: 0.2),
+            valueColor: AlwaysStoppedAnimation<Color>(
+              AppTheme.secondaryColor,
+            ),
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildModernSection({
+    required IconData icon,
+    required String title,
+    required Color accentColor,
+    required Widget child,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Section Header with colored accent
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: accentColor.withValues(alpha: 0.08),
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(20),
+                topRight: Radius.circular(20),
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: accentColor.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    icon,
+                    color: accentColor,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.darkNeutralColor,
+                    letterSpacing: 0.2,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Section Content
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: child,
+          ),
+        ],
+      ),
     );
   }
 }

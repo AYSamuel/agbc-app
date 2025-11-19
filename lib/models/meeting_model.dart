@@ -100,7 +100,9 @@ class MeetingModel {
       id: json['id'] ?? '',
       title: json['title'] ?? '',
       description: json['description'] ?? '',
-      dateTime: DateTime.parse(json['start_time']),
+      dateTime: json['start_time'] != null
+          ? DateTime.parse(json['start_time'])
+          : DateTime.now(),
       type: json['type'] ?? 'local',
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'])
@@ -108,8 +110,11 @@ class MeetingModel {
       updatedAt: json['updated_at'] != null
           ? DateTime.parse(json['updated_at'])
           : DateTime.now(),
-      endTime: DateTime.parse(json['end_time']),
+      endTime: json['end_time'] != null
+          ? DateTime.parse(json['end_time'])
+          : null,
       branchId: json['branch_id'],
+      category: json['category'] ?? 'general',
       organizerId: json['organizer_id'] ?? '',
       organizerName: json['organizer_name'] ?? '',
       location: json['location'] ?? '',

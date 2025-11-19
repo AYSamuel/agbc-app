@@ -3,12 +3,10 @@ import 'package:flutter/services.dart';
 import '../models/task_model.dart';
 import '../utils/theme.dart';
 import '../widgets/custom_back_button.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../providers/supabase_provider.dart';
 import '../models/user_model.dart';
 import 'task_details_screen.dart';
-import '../widgets/custom_card.dart';
 import '../widgets/custom_dropdown.dart';
 import 'package:remixicon/remixicon.dart';
 
@@ -51,26 +49,88 @@ class _TaskManagementScreenState extends State<TaskManagementScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Header with Back button
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
+            // Modern Header
+            Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: AppTheme.accentColor,
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(32),
+                  bottomRight: Radius.circular(32),
+                ),
+              ),
+              child: Column(
                 children: [
-                  CustomBackButton(
-                    onPressed: () => Navigator.pop(context),
+                  // Back button row
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                    child: Row(
+                      children: [
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: CustomBackButton(
+                            onPressed: () => Navigator.pop(context),
+                            color: Colors.white,
+                            showBackground: false,
+                            showShadow: false,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(width: 16),
-                  Text(
-                    'Task Management',
-                    style: GoogleFonts.inter(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.darkNeutralColor,
+                  // Title and subtitle
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: const Icon(
+                            Icons.task_alt,
+                            color: Colors.white,
+                            size: 28,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Task Management',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                              SizedBox(height: 4),
+                              Text(
+                                'Assign and track church tasks',
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
             ),
+            const SizedBox(height: 16),
             _buildFilterAndSortBar(),
             Expanded(
               child: StreamBuilder<List<TaskModel>>(
@@ -80,7 +140,7 @@ class _TaskManagementScreenState extends State<TaskManagementScreen> {
                     return Center(
                       child: Text(
                         'Error: ${snapshot.error}',
-                        style: GoogleFonts.inter(
+                        style: const TextStyle(
                           color: Colors.red,
                           fontSize: 16,
                         ),
@@ -109,18 +169,18 @@ class _TaskManagementScreenState extends State<TaskManagementScreen> {
                             color: AppTheme.primaryColor,
                           ),
                           const SizedBox(height: 16),
-                          Text(
+                          const Text(
                             'No Tasks Found',
-                            style: GoogleFonts.inter(
+                            style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
                               color: AppTheme.primaryColor,
                             ),
                           ),
                           const SizedBox(height: 8),
-                          Text(
+                          const Text(
                             'There are no tasks matching your current filter.',
-                            style: GoogleFonts.inter(
+                            style: TextStyle(
                               fontSize: 14,
                               color: AppTheme.neutralColor,
                             ),
@@ -200,142 +260,189 @@ class _TaskManagementScreenState extends State<TaskManagementScreen> {
   }
 
   Widget _buildTaskCard(TaskModel task) {
-    return GestureDetector(
-      onTap: () {
-        HapticFeedback.lightImpact();
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => TaskDetailsScreen(task: task),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
           ),
-        );
-      },
-      child: CustomCard(
-        padding: const EdgeInsets.only(bottom: 16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        task.title,
-                        style: GoogleFonts.inter(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.darkNeutralColor,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        task.description,
-                        style: GoogleFonts.inter(
-                          fontSize: 14,
-                          color: AppTheme.neutralColor,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            HapticFeedback.lightImpact();
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => TaskDetailsScreen(task: task),
+              ),
+            );
+          },
+          borderRadius: BorderRadius.circular(20),
+          child: Column(
+            children: [
+              // Colored accent bar
+              Container(
+                height: 5,
+                decoration: BoxDecoration(
+                  color: _getStatusColor(task.status),
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(20),
+                    topRight: Radius.circular(20),
                   ),
                 ),
-                const SizedBox(width: 12),
-                _buildStatusChip(task.status),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                _buildInfoChip(
-                  icon: Remix.flag_line,
-                  label: _getPriorityDisplayText(task.priority),
-                  color: _getPriorityColor(task.priority),
-                ),
-                const SizedBox(width: 12),
-                _buildInfoChip(
-                  icon: Remix.calendar_line,
-                  label: _formatDate(task.dueDate),
-                  color: AppTheme.neutralColor,
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            FutureBuilder<UserModel?>(
-              future: _getUserDetails(task.assignedTo),
-              builder: (context, snapshot) {
-                if (snapshot.hasData && snapshot.data != null) {
-                  return Row(
-                    children: [
-                      const Icon(
-                        Remix.user_line,
-                        size: 16,
-                        color: AppTheme.neutralColor,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Assigned to: ${snapshot.data!.displayName}',
-                        style: GoogleFonts.inter(
-                          fontSize: 12,
+              ),
+              // Card content
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                task.title,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppTheme.darkNeutralColor,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                task.description,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: AppTheme.neutralColor,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: _getStatusColor(task.status).withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            _getStatusDisplayText(task.status),
+                            style: TextStyle(
+                              color: _getStatusColor(task.status),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 10,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: _getPriorityColor(task.priority).withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Remix.flag_line,
+                                size: 14,
+                                color: _getPriorityColor(task.priority),
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                _getPriorityDisplayText(task.priority),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: _getPriorityColor(task.priority),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Icon(
+                          Remix.calendar_line,
+                          size: 14,
                           color: AppTheme.neutralColor,
                         ),
-                      ),
-                    ],
-                  );
-                }
-                return const SizedBox.shrink();
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatusChip(TaskStatus status) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: _getStatusColor(status).withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Text(
-        _getStatusDisplayText(status),
-        style: GoogleFonts.inter(
-          color: _getStatusColor(status),
-          fontWeight: FontWeight.bold,
-          fontSize: 12,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildInfoChip({
-    required IconData icon,
-    required String label,
-    required Color color,
-  }) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(
-          icon,
-          size: 14,
-          color: color,
-        ),
-        const SizedBox(width: 4),
-        Text(
-          label,
-          style: GoogleFonts.inter(
-            fontSize: 12,
-            color: color,
-            fontWeight: FontWeight.w500,
+                        const SizedBox(width: 4),
+                        Text(
+                          _formatDate(task.dueDate),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppTheme.neutralColor,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    FutureBuilder<UserModel?>(
+                      future: _getUserDetails(task.assignedTo),
+                      builder: (context, snapshot) {
+                        if (snapshot.hasData && snapshot.data != null) {
+                          return Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Icon(
+                                  Remix.user_line,
+                                  size: 14,
+                                  color: AppTheme.primaryColor,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  snapshot.data!.displayName,
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    color: AppTheme.darkNeutralColor,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          );
+                        }
+                        return const SizedBox.shrink();
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
-      ],
+      ),
     );
   }
 

@@ -17,95 +17,171 @@ class AdminScreen extends StatelessWidget {
       body: SafeArea(
         child: Column(
           children: [
-            // Header with Back button
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
+            // Modern Header
+            Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: AppTheme.primaryColor,
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(32),
+                  bottomRight: Radius.circular(32),
+                ),
+              ),
+              child: Column(
                 children: [
-                  CustomBackButton(
-                    onPressed: () {
-                      // Simply pop back to the previous screen
-                      Navigator.pop(context);
-                    },
+                  // Back button row
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                    child: Row(
+                      children: [
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: CustomBackButton(
+                            onPressed: () => Navigator.pop(context),
+                            color: Colors.white,
+                            showBackground: false,
+                            showShadow: false,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(width: 16),
-                  Text(
-                    'Admin Dashboard',
-                    style: AppTheme.titleStyle.copyWith(
-                      color: AppTheme.primaryColor,
+                  // Title and subtitle
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.2),
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: const Icon(
+                                Icons.admin_panel_settings,
+                                color: Colors.white,
+                                size: 32,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Admin Dashboard',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Manage your church operations',
+                                    style: TextStyle(
+                                      color: Colors.white.withValues(alpha: 0.9),
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w400,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
             ),
-            Expanded(
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  // Calculate the size of each card based on available space
-                  final cardWidth = (constraints.maxWidth - 48) /
-                      2; // 48 = padding (16) + spacing (16)
-                  final cardHeight = cardWidth * 1.2; // Maintain aspect ratio
 
-                  return GridView.count(
-                    padding: const EdgeInsets.all(16),
-                    crossAxisCount: 2,
-                    mainAxisSpacing: 16,
-                    crossAxisSpacing: 16,
-                    childAspectRatio: cardWidth / cardHeight,
-                    children: [
-                      AdminCard(
-                        icon: Icons.people,
-                        title: 'Users',
-                        description: 'Manage church members and roles',
-                        color: AppTheme.primaryColor,
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const UserManagementScreen(),
+            // Management Cards Grid
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Management',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.darkNeutralColor,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    GridView.count(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      crossAxisCount: 2,
+                      mainAxisSpacing: 16,
+                      crossAxisSpacing: 16,
+                      childAspectRatio: 0.85,
+                      children: [
+                        AdminCard(
+                          icon: Icons.people_rounded,
+                          title: 'Users',
+                          description: 'Manage church members and roles',
+                          color: AppTheme.primaryColor,
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const UserManagementScreen(),
+                            ),
                           ),
                         ),
-                      ),
-                      AdminCard(
-                        icon: Icons.task,
-                        title: 'Tasks',
-                        description: 'Assign and track church tasks',
-                        color: AppTheme.accentColor,
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const TaskManagementScreen(),
+                        AdminCard(
+                          icon: Icons.task_alt,
+                          title: 'Tasks',
+                          description: 'Assign and track church tasks',
+                          color: AppTheme.accentColor,
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const TaskManagementScreen(),
+                            ),
                           ),
                         ),
-                      ),
-                      AdminCard(
-                        icon: Icons.calendar_today,
-                        title: 'Meetings',
-                        description: 'Schedule and manage meetings',
-                        color: AppTheme.secondaryColor,
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                const MeetingManagementScreen(),
+                        AdminCard(
+                          icon: Icons.event_note,
+                          title: 'Meetings',
+                          description: 'Schedule and manage meetings',
+                          color: AppTheme.secondaryColor,
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  const MeetingManagementScreen(),
+                            ),
                           ),
                         ),
-                      ),
-                      AdminCard(
-                        icon: Icons.church,
-                        title: 'Branches',
-                        description: 'Manage church branches',
-                        color: AppTheme.successColor,
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                const BranchManagementScreen(),
+                        AdminCard(
+                          icon: Icons.location_city,
+                          title: 'Branches',
+                          description: 'Manage church branches',
+                          color: AppTheme.successColor,
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  const BranchManagementScreen(),
+                            ),
                           ),
                         ),
-                      ),
-                    ],
-                  );
-                },
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ],

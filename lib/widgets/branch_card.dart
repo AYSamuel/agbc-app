@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../models/church_branch_model.dart';
 import '../utils/theme.dart';
-import 'custom_button.dart';
 
 class BranchCard extends StatelessWidget {
   final ChurchBranch branch;
@@ -44,160 +44,218 @@ class BranchCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: AppTheme.cardColor,
-        borderRadius: BorderRadius.circular(16),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.darkNeutralColor.withValues(alpha: 0.05),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 10,
-            offset: const Offset(0, 4),
+            offset: const Offset(0, 2),
           ),
         ],
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: onView,
-          borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+          onTap: onView != null
+              ? () {
+                  HapticFeedback.lightImpact();
+                  onView!();
+                }
+              : null,
+          borderRadius: BorderRadius.circular(20),
+          child: Column(
+            children: [
+              // Colored accent bar
+              Container(
+                height: 5,
+                decoration: BoxDecoration(
+                  color: AppTheme.successColor,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(20),
+                    topRight: Radius.circular(20),
+                  ),
+                ),
+              ),
+              // Card content
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: AppTheme.primaryColor.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(
-                        Icons.church,
-                        color: AppTheme.primaryColor,
-                        size: 24,
-                      ),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: AppTheme.successColor.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(
+                            Icons.church,
+                            color: AppTheme.successColor,
+                            size: 24,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                branch.name,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppTheme.darkNeutralColor,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              if (branch.description != null &&
+                                  branch.description!.isNotEmpty) ...[
+                                Text(
+                                  branch.description!,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    color: AppTheme.neutralColor,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 8),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            branch.name,
-                            style: AppTheme.titleStyle.copyWith(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
+                    const SizedBox(height: 12),
+                    // Location
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(
+                            Icons.location_on,
+                            size: 14,
+                            color: AppTheme.primaryColor,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            _formatLocation(branch.location),
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: AppTheme.darkNeutralColor,
+                              fontWeight: FontWeight.w500,
                             ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          const SizedBox(height: 4),
-                          Row(
-                            children: [
-                              const Icon(
-                                Icons.location_on,
-                                size: 16,
-                                color: AppTheme.neutralColor,
-                              ),
-                              const SizedBox(width: 4),
-                              Expanded(
-                                child: Text(
-                                  _formatLocation(branch.location),
-                                  style: AppTheme.regularTextStyle.copyWith(
-                                    color: AppTheme.neutralColor,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 4),
-                          Row(
-                            children: [
-                              const Icon(
-                                Icons.home,
-                                size: 16,
-                                color: AppTheme.neutralColor,
-                              ),
-                              const SizedBox(width: 4),
-                              Expanded(
-                                child: Text(
-                                  branch.address,
-                                  style: AppTheme.regularTextStyle.copyWith(
-                                    color: AppTheme.neutralColor,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-                if (showActions) ...[
-                  const SizedBox(height: 16),
-                  const Divider(height: 1),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      if (onEdit != null)
-                        CustomButton(
-                          onPressed: onEdit,
-                          height: 36,
-                          backgroundColor: AppTheme.cardColor,
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.edit,
+                    const SizedBox(height: 12),
+                    // Address
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(
+                            Icons.home,
+                            size: 14,
+                            color: AppTheme.primaryColor,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            branch.address,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: AppTheme.darkNeutralColor,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (showActions && (onEdit != null || onDelete != null)) ...[
+                      const SizedBox(height: 16),
+                      const Divider(height: 1, color: AppTheme.neutralColor),
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          if (onEdit != null)
+                            TextButton.icon(
+                              onPressed: () {
+                                HapticFeedback.lightImpact();
+                                onEdit!();
+                              },
+                              icon: const Icon(
+                                Icons.edit_outlined,
                                 size: 16,
                                 color: AppTheme.primaryColor,
                               ),
-                              SizedBox(width: 4),
-                              Text(
+                              label: const Text(
                                 'Edit',
                                 style: TextStyle(
                                   color: AppTheme.primaryColor,
                                   fontSize: 14,
-                                  fontWeight: FontWeight.w500,
+                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
-                            ],
-                          ),
-                        ),
-                      if (onEdit != null && onDelete != null)
-                        const SizedBox(width: 8),
-                      if (onDelete != null)
-                        CustomButton(
-                          onPressed: onDelete,
-                          height: 36,
-                          backgroundColor: AppTheme.errorColor,
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.delete,
-                                size: 16,
-                                color: Colors.white,
+                              style: TextButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 8),
                               ),
-                              SizedBox(width: 4),
-                              Text(
+                            ),
+                          if (onEdit != null && onDelete != null)
+                            const SizedBox(width: 8),
+                          if (onDelete != null)
+                            TextButton.icon(
+                              onPressed: () {
+                                HapticFeedback.lightImpact();
+                                onDelete!();
+                              },
+                              icon: const Icon(
+                                Icons.delete_outline,
+                                size: 16,
+                                color: AppTheme.errorColor,
+                              ),
+                              label: const Text(
                                 'Delete',
                                 style: TextStyle(
-                                  color: Colors.white,
+                                  color: AppTheme.errorColor,
                                   fontSize: 14,
-                                  fontWeight: FontWeight.w500,
+                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
-                            ],
-                          ),
-                        ),
+                              style: TextButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 8),
+                              ),
+                            ),
+                        ],
+                      ),
                     ],
-                  ),
-                ],
-              ],
-            ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
       ),

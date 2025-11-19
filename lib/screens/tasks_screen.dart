@@ -297,9 +297,6 @@ class _TasksScreenState extends State<TasksScreen> {
                             ),
                           );
                         },
-                        onStatusChanged: (value) {
-                          // Handle task status change
-                        },
                       );
                     },
                   );

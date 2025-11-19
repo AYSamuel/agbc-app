@@ -8,6 +8,7 @@ import '../models/user_model.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:provider/provider.dart';
 import '../providers/supabase_provider.dart';
+import '../services/auth_service.dart';
 
 /// A screen that displays the details of a task
 class TaskDetailsScreen extends StatefulWidget {
@@ -24,14 +25,11 @@ class TaskDetailsScreen extends StatefulWidget {
 
 class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
   late TaskModel _task;
-  UserModel? _creator;
-  UserModel? _assignee;
 
   @override
   void initState() {
     super.initState();
     _task = widget.task;
-    _loadUserDetails();
     // Set status bar to transparent with dark icons
     SystemChrome.setSystemUIOverlayStyle(
       const SystemUiOverlayStyle(
@@ -53,36 +51,6 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
       ),
     );
     super.dispose();
-  }
-
-  Future<void> _loadUserDetails() async {
-    final supabaseProvider =
-        Provider.of<SupabaseProvider>(context, listen: false);
-
-    // Load creator details
-    try {
-      final creatorStream = supabaseProvider.getUser(_task.createdBy);
-      creatorStream.listen((user) {
-        if (mounted) {
-          setState(() {
-            _creator = user;
-          });
-        }
-      });
-
-      // Load assignee details
-      final assigneeStream = supabaseProvider.getUser(_task.assignedTo);
-      assigneeStream.listen((user) {
-        if (mounted) {
-          setState(() {
-            _assignee = user;
-          });
-        }
-      });
-    } catch (e) {
-      // Handle error silently or show a message
-      debugPrint('Error loading user details: $e');
-    }
   }
 
   @override
@@ -269,27 +237,53 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                     ),
                     const SizedBox(height: 16),
 
-                    // Creator and Assignee
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildUserCard(
-                            'Created by',
-                            _creator?.displayName ?? 'Loading...',
-                            _creator?.email ?? '',
-                            Remix.user_add_line,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: _buildUserCard(
-                            'Assigned to',
-                            _assignee?.displayName ?? 'Loading...',
-                            _assignee?.email ?? '',
-                            Remix.user_line,
-                          ),
-                        ),
-                      ],
+                    // Creator and Assignee (Creator only visible to admins/pastors)
+                    Consumer<AuthService>(
+                      builder: (context, authService, child) {
+                        final userRole = authService.currentUser?.role;
+                        final isAdminOrPastor = userRole == 'admin' ||
+                                                userRole == 'pastor';
+
+                        return Row(
+                          children: [
+                            // Show "Created by" only for admins and pastors
+                            if (isAdminOrPastor) ...[
+                              Expanded(
+                                child: StreamBuilder<UserModel?>(
+                                  stream: Provider.of<SupabaseProvider>(context, listen: false)
+                                      .getUser(_task.createdBy),
+                                  builder: (context, snapshot) {
+                                    final user = snapshot.data;
+                                    return _buildUserCard(
+                                      'Created by',
+                                      user?.displayName ?? 'Loading...',
+                                      user?.email ?? '',
+                                      Remix.user_add_line,
+                                    );
+                                  },
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                            ],
+                            // Always show "Assigned to"
+                            Expanded(
+                              child: StreamBuilder<UserModel?>(
+                                stream: Provider.of<SupabaseProvider>(context, listen: false)
+                                    .getUser(_task.assignedTo),
+                                builder: (context, snapshot) {
+                                  final user = snapshot.data;
+                                  return _buildUserCard(
+                                    'Assigned to',
+                                    user?.displayName ?? 'Loading...',
+                                    user?.email ?? '',
+                                    Remix.user_line,
+                                  );
+                                },
+                              ),
+                            ),
+                          ],
+                        );
+                      },
                     ),
                   ],
                 ),

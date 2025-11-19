@@ -1,12 +1,9 @@
 import 'package:grace_portal/models/task_model.dart';
-import 'package:grace_portal/models/user_model.dart';
 import 'package:grace_portal/screens/tasks_screen.dart';
-import 'package:grace_portal/services/auth_service.dart';
 import 'package:grace_portal/utils/theme.dart';
 import 'package:grace_portal/widgets/custom_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
 import 'package:remixicon/remixicon.dart';
 
 class TaskStatusCard extends StatefulWidget {
@@ -24,16 +21,10 @@ class TaskStatusCard extends StatefulWidget {
 class _TaskStatusCardState extends State<TaskStatusCard> {
   @override
   Widget build(BuildContext context) {
-    final user = Provider.of<AuthService>(context).currentUserProfile;
     final taskCount = widget.tasks
         .where((task) => task.status != TaskStatus.completed)
         .length;
     final hasTasks = taskCount > 0;
-
-    // For members, never show the card (completely hide it)
-    if (user?.role == UserRole.member) {
-      return const SizedBox.shrink();
-    }
 
     return Container(
       padding: const EdgeInsets.all(16.0),

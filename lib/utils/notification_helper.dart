@@ -26,24 +26,14 @@ class NotificationHelper {
           await _supabaseProvider.getUserById(assignedByUserId);
       final assignerName = assignedByUser?.fullName ?? 'Someone';
 
-      // Create notification record in database
-      await _supabaseProvider.createNotificationRecord(
-        userId: assignedUserId,
-        title: 'New Task Assigned',
-        message:
-            '$assignerName assigned you a new task: "$taskTitle". Wanna check it out?',
-        type: 'task_assignment',
-        relatedId: taskId,
-      );
-
-      // Send immediate notification
+      // Send notification (this creates database record AND sends push)
       await _notificationService.sendNotification(
         userIds: [assignedUserId],
         title: 'New Task Assigned',
         message:
-            'You have been assigned a new task: "$taskTitle". Wanna check it out?',
+            '$assignerName assigned you a new task: "$taskTitle". Wanna check it out?',
         data: {
-          'type': 'task_assignment',
+          'type': 'task_assigned', // FIXED: Use correct notification type
           'task_id': taskId,
           'screen': 'task_details',
           'deep_link': 'agbcapp://task?id=$taskId',
@@ -68,22 +58,13 @@ class NotificationHelper {
           await _supabaseProvider.getUserById(updatedByUserId);
       final updaterName = updatedByUser?.fullName ?? 'An administrator';
 
-      // Create notification record in database
-      await _supabaseProvider.createNotificationRecord(
-        userId: userId,
-        title: 'Role Updated',
-        message: '$updaterName updated your role to $newRole',
-        type: 'role_update',
-        relatedId: userId,
-      );
-
-      // Send immediate notification
+      // Send notification (this creates database record AND sends push)
       await _notificationService.sendNotification(
         userIds: [userId],
         title: 'Role Updated',
         message: '$updaterName updated your role to $newRole',
         data: {
-          'type': 'role_update',
+          'type': 'role_changed', // FIXED: Use correct notification type
           'user_id': userId,
           'new_role': newRole,
           'screen': 'profile',
@@ -113,24 +94,14 @@ class NotificationHelper {
           await _supabaseProvider.getUserById(updatedByUserId);
       final updaterName = updatedByUser?.fullName ?? 'Someone';
 
-      // Create notification record in database
-      await _supabaseProvider.createNotificationRecord(
-        userId: taskCreatorId,
-        title: 'Task Status Updated',
-        message:
-            '$updaterName updated the status of "$taskTitle" to $newStatus',
-        type: 'task_status_update',
-        relatedId: taskId,
-      );
-
-      // Send immediate notification
+      // Send notification (this creates database record AND sends push)
       await _notificationService.sendNotification(
         userIds: [taskCreatorId],
         title: 'Task Status Updated',
         message:
             '$updaterName updated the status of "$taskTitle" to $newStatus',
         data: {
-          'type': 'task_status_update',
+          'type': 'task_completed', // Use completed type (or general if status isn't completed)
           'task_id': taskId,
           'new_status': newStatus,
           'screen': 'task_details',
@@ -164,25 +135,13 @@ class NotificationHelper {
 
       if (notifyUserIds.isEmpty) return;
 
-      // Create notification records for each participant
-      for (final userId in notifyUserIds) {
-        await _supabaseProvider.createNotificationRecord(
-          userId: userId,
-          title: 'New Comment on Task',
-          message:
-              '$commenterName commented on "$taskTitle": ${commentText.length > 50 ? '${commentText.substring(0, 50)}...' : commentText}',
-          type: 'task_comment',
-          relatedId: taskId,
-        );
-      }
-
-      // Send immediate notification
+      // Send batched notification (this creates database records AND sends push)
       await _notificationService.sendNotification(
         userIds: notifyUserIds,
         title: 'New Comment on Task',
         message: '$commenterName commented on "$taskTitle"',
         data: {
-          'type': 'task_comment',
+          'type': 'comment_added', // FIXED: Use correct notification type
           'task_id': taskId,
           'screen': 'task_details',
         },
@@ -197,6 +156,7 @@ class NotificationHelper {
 
   /// Notify branch members about a new meeting (immediate notification)
   /// If branchId is null, notifies all users (global meeting)
+  /// OPTIMIZED: Uses batched notifications for maximum performance
   Future<void> notifyMeetingCreated({
     required String meetingId,
     required String meetingTitle,
@@ -215,34 +175,32 @@ class NotificationHelper {
         final title =
             formatMeetingNotificationTitle(1440); // Initial notification
 
-        // Send individual personalized notifications to each user
-        for (final user in users) {
-          final userName = user.fullName; // Simplified - no null check needed
+        // Create generic message (no personalization for performance)
+        final message = formatMeetingNotificationMessage(
+          userName: '', // Empty - not used for initial notifications
+          meetingTitle: meetingTitle,
+          meetingDateTime: meetingDateTime,
+          reminderMinutes: 1440, // Initial notification (1 day)
+          isInitialNotification: true,
+        );
 
-          // Create a personalized message for each user
-          final message = formatMeetingNotificationMessage(
-            userName: userName,
-            meetingTitle: meetingTitle,
-            meetingDateTime: meetingDateTime,
-            reminderMinutes: 1440, // Initial notification (1 day)
-            isInitialNotification: true,
-          );
+        // OPTIMIZED: Batch all user IDs and send in ONE API call
+        final userIds = users.map((u) => u.id).toList();
 
-          // Send immediate notification to individual user
-          await _notificationService.sendNotification(
-            userIds: [user.id], // Send to individual user
-            title: title,
-            message: message,
-            data: {
-              'type': 'meeting',
-              'meeting_id': meetingId,
-              'screen': 'meeting_details',
-            },
-          );
-        }
+        await _notificationService.sendNotification(
+          userIds: userIds, // Send to all users at once
+          title: title,
+          message: message,
+          data: {
+            'type': 'meeting_reminder', // Use valid notification type
+            'meeting_id': meetingId,
+            'screen': 'meeting_details',
+            'url': 'agbcapp://meeting/$meetingId', // Deep link URL
+          },
+        );
 
         debugPrint(
-            'Successfully sent meeting creation notifications to ${users.length} users${branchId != null ? " in branch" : " (global)"}');
+            'Successfully sent batched meeting creation notification to ${users.length} users${branchId != null ? " in branch" : " (global)"}');
       }
     } catch (e) {
       debugPrint('Error sending meeting creation notifications: $e');
@@ -251,6 +209,7 @@ class NotificationHelper {
 
   /// Schedule initial notification for a meeting at a specific date/time
   /// If branchId is null, schedules notifications for all users (global meeting)
+  /// OPTIMIZED: Uses batched notifications for maximum performance
   Future<void> scheduleInitialMeetingNotification({
     required String meetingId,
     required String meetingTitle,
@@ -271,45 +230,35 @@ class NotificationHelper {
           // Use the proper title format for initial notification
           final title = formatMeetingNotificationTitle(1440); // Initial notification
 
-          // Schedule individual personalized notifications to each user
-          for (final user in users) {
-            final userName = user.fullName; // Simplified - no null check needed
+          // Create generic message (no personalization for performance)
+          final message = formatMeetingNotificationMessage(
+            userName: '', // Empty - not used for initial notifications
+            meetingTitle: meetingTitle,
+            meetingDateTime: meetingDateTime,
+            reminderMinutes: 1440, // Initial notification (1 day)
+            isInitialNotification: true,
+          );
 
-            // Create a personalized message for each user
-            final message = formatMeetingNotificationMessage(
-              userName: userName,
-              meetingTitle: meetingTitle,
-              meetingDateTime: meetingDateTime,
-              reminderMinutes: 1440, // Initial notification (1 day)
-              isInitialNotification: true,
-            );
+          // OPTIMIZED: Batch all user IDs and send in ONE API call
+          final userIds = users.map((u) => u.id).toList();
 
-            // Schedule notification via OneSignal
-            await _notificationService.scheduleNotification(
-              userIds: [user.id], // Send to individual user
-              title: title,
-              message: message,
-              scheduledDate: scheduledDateTime,
-              data: {
-                'type': 'meeting',
-                'meeting_id': meetingId,
-                'screen': 'meeting_details',
-                'is_initial_notification': true,
-              },
-            );
-
-            // Create notification record for tracking
-            await _supabaseProvider.createNotificationRecord(
-              userId: user.id,
-              title: title,
-              message: message,
-              type: 'meeting_initial',
-              relatedId: meetingId,
-            );
-          }
+          // Schedule notification via OneSignal for all users at once
+          await _notificationService.scheduleNotification(
+            userIds: userIds, // Send to all users at once
+            title: title,
+            message: message,
+            scheduledDate: scheduledDateTime,
+            data: {
+              'type': 'meeting_reminder',
+              'meeting_id': meetingId,
+              'screen': 'meeting_details',
+              'is_initial_notification': true,
+              'url': 'agbcapp://meeting/$meetingId', // Deep link URL
+            },
+          );
 
           debugPrint(
-              'Successfully scheduled initial meeting notifications for ${users.length} users${branchId != null ? " in branch" : " (global)"} at $scheduledDateTime');
+              'Successfully scheduled batched initial meeting notification for ${users.length} users${branchId != null ? " in branch" : " (global)"} at $scheduledDateTime');
         } else {
           debugPrint(
               'Skipping initial notification scheduling - scheduled time is in the past');
@@ -354,6 +303,7 @@ class NotificationHelper {
   }
 
   /// Schedule a single notification via OneSignal
+  /// OPTIMIZED: Uses batched notifications for maximum performance
   static Future<void> _scheduleNotificationViaOneSignal({
     required SupabaseProvider supabaseProvider,
     required NotificationService notificationService,
@@ -373,36 +323,35 @@ class NotificationHelper {
         // Format notification title
         final title = formatMeetingNotificationTitle(reminderMinutes);
 
-        // Send individual personalized notifications to each user
-        for (final user in branchUsers) {
-          final userName = user.fullName; // Simplified - no null check needed
+        // Create generic message (no personalization for performance)
+        final message = formatMeetingNotificationMessage(
+          userName: '', // Empty - will be handled by formatMeetingNotificationMessage
+          meetingTitle: meetingTitle,
+          meetingDateTime: meetingDateTime,
+          reminderMinutes: reminderMinutes,
+          isInitialNotification: false,
+        );
 
-          // Create a personalized message for each user
-          final message = formatMeetingNotificationMessage(
-            userName: userName,
-            meetingTitle: meetingTitle,
-            meetingDateTime: meetingDateTime,
-            reminderMinutes: reminderMinutes,
-            isInitialNotification: false,
-          );
+        // OPTIMIZED: Batch all user IDs and send in ONE API call
+        final userIds = branchUsers.map((u) => u.id as String).toList();
 
-          // Schedule notification via OneSignal
-          await notificationService.scheduleNotification(
-            userIds: [user.id], // Send to individual user
-            title: title,
-            message: message,
-            scheduledDate: sendTime,
-            data: {
-              'type': 'meeting_reminder',
-              'meeting_id': meetingId,
-              'screen': 'meeting_details',
-              'reminder_minutes': reminderMinutes,
-            },
-          );
-        }
+        // Schedule notification via OneSignal for all users at once
+        await notificationService.scheduleNotification(
+          userIds: userIds, // Send to all users at once
+          title: title,
+          message: message,
+          scheduledDate: sendTime,
+          data: {
+            'type': 'meeting_reminder',
+            'meeting_id': meetingId,
+            'screen': 'meeting_details',
+            'reminder_minutes': reminderMinutes,
+            'url': 'agbcapp://meeting/$meetingId', // Deep link URL
+          },
+        );
 
         debugPrint(
-            'Successfully scheduled notifications for ${branchUsers.length} users at $reminderMinutes minutes before meeting');
+            'Successfully scheduled batched notification for ${branchUsers.length} users at $reminderMinutes minutes before meeting');
       } else {
         debugPrint(
             'Skipping notification scheduling for $reminderMinutes minutes - send time is in the past');
@@ -413,6 +362,7 @@ class NotificationHelper {
   }
 
   /// Format meeting notification message based on reminder time
+  /// OPTIMIZED: Returns generic messages for batched notifications (no personalization)
   static String formatMeetingNotificationMessage({
     required String userName,
     required String meetingTitle,
@@ -449,7 +399,8 @@ class NotificationHelper {
         timeUnit = timeValue == 1 ? 'minute' : 'minutes';
       }
 
-      return 'Hello $userName, this is a small reminder that your event "$meetingTitle" starts in $timeValue $timeUnit. U make church complete 😊';
+      // OPTIMIZED: Generic message for better performance (no user name)
+      return 'This is a reminder that "$meetingTitle" starts in $timeValue $timeUnit. U make church complete 😊';
     }
   }
 

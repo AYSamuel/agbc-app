@@ -1,5 +1,4 @@
 import 'package:flutter/foundation.dart';
-import 'package:grace_portal/providers/supabase_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
 import 'dart:io' show Platform;
@@ -113,16 +112,8 @@ class NotificationService extends ChangeNotifier {
         debugPrint('Generated fallback device ID: $deviceId');
       }
 
-      // CLEAN UP: Remove ALL existing entries for this user to avoid duplicates
-      debugPrint('Cleaning up any existing device registrations for user...');
-      await _supabase.from('user_devices').delete().eq('user_id', userId);
-      debugPrint('Existing registrations cleaned up');
-
-      // Also clean up any entries with the same device_id from other users
-      await _supabase.from('user_devices').delete().eq('device_id', deviceId);
-      debugPrint('Existing device_id registrations cleaned up');
-
-      // Prepare the device data
+      // OPTIMIZED: Use upsert instead of delete + insert
+      // This is more efficient and handles conflicts automatically
       final deviceData = {
         'user_id': userId,
         'device_id': deviceId,
@@ -134,21 +125,17 @@ class NotificationService extends ChangeNotifier {
         'updated_at': DateTime.now().toIso8601String(),
       };
 
-      debugPrint('Device data to insert: $deviceData');
+      debugPrint('Device data to upsert: $deviceData');
 
-      // Insert the new record (using insert instead of upsert to avoid conflicts)
-      final result = await _supabase.from('user_devices').insert(deviceData);
-      debugPrint('Database insert result: $result');
+      // OPTIMIZED: Upsert handles both insert and update automatically
+      // Uses device_id as conflict resolution key
+      final result = await _supabase.from('user_devices').upsert(
+        deviceData,
+        onConflict: 'device_id', // Update if device_id already exists
+      );
+      debugPrint('Database upsert result: $result');
 
-      // Verify the insertion
-      final verifyResult = await _supabase
-          .from('user_devices')
-          .select('id, device_id, platform, onesignal_user_id')
-          .eq('user_id', userId)
-          .single();
-
-      debugPrint('✅ Device registration verified in database: $verifyResult');
-      debugPrint('Device registered successfully for user: $userId');
+      debugPrint('✅ Device registered/updated successfully for user: $userId');
     } catch (e) {
       debugPrint('❌ Error registering device: $e');
       await logError('register_device', e.toString());
@@ -220,15 +207,24 @@ class NotificationService extends ChangeNotifier {
       debugPrint('Sending notification to users: $userIds');
       debugPrint('Title: $title, Message: $message');
 
-      // Create notification records in database first
-      final supabaseProvider = SupabaseProvider();
-      await supabaseProvider.createNotificationRecords(
-        userIds: userIds,
-        title: title,
-        message: message,
-        data: data,
-      );
+      // Create notification records in database for in-app notification panel
+      // Note: This happens in parallel with push notification sending
+      final notificationRecords = userIds.map((userId) => {
+        'user_id': userId,
+        'title': title,
+        'message': message,
+        'type': data?['type'] ?? 'general',
+        'data': data ?? {},
+        'is_read': false,
+        'created_at': DateTime.now().toIso8601String(),
+        'updated_at': DateTime.now().toIso8601String(),
+      }).toList();
 
+      // Insert all notification records in one batch operation
+      await _supabase.from('notifications').insert(notificationRecords);
+      debugPrint('Created ${notificationRecords.length} notification records in database');
+
+      // Send push notification via Edge Function
       final response =
           await _supabase.functions.invoke('send-notification', body: {
         'userIds': userIds,

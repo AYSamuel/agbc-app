@@ -147,7 +147,7 @@ class _UpcomingEventsScreenState extends State<UpcomingEventsScreen> {
                       itemBuilder: (context, index) {
                         final meeting = upcomingMeetings[index];
                         return Padding(
-                          padding: const EdgeInsets.only(bottom: 16.0),
+                          padding: EdgeInsets.only(bottom: index < upcomingMeetings.length - 1 ? 16.0 : 0),
                           child: MeetingCard(
                             meeting: meeting,
                             onTap: () {

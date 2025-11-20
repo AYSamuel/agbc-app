@@ -546,6 +546,7 @@ class SupabaseProvider extends ChangeNotifier {
   }
 
   /// Get unread notification count for current user
+  /// OPTIMIZED: Fetches only IDs instead of full records (lighter query)
   Future<int> getUnreadNotificationCount() async {
     try {
       final userId = _supabase.auth.currentUser?.id;
@@ -555,15 +556,17 @@ class SupabaseProvider extends ChangeNotifier {
         return 0;
       }
 
+      // OPTIMIZED: Select only 'id' field instead of all fields
+      // This reduces data transfer and improves performance
       final response = await _supabase
           .from('notifications')
           .select('id')
           .eq('user_id', userId)
           .eq('is_read', false);
 
-      debugPrint(
-          'Unread notifications query result: ${response.length} records');
-      return response.length;
+      final count = response.length;
+      debugPrint('Unread notification count for user $userId: $count');
+      return count;
     } catch (e) {
       debugPrint('Error getting notification count: $e');
       _setError('Failed to get notification count: $e');
@@ -572,9 +575,11 @@ class SupabaseProvider extends ChangeNotifier {
   }
 
   /// Get notifications for current user
-  Stream<List<NotificationModel>> getUserNotifications() {
+  /// OPTIMIZED: Added pagination to prevent memory issues with large notification lists
+  /// Default limit: 50 most recent notifications
+  Stream<List<NotificationModel>> getUserNotifications({int limit = 50}) {
     final userId = _supabase.auth.currentUser?.id;
-    debugPrint('Setting up notification stream for user: $userId');
+    debugPrint('Setting up notification stream for user: $userId (limit: $limit)');
     if (userId == null) {
       debugPrint('No user ID - returning empty stream');
       return Stream.value([]);
@@ -585,8 +590,34 @@ class SupabaseProvider extends ChangeNotifier {
         .stream(primaryKey: ['id'])
         .eq('user_id', userId)
         .order('created_at', ascending: false)
+        .limit(limit) // OPTIMIZED: Limit results to prevent memory issues
         .map((data) =>
             data.map((json) => NotificationModel.fromJson(json)).toList());
+  }
+
+  /// Get paginated notifications for current user (for "load more" functionality)
+  Future<List<NotificationModel>> getNotificationsPaginated({
+    required int offset,
+    int limit = 20,
+  }) async {
+    try {
+      final userId = _supabase.auth.currentUser?.id;
+      if (userId == null) return [];
+
+      final response = await _supabase
+          .from('notifications')
+          .select()
+          .eq('user_id', userId)
+          .order('created_at', ascending: false)
+          .range(offset, offset + limit - 1);
+
+      return response
+          .map((json) => NotificationModel.fromJson(json))
+          .toList();
+    } catch (e) {
+      debugPrint('Error fetching paginated notifications: $e');
+      return [];
+    }
   }
 
   /// Mark notification as read

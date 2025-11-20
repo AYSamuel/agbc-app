@@ -12,6 +12,7 @@ import '../widgets/custom_back_button.dart';
 import '../widgets/custom_button.dart';
 import '../widgets/custom_input.dart';
 import '../widgets/custom_dropdown.dart';
+import '../utils/focus_helper.dart';
 
 class MeetingCreationScreen extends StatefulWidget {
   const MeetingCreationScreen({super.key});
@@ -915,6 +916,11 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
   }
 
   Future<void> _selectDateTime() async {
+    if (!mounted) return;
+
+    // FIXED: Dismiss keyboard before showing date picker
+    FocusHelper.unfocus(context);
+
     final date = await showDatePicker(
       context: context,
       initialDate: DateTime.now().add(const Duration(days: 1)),
@@ -976,7 +982,15 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
             time.minute,
           );
         });
+
+        // FIXED: Ensure focus is cleared after setting the value
+        FocusHelper.unfocus(context);
       }
+    }
+
+    // FIXED: Final cleanup - ensure keyboard stays dismissed
+    if (mounted) {
+      FocusHelper.unfocus(context);
     }
   }
 
@@ -991,6 +1005,11 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
       );
       return;
     }
+
+    if (!mounted) return;
+
+    // FIXED: Dismiss keyboard before showing date picker
+    FocusHelper.unfocus(context);
 
     final date = await showDatePicker(
       context: context,
@@ -1071,7 +1090,15 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
         setState(() {
           _selectedEndTime = endDateTime;
         });
+
+        // FIXED: Ensure focus is cleared after setting the value
+        FocusHelper.unfocus(context);
       }
+    }
+
+    // FIXED: Final cleanup - ensure keyboard stays dismissed
+    if (mounted) {
+      FocusHelper.unfocus(context);
     }
   }
 
@@ -1122,6 +1149,11 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
   }
 
   Future<void> _selectRecurrenceEndDate() async {
+    if (!mounted) return;
+
+    // FIXED: Dismiss keyboard before showing date picker
+    FocusHelper.unfocus(context);
+
     final date = await showDatePicker(
       context: context,
       initialDate: _selectedDateTime ?? DateTime.now().add(const Duration(days: 7)),
@@ -1149,14 +1181,27 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
       },
     );
 
-    if (date != null) {
+    if (date != null && mounted) {
       setState(() {
         _recurrenceEndDate = date;
       });
+
+      // FIXED: Ensure focus is cleared after setting the value
+      FocusHelper.unfocus(context);
+    }
+
+    // FIXED: Final cleanup - ensure keyboard stays dismissed
+    if (mounted) {
+      FocusHelper.unfocus(context);
     }
   }
 
   Future<void> _selectScheduledNotificationDateTime() async {
+    if (!mounted) return;
+
+    // FIXED: Dismiss keyboard before showing date picker
+    FocusHelper.unfocus(context);
+
     final date = await showDatePicker(
       context: context,
       initialDate: DateTime.now().add(const Duration(hours: 1)),
@@ -1233,7 +1278,15 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
         setState(() {
           _scheduledNotificationDateTime = scheduledDateTime;
         });
+
+        // FIXED: Ensure focus is cleared after setting the value
+        FocusHelper.unfocus(context);
       }
+    }
+
+    // FIXED: Final cleanup - ensure keyboard stays dismissed
+    if (mounted) {
+      FocusHelper.unfocus(context);
     }
   }
 

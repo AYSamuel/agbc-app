@@ -81,6 +81,8 @@ serve(async (req: Request) => {
       // iOS badge handling
       ios_badgeType: 'Increase',
       ios_badgeCount: 1,
+      // Add deep link URL if provided
+      ...(data?.url && { url: data.url })
     }
 
     console.log('Sending scheduled notification to OneSignal:', JSON.stringify(oneSignalPayload, null, 2))

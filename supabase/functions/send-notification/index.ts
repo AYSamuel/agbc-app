@@ -90,7 +90,9 @@ serve(async (req)=>{
       },
       include_external_user_ids: oneSignalUserIds,
       data: data || {},
-      priority: 10
+      priority: 10,
+      // Add deep link URL if provided
+      ...(data?.url && { url: data.url })
     };
     console.log('OneSignal notification payload:', JSON.stringify(notification, null, 2));
     // Send the notification using OneSignal's REST API

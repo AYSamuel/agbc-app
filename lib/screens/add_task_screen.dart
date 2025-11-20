@@ -13,6 +13,7 @@ import '../widgets/custom_back_button.dart';
 import '../widgets/custom_dropdown.dart';
 import '../utils/theme.dart';
 import '../services/auth_service.dart';
+import '../utils/focus_helper.dart';
 
 class AddTaskScreen extends StatefulWidget {
   const AddTaskScreen({super.key});
@@ -88,6 +89,9 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
       FocusNode focusNode, bool isDeadline) async {
     if (!mounted) return;
 
+    // FIXED: Dismiss keyboard before showing date picker
+    FocusHelper.unfocus(context);
+
     HapticFeedback.selectionClick();
 
     final DateTime? picked = await showDatePicker(
@@ -161,7 +165,15 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
           }
           controller.text = _formatDateTime(dateTime);
         });
+
+        // FIXED: Ensure focus is cleared after setting the value
+        FocusHelper.unfocus(context);
       }
+    }
+
+    // FIXED: Final cleanup - ensure keyboard stays dismissed
+    if (mounted) {
+      FocusHelper.unfocus(context);
     }
   }
 

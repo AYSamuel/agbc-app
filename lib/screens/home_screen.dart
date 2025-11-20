@@ -595,19 +595,24 @@ class _HomeScreenState extends State<HomeScreen> {
                         itemCount: upcomingMeetings.length,
                         itemBuilder: (context, index) {
                           final meeting = upcomingMeetings[index];
-                          return MeetingCard(
-                            meeting: meeting,
-                            width: 280,
-                            onTap: () {
-                              // Navigate to meeting details screen
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      MeetingDetailsScreen(meeting: meeting),
-                                ),
-                              );
-                            },
+                          return Padding(
+                            padding: EdgeInsets.only(
+                              right: index < upcomingMeetings.length - 1 ? 12.0 : 0,
+                            ),
+                            child: MeetingCard(
+                              meeting: meeting,
+                              width: 280,
+                              onTap: () {
+                                // Navigate to meeting details screen
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        MeetingDetailsScreen(meeting: meeting),
+                                  ),
+                                );
+                              },
+                            ),
                           );
                         },
                       ),

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:remixicon/remixicon.dart';
 import '../utils/theme.dart';
 
-class AppNavBar extends StatelessWidget {
+class AppNavBar extends StatefulWidget {
   final VoidCallback? onNotificationTap;
   final int? notificationCount;
 
@@ -11,6 +11,27 @@ class AppNavBar extends StatelessWidget {
     this.onNotificationTap,
     this.notificationCount,
   });
+
+  @override
+  State<AppNavBar> createState() => _AppNavBarState();
+}
+
+class _AppNavBarState extends State<AppNavBar> {
+  DateTime? _lastTapTime;
+
+  /// OPTIMIZED: Debounced tap handler to prevent rapid taps
+  void _handleNotificationTap() {
+    final now = DateTime.now();
+
+    // Prevent rapid taps (debounce with 500ms threshold)
+    if (_lastTapTime != null &&
+        now.difference(_lastTapTime!) < const Duration(milliseconds: 500)) {
+      return; // Ignore rapid taps
+    }
+
+    _lastTapTime = now;
+    widget.onNotificationTap?.call();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +53,7 @@ class AppNavBar extends StatelessWidget {
         children: [
           // Notification Bell
           GestureDetector(
-            onTap: onNotificationTap,
+            onTap: _handleNotificationTap, // OPTIMIZED: Use debounced handler
             child: Stack(
               clipBehavior: Clip.none,
               children: [
@@ -49,7 +70,7 @@ class AppNavBar extends StatelessWidget {
                     color: AppTheme.primaryColor,
                   ),
                 ),
-                if (notificationCount != null && notificationCount! > 0)
+                if (widget.notificationCount != null && widget.notificationCount! > 0)
                   Positioned(
                     right: -4,
                     top: -4,
@@ -65,9 +86,9 @@ class AppNavBar extends StatelessWidget {
                         minHeight: 16,
                       ),
                       child: Text(
-                        notificationCount! > 99
+                        widget.notificationCount! > 99
                             ? '99+'
-                            : notificationCount.toString(),
+                            : widget.notificationCount.toString(),
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 10,

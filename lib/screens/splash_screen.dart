@@ -4,6 +4,7 @@ import '../services/auth_service.dart';
 import '../services/notification_service.dart';
 import '../providers/branches_provider.dart';
 import '../providers/supabase_provider.dart';
+import '../main.dart' as main_app;
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -164,6 +165,9 @@ class _SplashScreenState extends State<SplashScreen>
           // User chose to stay logged in
           debugPrint('User staying logged in - navigating to home');
           Navigator.of(context).pushReplacementNamed('/home');
+
+          // Check for pending notifications after navigation
+          main_app.handlePendingNotification();
         } else {
           // User didn't choose "Remember Me", so sign them out and go to login
           debugPrint('Remember me not enabled - signing out user');

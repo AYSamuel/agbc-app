@@ -99,7 +99,7 @@ void handlePendingNotification() {
     // Wait a bit for navigation to be ready
     Future.delayed(const Duration(milliseconds: 500), () {
       final context = navigatorKey.currentContext;
-      if (context != null) {
+      if (context != null && context.mounted) {
         _navigateFromNotification(context, _pendingNotificationData!);
         _pendingNotificationData = null; // Clear after handling
       } else {
@@ -107,7 +107,7 @@ void handlePendingNotification() {
         // Retry once more
         Future.delayed(const Duration(seconds: 1), () {
           final retryContext = navigatorKey.currentContext;
-          if (retryContext != null) {
+          if (retryContext != null && retryContext.mounted) {
             _navigateFromNotification(retryContext, _pendingNotificationData!);
             _pendingNotificationData = null;
           } else {

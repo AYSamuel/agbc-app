@@ -21,9 +21,9 @@ class MeetingManagementScreen extends StatelessWidget {
             // Modern Header
             Container(
               width: double.infinity,
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: AppTheme.secondaryColor,
-                borderRadius: const BorderRadius.only(
+                borderRadius: BorderRadius.only(
                   bottomLeft: Radius.circular(32),
                   bottomRight: Radius.circular(32),
                 ),
@@ -128,17 +128,17 @@ class MeetingManagementScreen extends StatelessWidget {
                   final meetings = snapshot.data!;
 
                   if (meetings.isEmpty) {
-                    return Center(
+                    return const Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(
+                          Icon(
                             Icons.event_note,
                             size: 64,
                             color: AppTheme.primaryColor,
                           ),
-                          const SizedBox(height: 16),
-                          const Text(
+                          SizedBox(height: 16),
+                          Text(
                             'No Meetings Found',
                             style: TextStyle(
                               fontSize: 18,
@@ -146,8 +146,8 @@ class MeetingManagementScreen extends StatelessWidget {
                               color: AppTheme.primaryColor,
                             ),
                           ),
-                          const SizedBox(height: 8),
-                          const Text(
+                          SizedBox(height: 8),
+                          Text(
                             'There are currently no meetings in the system.',
                             style: TextStyle(
                               fontSize: 14,

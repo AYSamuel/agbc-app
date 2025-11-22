@@ -52,9 +52,9 @@ class _TaskManagementScreenState extends State<TaskManagementScreen> {
             // Modern Header
             Container(
               width: double.infinity,
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: AppTheme.accentColor,
-                borderRadius: const BorderRadius.only(
+                borderRadius: BorderRadius.only(
                   bottomLeft: Radius.circular(32),
                   bottomRight: Radius.circular(32),
                 ),
@@ -159,17 +159,17 @@ class _TaskManagementScreenState extends State<TaskManagementScreen> {
                   final tasks = _filterAndSortTasks(snapshot.data!);
 
                   if (tasks.isEmpty) {
-                    return Center(
+                    return const Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(
+                          Icon(
                             Remix.task_line,
                             size: 64,
                             color: AppTheme.primaryColor,
                           ),
-                          const SizedBox(height: 16),
-                          const Text(
+                          SizedBox(height: 16),
+                          Text(
                             'No Tasks Found',
                             style: TextStyle(
                               fontSize: 18,
@@ -177,8 +177,8 @@ class _TaskManagementScreenState extends State<TaskManagementScreen> {
                               color: AppTheme.primaryColor,
                             ),
                           ),
-                          const SizedBox(height: 8),
-                          const Text(
+                          SizedBox(height: 8),
+                          Text(
                             'There are no tasks matching your current filter.',
                             style: TextStyle(
                               fontSize: 14,
@@ -323,7 +323,7 @@ class _TaskManagementScreenState extends State<TaskManagementScreen> {
                               const SizedBox(height: 8),
                               Text(
                                 task.description,
-                                style: TextStyle(
+                                style: const TextStyle(
                                   fontSize: 14,
                                   color: AppTheme.neutralColor,
                                 ),
@@ -382,7 +382,7 @@ class _TaskManagementScreenState extends State<TaskManagementScreen> {
                           ),
                         ),
                         const SizedBox(width: 12),
-                        Icon(
+                        const Icon(
                           Remix.calendar_line,
                           size: 14,
                           color: AppTheme.neutralColor,
@@ -390,7 +390,7 @@ class _TaskManagementScreenState extends State<TaskManagementScreen> {
                         const SizedBox(width: 4),
                         Text(
                           _formatDate(task.dueDate),
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 12,
                             color: AppTheme.neutralColor,
                             fontWeight: FontWeight.w500,

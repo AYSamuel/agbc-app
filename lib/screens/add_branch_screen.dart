@@ -501,7 +501,7 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
                 const SizedBox(width: 12),
                 Text(
                   title,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                     color: AppTheme.darkNeutralColor,

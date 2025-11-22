@@ -174,7 +174,7 @@ class UserCard extends StatelessWidget {
                           // Email
                           Row(
                             children: [
-                              Icon(
+                              const Icon(
                                 Icons.email_outlined,
                                 size: 14,
                                 color: AppTheme.neutralColor,
@@ -183,7 +183,7 @@ class UserCard extends StatelessWidget {
                               Expanded(
                                 child: Text(
                                   user.email,
-                                  style: TextStyle(
+                                  style: const TextStyle(
                                     fontSize: 13,
                                     color: AppTheme.neutralColor,
                                     fontWeight: FontWeight.w400,
@@ -199,7 +199,7 @@ class UserCard extends StatelessWidget {
                           Row(
                             children: [
                               if (user.location != null) ...[
-                                Icon(
+                                const Icon(
                                   Icons.location_on_outlined,
                                   size: 14,
                                   color: AppTheme.neutralColor,
@@ -208,7 +208,7 @@ class UserCard extends StatelessWidget {
                                 Flexible(
                                   child: Text(
                                     _formatUserLocation(user.location),
-                                    style: TextStyle(
+                                    style: const TextStyle(
                                       fontSize: 12,
                                       color: AppTheme.neutralColor,
                                     ),
@@ -230,7 +230,7 @@ class UserCard extends StatelessWidget {
                                   ),
                                 ),
                               if (user.branchId != null) ...[
-                                Icon(
+                                const Icon(
                                   Icons.church_outlined,
                                   size: 14,
                                   color: AppTheme.neutralColor,
@@ -239,7 +239,7 @@ class UserCard extends StatelessWidget {
                                 Flexible(
                                   child: Text(
                                     _getBranchName(context, user.branchId),
-                                    style: TextStyle(
+                                    style: const TextStyle(
                                       fontSize: 12,
                                       color: AppTheme.neutralColor,
                                     ),

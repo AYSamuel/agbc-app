@@ -50,9 +50,9 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
             // Modern Header
             Container(
               width: double.infinity,
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: AppTheme.primaryColor,
-                borderRadius: const BorderRadius.only(
+                borderRadius: BorderRadius.only(
                   bottomLeft: Radius.circular(32),
                   bottomRight: Radius.circular(32),
                 ),
@@ -133,7 +133,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                                   : null,
                               child: widget.user.photoUrl == null ||
                                       widget.user.photoUrl!.isEmpty
-                                  ? Icon(
+                                  ? const Icon(
                                       Icons.person_rounded,
                                       size: 52,
                                       color: AppTheme.primaryColor,
@@ -254,7 +254,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           // Role Selection
-                          Text(
+                          const Text(
                             'Role',
                             style: TextStyle(
                               color: AppTheme.darkNeutralColor,
@@ -293,7 +293,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                           ),
                           const SizedBox(height: 20),
                           // Branch Selection
-                          Text(
+                          const Text(
                             'Branch',
                             style: TextStyle(
                               color: AppTheme.darkNeutralColor,
@@ -495,7 +495,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
             children: [
               Text(
                 label,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 12,
                   color: AppTheme.neutralColor,
                   fontWeight: FontWeight.w500,

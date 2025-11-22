@@ -220,7 +220,7 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
                                     ),
                                     child: Row(
                                       children: [
-                                        Icon(
+                                        const Icon(
                                           Icons.event_available,
                                           color: AppTheme.secondaryColor,
                                           size: 24,
@@ -272,7 +272,7 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
                                     ),
                                     child: Row(
                                       children: [
-                                        Icon(
+                                        const Icon(
                                           Icons.event_busy,
                                           color: AppTheme.secondaryColor,
                                           size: 24,
@@ -331,7 +331,7 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
                                           _isVirtual = value;
                                         });
                                       },
-                                      activeColor: AppTheme.accentColor,
+                                      activeThumbColor: AppTheme.accentColor,
                                     ),
                                     const SizedBox(width: 8),
                                     Text(
@@ -1468,7 +1468,7 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
                 const SizedBox(width: 12),
                 Text(
                   title,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                     color: AppTheme.darkNeutralColor,

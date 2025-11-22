@@ -91,7 +91,7 @@ class AdminCard extends StatelessWidget {
                       // Description
                       Text(
                         description,
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 12,
                           color: AppTheme.neutralColor,
                           fontWeight: FontWeight.w400,

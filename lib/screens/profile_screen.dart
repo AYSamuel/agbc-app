@@ -150,7 +150,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                       : null,
                                   child: (user?.photoUrl == null ||
                                           user!.photoUrl!.isEmpty)
-                                      ? Icon(Icons.person,
+                                      ? const Icon(Icons.person,
                                           size: 50, color: AppTheme.primaryColor)
                                       : null,
                                 ),
@@ -229,7 +229,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             return Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(
+                                const Icon(
                                   Icons.church,
                                   size: 16,
                                   color: AppTheme.neutralColor,
@@ -237,7 +237,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 const SizedBox(width: 6),
                                 Text(
                                   branchDisplayName,
-                                  style: TextStyle(
+                                  style: const TextStyle(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w500,
                                     color: AppTheme.neutralColor,
@@ -481,7 +481,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             children: [
               Text(
                 title,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 12,
                   color: AppTheme.neutralColor,
                   fontWeight: FontWeight.w500,

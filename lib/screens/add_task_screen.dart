@@ -553,7 +553,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   }
 
   Widget _buildModernProgressBar() {
-    final totalSteps = 5;
+    const totalSteps = 5;
     final completedSteps = [
       _isTitleValid,
       _isDescriptionValid,
@@ -595,7 +595,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
             value: progress,
             minHeight: 6,
             backgroundColor: Colors.white.withValues(alpha: 0.2),
-            valueColor: AlwaysStoppedAnimation<Color>(
+            valueColor: const AlwaysStoppedAnimation<Color>(
               AppTheme.secondaryColor,
             ),
           ),
@@ -652,7 +652,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                 const SizedBox(width: 12),
                 Text(
                   title,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                     color: AppTheme.darkNeutralColor,

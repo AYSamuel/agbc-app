@@ -69,9 +69,9 @@ class BranchCard extends StatelessWidget {
               // Colored accent bar
               Container(
                 height: 5,
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   color: AppTheme.successColor,
-                  borderRadius: const BorderRadius.only(
+                  borderRadius: BorderRadius.only(
                     topLeft: Radius.circular(20),
                     topRight: Radius.circular(20),
                   ),

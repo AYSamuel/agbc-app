@@ -559,8 +559,9 @@ class _HomeScreenState extends State<HomeScreen> {
                             meeting.status == MeetingStatus.scheduled &&
                             meeting.parentMeetingId ==
                                 null) // Only show parent meetings
-                        .take(5)
-                        .toList();
+                        .toList()
+                      ..sort((a, b) => a.dateTime.compareTo(b.dateTime)); // Sort by date and time (earliest first)
+                    final displayedMeetings = upcomingMeetings.take(5).toList();
 
                     if (upcomingMeetings.isEmpty) {
                       return SizedBox(
@@ -592,12 +593,12 @@ class _HomeScreenState extends State<HomeScreen> {
                       height: 180,
                       child: ListView.builder(
                         scrollDirection: Axis.horizontal,
-                        itemCount: upcomingMeetings.length,
+                        itemCount: displayedMeetings.length,
                         itemBuilder: (context, index) {
-                          final meeting = upcomingMeetings[index];
+                          final meeting = displayedMeetings[index];
                           return Padding(
                             padding: EdgeInsets.only(
-                              right: index < upcomingMeetings.length - 1 ? 12.0 : 0,
+                              right: index < displayedMeetings.length - 1 ? 12.0 : 0,
                             ),
                             child: MeetingCard(
                               meeting: meeting,

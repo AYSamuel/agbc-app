@@ -48,6 +48,7 @@ class MeetingCard extends StatelessWidget {
               : null,
           borderRadius: BorderRadius.circular(20),
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
               // Colored accent bar
               Container(
@@ -65,6 +66,7 @@ class MeetingCard extends StatelessWidget {
                 padding: const EdgeInsets.all(20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -141,25 +143,27 @@ class MeetingCard extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 12),
-                    // Location
+                    // Location or Virtual Meeting indicator
                     Row(
                       children: [
                         Container(
                           padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
-                            color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                            color: meeting.isVirtual
+                                ? Colors.blue.withValues(alpha: 0.1)
+                                : AppTheme.primaryColor.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: const Icon(
-                            Icons.location_on,
+                          child: Icon(
+                            meeting.isVirtual ? Icons.video_call : Icons.location_on,
                             size: 14,
-                            color: AppTheme.primaryColor,
+                            color: meeting.isVirtual ? Colors.blue : AppTheme.primaryColor,
                           ),
                         ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            meeting.location,
+                            meeting.isVirtual ? 'Virtual Meeting' : meeting.location,
                             style: const TextStyle(
                               fontSize: 13,
                               color: AppTheme.darkNeutralColor,
@@ -171,9 +175,9 @@ class MeetingCard extends StatelessWidget {
                         ),
                       ],
                     ),
-                    if (meeting.isVirtual && meeting.meetingLink != null) ...[
+                    if (showActions && meeting.isVirtual && meeting.meetingLink != null) ...[
                       const SizedBox(height: 12),
-                      // Meeting link
+                      // Meeting link (only shown when showActions is true)
                       Row(
                         children: [
                           Container(
@@ -183,7 +187,7 @@ class MeetingCard extends StatelessWidget {
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: const Icon(
-                              Icons.video_call,
+                              Icons.link,
                               size: 14,
                               color: Colors.blue,
                             ),

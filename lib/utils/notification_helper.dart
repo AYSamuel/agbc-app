@@ -46,6 +46,41 @@ class NotificationHelper {
     }
   }
 
+  /// Send scheduled notification when a task is assigned to a user
+  Future<void> notifyTaskAssignmentScheduled({
+    required String assignedUserId,
+    required String taskTitle,
+    required String taskId,
+    required String assignedByUserId,
+    required DateTime scheduledDateTime,
+  }) async {
+    try {
+      // Get the assigned user's name for the notification
+      final assignedByUser =
+          await _supabaseProvider.getUserById(assignedByUserId);
+      final assignerName = assignedByUser?.fullName ?? 'Someone';
+
+      // Send scheduled notification (this creates database record AND schedules push)
+      await _notificationService.scheduleNotification(
+        userIds: [assignedUserId],
+        title: 'New Task Assigned',
+        message:
+            '$assignerName assigned you a new task: "$taskTitle". Wanna check it out?',
+        data: {
+          'type': 'task_assigned',
+          'task_id': taskId,
+          'screen': 'task_details',
+          'deep_link': 'agbcapp://task?id=$taskId',
+        },
+        scheduledDate: scheduledDateTime,
+      );
+
+      debugPrint('Scheduled task assignment notification for user: $assignedUserId at $scheduledDateTime');
+    } catch (e) {
+      debugPrint('Error sending scheduled task assignment notification: $e');
+    }
+  }
+
   /// Send notification when a user's role is updated
   Future<void> notifyRoleUpdate({
     required String userId,
@@ -94,17 +129,38 @@ class NotificationHelper {
           await _supabaseProvider.getUserById(updatedByUserId);
       final updaterName = updatedByUser?.fullName ?? 'Someone';
 
+      // Only notify for in_progress and completed status changes
+      String title;
+      String message;
+      String notificationType;
+
+      switch (newStatus) {
+        case 'in_progress':
+          title = 'Task Started';
+          message = '$updaterName has started working on the "$taskTitle" task';
+          notificationType = 'task_assigned'; // Use task_assigned type for started tasks
+          break;
+        case 'completed':
+          title = 'Task Completed';
+          message = '$updaterName has finished the "$taskTitle" task';
+          notificationType = 'task_completed';
+          break;
+        default:
+          // Don't send notifications for pending or cancelled status changes
+          return;
+      }
+
       // Send notification (this creates database record AND sends push)
       await _notificationService.sendNotification(
         userIds: [taskCreatorId],
-        title: 'Task Status Updated',
-        message:
-            '$updaterName updated the status of "$taskTitle" to $newStatus',
+        title: title,
+        message: message,
         data: {
-          'type': 'task_completed', // Use completed type (or general if status isn't completed)
+          'type': notificationType,
           'task_id': taskId,
           'new_status': newStatus,
           'screen': 'task_details',
+          'deep_link': 'agbcapp://task?id=$taskId',
         },
       );
 

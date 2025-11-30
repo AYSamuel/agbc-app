@@ -776,6 +776,7 @@ class SupabaseProvider extends ChangeNotifier {
     required String branchId,
     DateTime? dueDate,
     NotificationHelper? notificationHelper,
+    InitialNotificationConfig? notificationConfig,
   }) async {
     try {
       _setLoading(true);
@@ -800,14 +801,31 @@ class SupabaseProvider extends ChangeNotifier {
           .select()
           .single();
 
-      // Send notification if helper is provided and task is assigned to someone else
-      if (notificationHelper != null && assignedTo != currentUser.id) {
-        await notificationHelper.notifyTaskAssignment(
-          assignedUserId: assignedTo,
-          taskTitle: title,
-          taskId: response['id'],
-          assignedByUserId: currentUser.id,
-        );
+      // Send notification if helper is provided, task is assigned to someone else, and config allows it
+      if (notificationHelper != null &&
+          assignedTo != currentUser.id &&
+          notificationConfig != null &&
+          notificationConfig.enabled) {
+
+        if (notificationConfig.timing == NotificationTiming.immediate) {
+          // Send immediate notification
+          await notificationHelper.notifyTaskAssignment(
+            assignedUserId: assignedTo,
+            taskTitle: title,
+            taskId: response['id'],
+            assignedByUserId: currentUser.id,
+          );
+        } else if (notificationConfig.timing == NotificationTiming.scheduled &&
+                   notificationConfig.scheduledDateTime != null) {
+          // Send scheduled notification
+          await notificationHelper.notifyTaskAssignmentScheduled(
+            assignedUserId: assignedTo,
+            taskTitle: title,
+            taskId: response['id'],
+            assignedByUserId: currentUser.id,
+            scheduledDateTime: notificationConfig.scheduledDateTime!,
+          );
+        }
       }
 
       _setLoading(false);

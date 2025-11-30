@@ -18,10 +18,12 @@ import 'screens/register_screen.dart';
 import 'screens/main_navigation_screen.dart';
 import 'screens/meetings_screen.dart';
 import 'screens/meeting_details_screen.dart';
+import 'screens/task_details_screen.dart';
 import 'screens/upcoming_events_screen.dart';
 import 'utils/theme.dart';
 import 'utils/notification_helper.dart';
 import 'models/meeting_model.dart';
+import 'models/task_model.dart';
 
 // Global navigator key for notification navigation
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -70,12 +72,11 @@ void _navigateFromNotification(BuildContext context, Map<String, dynamic> additi
 
     case 'task_assigned':
     case 'task_completed':
+    case 'task_due':
     case 'comment_added':
       final taskId = additionalData['task_id'] as String?;
       if (taskId != null && screen == 'task_details') {
-        // Navigate to task details (you'll need to implement this route)
-        debugPrint('Navigate to task details: $taskId');
-        // TODO: Implement task details navigation when route is available
+        _navigateToTaskDetails(context, taskId);
       }
       break;
 
@@ -151,6 +152,44 @@ Future<void> _navigateToMeetingDetails(BuildContext context, String meetingId) a
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error loading meeting: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+}
+
+/// Navigate to task details screen
+Future<void> _navigateToTaskDetails(BuildContext context, String taskId) async {
+  try {
+    debugPrint('Fetching task details for ID: $taskId');
+
+    // Get the task from Supabase
+    final supabase = Supabase.instance.client;
+    final response = await supabase
+        .from('tasks')
+        .select()
+        .eq('id', taskId)
+        .single();
+
+    final task = TaskModel.fromJson(response);
+
+    // Navigate to task details screen
+    if (context.mounted) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => TaskDetailsScreen(task: task),
+        ),
+      );
+    }
+  } catch (e) {
+    debugPrint('Error navigating to task details: $e');
+    // Show error message
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error loading task: $e'),
           backgroundColor: Colors.red,
         ),
       );

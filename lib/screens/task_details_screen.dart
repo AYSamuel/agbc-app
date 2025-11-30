@@ -9,6 +9,8 @@ import 'package:remixicon/remixicon.dart';
 import 'package:provider/provider.dart';
 import '../providers/supabase_provider.dart';
 import '../services/auth_service.dart';
+import '../utils/notification_helper.dart';
+import '../services/notification_service.dart';
 
 /// A screen that displays the details of a task
 class TaskDetailsScreen extends StatefulWidget {
@@ -567,16 +569,29 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
     try {
       final supabaseProvider =
           Provider.of<SupabaseProvider>(context, listen: false);
+      final notificationService =
+          Provider.of<NotificationService>(context, listen: false);
 
-      // Update the task with new status
-      final updatedTask = _task.copyWith(
-        status: newStatus,
-        completedAt: newStatus == TaskStatus.completed ? DateTime.now() : null,
+      // Create notification helper
+      final notificationHelper = NotificationHelper(
+        supabaseProvider: supabaseProvider,
+        notificationService: notificationService,
       );
 
-      await supabaseProvider.updateTask(updatedTask);
+      // Use the notification-enabled update method
+      await supabaseProvider.updateTaskWithNotification(
+        taskId: _task.id,
+        status: newStatus.databaseValue,
+        notificationHelper: notificationHelper,
+      );
 
       if (mounted) {
+        // Fetch the updated task to reflect changes
+        final updatedTask = _task.copyWith(
+          status: newStatus,
+          completedAt: newStatus == TaskStatus.completed ? DateTime.now() : null,
+        );
+
         setState(() {
           _task = updatedTask;
         });

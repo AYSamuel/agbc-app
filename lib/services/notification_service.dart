@@ -299,6 +299,24 @@ class NotificationService extends ChangeNotifier {
       debugPrint('Users: $userIds');
       debugPrint('Title: $title');
 
+      // Create notification records in database for in-app notification panel
+      // This ensures scheduled notifications appear in the panel immediately
+      final notificationRecords = userIds.map((userId) => {
+        'user_id': userId,
+        'title': title,
+        'message': message,
+        'type': data?['type'] ?? 'general',
+        'data': data ?? {},
+        'is_read': false,
+        'created_at': DateTime.now().toIso8601String(),
+        'updated_at': DateTime.now().toIso8601String(),
+      }).toList();
+
+      // Insert all notification records in one batch operation
+      await _supabase.from('notifications').insert(notificationRecords);
+      debugPrint('Created ${notificationRecords.length} notification records in database for scheduled notification');
+
+      // Schedule push notification via Edge Function
       final response = await _supabase.functions.invoke(
         'send-scheduled-notification',
         body: {

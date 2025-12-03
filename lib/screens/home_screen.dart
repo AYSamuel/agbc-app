@@ -141,7 +141,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            userProfile?.displayName ?? 'User',
+                            userProfile?.displayName.split(' ').first ?? 'User',
                             style: GoogleFonts.inter(
                               fontSize: 24,
                               fontWeight: FontWeight.bold,

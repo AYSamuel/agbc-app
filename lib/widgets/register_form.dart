@@ -188,8 +188,9 @@ class _RegisterFormState extends State<RegisterForm> with FormValidationMixin {
             CustomInput(
               label: 'Full Name',
               controller: _nameController,
-              hint: 'Enter your full name',
-              prefixIcon: const Icon(Icons.person, color: AppTheme.primaryColor),
+              hint: 'Enter only your first and last name',
+              prefixIcon:
+                  const Icon(Icons.person, color: AppTheme.primaryColor),
               textInputAction: TextInputAction.next,
               onSubmitted: (_) => FocusScope.of(context).nextFocus(),
               validator: validateName,
@@ -223,112 +224,112 @@ class _RegisterFormState extends State<RegisterForm> with FormValidationMixin {
             ),
             const FormSpacing(),
 
-          // Location Field
-          LocationField(
-            initialLocation: _locationData,
-            onLocationChanged: (location) {
-              setState(() {
-                _locationData = location;
-              });
-            },
-            validator: (location) {
-              if (location['city']?.isEmpty == true ||
-                  location['country']?.isEmpty == true) {
-                return 'Both city and country are required';
-              }
-              return null;
-            },
-          ),
-          const FormSpacing(),
+            // Location Field
+            LocationField(
+              initialLocation: _locationData,
+              onLocationChanged: (location) {
+                setState(() {
+                  _locationData = location;
+                });
+              },
+              validator: (location) {
+                if (location['city']?.isEmpty == true ||
+                    location['country']?.isEmpty == true) {
+                  return 'Both city and country are required';
+                }
+                return null;
+              },
+            ),
+            const FormSpacing(),
 
-          // Branch Selection
-          Consumer<BranchesProvider>(
-            builder: (context, branchesProvider, child) {
-              final branches = branchesProvider.branches;
-              if (branches.isEmpty) {
-                return Text(
-                  'No branches available',
-                  style: AppTheme.regularTextStyle.copyWith(
-                    color: AppTheme.errorColor,
-                  ),
-                );
-              }
-
-              return CustomDropdown<String>(
-                value: _selectedBranchId,
-                label: 'Select Branch',
-                hint: 'Choose your church branch',
-                prefixIcon: Icons.church,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please select a branch';
-                  }
-                  return null;
-                },
-                items: branches.map((branch) {
-                  return DropdownMenuItem<String>(
-                    value: branch.id,
-                    child: Text(
-                      branch.name,
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            color: AppTheme.darkNeutralColor,
-                            fontWeight: FontWeight.w500,
-                            fontSize: 16,
-                            letterSpacing: 0.2,
-                          ),
+            // Branch Selection
+            Consumer<BranchesProvider>(
+              builder: (context, branchesProvider, child) {
+                final branches = branchesProvider.branches;
+                if (branches.isEmpty) {
+                  return Text(
+                    'No branches available',
+                    style: AppTheme.regularTextStyle.copyWith(
+                      color: AppTheme.errorColor,
                     ),
                   );
-                }).toList(),
-                onChanged: (value) {
-                  setState(() {
-                    _selectedBranchId = value;
-                  });
-                },
-              );
-            },
-          ),
-          const FormSpacing(),
+                }
 
-          // Password Field
-          PasswordField(
-            controller: _passwordController,
-            label: 'Password',
-            hint: 'Enter your password',
-            textInputAction: TextInputAction.next,
-            onSubmitted: (_) => FocusScope.of(context).nextFocus(),
-            validator: validatePassword,
-            autofillHints: const [AutofillHints.newPassword],
-          ),
-          const FormSpacing(),
+                return CustomDropdown<String>(
+                  value: _selectedBranchId,
+                  label: 'Select Branch',
+                  hint: 'Choose your church branch',
+                  prefixIcon: Icons.church,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please select a branch';
+                    }
+                    return null;
+                  },
+                  items: branches.map((branch) {
+                    return DropdownMenuItem<String>(
+                      value: branch.id,
+                      child: Text(
+                        branch.name,
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                              color: AppTheme.darkNeutralColor,
+                              fontWeight: FontWeight.w500,
+                              fontSize: 16,
+                              letterSpacing: 0.2,
+                            ),
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedBranchId = value;
+                    });
+                  },
+                );
+              },
+            ),
+            const FormSpacing(),
 
-          // Confirm Password Field
-          PasswordField(
-            controller: _confirmPasswordController,
-            label: 'Confirm Password',
-            hint: 'Confirm your password',
-            textInputAction: TextInputAction.done,
-            onSubmitted: (_) => _register(),
-            validator: validatePassword,
-            isConfirmField: true,
-            confirmController: _passwordController,
-            autofillHints: const [AutofillHints.newPassword],
-          ),
-          const FormSpacing(height: 32),
+            // Password Field
+            PasswordField(
+              controller: _passwordController,
+              label: 'Password',
+              hint: 'Enter your password',
+              textInputAction: TextInputAction.next,
+              onSubmitted: (_) => FocusScope.of(context).nextFocus(),
+              validator: validatePassword,
+              autofillHints: const [AutofillHints.newPassword],
+            ),
+            const FormSpacing(),
 
-          // Register Button
-          CustomButton(
-            onPressed: _isLoading ? null : _register,
-            child: _isLoading
-                ? const LoadingIndicator()
-                : const Text(
-                    'Create Account',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+            // Confirm Password Field
+            PasswordField(
+              controller: _confirmPasswordController,
+              label: 'Confirm Password',
+              hint: 'Confirm your password',
+              textInputAction: TextInputAction.done,
+              onSubmitted: (_) => _register(),
+              validator: validatePassword,
+              isConfirmField: true,
+              confirmController: _passwordController,
+              autofillHints: const [AutofillHints.newPassword],
+            ),
+            const FormSpacing(height: 32),
+
+            // Register Button
+            CustomButton(
+              onPressed: _isLoading ? null : _register,
+              child: _isLoading
+                  ? const LoadingIndicator()
+                  : const Text(
+                      'Create Account',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
                     ),
-                  ),
-          ),
+            ),
           ],
         ),
       ),

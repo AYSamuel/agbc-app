@@ -1,0 +1,10 @@
+# GitHub Pages configuration for GRACE PORTAL Privacy Policy
+title: GRACE PORTAL Privacy Policy
+description: Privacy Policy for the GRACE PORTAL church management application
+
+# Build settings
+markdown: kramdown
+
+# Exclude files from processing
+exclude:
+  - README.md

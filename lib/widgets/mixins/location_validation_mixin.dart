@@ -1,11 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:geocoding/geocoding.dart';
+import '../../services/nominatim_service.dart';
 
 /// A mixin for validating city/country location data with real geocoding verification.
 /// This mixin provides comprehensive validation methods for location input
 /// in the format of city and country, compatible with JSONB storage.
 mixin LocationValidationMixin {
+  final NominatimService _nominatimService = NominatimService();
   /// Validates a complete location map containing city and country
   /// Includes real location verification using geocoding
   Future<String?> validateLocationMapAsync(
@@ -167,125 +168,25 @@ mixin LocationValidationMixin {
     return null;
   }
 
-  /// Validates location using geocoding service
+  /// Validates location using Nominatim geocoding service
   Future<bool> _validateLocationWithGeocoding(
       String city, String country) async {
     try {
-      // Try to geocode the location
-      final query = '$city, $country';
-      final locations = await locationFromAddress(query);
-
-      if (locations.isEmpty) {
-        return false;
-      }
-
-      // Verify the result by reverse geocoding
-      final firstLocation = locations.first;
-      final placemarks = await placemarkFromCoordinates(
-        firstLocation.latitude,
-        firstLocation.longitude,
-      );
-
-      if (placemarks.isEmpty) {
-        return false;
-      }
-
-      final placemark = placemarks.first;
-
-      // Check if the returned location matches our input
-      final returnedCountry = placemark.country?.toLowerCase() ?? '';
-      final returnedCity = placemark.locality?.toLowerCase() ??
-          placemark.subAdministrativeArea?.toLowerCase() ??
-          placemark.administrativeArea?.toLowerCase() ??
-          '';
-
-      final inputCountry = country.toLowerCase();
-      final inputCity = city.toLowerCase();
-
-      // Flexible matching - check if country matches and city is reasonable
-      final countryMatches = _countryNamesMatch(returnedCountry, inputCountry);
-      final cityMatches = returnedCity.contains(inputCity) ||
-          inputCity.contains(returnedCity) ||
-          _areSimilarCityNames(returnedCity, inputCity);
-
-      return countryMatches && (cityMatches || returnedCity.isNotEmpty);
+      return await _nominatimService.validateLocation(city, country);
     } catch (e) {
       debugPrint('Geocoding error: $e');
       return false;
     }
   }
 
-  /// Checks if two country names refer to the same country
-  bool _countryNamesMatch(String country1, String country2) {
-    if (country1 == country2) return true;
-
-    // Handle common variations
-    final variations = _getCountryVariations();
-    final normalized1 = variations[country1] ?? country1;
-    final normalized2 = variations[country2] ?? country2;
-
-    return normalized1.toLowerCase() == normalized2.toLowerCase();
-  }
-
-  /// Checks if two city names are similar (handles minor spelling differences)
-  bool _areSimilarCityNames(String city1, String city2) {
-    if (city1.isEmpty || city2.isEmpty) return false;
-
-    // Simple similarity check - at least 70% character overlap
-    final longer = city1.length > city2.length ? city1 : city2;
-    final shorter = city1.length <= city2.length ? city1 : city2;
-
-    if (shorter.length < 3) return longer == shorter;
-
-    int matches = 0;
-    for (int i = 0; i < shorter.length; i++) {
-      if (i < longer.length && shorter[i] == longer[i]) {
-        matches++;
-      }
-    }
-
-    return (matches / shorter.length) >= 0.7;
-  }
-
-  /// Gets location suggestions using geocoding
+  /// Gets location suggestions using Nominatim geocoding
   Future<List<Map<String, String>>> getLocationSuggestions(String query) async {
     if (query.trim().length < 3) {
       return [];
     }
 
     try {
-      final locations = await locationFromAddress(query);
-      final suggestions = <Map<String, String>>[];
-
-      for (final location in locations.take(5)) {
-        try {
-          final placemarks = await placemarkFromCoordinates(
-            location.latitude,
-            location.longitude,
-          );
-
-          if (placemarks.isNotEmpty) {
-            final placemark = placemarks.first;
-            final city = placemark.locality ??
-                placemark.subAdministrativeArea ??
-                placemark.administrativeArea ??
-                '';
-            final country = placemark.country ?? '';
-
-            if (city.isNotEmpty && country.isNotEmpty) {
-              suggestions.add({
-                'city': city,
-                'country': country,
-                'display': '$city, $country',
-              });
-            }
-          }
-        } catch (e) {
-          debugPrint('Error processing location suggestion: $e');
-        }
-      }
-
-      return suggestions;
+      return await _nominatimService.searchLocations(query);
     } catch (e) {
       debugPrint('Error getting location suggestions: $e');
       return [];

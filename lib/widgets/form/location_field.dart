@@ -30,7 +30,6 @@ class _LocationFieldState extends State<LocationField>
     with LocationValidationMixin {
   late TextEditingController _cityController;
   late TextEditingController _countryController;
-  late FocusNode _countryFocusNode;
 
   Timer? _debounceTimer;
   String? _errorMessage;
@@ -49,10 +48,6 @@ class _LocationFieldState extends State<LocationField>
     _countryController = TextEditingController(
       text: widget.initialLocation?['country'] ?? '',
     );
-    // Only initialize country focus node
-    _countryFocusNode = FocusNode();
-
-    // Remove city focus listener setup since we'll handle focus differently
   }
 
   @override
@@ -60,20 +55,14 @@ class _LocationFieldState extends State<LocationField>
     // Cancel any pending timer first
     _debounceTimer?.cancel();
 
-    // Dispose controllers and focus nodes
+    // Dispose controllers
     _cityController.dispose();
     _countryController.dispose();
-    _countryFocusNode.dispose();
 
     super.dispose();
   }
 
   void _onCityChanged() {
-    _debounceValidation();
-    _onLocationChanged();
-  }
-
-  void _onCountryChanged() {
     _debounceValidation();
     _onLocationChanged();
   }
@@ -159,7 +148,7 @@ class _LocationFieldState extends State<LocationField>
         // City Field with Autocomplete
         Autocomplete<Map<String, String>>(
           optionsBuilder: (TextEditingValue textEditingValue) async {
-            // Only show options if has sufficient text (remove focus check since we'll use the autocomplete's focus)
+            // Only show options if has sufficient text
             if (textEditingValue.text.length < 2) {
               return const Iterable<Map<String, String>>.empty();
             }
@@ -169,6 +158,7 @@ class _LocationFieldState extends State<LocationField>
                   ? '${textEditingValue.text}, ${_countryController.text}'
                   : textEditingValue.text;
               final suggestions = await getLocationSuggestions(query);
+
               return suggestions;
             } catch (e) {
               return const Iterable<Map<String, String>>.empty();
@@ -177,11 +167,16 @@ class _LocationFieldState extends State<LocationField>
           displayStringForOption: (Map<String, String> option) =>
               option['city'] ?? '',
           onSelected: (Map<String, String> selection) {
-            _cityController.text = selection['city'] ?? '';
-            if (selection['country']?.isNotEmpty == true) {
-              _countryController.text = selection['country'] ?? '';
-            }
+            setState(() {
+              _cityController.text = selection['city'] ?? '';
+              if (selection['country']?.isNotEmpty == true) {
+                _countryController.text = selection['country'] ?? '';
+              }
+            });
             _onLocationChanged();
+
+            // Dismiss keyboard and remove focus after selection
+            FocusScope.of(context).unfocus();
           },
           fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
             // Use a post-frame callback to sync controllers safely
@@ -236,6 +231,9 @@ class _LocationFieldState extends State<LocationField>
             );
           },
           optionsViewBuilder: (context, onSelected, options) {
+            final screenHeight = MediaQuery.of(context).size.height;
+            final maxHeight = screenHeight * 0.3; // 30% of screen height, max
+
             return Align(
               alignment: Alignment.topLeft,
               child: Material(
@@ -243,7 +241,9 @@ class _LocationFieldState extends State<LocationField>
                 borderRadius: BorderRadius.circular(8),
                 child: Container(
                   width: MediaQuery.of(context).size.width - 32,
-                  constraints: const BoxConstraints(maxHeight: 200),
+                  constraints: BoxConstraints(
+                    maxHeight: maxHeight.clamp(150.0, 250.0),
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(8),
@@ -293,97 +293,19 @@ class _LocationFieldState extends State<LocationField>
 
         const SizedBox(height: 16),
 
-        // Country Field with Autocomplete
-        Autocomplete<String>(
-          optionsBuilder: (TextEditingValue textEditingValue) {
-            // Only show options if the field is focused and has text, or if it's focused and empty
-            if (!_countryFocusNode.hasFocus) {
-              return const Iterable<String>.empty();
+        // Country Field (Read-only, auto-filled from city selection)
+        CustomInput(
+          label: 'Country',
+          controller: _countryController,
+          hint: 'Select a city to auto-fill country',
+          prefixIcon: const Icon(Icons.public, color: AppTheme.primaryColor),
+          enabled: false,
+          textInputAction: TextInputAction.done,
+          validator: (value) {
+            if (value == null || value.trim().isEmpty) {
+              return 'Please select a city first';
             }
-            if (textEditingValue.text.isEmpty) {
-              return getCommonCountries();
-            }
-            return filterCountries(textEditingValue.text);
-          },
-          onSelected: (String selection) {
-            _countryController.text = selection;
-            _onCountryChanged();
-            // Unfocus the country field after selection
-            _countryFocusNode.unfocus();
-          },
-          fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
-            // Use a post-frame callback to sync controllers safely
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (controller.text != _countryController.text) {
-                controller.text = _countryController.text;
-              }
-            });
-
-            return CustomInput(
-              label: 'Country',
-              controller: controller,
-              focusNode:
-                  _countryFocusNode, // Use our own focus node instead of the provided one
-              hint: 'Enter your country',
-              prefixIcon:
-                  const Icon(Icons.public, color: AppTheme.primaryColor),
-              textInputAction: TextInputAction.done,
-              onChanged: (value) {
-                _countryController.text = value;
-                _onCountryChanged();
-              },
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Country is required';
-                }
-                return validateCountryInput(value);
-              },
-            );
-          },
-          optionsViewBuilder: (context, onSelected, options) {
-            return Align(
-              alignment: Alignment.topLeft,
-              child: Material(
-                elevation: 4,
-                borderRadius: BorderRadius.circular(8),
-                child: Container(
-                  width: MediaQuery.of(context).size.width - 32,
-                  constraints: const BoxConstraints(maxHeight: 200),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.grey.shade300),
-                  ),
-                  child: ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: options.length,
-                    itemBuilder: (context, index) {
-                      final option = options.elementAt(index);
-                      return ListTile(
-                        dense: true,
-                        leading: const Icon(
-                          Icons.public,
-                          size: 16,
-                          color: AppTheme.primaryColor,
-                        ),
-                        title: Text(
-                          option,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: Colors.black87,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        onTap: () => onSelected(option),
-                        hoverColor: Colors.grey.shade100,
-                        splashColor:
-                            AppTheme.primaryColor.withValues(alpha: 0.1),
-                      );
-                    },
-                  ),
-                ),
-              ),
-            );
+            return null;
           },
         ),
 

@@ -314,6 +314,12 @@ We welcome contributions to the AGBC App! If you'd like to help improve the proj
     ```
 7.  **Open a Pull Request:** Submit a pull request from your feature branch to the main project repository. Provide a clear description of your changes in the PR.
 
+## Privacy Policy
+
+The privacy policy for GRACE PORTAL is available at: [https://yourusername.github.io/agbc-app/](https://aysamuel.github.io/agbc-app/)
+
+_(Replace `yourusername` with your actual GitHub username once you enable GitHub Pages)_
+
 ## License
 
 This project is intended to be licensed under the MIT License.

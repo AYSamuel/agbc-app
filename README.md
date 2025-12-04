@@ -316,9 +316,7 @@ We welcome contributions to the AGBC App! If you'd like to help improve the proj
 
 ## Privacy Policy
 
-The privacy policy for GRACE PORTAL is available at: [https://yourusername.github.io/agbc-app/](https://aysamuel.github.io/agbc-app/)
-
-_(Replace `yourusername` with your actual GitHub username once you enable GitHub Pages)_
+The privacy policy for GRACE PORTAL is available at: [https://aysamuel.github.io/agbc-app/privacy-policy.html](https://aysamuel.github.io/agbc-app/privacy-policy.html)
 
 ## License
 

@@ -84,6 +84,7 @@ class AuthService extends ChangeNotifier {
       final response = await _supabase.auth.signUp(
         email: email,
         password: password,
+        emailRedirectTo: 'https://aysamuel.github.io/agbc-app/email-confirmed.html',
         data: {
           'display_name': displayName,
           'phone_number': phoneNumber.isNotEmpty ? phoneNumber : null,

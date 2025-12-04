@@ -393,13 +393,52 @@ class _GracePortalAppState extends State<GracePortalApp> {
   void _handleDeepLink(Uri uri) {
     debugPrint('Deep link received: $uri');
 
+    // Handle HTTPS deep links (Supabase auth callbacks & GitHub Pages)
+    if (uri.scheme == 'https') {
+      // Supabase auth callback
+      if (uri.host == 'fotfplvqsnmbzjjhqlwp.supabase.co') {
+        debugPrint('Handling Supabase auth callback');
+        Supabase.instance.client.auth.getSessionFromUrl(uri);
+        // Show success message
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Email confirmed successfully! You can now log in.'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
+        return;
+      }
+
+      // GitHub Pages confirmation (redirect to HTML fallback on mobile if needed)
+      if (uri.host == 'aysamuel.github.io' &&
+          uri.path.contains('email-confirmed')) {
+        debugPrint('Email confirmation page opened in app');
+        // The app opened the link - show a message
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Email confirmed! Please log in to continue.'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
+        return;
+      }
+    }
+
+    // Handle custom scheme deep links
     if (uri.scheme == 'agbcapp') {
       switch (uri.host) {
         case 'login':
           Navigator.pushNamed(context, '/login');
           break;
         case 'callback':
-          // Handle auth callback
+          // Handle custom auth callback
+          debugPrint('Custom auth callback');
           break;
         case 'task':
           final taskId =

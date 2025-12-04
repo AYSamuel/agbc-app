@@ -30,13 +30,28 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
 
-            <!-- Deep linking -->
+            <!-- Deep linking - Custom scheme -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <!-- Replace with your app's domain -->
                 <data android:scheme="agbcapp" />
+            </intent-filter>
+
+            <!-- App Links - HTTPS deep linking for Supabase auth and GitHub Pages -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <!-- GitHub Pages domain for email confirmation -->
+                <data
+                    android:scheme="https"
+                    android:host="aysamuel.github.io"
+                    android:pathPrefix="/agbc-app" />
+                <!-- Supabase domain for auth callbacks -->
+                <data
+                    android:scheme="https"
+                    android:host="fotfplvqsnmbzjjhqlwp.supabase.co" />
             </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.

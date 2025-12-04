@@ -83,5 +83,10 @@
 	<array>
 		<string>remote-notification</string>
 	</array>
+	<key>com.apple.developer.associated-domains</key>
+	<array>
+		<string>applinks:aysamuel.github.io</string>
+		<string>applinks:fotfplvqsnmbzjjhqlwp.supabase.co</string>
+	</array>
 </dict>
 </plist>

@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.agbc.app",
+      "sha256_cert_fingerprints": [
+        "39:B6:A3:97:DB:9D:D4:01:03:AA:52:D0:72:72:B3:1E:FD:F5:C0:E1:AD:C6:B4:86:68:F5:05:37:11:77:91:CB"
+      ]
+    }
+  }
+]

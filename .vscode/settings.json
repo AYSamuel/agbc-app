@@ -20,5 +20,8 @@
     "fs",
     "http",
     "net"
-  ]
+  ],
+  "git.confirmSync": true,
+  "git.showPushSuccessNotification": true,
+  "git.alwaysSignOff": false
 }

@@ -216,7 +216,7 @@ class _RegisterFormState extends State<RegisterForm> with FormValidationMixin {
             CustomInput(
               label: 'Phone Number',
               controller: _phoneController,
-              hint: 'Enter your phone number',
+              hint: 'Enter with country code (e.g., +1234567890)',
               prefixIcon: const Icon(Icons.phone, color: AppTheme.primaryColor),
               keyboardType: TextInputType.phone,
               validator: validatePhone,

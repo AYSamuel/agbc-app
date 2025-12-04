@@ -95,11 +95,21 @@ mixin FormValidationMixin {
     if (value == null || value.isEmpty) {
       return 'Please enter your phone number';
     }
-    // Enhanced phone number validation
-    final phoneRegex = RegExp(r'^\+?[0-9]{10,15}$');
-    if (!phoneRegex.hasMatch(value.replaceAll(RegExp(r'[\s\-\(\)]'), ''))) {
-      return 'Please enter a valid phone number';
+
+    // Remove spaces, dashes, and parentheses for validation
+    final cleanedValue = value.replaceAll(RegExp(r'[\s\-\(\)]'), '');
+
+    // Check if it starts with + (country code required)
+    if (!cleanedValue.startsWith('+')) {
+      return 'Phone number must include country code (e.g., +1234567890)';
     }
+
+    // Enhanced phone number validation - must start with + and have 10-15 digits after
+    final phoneRegex = RegExp(r'^\+[0-9]{10,15}$');
+    if (!phoneRegex.hasMatch(cleanedValue)) {
+      return 'Please enter a valid phone number with country code';
+    }
+
     return null;
   }
 

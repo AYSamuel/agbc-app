@@ -84,3 +84,20 @@ app.*.map.json
 supabase/config.toml
 supabase/migrations/
 supabase/seed.sql
+
+# Android signing files (NEVER COMMIT THESE!)
+android/key.properties
+*.jks
+*.keystore
+
+# Documentation and guide files (internal use only)
+*.md
+!README.md
+DEEP_LINKING_QUICK_START.txt
+GOOGLE_PLAY_REVIEWER_INSTRUCTIONS.md
+PLAY_CONSOLE_APP_ACCESS_TEXT.txt
+GOOGLE_PLAY_STORE_LISTING.txt
+SUPABASE_CONFIG_FINAL.md
+URL_STRUCTURE_SUMMARY.md
+GOOGLE_PLAY_RELEASE_GUIDE.md
+GIT_WORKFLOW_GUIDE.md

@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
 import 'dart:io' show Platform;
+import '../utils/timezone_helper.dart';
 
 class NotificationService extends ChangeNotifier {
   static final NotificationService _instance = NotificationService._internal();
@@ -112,6 +113,9 @@ class NotificationService extends ChangeNotifier {
         debugPrint('Generated fallback device ID: $deviceId');
       }
 
+      // Get device timezone
+      final deviceTimezone = TimezoneHelper.getDeviceTimezone();
+
       // OPTIMIZED: Use upsert instead of delete + insert
       // This is more efficient and handles conflicts automatically
       final deviceData = {
@@ -120,6 +124,7 @@ class NotificationService extends ChangeNotifier {
         'platform': platform,
         'push_token': pushToken,
         'onesignal_user_id': oneSignalUserId,
+        'timezone': deviceTimezone,
         'is_active': true,
         'last_seen': DateTime.now().toIso8601String(),
         'updated_at': DateTime.now().toIso8601String(),

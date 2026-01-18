@@ -1,19 +1,26 @@
+import '../utils/timezone_helper.dart';
+
 /// Configuration for initial meeting notifications
 /// This class defines when and how users should be notified about newly created meetings
 class InitialNotificationConfig {
   /// Whether to send initial notification about the meeting
   final bool enabled;
-  
+
   /// When to send the notification (immediate, scheduled, or none)
   final NotificationTiming timing;
-  
+
   /// Custom schedule time (required if timing is scheduled)
   final DateTime? scheduledDateTime;
+
+  /// Reminder minutes before the meeting to send notifications
+  /// e.g., [1440, 60, 15] = 1 day, 1 hour, 15 minutes before
+  final List<int>? reminderMinutes;
 
   const InitialNotificationConfig({
     required this.enabled,
     required this.timing,
     this.scheduledDateTime,
+    this.reminderMinutes,
   });
 
   /// Creates a default configuration with immediate notification enabled
@@ -52,6 +59,9 @@ class InitialNotificationConfig {
       scheduledDateTime: json['scheduledDateTime'] != null
           ? DateTime.parse(json['scheduledDateTime'])
           : null,
+      reminderMinutes: json['reminderMinutes'] != null
+          ? List<int>.from(json['reminderMinutes'])
+          : null,
     );
   }
 
@@ -61,6 +71,7 @@ class InitialNotificationConfig {
       'enabled': enabled,
       'timing': timing.toString().split('.').last,
       'scheduledDateTime': scheduledDateTime?.toIso8601String(),
+      'reminderMinutes': reminderMinutes,
     };
   }
 
@@ -97,7 +108,10 @@ class InitialNotificationConfig {
   }
 
   String _formatDateTime(DateTime dateTime) {
-    return '${dateTime.day}/${dateTime.month}/${dateTime.year} at ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+    // Convert UTC to user's local timezone for display
+    final userTimezone = TimezoneHelper.getDeviceTimezone();
+    final localDateTime = TimezoneHelper.convertFromUtc(dateTime, userTimezone);
+    return '${localDateTime.day}/${localDateTime.month}/${localDateTime.year} at ${localDateTime.hour.toString().padLeft(2, '0')}:${localDateTime.minute.toString().padLeft(2, '0')}';
   }
 
   /// Creates a copy with updated fields
@@ -105,11 +119,13 @@ class InitialNotificationConfig {
     bool? enabled,
     NotificationTiming? timing,
     DateTime? scheduledDateTime,
+    List<int>? reminderMinutes,
   }) {
     return InitialNotificationConfig(
       enabled: enabled ?? this.enabled,
       timing: timing ?? this.timing,
       scheduledDateTime: scheduledDateTime ?? this.scheduledDateTime,
+      reminderMinutes: reminderMinutes ?? this.reminderMinutes,
     );
   }
 
@@ -120,10 +136,21 @@ class InitialNotificationConfig {
           runtimeType == other.runtimeType &&
           enabled == other.enabled &&
           timing == other.timing &&
-          scheduledDateTime == other.scheduledDateTime;
+          scheduledDateTime == other.scheduledDateTime &&
+          _listEquals(reminderMinutes, other.reminderMinutes);
 
   @override
-  int get hashCode => Object.hash(enabled, timing, scheduledDateTime);
+  int get hashCode => Object.hash(enabled, timing, scheduledDateTime, reminderMinutes);
+
+  bool _listEquals(List<int>? a, List<int>? b) {
+    if (a == null && b == null) return true;
+    if (a == null || b == null) return false;
+    if (a.length != b.length) return false;
+    for (int i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
+  }
 }
 
 /// Enum for notification timing options

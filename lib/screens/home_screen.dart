@@ -150,47 +150,58 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ],
                       ),
-                      Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: AppTheme.primaryColor,
-                            width: 2,
+                      GestureDetector(
+                        onTap: () {
+                          HapticFeedback.selectionClick();
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const ProfileScreen(),
+                            ),
+                          );
+                        },
+                        child: Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: AppTheme.primaryColor,
+                              width: 2,
+                            ),
                           ),
-                        ),
-                        child: ClipOval(
-                          child: (userProfile?.photoUrl != null &&
-                                  userProfile!.photoUrl!.isNotEmpty)
-                              ? Image.network(
-                                  userProfile.photoUrl!,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    // Show default icon if image fails to load
-                                    return const Icon(
-                                      Icons.person,
-                                      size: 32,
-                                      color: AppTheme.primaryColor,
-                                    );
-                                  },
-                                  loadingBuilder:
-                                      (context, child, loadingProgress) {
-                                    if (loadingProgress == null) return child;
-                                    // Show loading indicator while image loads
-                                    return const Center(
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
+                          child: ClipOval(
+                            child: (userProfile?.photoUrl != null &&
+                                    userProfile!.photoUrl!.isNotEmpty)
+                                ? Image.network(
+                                    userProfile.photoUrl!,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      // Show default icon if image fails to load
+                                      return const Icon(
+                                        Icons.person,
+                                        size: 32,
                                         color: AppTheme.primaryColor,
-                                      ),
-                                    );
-                                  },
-                                )
-                              : const Icon(
-                                  Icons.person,
-                                  size: 32,
-                                  color: AppTheme.primaryColor,
-                                ),
+                                      );
+                                    },
+                                    loadingBuilder:
+                                        (context, child, loadingProgress) {
+                                      if (loadingProgress == null) return child;
+                                      // Show loading indicator while image loads
+                                      return const Center(
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: AppTheme.primaryColor,
+                                        ),
+                                      );
+                                    },
+                                  )
+                                : const Icon(
+                                    Icons.person,
+                                    size: 32,
+                                    color: AppTheme.primaryColor,
+                                  ),
+                          ),
                         ),
                       ),
                     ],

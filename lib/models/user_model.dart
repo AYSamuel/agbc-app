@@ -125,6 +125,17 @@ class UserModel {
     return settings['notifications']?[type] ?? true;
   }
 
+  /// Gets user's timezone from settings
+  /// Returns null if not set (will use device timezone)
+  String? get timezone {
+    return settings['timezone'] as String?;
+  }
+
+  /// Checks if user has a custom timezone set
+  bool get hasCustomTimezone {
+    return settings['timezone'] != null && (settings['timezone'] as String).isNotEmpty;
+  }
+
   /// Gets user's location as a formatted string
   String? get locationString {
     if (location == null) return null;

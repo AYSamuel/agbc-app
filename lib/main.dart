@@ -22,6 +22,7 @@ import 'screens/task_details_screen.dart';
 import 'screens/upcoming_events_screen.dart';
 import 'utils/theme.dart';
 import 'utils/notification_helper.dart';
+import 'utils/timezone_helper.dart';
 import 'models/meeting_model.dart';
 import 'models/task_model.dart';
 
@@ -202,6 +203,9 @@ Future<void> main() async {
     // Ensure Flutter widgets are initialized before any plugin calls.
     WidgetsFlutterBinding.ensureInitialized();
 
+    // Initialize timezone database
+    await TimezoneHelper.initializeTimezones();
+
     // Load environment variables from .env file.
     await AppConfig.load();
 
@@ -241,6 +245,9 @@ Future<void> main() async {
 
     // Capture OneSignal Player ID for existing logged-in users
     await _capturePlayerIdForExistingUser();
+
+    // Migrate existing devices to include timezone information
+    await _migrateDeviceTimezones(notificationService);
 
     // Run the main application widget.
     runApp(
@@ -342,6 +349,53 @@ Future<void> _capturePlayerIdForExistingUser() async {
     }
   } catch (e) {
     debugPrint('Error capturing Player ID for existing user: $e');
+  }
+}
+
+/// Migrate existing devices to include timezone information
+/// This ensures existing users have their device timezone stored in the database
+Future<void> _migrateDeviceTimezones(NotificationService notificationService) async {
+  try {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user != null) {
+      debugPrint('=== TIMEZONE MIGRATION CHECK ===');
+
+      // Check if device already has timezone in database
+      try {
+        final devices = await Supabase.instance.client
+            .from('user_devices')
+            .select('timezone')
+            .eq('user_id', user.id);
+
+        // Check if any device is missing timezone or has null/empty timezone
+        final needsMigration = devices.isEmpty ||
+            devices.any((device) => device['timezone'] == null ||
+                                   device['timezone'] == '' ||
+                                   device['timezone'] == 'UTC');
+
+        if (needsMigration) {
+          debugPrint('Device timezone migration needed - re-registering device');
+
+          // Wait for OneSignal to be ready
+          await Future.delayed(const Duration(seconds: 2));
+
+          // Re-register device to update timezone
+          await notificationService.registerDevice(user.id);
+
+          debugPrint('✅ Device timezone migration completed');
+        } else {
+          debugPrint('Device timezone already set - no migration needed');
+        }
+      } catch (e) {
+        debugPrint('Error checking device timezone: $e - will re-register');
+        // If check fails, re-register to be safe
+        await Future.delayed(const Duration(seconds: 2));
+        await notificationService.registerDevice(user.id);
+      }
+    }
+  } catch (e) {
+    debugPrint('Error during timezone migration: $e');
+    // Don't throw - migration failure should not prevent app from starting
   }
 }
 

@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../providers/supabase_provider.dart';
 import '../models/meeting_model.dart';
 import '../utils/theme.dart';
+import '../utils/timezone_helper.dart';
 import '../widgets/custom_back_button.dart';
 
 class MeetingManagementScreen extends StatelessWidget {
@@ -426,6 +427,9 @@ class MeetingManagementScreen extends StatelessWidget {
   }
 
   String _formatDateTime(DateTime dateTime) {
-    return '${dateTime.day}/${dateTime.month}/${dateTime.year} at ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+    // Convert UTC to user's local timezone
+    final userTimezone = TimezoneHelper.getDeviceTimezone();
+    final localDateTime = TimezoneHelper.convertFromUtc(dateTime, userTimezone);
+    return '${localDateTime.day}/${localDateTime.month}/${localDateTime.year} at ${localDateTime.hour.toString().padLeft(2, '0')}:${localDateTime.minute.toString().padLeft(2, '0')}';
   }
 }

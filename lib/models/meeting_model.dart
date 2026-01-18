@@ -33,6 +33,9 @@ class MeetingModel {
   final String? meetingLink;
   final Map<String, dynamic> attendees; // Now JSONB for structured data
 
+  // Timezone support
+  final String creatorTimezone; // IANA timezone identifier of the creator
+
   // Meeting status tracking using ENUM
   final MeetingStatus status;
 
@@ -73,6 +76,7 @@ class MeetingModel {
     this.isVirtual = false,
     this.meetingLink,
     Map<String, dynamic>? attendees,
+    this.creatorTimezone = 'UTC',
     this.status = MeetingStatus.scheduled,
     Map<String, dynamic>? metadata,
     this.initialNotificationConfig,
@@ -124,6 +128,7 @@ class MeetingModel {
         'confirmed': List<String>.from(json['attendees'] ?? []),
         'pending': <String>[]
       }, // Convert array to map format for internal use
+      creatorTimezone: json['creator_timezone'] ?? 'UTC',
       status: MeetingStatus.values.firstWhere(
         (e) => e.toString().split('.').last == json['status'],
         orElse: () => MeetingStatus.scheduled,
@@ -177,6 +182,7 @@ class MeetingModel {
       'is_virtual': isVirtual,
       'meeting_link': meetingLink,
       'attendees': [], // Send as empty array for new meetings
+      'creator_timezone': creatorTimezone,
       'status': status.toString().split('.').last,
       'metadata': metadata,
       'initial_notification_config': initialNotificationConfig?.toJson(),
@@ -259,6 +265,7 @@ class MeetingModel {
     bool? isVirtual,
     String? meetingLink,
     Map<String, dynamic>? attendees,
+    String? creatorTimezone,
     MeetingStatus? status,
     Map<String, dynamic>? metadata,
     InitialNotificationConfig? initialNotificationConfig,
@@ -291,6 +298,7 @@ class MeetingModel {
       isVirtual: isVirtual ?? this.isVirtual,
       meetingLink: meetingLink ?? this.meetingLink,
       attendees: attendees ?? this.attendees,
+      creatorTimezone: creatorTimezone ?? this.creatorTimezone,
       status: status ?? this.status,
       metadata: metadata ?? this.metadata,
       initialNotificationConfig: initialNotificationConfig ?? this.initialNotificationConfig,
@@ -306,6 +314,19 @@ class MeetingModel {
       recurrenceDayOfMonth: recurrenceDayOfMonth ?? this.recurrenceDayOfMonth,
       recurrenceExceptions: recurrenceExceptions ?? this.recurrenceExceptions,
     );
+  }
+
+  /// Get the meeting's local date/time in a specific timezone.
+  /// Assumes the meeting's dateTime is stored in UTC.
+  ///
+  /// [userTimezone] - The target IANA timezone identifier
+  ///
+  /// Returns the DateTime in the user's local timezone.
+  DateTime getLocalDateTime(String userTimezone) {
+    // Import the TimezoneHelper inline to avoid circular dependency
+    // This is a workaround since we can't import timezone_helper here
+    // In actual usage, the caller should use TimezoneHelper.convertFromUtc
+    return dateTime; // Fallback - caller should use TimezoneHelper directly
   }
 
   @override

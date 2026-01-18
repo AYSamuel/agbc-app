@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
 import '../providers/supabase_provider.dart';
 import '../services/notification_service.dart';
+import 'timezone_helper.dart';
 
 class NotificationHelper {
   final SupabaseProvider _supabaseProvider;
@@ -212,7 +213,7 @@ class NotificationHelper {
 
   /// Notify branch members about a new meeting (immediate notification)
   /// If branchId is null, notifies all users (global meeting)
-  /// OPTIMIZED: Uses batched notifications for maximum performance
+  /// OPTIMIZED: Uses batched notifications grouped by timezone for accurate time display
   Future<void> notifyMeetingCreated({
     required String meetingId,
     required String meetingTitle,
@@ -227,36 +228,48 @@ class NotificationHelper {
           : await _supabaseProvider.getAllUsersList();
 
       if (users.isNotEmpty) {
+        // Group users by timezone for accurate time display
+        final usersByTimezone = <String, List<String>>{};
+        for (final user in users) {
+          final timezone = user.timezone ?? TimezoneHelper.getDeviceTimezone();
+          usersByTimezone.putIfAbsent(timezone, () => []).add(user.id);
+        }
+
         // Use the proper title format for initial notification
-        final title =
-            formatMeetingNotificationTitle(1440); // Initial notification
+        final title = formatMeetingNotificationTitle(1440); // Initial notification
 
-        // Create generic message (no personalization for performance)
-        final message = formatMeetingNotificationMessage(
-          userName: '', // Empty - not used for initial notifications
-          meetingTitle: meetingTitle,
-          meetingDateTime: meetingDateTime,
-          reminderMinutes: 1440, // Initial notification (1 day)
-          isInitialNotification: true,
-        );
+        // Send separate batched notifications per timezone group
+        for (final entry in usersByTimezone.entries) {
+          final timezone = entry.key;
+          final userIds = entry.value;
 
-        // OPTIMIZED: Batch all user IDs and send in ONE API call
-        final userIds = users.map((u) => u.id).toList();
+          // Create timezone-specific message
+          final message = formatMeetingNotificationMessage(
+            userName: '', // Empty - not used for initial notifications
+            meetingTitle: meetingTitle,
+            meetingDateTime: meetingDateTime,
+            reminderMinutes: 1440, // Initial notification (1 day)
+            isInitialNotification: true,
+            recipientTimezone: timezone,
+          );
 
-        await _notificationService.sendNotification(
-          userIds: userIds, // Send to all users at once
-          title: title,
-          message: message,
-          data: {
-            'type': 'meeting_reminder', // Use valid notification type
-            'meeting_id': meetingId,
-            'screen': 'meeting_details',
-            'url': 'agbcapp://meeting/$meetingId', // Deep link URL
-          },
-        );
+          await _notificationService.sendNotification(
+            userIds: userIds,
+            title: title,
+            message: message,
+            data: {
+              'type': 'meeting_reminder', // Use valid notification type
+              'meeting_id': meetingId,
+              'screen': 'meeting_details',
+              'url': 'agbcapp://meeting/$meetingId', // Deep link URL
+            },
+          );
+
+          debugPrint('Sent notification to ${userIds.length} users in timezone $timezone');
+        }
 
         debugPrint(
-            'Successfully sent batched meeting creation notification to ${users.length} users${branchId != null ? " in branch" : " (global)"}');
+            'Successfully sent batched meeting creation notification to ${users.length} users in ${usersByTimezone.length} timezone(s)${branchId != null ? " in branch" : " (global)"}');
       }
     } catch (e) {
       debugPrint('Error sending meeting creation notifications: $e');
@@ -265,7 +278,7 @@ class NotificationHelper {
 
   /// Schedule initial notification for a meeting at a specific date/time
   /// If branchId is null, schedules notifications for all users (global meeting)
-  /// OPTIMIZED: Uses batched notifications for maximum performance
+  /// OPTIMIZED: Uses batched notifications grouped by timezone for accurate time display
   Future<void> scheduleInitialMeetingNotification({
     required String meetingId,
     required String meetingTitle,
@@ -283,38 +296,51 @@ class NotificationHelper {
       if (users.isNotEmpty) {
         // Only schedule if the scheduled time is in the future
         if (scheduledDateTime.isAfter(DateTime.now())) {
+          // Group users by timezone for accurate time display
+          final usersByTimezone = <String, List<String>>{};
+          for (final user in users) {
+            final timezone = user.timezone ?? TimezoneHelper.getDeviceTimezone();
+            usersByTimezone.putIfAbsent(timezone, () => []).add(user.id);
+          }
+
           // Use the proper title format for initial notification
           final title = formatMeetingNotificationTitle(1440); // Initial notification
 
-          // Create generic message (no personalization for performance)
-          final message = formatMeetingNotificationMessage(
-            userName: '', // Empty - not used for initial notifications
-            meetingTitle: meetingTitle,
-            meetingDateTime: meetingDateTime,
-            reminderMinutes: 1440, // Initial notification (1 day)
-            isInitialNotification: true,
-          );
+          // Schedule separate batched notifications per timezone group
+          for (final entry in usersByTimezone.entries) {
+            final timezone = entry.key;
+            final userIds = entry.value;
 
-          // OPTIMIZED: Batch all user IDs and send in ONE API call
-          final userIds = users.map((u) => u.id).toList();
+            // Create timezone-specific message
+            final message = formatMeetingNotificationMessage(
+              userName: '', // Empty - not used for initial notifications
+              meetingTitle: meetingTitle,
+              meetingDateTime: meetingDateTime,
+              reminderMinutes: 1440, // Initial notification (1 day)
+              isInitialNotification: true,
+              recipientTimezone: timezone,
+            );
 
-          // Schedule notification via OneSignal for all users at once
-          await _notificationService.scheduleNotification(
-            userIds: userIds, // Send to all users at once
-            title: title,
-            message: message,
-            scheduledDate: scheduledDateTime,
-            data: {
-              'type': 'meeting_reminder',
-              'meeting_id': meetingId,
-              'screen': 'meeting_details',
-              'is_initial_notification': true,
-              'url': 'agbcapp://meeting/$meetingId', // Deep link URL
-            },
-          );
+            // Schedule notification via OneSignal for this timezone group
+            await _notificationService.scheduleNotification(
+              userIds: userIds,
+              title: title,
+              message: message,
+              scheduledDate: scheduledDateTime,
+              data: {
+                'type': 'meeting_reminder',
+                'meeting_id': meetingId,
+                'screen': 'meeting_details',
+                'is_initial_notification': true,
+                'url': 'agbcapp://meeting/$meetingId', // Deep link URL
+              },
+            );
+
+            debugPrint('Scheduled notification for ${userIds.length} users in timezone $timezone');
+          }
 
           debugPrint(
-              'Successfully scheduled batched initial meeting notification for ${users.length} users${branchId != null ? " in branch" : " (global)"} at $scheduledDateTime');
+              'Successfully scheduled batched initial meeting notification for ${users.length} users in ${usersByTimezone.length} timezone(s)${branchId != null ? " in branch" : " (global)"} at $scheduledDateTime');
         } else {
           debugPrint(
               'Skipping initial notification scheduling - scheduled time is in the past');
@@ -359,7 +385,7 @@ class NotificationHelper {
   }
 
   /// Schedule a single notification via OneSignal
-  /// OPTIMIZED: Uses batched notifications for maximum performance
+  /// OPTIMIZED: Uses batched notifications grouped by timezone for accurate time display
   static Future<void> _scheduleNotificationViaOneSignal({
     required SupabaseProvider supabaseProvider,
     required NotificationService notificationService,
@@ -376,38 +402,51 @@ class NotificationHelper {
 
       // Only schedule if the send time is in the future
       if (sendTime.isAfter(DateTime.now())) {
+        // Group users by timezone for accurate time display
+        final usersByTimezone = <String, List<String>>{};
+        for (final user in branchUsers) {
+          final timezone = user.timezone ?? TimezoneHelper.getDeviceTimezone();
+          usersByTimezone.putIfAbsent(timezone, () => []).add(user.id as String);
+        }
+
         // Format notification title
         final title = formatMeetingNotificationTitle(reminderMinutes);
 
-        // Create generic message (no personalization for performance)
-        final message = formatMeetingNotificationMessage(
-          userName: '', // Empty - will be handled by formatMeetingNotificationMessage
-          meetingTitle: meetingTitle,
-          meetingDateTime: meetingDateTime,
-          reminderMinutes: reminderMinutes,
-          isInitialNotification: false,
-        );
+        // Schedule separate batched notifications per timezone group
+        for (final entry in usersByTimezone.entries) {
+          final timezone = entry.key;
+          final userIds = entry.value;
 
-        // OPTIMIZED: Batch all user IDs and send in ONE API call
-        final userIds = branchUsers.map((u) => u.id as String).toList();
+          // Create timezone-specific message
+          final message = formatMeetingNotificationMessage(
+            userName: '', // Empty - will be handled by formatMeetingNotificationMessage
+            meetingTitle: meetingTitle,
+            meetingDateTime: meetingDateTime,
+            reminderMinutes: reminderMinutes,
+            isInitialNotification: false,
+            recipientTimezone: timezone,
+          );
 
-        // Schedule notification via OneSignal for all users at once
-        await notificationService.scheduleNotification(
-          userIds: userIds, // Send to all users at once
-          title: title,
-          message: message,
-          scheduledDate: sendTime,
-          data: {
-            'type': 'meeting_reminder',
-            'meeting_id': meetingId,
-            'screen': 'meeting_details',
-            'reminder_minutes': reminderMinutes,
-            'url': 'agbcapp://meeting/$meetingId', // Deep link URL
-          },
-        );
+          // Schedule notification via OneSignal for this timezone group
+          await notificationService.scheduleNotification(
+            userIds: userIds,
+            title: title,
+            message: message,
+            scheduledDate: sendTime,
+            data: {
+              'type': 'meeting_reminder',
+              'meeting_id': meetingId,
+              'screen': 'meeting_details',
+              'reminder_minutes': reminderMinutes,
+              'url': 'agbcapp://meeting/$meetingId', // Deep link URL
+            },
+          );
+
+          debugPrint('Scheduled reminder for ${userIds.length} users in timezone $timezone');
+        }
 
         debugPrint(
-            'Successfully scheduled batched notification for ${branchUsers.length} users at $reminderMinutes minutes before meeting');
+            'Successfully scheduled batched notification for ${branchUsers.length} users in ${usersByTimezone.length} timezone(s) at $reminderMinutes minutes before meeting');
       } else {
         debugPrint(
             'Skipping notification scheduling for $reminderMinutes minutes - send time is in the past');
@@ -425,11 +464,15 @@ class NotificationHelper {
     required DateTime meetingDateTime,
     required int reminderMinutes,
     required bool isInitialNotification,
+    String recipientTimezone = 'UTC',
   }) {
-    final dayName = DateFormat('EEEE').format(meetingDateTime);
+    // Convert UTC meeting time to recipient's timezone
+    final localDateTime = TimezoneHelper.convertFromUtc(meetingDateTime, recipientTimezone);
+
+    final dayName = DateFormat('EEEE').format(localDateTime);
     final formattedDate =
-        DateFormat('d\'th of MMMM, yyyy').format(meetingDateTime);
-    final formattedTime = DateFormat('h:mm a').format(meetingDateTime);
+        DateFormat('d\'th of MMMM, yyyy').format(localDateTime);
+    final formattedTime = DateFormat('h:mm a').format(localDateTime);
 
     if (isInitialNotification || reminderMinutes >= 1440) {
       return 'Your church family has a meeting on $dayName $formattedDate at $formattedTime. There\'s no church without U 😊';

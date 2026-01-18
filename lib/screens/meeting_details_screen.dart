@@ -4,7 +4,6 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:remixicon/remixicon.dart';
-import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/meeting_model.dart';
 import '../models/meeting_response_model.dart';
@@ -13,6 +12,7 @@ import '../models/initial_notification_config.dart';
 import '../providers/supabase_provider.dart';
 import '../services/auth_service.dart';
 import '../utils/theme.dart';
+import '../utils/timezone_helper.dart';
 import '../widgets/custom_back_button.dart';
 import '../widgets/custom_input.dart';
 
@@ -38,7 +38,7 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
   bool _canViewAttendance = false;
   String? _reasonText;
   final TextEditingController _reasonController = TextEditingController();
-  
+
   // Auto-save state variables
   Timer? _autoSaveTimer;
   bool _isAutoSaving = false;
@@ -51,7 +51,7 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
     super.initState();
     _meeting = widget.meeting;
     _loadMeetingData();
-    
+
     // Set status bar to transparent with dark icons
     SystemChrome.setSystemUIOverlayStyle(
       const SystemUiOverlayStyle(
@@ -78,8 +78,9 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
   }
 
   Future<void> _loadMeetingData() async {
-    final supabaseProvider = Provider.of<SupabaseProvider>(context, listen: false);
-    
+    final supabaseProvider =
+        Provider.of<SupabaseProvider>(context, listen: false);
+
     setState(() {
       _isLoading = true;
     });
@@ -96,7 +97,8 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
       });
 
       // Load user's current response
-      final userResponse = await supabaseProvider.getUserMeetingResponse(_meeting.id);
+      final userResponse =
+          await supabaseProvider.getUserMeetingResponse(_meeting.id);
       if (mounted) {
         setState(() {
           _userResponse = userResponse;
@@ -106,7 +108,7 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
             _reasonController.text = _reasonText!;
           }
         });
-        
+
         // Set up auto-save listener for reason field
         _setupAutoSaveListener();
       }
@@ -121,7 +123,8 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
 
       // Load attendance summary if user can view it
       if (canView) {
-        final summary = await supabaseProvider.getMeetingAttendanceSummary(_meeting.id);
+        final summary =
+            await supabaseProvider.getMeetingAttendanceSummary(_meeting.id);
         if (mounted) {
           setState(() {
             _attendanceSummary = summary;
@@ -160,7 +163,7 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
     }
 
     final currentText = _reasonController.text.trim();
-    
+
     // Don't auto-save if text hasn't changed from last saved version
     if (currentText == (_lastSavedReason ?? '')) {
       return;
@@ -168,7 +171,7 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
 
     // Cancel existing timer
     _autoSaveTimer?.cancel();
-    
+
     // Reset auto-save status
     setState(() {
       _autoSaveSuccess = false;
@@ -200,8 +203,9 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
     });
 
     try {
-      final supabaseProvider = Provider.of<SupabaseProvider>(context, listen: false);
-      
+      final supabaseProvider =
+          Provider.of<SupabaseProvider>(context, listen: false);
+
       await supabaseProvider.submitMeetingResponse(
         meetingId: _meeting.id,
         responseType: ResponseType.notAttending,
@@ -213,7 +217,7 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
           _lastSavedReason = reasonText;
           _autoSaveSuccess = true;
           _autoSaveError = null;
-          
+
           // Update the user response model
           _userResponse = _userResponse!.copyWith(
             reason: reasonText.isEmpty ? null : reasonText,
@@ -247,16 +251,17 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
   }
 
   Future<void> _submitResponse(ResponseType responseType) async {
-    final supabaseProvider = Provider.of<SupabaseProvider>(context, listen: false);
-    
+    final supabaseProvider =
+        Provider.of<SupabaseProvider>(context, listen: false);
+
     // Clear reason text if not selecting "Not Attending"
     if (responseType != ResponseType.notAttending) {
       _reasonController.clear();
     }
-    
+
     // Cancel any pending auto-save and reset auto-save state
     _autoSaveTimer?.cancel();
-    
+
     setState(() {
       _isLoading = true;
       _isAutoSaving = false;
@@ -265,10 +270,12 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
     });
 
     try {
-      final reasonText = responseType == ResponseType.notAttending 
-          ? (_reasonController.text.trim().isEmpty ? null : _reasonController.text.trim())
+      final reasonText = responseType == ResponseType.notAttending
+          ? (_reasonController.text.trim().isEmpty
+              ? null
+              : _reasonController.text.trim())
           : null;
-          
+
       await supabaseProvider.submitMeetingResponse(
         meetingId: _meeting.id,
         responseType: responseType,
@@ -297,7 +304,8 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
 
         // Reload attendance summary if user can view it
         if (_canViewAttendance) {
-          final summary = await supabaseProvider.getMeetingAttendanceSummary(_meeting.id);
+          final summary =
+              await supabaseProvider.getMeetingAttendanceSummary(_meeting.id);
           if (mounted) {
             setState(() {
               _attendanceSummary = summary;
@@ -349,7 +357,7 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
   Widget _buildRSVPButton(ResponseType responseType) {
     final isSelected = _userResponse?.responseType == responseType;
     final color = _getResponseColor(responseType);
-    
+
     return Expanded(
       child: GestureDetector(
         onTap: _isLoading ? null : () => _submitResponse(responseType),
@@ -359,13 +367,15 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
             color: isSelected ? color : Colors.white,
             border: Border.all(color: color, width: 2),
             borderRadius: BorderRadius.circular(8),
-            boxShadow: isSelected ? [
-              BoxShadow(
-                color: color.withValues(alpha: 0.3),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ] : null,
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: color.withValues(alpha: 0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : null,
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -395,7 +405,8 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
     );
   }
 
-  Widget _buildInfoCard(String title, String value, Color color, IconData icon) {
+  Widget _buildInfoCard(
+      String title, String value, Color color, IconData icon) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -476,7 +487,9 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
             ],
           ),
           const SizedBox(height: 8),
-          if (_meeting.isVirtual && _meeting.meetingLink != null && _meeting.meetingLink!.isNotEmpty)
+          if (_meeting.isVirtual &&
+              _meeting.meetingLink != null &&
+              _meeting.meetingLink!.isNotEmpty)
             // Clickable Virtual Meeting Link
             InkWell(
               onTap: () => _openMeetingLink(_meeting.meetingLink!),
@@ -597,12 +610,13 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
 
       // 4. If all methods failed, show fallback options
       if (!launched) {
-        _showErrorWithFallback(normalizedUrl, 'Unable to open meeting link automatically');
+        _showErrorWithFallback(
+            normalizedUrl, 'Unable to open meeting link automatically');
       }
-
     } catch (e) {
       debugPrint('URL parsing error: $e');
-      _showErrorWithFallback(url, 'Error processing meeting link: ${e.toString()}');
+      _showErrorWithFallback(
+          url, 'Error processing meeting link: ${e.toString()}');
     }
   }
 
@@ -619,7 +633,7 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
     if (uri.scheme.isEmpty || uri.host.isEmpty) {
       return false;
     }
-    
+
     // Check for common meeting platforms
     final validSchemes = ['http', 'https', 'zoom', 'teams', 'meet'];
     return validSchemes.contains(uri.scheme.toLowerCase());
@@ -627,7 +641,7 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
 
   void _showSuccessMessage() {
     if (!mounted) return;
-    
+
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -651,7 +665,7 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
     if (!mounted) return;
 
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -763,7 +777,7 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
     }
 
     final summary = _attendanceSummary!;
-    
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -799,7 +813,7 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
             ],
           ),
           const SizedBox(height: 16),
-          
+
           // Summary stats
           Row(
             children: [
@@ -828,7 +842,7 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
               ),
             ],
           ),
-          
+
           if (summary.responses.isNotEmpty) ...[
             const SizedBox(height: 16),
             Text(
@@ -840,7 +854,8 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
               ),
             ),
             const SizedBox(height: 8),
-            ...summary.responses.map((response) => _buildResponseItem(response)),
+            ...summary.responses
+                .map((response) => _buildResponseItem(response)),
           ],
         ],
       ),
@@ -879,7 +894,7 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
 
   Widget _buildResponseItem(MeetingResponseWithUser response) {
     final color = _getResponseColor(response.responseType);
-    
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
@@ -959,7 +974,11 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
           if (_meeting.recurrenceEndDate != null)
             _buildRecurringInfoRow(
               'Ends',
-              DateFormat('MMM dd, yyyy').format(_meeting.recurrenceEndDate!),
+              TimezoneHelper.formatInTimezone(
+                _meeting.recurrenceEndDate!,
+                TimezoneHelper.getDeviceTimezone(),
+                'MMM dd, yyyy',
+              ),
             )
           else
             _buildRecurringInfoRow(
@@ -1011,7 +1030,7 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
 
   Widget _buildNotificationStatus() {
     final config = _meeting.initialNotificationConfig;
-    
+
     // If no notification config, don't show the section
     if (config == null) {
       return const SizedBox.shrink();
@@ -1039,13 +1058,14 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
       if (config.scheduledDateTime != null) {
         final now = DateTime.now();
         final scheduledTime = config.scheduledDateTime!;
-        
+
         if (_meeting.initialNotificationSent) {
           statusText = 'Scheduled notification sent';
           statusColor = Colors.green;
           statusIcon = Remix.notification_line;
         } else if (scheduledTime.isAfter(now)) {
-          statusText = 'Notification scheduled for ${DateFormat('MMM dd, h:mm a').format(scheduledTime)}';
+          statusText =
+              'Notification scheduled for ${TimezoneHelper.formatInTimezone(scheduledTime, TimezoneHelper.getDeviceTimezone(), 'MMM dd, h:mm a')}';
           statusColor = Colors.blue;
           statusIcon = Remix.time_line;
         } else {
@@ -1119,7 +1139,8 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
               ),
             ],
           ),
-          if (_meeting.initialNotificationSent && _meeting.initialNotificationSentAt != null) ...[
+          if (_meeting.initialNotificationSent &&
+              _meeting.initialNotificationSentAt != null) ...[
             const SizedBox(height: 8),
             Row(
               children: [
@@ -1130,7 +1151,7 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  'Sent on ${DateFormat('MMM dd, h:mm a').format(_meeting.initialNotificationSentAt!)}',
+                  'Sent on ${TimezoneHelper.formatInTimezone(_meeting.initialNotificationSentAt!, TimezoneHelper.getDeviceTimezone(), 'MMM dd, h:mm a')}',
                   style: GoogleFonts.inter(
                     fontSize: 12,
                     color: Colors.green,
@@ -1175,7 +1196,7 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
                   ],
                 ),
               ),
-              
+
               Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
@@ -1241,10 +1262,8 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
                     const SizedBox(height: 16),
 
                     // Recurring Meeting Info
-                    if (_meeting.isRecurring)
-                      _buildRecurringInfo(),
-                    if (_meeting.isRecurring)
-                      const SizedBox(height: 16),
+                    if (_meeting.isRecurring) _buildRecurringInfo(),
+                    if (_meeting.isRecurring) const SizedBox(height: 16),
 
                     // Date, Time, and Location
                     Row(
@@ -1252,7 +1271,11 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
                         Expanded(
                           child: _buildInfoCard(
                             'Date',
-                            DateFormat('MMM dd, yyyy').format(_meeting.dateTime),
+                            TimezoneHelper.formatInTimezone(
+                              _meeting.dateTime,
+                              TimezoneHelper.getDeviceTimezone(),
+                              'MMM dd, yyyy',
+                            ),
                             AppTheme.primaryColor,
                             Remix.calendar_line,
                           ),
@@ -1261,7 +1284,11 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
                         Expanded(
                           child: _buildInfoCard(
                             'Time',
-                            DateFormat('h:mm a').format(_meeting.dateTime),
+                            TimezoneHelper.formatInTimezone(
+                              _meeting.dateTime,
+                              TimezoneHelper.getDeviceTimezone(),
+                              'h:mm a',
+                            ),
                             AppTheme.primaryColor,
                             Remix.time_line,
                           ),
@@ -1293,8 +1320,10 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
                     Consumer<AuthService>(
                       builder: (context, authService, child) {
                         final currentUser = authService.currentUserProfile;
-                        final canViewNotificationStatus = currentUser?.isAdmin == true || currentUser?.isPastor == true;
-                        
+                        final canViewNotificationStatus =
+                            currentUser?.isAdmin == true ||
+                                currentUser?.isPastor == true;
+
                         if (canViewNotificationStatus) {
                           return Column(
                             children: [
@@ -1312,8 +1341,9 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
                     Consumer<AuthService>(
                       builder: (context, authService, child) {
                         final currentUser = authService.currentUserProfile;
-                        final canRSVP = _meeting.shouldNotify(currentUser?.branchId);
-                        
+                        final canRSVP =
+                            _meeting.shouldNotify(currentUser?.branchId);
+
                         if (canRSVP) {
                           return Container(
                             padding: const EdgeInsets.all(16),
@@ -1350,7 +1380,7 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
                                   ],
                                 ),
                                 const SizedBox(height: 16),
-                                
+
                                 // RSVP Buttons
                                 Row(
                                   children: [
@@ -1362,9 +1392,10 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
                                   ],
                                 ),
                                 const SizedBox(height: 16),
-                                
+
                                 // Reason Text Field - Only show for "Not Attending"
-                                if (_userResponse?.responseType == ResponseType.notAttending)
+                                if (_userResponse?.responseType ==
+                                    ResponseType.notAttending)
                                   _buildReasonFieldWithAutoSave(),
                               ],
                             ),
@@ -1378,7 +1409,7 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
 
                     // Attendance Summary (for authorized users)
                     _buildAttendanceSummary(),
-                    
+
                     // Loading indicator
                     if (_isLoading)
                       const Center(
@@ -1411,7 +1442,7 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
           enabled: !_isLoading,
         ),
         const SizedBox(height: 8),
-        
+
         // Auto-save status and helper text
         Row(
           children: [

@@ -1,11 +1,19 @@
 mixin FormValidationMixin {
   String? validateEmail(String? value) {
-    if (value == null || value.isEmpty) {
+    if (value == null || value.trim().isEmpty) {
       return 'Please enter your email';
     }
+
+    final trimmedValue = value.trim();
+
+    // Check maximum length (standard email max length is 254 characters)
+    if (trimmedValue.length > 254) {
+      return 'Email must be less than 254 characters';
+    }
+
     // Enhanced email validation
     final emailRegex = RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
-    if (!emailRegex.hasMatch(value)) {
+    if (!emailRegex.hasMatch(trimmedValue)) {
       return 'Please enter a valid email';
     }
     return null;
@@ -18,16 +26,49 @@ mixin FormValidationMixin {
     if (value.length < 6) {
       return 'Password must be at least 6 characters';
     }
+    // Maximum length check (reasonable limit for passwords)
+    if (value.length > 128) {
+      return 'Password must be less than 128 characters';
+    }
     return null;
   }
 
   String? validateName(String? value) {
-    if (value == null || value.isEmpty) {
+    if (value == null || value.trim().isEmpty) {
       return 'Please enter your name';
     }
-    if (value.length < 2) {
+
+    final trimmedValue = value.trim();
+
+    // Check minimum length
+    if (trimmedValue.length < 2) {
       return 'Name must be at least 2 characters';
     }
+
+    // Check maximum length (reasonable limit for names)
+    if (trimmedValue.length > 100) {
+      return 'Name must be less than 100 characters';
+    }
+
+    // Check for at least first and last name (two words)
+    final nameParts = trimmedValue.split(RegExp(r'\s+'));
+    if (nameParts.length < 2) {
+      return 'Please enter both first and last name';
+    }
+
+    // Check each name part is at least 2 characters
+    for (final part in nameParts) {
+      if (part.length < 2) {
+        return 'Each name must be at least 2 characters';
+      }
+    }
+
+    // Check for valid characters (letters, spaces, hyphens, apostrophes)
+    final nameRegex = RegExp(r"^[a-zA-Z\s\-']+$");
+    if (!nameRegex.hasMatch(trimmedValue)) {
+      return 'Name can only contain letters, spaces, hyphens, and apostrophes';
+    }
+
     return null;
   }
 
@@ -92,12 +133,14 @@ mixin FormValidationMixin {
   }
 
   String? validatePhone(String? value) {
-    if (value == null || value.isEmpty) {
+    if (value == null || value.trim().isEmpty) {
       return 'Please enter your phone number';
     }
 
-    // Remove spaces, dashes, and parentheses for validation
-    final cleanedValue = value.replaceAll(RegExp(r'[\s\-\(\)]'), '');
+    final trimmedValue = value.trim();
+
+    // Remove spaces, dashes, dots, and parentheses for validation
+    final cleanedValue = trimmedValue.replaceAll(RegExp(r'[\s\-\(\)\.]'), '');
 
     // Check if it starts with + (country code required)
     if (!cleanedValue.startsWith('+')) {

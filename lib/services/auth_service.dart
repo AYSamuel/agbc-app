@@ -26,8 +26,11 @@ class AuthService extends ChangeNotifier {
   /// Returns whether the service is currently loading
   bool get isLoading => _isLoading;
 
-  /// Returns whether a user is currently authenticated
-  bool get isAuthenticated => currentUser != null;
+  /// Returns whether a user is currently authenticated with a valid profile
+  /// A user is considered authenticated only if they have both:
+  /// 1. A valid auth session (currentUser != null)
+  /// 2. A valid user profile in the database (currentUserProfile != null)
+  bool get isAuthenticated => currentUser != null && _currentUserProfile != null;
 
   /// Initialize the auth service and load current user profile if authenticated
   Future<void> initialize() async {
@@ -40,6 +43,13 @@ class AuthService extends ChangeNotifier {
       }
     } catch (e) {
       debugPrint('Error initializing auth service: $e');
+
+      // If user profile doesn't exist in database, sign out the user
+      // This handles the case where a user was deleted from the backend
+      if (currentUser != null && _currentUserProfile == null) {
+        debugPrint('User profile not found in database - signing out user');
+        await signOut();
+      }
     } finally {
       _isLoading = false;
       notifyListeners();

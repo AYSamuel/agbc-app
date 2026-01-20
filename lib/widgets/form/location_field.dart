@@ -10,7 +10,6 @@ class LocationField extends StatefulWidget {
   final bool enableGeocoding;
   final bool showSuggestions;
   final Map<String, String>? initialLocation;
-  final GlobalKey<FormState>? formKey;
 
   const LocationField({
     super.key,
@@ -19,7 +18,6 @@ class LocationField extends StatefulWidget {
     this.enableGeocoding = true,
     this.showSuggestions = true,
     this.initialLocation,
-    this.formKey,
   });
 
   @override
@@ -34,10 +32,9 @@ class _LocationFieldState extends State<LocationField>
   Timer? _debounceTimer;
   String? _errorMessage;
   bool _isValidating = false;
-
-  // Remove the custom city focus node and listener since we'll use the autocomplete's focus node
-  // late FocusNode _cityFocusNode;
-  // late VoidCallback _cityFocusListener;
+  bool _isLoadingSuggestions = false;
+  FocusNode? _trackedFocusNode;
+  VoidCallback? _focusListener;
 
   @override
   void initState() {
@@ -54,6 +51,11 @@ class _LocationFieldState extends State<LocationField>
   void dispose() {
     // Cancel any pending timer first
     _debounceTimer?.cancel();
+
+    // Remove focus listener if exists
+    if (_trackedFocusNode != null && _focusListener != null) {
+      _trackedFocusNode!.removeListener(_focusListener!);
+    }
 
     // Dispose controllers
     _cityController.dispose();
@@ -95,27 +97,12 @@ class _LocationFieldState extends State<LocationField>
           _errorMessage = error;
           _isValidating = false;
         });
-
-        // Trigger form validation after async validation completes
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          // Always trigger validation after async validation completes
-          if (widget.formKey != null) {
-            widget.formKey!.currentState!.validate();
-          }
-        });
       }
     } catch (e) {
       if (mounted) {
         setState(() {
           _errorMessage = 'Error validating location';
           _isValidating = false;
-        });
-
-        // Also trigger validation on error
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (widget.formKey != null) {
-            widget.formKey!.currentState!.validate();
-          }
         });
       }
     }
@@ -150,8 +137,25 @@ class _LocationFieldState extends State<LocationField>
           optionsBuilder: (TextEditingValue textEditingValue) async {
             // Only show options if has sufficient text
             if (textEditingValue.text.length < 2) {
+              // Schedule setState after build
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted && _isLoadingSuggestions) {
+                  setState(() {
+                    _isLoadingSuggestions = false;
+                  });
+                }
+              });
               return const Iterable<Map<String, String>>.empty();
             }
+
+            // Set loading state after build completes
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted && !_isLoadingSuggestions) {
+                setState(() {
+                  _isLoadingSuggestions = true;
+                });
+              }
+            });
 
             try {
               final query = _countryController.text.isNotEmpty
@@ -159,8 +163,25 @@ class _LocationFieldState extends State<LocationField>
                   : textEditingValue.text;
               final suggestions = await getLocationSuggestions(query);
 
+              // Schedule setState after build
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted && _isLoadingSuggestions) {
+                  setState(() {
+                    _isLoadingSuggestions = false;
+                  });
+                }
+              });
+
               return suggestions;
             } catch (e) {
+              // Schedule setState after build
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted && _isLoadingSuggestions) {
+                  setState(() {
+                    _isLoadingSuggestions = false;
+                  });
+                }
+              });
               return const Iterable<Map<String, String>>.empty();
             }
           },
@@ -172,6 +193,7 @@ class _LocationFieldState extends State<LocationField>
               if (selection['country']?.isNotEmpty == true) {
                 _countryController.text = selection['country'] ?? '';
               }
+              _isLoadingSuggestions = false; // Reset loading state
             });
             _onLocationChanged();
 
@@ -179,54 +201,75 @@ class _LocationFieldState extends State<LocationField>
             FocusScope.of(context).unfocus();
           },
           fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
-            // Use a post-frame callback to sync controllers safely
+            // Sync autocomplete controller with our city controller after build
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (controller.text != _cityController.text) {
                 controller.text = _cityController.text;
+                controller.selection = TextSelection.collapsed(
+                  offset: controller.text.length,
+                );
               }
             });
 
-            // Add focus listener for validation when field loses focus
-            focusNode.addListener(() {
-              if (!focusNode.hasFocus) {
-                // City field lost focus, trigger validation immediately
-                final city = _cityController.text.trim();
-                final country = _countryController.text.trim();
+            // Add focus listener only once per focus node
+            if (_trackedFocusNode != focusNode) {
+              // Remove old listener if exists
+              if (_trackedFocusNode != null && _focusListener != null) {
+                _trackedFocusNode!.removeListener(_focusListener!);
+              }
 
-                if (city.isNotEmpty &&
-                    country.isNotEmpty &&
-                    widget.enableGeocoding) {
-                  // Cancel any pending debounced validation
-                  _debounceTimer?.cancel();
-                  // Trigger immediate validation
-                  _validateWithGeocoding();
+              // Create new listener
+              _focusListener = () {
+                if (!focusNode.hasFocus && _isLoadingSuggestions) {
+                  // Field lost focus, clear loading state
+                  setState(() {
+                    _isLoadingSuggestions = false;
+                  });
                 }
-              }
-            });
+              };
+
+              // Add listener to new focus node
+              focusNode.addListener(_focusListener!);
+              _trackedFocusNode = focusNode;
+            }
 
             return CustomInput(
               label: 'City',
               controller: controller,
               focusNode:
                   focusNode, // Use the autocomplete's provided focus node
-              hint: 'Enter your city',
+              hint: 'Start typing for suggestions...',
               prefixIcon:
                   const Icon(Icons.location_city, color: AppTheme.primaryColor),
               textInputAction: TextInputAction.next,
               onChanged: (value) {
                 _cityController.text = value;
+                // Clear country when user manually edits city
+                // This ensures country is only filled when user selects from dropdown
+                if (_countryController.text.isNotEmpty) {
+                  setState(() {
+                    _countryController.text = '';
+                    _errorMessage = null; // Clear any validation errors
+                  });
+                }
                 _onCityChanged();
               },
-              validator: widget.validator != null
-                  ? (String? value) {
-                      // Convert the string value to a map for the LocationField validator
-                      final locationMap = {
-                        'city': _cityController.text,
-                        'country': _countryController.text,
-                      };
-                      return widget.validator!(locationMap);
-                    }
-                  : null,
+              validator: (String? value) {
+                // Use custom validator if provided, otherwise use default
+                if (widget.validator != null) {
+                  final locationMap = {
+                    'city': _cityController.text,
+                    'country': _countryController.text,
+                  };
+                  return widget.validator!(locationMap);
+                }
+
+                // Default validation: ensure city is not empty
+                if (value == null || value.trim().isEmpty) {
+                  return 'Please enter your city';
+                }
+                return null;
+              },
               errorText: _errorMessage,
             );
           },
@@ -249,47 +292,150 @@ class _LocationFieldState extends State<LocationField>
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: Colors.grey.shade300),
                   ),
-                  child: ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: options.length,
-                    itemBuilder: (context, index) {
-                      final option = options.elementAt(index);
-                      return ListTile(
-                        dense: true,
-                        leading: const Icon(
-                          Icons.location_city,
-                          size: 16,
-                          color: AppTheme.primaryColor,
-                        ),
-                        title: Text(
-                          option['city'] ?? '',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: Colors.black87,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        subtitle: option['country']?.isNotEmpty == true
-                            ? Text(
-                                option['country']!,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey.shade600,
+                  child: _isLoadingSuggestions && options.isEmpty
+                      ? Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(24.0),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2.5,
+                                    color: AppTheme.primaryColor,
+                                  ),
                                 ),
-                              )
-                            : null,
-                        onTap: () => onSelected(option),
-                        hoverColor: Colors.grey.shade100,
-                        splashColor:
-                            AppTheme.primaryColor.withValues(alpha: 0.1),
-                      );
-                    },
-                  ),
+                                const SizedBox(height: 12),
+                                Text(
+                                  'Searching for cities...',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: Colors.grey.shade600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        )
+                      : options.isEmpty
+                          ? Center(
+                              child: Padding(
+                                padding: const EdgeInsets.all(24.0),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.search_off,
+                                      size: 32,
+                                      color: Colors.grey.shade400,
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      'No cities found',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: Colors.grey.shade600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            )
+                          : ListView.builder(
+                              shrinkWrap: true,
+                              itemCount: options.length,
+                              itemBuilder: (context, index) {
+                                final option = options.elementAt(index);
+                                return ListTile(
+                                  dense: true,
+                                  leading: const Icon(
+                                    Icons.location_city,
+                                    size: 16,
+                                    color: AppTheme.primaryColor,
+                                  ),
+                                  title: Text(
+                                    option['city'] ?? '',
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.black87,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  subtitle: option['country']?.isNotEmpty == true
+                                      ? Text(
+                                          option['country']!,
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.grey.shade600,
+                                          ),
+                                        )
+                                      : null,
+                                  onTap: () => onSelected(option),
+                                  hoverColor: Colors.grey.shade100,
+                                  splashColor:
+                                      AppTheme.primaryColor.withValues(alpha: 0.1),
+                                );
+                              },
+                            ),
                 ),
               ),
             );
           },
         ),
+
+        // Helper text for autocomplete
+        if (_cityController.text.isEmpty ||
+            (_cityController.text.isNotEmpty &&
+                _cityController.text.length < 2 &&
+                !_isLoadingSuggestions)) ...[
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Icon(
+                Icons.info_outline,
+                size: 14,
+                color: Colors.grey.shade600,
+              ),
+              const SizedBox(width: 4),
+              Text(
+                'Type at least 2 characters to see city suggestions',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey.shade600,
+                ),
+              ),
+            ],
+          ),
+        ],
+
+        // Loading suggestions indicator (alternative position)
+        if (_isLoadingSuggestions &&
+            _cityController.text.length >= 2 &&
+            !_isValidating) ...[
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              SizedBox(
+                width: 12,
+                height: 12,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.blue.shade600,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Searching for cities...',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.blue.shade600,
+                ),
+              ),
+            ],
+          ),
+        ],
 
         const SizedBox(height: 16),
 
@@ -303,7 +449,7 @@ class _LocationFieldState extends State<LocationField>
           textInputAction: TextInputAction.done,
           validator: (value) {
             if (value == null || value.trim().isEmpty) {
-              return 'Please select a city first';
+              return 'Please select a city from the suggestions above';
             }
             return null;
           },

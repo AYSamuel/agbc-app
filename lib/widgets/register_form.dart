@@ -232,13 +232,6 @@ class _RegisterFormState extends State<RegisterForm> with FormValidationMixin {
                   _locationData = location;
                 });
               },
-              validator: (location) {
-                if (location['city']?.isEmpty == true ||
-                    location['country']?.isEmpty == true) {
-                  return 'Both city and country are required';
-                }
-                return null;
-              },
             ),
             const FormSpacing(),
 

@@ -57,10 +57,16 @@ class _PasswordFieldState extends State<PasswordField> {
       ),
       validator: widget.isConfirmField
           ? (value) {
+              // First check basic password requirements
+              final basicValidation = widget.validator?.call(value);
+              if (basicValidation != null) {
+                return basicValidation;
+              }
+              // Then check if passwords match
               if (value != widget.confirmController?.text) {
                 return 'Passwords do not match';
               }
-              return widget.validator?.call(value);
+              return null;
             }
           : widget.validator,
     );

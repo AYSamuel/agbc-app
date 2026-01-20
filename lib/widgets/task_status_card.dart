@@ -74,8 +74,8 @@ class _TaskStatusCardState extends State<TaskStatusCard> {
           const SizedBox(height: 8),
           Text(
             hasTasks
-                ? 'You have $taskCount ${taskCount == 1 ? 'task' : 'tasks'} assigned to you'
-                : 'You don\'t have any tasks assigned to you',
+                ? 'You are currently involved in $taskCount ${taskCount == 1 ? 'task' : 'tasks'}'
+                : 'You are not currently involved in any tasks',
             style: const TextStyle(
               fontSize: 14,
               color: AppTheme.neutralColor,

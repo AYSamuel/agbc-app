@@ -69,6 +69,23 @@ class SupabaseProvider extends ChangeNotifier {
     }
   }
 
+  /// Update user branch
+  Future<bool> updateUserBranch(String userId, String? branchId) async {
+    _setLoading(true);
+    try {
+      await _supabase.from('users').update({
+        'branch_id': branchId,
+        'updated_at': DateTime.now().toIso8601String(),
+      }).eq('id', userId);
+      return true;
+    } catch (e) {
+      _setError('Failed to update user branch: $e');
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
   // ==================== BRANCHES ====================
 
   /// Get all branches stream
@@ -256,18 +273,22 @@ class SupabaseProvider extends ChangeNotifier {
       final meetingId = response['id'];
 
       // Create NotificationHelper if none provided
-      final helper = notificationHelper ?? 
+      final helper = notificationHelper ??
           NotificationHelper(
             supabaseProvider: this,
             notificationService: NotificationService(),
           );
 
+      // IMPORTANT: For recurring meetings, only send/schedule notifications for the parent meeting
+      // The database trigger will create child instances, but we should NOT send notifications for all of them at once
+      // Notifications for future occurrences should be scheduled separately (via a background job)
+
       // Handle initial notification based on configuration
-      if (meeting.initialNotificationConfig != null && 
+      if (meeting.initialNotificationConfig != null &&
           meeting.initialNotificationConfig!.enabled) {
-        
+
         final config = meeting.initialNotificationConfig!;
-        
+
         switch (config.timing) {
           case NotificationTiming.immediate:
             // Send immediate notification (for both global and branch-specific meetings)
@@ -296,7 +317,7 @@ class SupabaseProvider extends ChangeNotifier {
               );
             }
             break;
-            
+
           case NotificationTiming.none:
             // No initial notification - do nothing
             break;
@@ -304,6 +325,7 @@ class SupabaseProvider extends ChangeNotifier {
       }
 
       // Schedule reminder notifications if provided
+      // ONLY schedule for the parent meeting, NOT for auto-generated instances
       if (reminderMinutes.isNotEmpty) {
         await scheduleMeetingNotifications(
           meetingId: meetingId,
@@ -557,6 +579,7 @@ class SupabaseProvider extends ChangeNotifier {
 
   /// Get unread notification count for current user
   /// OPTIMIZED: Fetches only IDs instead of full records (lighter query)
+  /// FILTERED: Only counts immediate or due notifications (excludes future scheduled ones)
   Future<int> getUnreadNotificationCount() async {
     try {
       final userId = _supabase.auth.currentUser?.id;
@@ -572,7 +595,8 @@ class SupabaseProvider extends ChangeNotifier {
           .from('notifications')
           .select('id')
           .eq('user_id', userId)
-          .eq('is_read', false);
+          .eq('is_read', false)
+          .or('scheduled_for.is.null,scheduled_for.lte.${DateTime.now().toIso8601String()}'); // Only count immediate or due notifications
 
       final count = response.length;
       debugPrint('Unread notification count for user $userId: $count');
@@ -586,6 +610,7 @@ class SupabaseProvider extends ChangeNotifier {
 
   /// Get notifications for current user
   /// OPTIMIZED: Added pagination to prevent memory issues with large notification lists
+  /// FILTERED: Only shows immediate notifications or scheduled notifications that are due
   /// Default limit: 50 most recent notifications
   Stream<List<NotificationModel>> getUserNotifications({int limit = 50}) {
     final userId = _supabase.auth.currentUser?.id;
@@ -601,8 +626,17 @@ class SupabaseProvider extends ChangeNotifier {
         .eq('user_id', userId)
         .order('created_at', ascending: false)
         .limit(limit) // OPTIMIZED: Limit results to prevent memory issues
-        .map((data) =>
-            data.map((json) => NotificationModel.fromJson(json)).toList());
+        .map((data) {
+          final notifications = data.map((json) => NotificationModel.fromJson(json)).toList();
+          // Filter out future scheduled notifications (client-side filtering)
+          final now = DateTime.now();
+          return notifications.where((notification) {
+            // Show notification if:
+            // 1. It has no scheduled_for (immediate notification), OR
+            // 2. Its scheduled_for time has passed or is now
+            return notification.scheduledFor == null || notification.scheduledFor!.isBefore(now) || notification.scheduledFor!.isAtSameMomentAs(now);
+          }).toList();
+        });
   }
 
   /// Get paginated notifications for current user (for "load more" functionality)

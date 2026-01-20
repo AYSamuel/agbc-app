@@ -144,6 +144,16 @@ class SupabaseProvider extends ChangeNotifier {
         .map((data) => data.map((json) => TaskModel.fromJson(json)).toList());
   }
 
+  /// Get tasks user is involved in (created by them or assigned to them)
+  /// This filters from getAllTasks to only show tasks where user is creator or assignee
+  Stream<List<TaskModel>> getUserInvolvedTasks(String userId) {
+    return getAllTasks().map((tasks) {
+      return tasks.where((task) {
+        return task.assignedTo == userId || task.createdBy == userId;
+      }).toList();
+    });
+  }
+
   /// Create new task
   Future<bool> createTask(TaskModel task) async {
     _setLoading(true);

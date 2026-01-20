@@ -23,6 +23,7 @@ class TasksScreen extends StatefulWidget {
 class _TasksScreenState extends State<TasksScreen> {
   String _selectedFilter = 'all';
   String _selectedSort = 'due_date';
+  String _selectedOwnershipFilter = 'all'; // all, created_by_me, assigned_to_me
 
   @override
   void initState() {
@@ -91,9 +92,11 @@ class _TasksScreenState extends State<TasksScreen> {
                   const Spacer(),
                   IconButton(
                     icon: const Icon(Remix.filter_3_line),
-                    color: const Color(0xFF4B5563),
+                    color: _selectedOwnershipFilter != 'all'
+                        ? const Color(0xFF5B7EBF)
+                        : const Color(0xFF4B5563),
                     onPressed: () {
-                      // Show filter options
+                      _showOwnershipFilterOptions(context);
                     },
                   ),
                 ],
@@ -155,7 +158,7 @@ class _TasksScreenState extends State<TasksScreen> {
               ),
               child: StreamBuilder<List<TaskModel>>(
                 stream: Provider.of<SupabaseProvider>(context)
-                    .getUserTasks(user?.id ?? ''),
+                    .getUserInvolvedTasks(user?.id ?? ''),
                 builder: (context, snapshot) {
                   if (!snapshot.hasData) {
                     return const SizedBox.shrink();
@@ -217,7 +220,7 @@ class _TasksScreenState extends State<TasksScreen> {
             Expanded(
               child: StreamBuilder<List<TaskModel>>(
                 stream: Provider.of<SupabaseProvider>(context)
-                    .getUserTasks(user?.id ?? ''),
+                    .getUserInvolvedTasks(user?.id ?? ''),
                 builder: (context, snapshot) {
                   if (snapshot.hasError) {
                     return Center(
@@ -268,11 +271,7 @@ class _TasksScreenState extends State<TasksScreen> {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            _selectedFilter == 'all'
-                                ? 'You don\'t have any tasks assigned to you'
-                                : _selectedFilter == 'in_progress'
-                                    ? 'You currently have no tasks in progress'
-                                    : 'You have no completed tasks yet',
+                            _getEmptyStateMessage(),
                             style: GoogleFonts.inter(
                               fontSize: 16,
                               color: AppTheme.neutralColor,
@@ -432,6 +431,52 @@ class _TasksScreenState extends State<TasksScreen> {
     );
   }
 
+  void _showOwnershipFilterOptions(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => CustomDrawer(
+        title: 'Filter by',
+        items: [
+          DrawerItem(
+            icon: Remix.list_check,
+            label: 'All Tasks',
+            showChevron: false,
+            onTap: () {
+              setState(() {
+                _selectedOwnershipFilter = 'all';
+              });
+              Navigator.pop(context);
+            },
+          ),
+          DrawerItem(
+            icon: Remix.user_add_line,
+            label: 'Created by Me',
+            showChevron: false,
+            onTap: () {
+              setState(() {
+                _selectedOwnershipFilter = 'created_by_me';
+              });
+              Navigator.pop(context);
+            },
+          ),
+          DrawerItem(
+            icon: Remix.user_received_line,
+            label: 'Assigned to Me',
+            showChevron: false,
+            onTap: () {
+              setState(() {
+                _selectedOwnershipFilter = 'assigned_to_me';
+              });
+              Navigator.pop(context);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
   String _getSortLabel(String sortValue) {
     switch (sortValue) {
       case 'due_date':
@@ -450,8 +495,19 @@ class _TasksScreenState extends State<TasksScreen> {
   }
 
   List<TaskModel> _filterAndSortTasks(List<TaskModel> tasks) {
-    // Apply filter
+    final user = Provider.of<AuthService>(context, listen: false).currentUser;
     var filteredTasks = tasks;
+
+    // Apply ownership filter first
+    if (_selectedOwnershipFilter == 'created_by_me') {
+      filteredTasks =
+          tasks.where((task) => task.createdBy == user?.id).toList();
+    } else if (_selectedOwnershipFilter == 'assigned_to_me') {
+      filteredTasks =
+          tasks.where((task) => task.assignedTo == user?.id).toList();
+    }
+
+    // Apply status filter
     if (_selectedFilter != 'all') {
       TaskStatus? filterStatus;
       switch (_selectedFilter) {
@@ -470,7 +526,7 @@ class _TasksScreenState extends State<TasksScreen> {
       }
       if (filterStatus != null) {
         filteredTasks =
-            tasks.where((task) => task.status == filterStatus).toList();
+            filteredTasks.where((task) => task.status == filterStatus).toList();
       }
     }
 
@@ -522,5 +578,31 @@ class _TasksScreenState extends State<TasksScreen> {
       case TaskStatus.cancelled:
         return 4;
     }
+  }
+
+  String _getEmptyStateMessage() {
+    String ownershipPart = '';
+    if (_selectedOwnershipFilter == 'created_by_me') {
+      ownershipPart = 'created by you';
+    } else if (_selectedOwnershipFilter == 'assigned_to_me') {
+      ownershipPart = 'assigned to you';
+    } else {
+      ownershipPart = 'you\'re involved in';
+    }
+
+    String statusPart = '';
+    if (_selectedFilter == 'all') {
+      return 'You don\'t have any tasks $ownershipPart';
+    } else if (_selectedFilter == 'in_progress') {
+      statusPart = 'in progress';
+    } else if (_selectedFilter == 'completed') {
+      statusPart = 'completed';
+    } else if (_selectedFilter == 'pending') {
+      statusPart = 'pending';
+    } else if (_selectedFilter == 'cancelled') {
+      statusPart = 'cancelled';
+    }
+
+    return 'You currently have no $statusPart tasks $ownershipPart';
   }
 }

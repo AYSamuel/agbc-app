@@ -220,7 +220,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 // Task Status Card
                 StreamBuilder<List<TaskModel>>(
                   stream: Provider.of<SupabaseProvider>(context)
-                      .getUserTasks(userProfile?.id ?? ''),
+                      .getUserInvolvedTasks(userProfile?.id ?? ''),
                   builder: (context, snapshot) {
                     // Show loading state
                     if (snapshot.connectionState == ConnectionState.waiting) {

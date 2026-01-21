@@ -35,15 +35,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   void _showNotificationPanel() {
     if (_overlayEntry != null) return;
 
-    // Mark notifications as seen (Facebook-style behavior)
-    final notificationProvider =
-        Provider.of<NotificationProvider>(context, listen: false);
-    notificationProvider.markAsSeen();
-
     _overlayEntry = OverlayEntry(
       builder: (context) => Positioned(
         top: 100, // Position below the nav bar
-        right: 16,
+        left: 16,
         child: NotificationPanel(
           onClose: _removeOverlay,
         ),

@@ -545,8 +545,10 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
       if (selectedBranchId != widget.user.branchId) {
         _log.info(
             'Updating branch from ${widget.user.branchId} to $selectedBranchId');
-        final updatedUser = widget.user.copyWith(branchId: selectedBranchId);
-        await supabaseProvider.updateUser(updatedUser);
+        await supabaseProvider.updateUserBranch(
+          widget.user.id,
+          selectedBranchId,
+        );
       }
 
       if (!context.mounted) return;

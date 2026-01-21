@@ -84,14 +84,14 @@ class MeetingCard extends StatelessWidget {
                                   color: AppTheme.darkNeutralColor,
                                 ),
                               ),
-                              const SizedBox(height: 8),
+                              const SizedBox(height: 5),
                               Text(
                                 meeting.description,
                                 style: const TextStyle(
                                   fontSize: 14,
                                   color: AppTheme.neutralColor,
                                 ),
-                                maxLines: 2,
+                                maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ],
@@ -99,9 +99,11 @@ class MeetingCard extends StatelessWidget {
                         ),
                         const SizedBox(width: 12),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
-                            color: _getStatusColor(meeting.status).withValues(alpha: 0.15),
+                            color: _getStatusColor(meeting.status)
+                                .withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
@@ -116,7 +118,7 @@ class MeetingCard extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 12),
                     // Date and time
                     Row(
                       children: [
@@ -156,15 +158,21 @@ class MeetingCard extends StatelessWidget {
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Icon(
-                            meeting.isVirtual ? Icons.video_call : Icons.location_on,
+                            meeting.isVirtual
+                                ? Icons.video_call
+                                : Icons.location_on,
                             size: 14,
-                            color: meeting.isVirtual ? Colors.blue : AppTheme.primaryColor,
+                            color: meeting.isVirtual
+                                ? Colors.blue
+                                : AppTheme.primaryColor,
                           ),
                         ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            meeting.isVirtual ? 'Virtual Meeting' : meeting.location,
+                            meeting.isVirtual
+                                ? 'Virtual Meeting'
+                                : meeting.location,
                             style: const TextStyle(
                               fontSize: 13,
                               color: AppTheme.darkNeutralColor,
@@ -176,7 +184,9 @@ class MeetingCard extends StatelessWidget {
                         ),
                       ],
                     ),
-                    if (showActions && meeting.isVirtual && meeting.meetingLink != null) ...[
+                    if (showActions &&
+                        meeting.isVirtual &&
+                        meeting.meetingLink != null) ...[
                       const SizedBox(height: 12),
                       // Meeting link (only shown when showActions is true)
                       Row(
@@ -196,7 +206,8 @@ class MeetingCard extends StatelessWidget {
                           const SizedBox(width: 8),
                           Expanded(
                             child: InkWell(
-                              onTap: () => _launchMeetingLink(context, meeting.meetingLink!),
+                              onTap: () => _launchMeetingLink(
+                                  context, meeting.meetingLink!),
                               child: Text(
                                 meeting.meetingLink!,
                                 style: const TextStyle(
@@ -214,7 +225,8 @@ class MeetingCard extends StatelessWidget {
                         ],
                       ),
                     ],
-                    if (showActions && (onEdit != null || onDelete != null)) ...[
+                    if (showActions &&
+                        (onEdit != null || onDelete != null)) ...[
                       const SizedBox(height: 16),
                       const Divider(height: 1, color: AppTheme.neutralColor),
                       const SizedBox(height: 12),

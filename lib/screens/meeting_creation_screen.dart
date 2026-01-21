@@ -13,7 +13,7 @@ import '../widgets/custom_back_button.dart';
 import '../widgets/custom_button.dart';
 import '../widgets/custom_input.dart';
 import '../widgets/custom_dropdown.dart';
-import '../utils/focus_helper.dart';
+import '../widgets/custom_date_time_picker.dart';
 
 class MeetingCreationScreen extends StatefulWidget {
   const MeetingCreationScreen({super.key});
@@ -208,108 +208,58 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
                             accentColor: AppTheme.secondaryColor,
                             child: Column(
                               children: [
-                                InkWell(
-                                  onTap: _selectDateTime,
-                                  child: Container(
-                                    padding: const EdgeInsets.all(16),
-                                    decoration: BoxDecoration(
-                                      border: Border.all(
-                                          color: AppTheme.neutralColor.withValues(alpha: 0.15),
-                                          width: 1.5),
-                                      borderRadius: BorderRadius.circular(12),
-                                      color: Colors.white,
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        const Icon(
-                                          Icons.event_available,
-                                          color: AppTheme.secondaryColor,
-                                          size: 24,
-                                        ),
-                                        const SizedBox(width: 12),
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                'Meeting Start Time',
-                                                style: GoogleFonts.inter(
-                                                  fontSize: 13,
-                                                  color: AppTheme.neutralColor,
-                                                  fontWeight: FontWeight.w500,
-                                                ),
-                                              ),
-                                              const SizedBox(height: 4),
-                                              Text(
-                                                _selectedDateTime != null
-                                                    ? _formatDateTime(_selectedDateTime!)
-                                                    : 'Select start date and time',
-                                                style: GoogleFonts.inter(
-                                                  fontSize: 15,
-                                                  color: _selectedDateTime != null
-                                                      ? AppTheme.darkNeutralColor
-                                                      : AppTheme.neutralColor,
-                                                  fontWeight: FontWeight.w600,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
+                                CustomDateTimePicker(
+                                  label: 'Meeting Start Time',
+                                  hintText: 'Select start date and time',
+                                  value: _selectedDateTime,
+                                  onChanged: (dateTime) {
+                                    setState(() {
+                                      _selectedDateTime = dateTime;
+                                      // If end time is before start time, clear it or move it
+                                      if (_selectedEndTime != null &&
+                                          dateTime != null) {
+                                        if (_selectedEndTime!
+                                            .isBefore(dateTime)) {
+                                          _selectedEndTime = dateTime
+                                              .add(const Duration(hours: 1));
+                                        }
+                                      }
+                                    });
+                                  },
+                                  validator: (value) {
+                                    if (value == null) {
+                                      return 'Please select a start time';
+                                    }
+                                    if (value.isBefore(DateTime.now())) {
+                                      return 'Start time cannot be in the past';
+                                    }
+                                    return null;
+                                  },
+                                  prefixIcon: Icons.event_available,
+                                  mode: DateTimePickerMode.dateAndTime,
                                 ),
                                 const SizedBox(height: 16),
-                                InkWell(
-                                  onTap: _selectEndTime,
-                                  child: Container(
-                                    padding: const EdgeInsets.all(16),
-                                    decoration: BoxDecoration(
-                                      border: Border.all(
-                                          color: AppTheme.neutralColor.withValues(alpha: 0.15),
-                                          width: 1.5),
-                                      borderRadius: BorderRadius.circular(12),
-                                      color: Colors.white,
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        const Icon(
-                                          Icons.event_busy,
-                                          color: AppTheme.secondaryColor,
-                                          size: 24,
-                                        ),
-                                        const SizedBox(width: 12),
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                'Meeting End Time',
-                                                style: GoogleFonts.inter(
-                                                  fontSize: 13,
-                                                  color: AppTheme.neutralColor,
-                                                  fontWeight: FontWeight.w500,
-                                                ),
-                                              ),
-                                              const SizedBox(height: 4),
-                                              Text(
-                                                _selectedEndTime != null
-                                                    ? _formatDateTime(_selectedEndTime!)
-                                                    : 'Select end date and time',
-                                                style: GoogleFonts.inter(
-                                                  fontSize: 15,
-                                                  color: _selectedEndTime != null
-                                                      ? AppTheme.darkNeutralColor
-                                                      : AppTheme.neutralColor,
-                                                  fontWeight: FontWeight.w600,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
+                                CustomDateTimePicker(
+                                  label: 'Meeting End Time',
+                                  hintText: 'Select end date and time',
+                                  value: _selectedEndTime,
+                                  onChanged: (dateTime) {
+                                    setState(() {
+                                      _selectedEndTime = dateTime;
+                                    });
+                                  },
+                                  validator: (value) {
+                                    if (value == null) {
+                                      return 'Please select an end time';
+                                    }
+                                    if (_selectedDateTime != null &&
+                                        value.isBefore(_selectedDateTime!)) {
+                                      return 'End time must be after start time';
+                                    }
+                                    return null;
+                                  },
+                                  prefixIcon: Icons.event_busy,
+                                  mode: DateTimePickerMode.dateAndTime,
                                 ),
                               ],
                             ),
@@ -353,7 +303,8 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
                                     hint: 'Enter virtual meeting URL',
                                     prefixIcon: const Icon(Icons.link),
                                     validator: (value) {
-                                      if (_isVirtual && (value == null || value.isEmpty)) {
+                                      if (_isVirtual &&
+                                          (value == null || value.isEmpty)) {
                                         return 'Please enter a meeting link';
                                       }
                                       return null;
@@ -366,7 +317,8 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
                                     hint: 'Enter meeting location',
                                     prefixIcon: const Icon(Icons.place),
                                     validator: (value) {
-                                      if (!_isVirtual && (value == null || value.isEmpty)) {
+                                      if (!_isVirtual &&
+                                          (value == null || value.isEmpty)) {
                                         return 'Please enter a location';
                                       }
                                       return null;
@@ -406,24 +358,26 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
                                     border: Border.all(
-                                      color: _initialNotificationTiming == NotificationTiming.immediate 
-                                        ? AppTheme.primaryColor 
-                                        : Colors.grey,
+                                      color: _initialNotificationTiming ==
+                                              NotificationTiming.immediate
+                                          ? AppTheme.primaryColor
+                                          : Colors.grey,
                                       width: 2,
                                     ),
                                   ),
-                                  child: _initialNotificationTiming == NotificationTiming.immediate
-                                    ? Center(
-                                        child: Container(
-                                          width: 10,
-                                          height: 10,
-                                          decoration: const BoxDecoration(
-                                            shape: BoxShape.circle,
-                                            color: AppTheme.primaryColor,
+                                  child: _initialNotificationTiming ==
+                                          NotificationTiming.immediate
+                                      ? Center(
+                                          child: Container(
+                                            width: 10,
+                                            height: 10,
+                                            decoration: const BoxDecoration(
+                                              shape: BoxShape.circle,
+                                              color: AppTheme.primaryColor,
+                                            ),
                                           ),
-                                        ),
-                                      )
-                                    : null,
+                                        )
+                                      : null,
                                 ),
                                 title: Text(
                                   'Notify immediately',
@@ -441,7 +395,8 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
                                 ),
                                 onTap: () {
                                   setState(() {
-                                    _initialNotificationTiming = NotificationTiming.immediate;
+                                    _initialNotificationTiming =
+                                        NotificationTiming.immediate;
                                     _scheduledNotificationDateTime = null;
                                   });
                                 },
@@ -453,24 +408,26 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
                                     border: Border.all(
-                                      color: _initialNotificationTiming == NotificationTiming.scheduled 
-                                        ? AppTheme.primaryColor 
-                                        : Colors.grey,
+                                      color: _initialNotificationTiming ==
+                                              NotificationTiming.scheduled
+                                          ? AppTheme.primaryColor
+                                          : Colors.grey,
                                       width: 2,
                                     ),
                                   ),
-                                  child: _initialNotificationTiming == NotificationTiming.scheduled
-                                    ? Center(
-                                        child: Container(
-                                          width: 10,
-                                          height: 10,
-                                          decoration: const BoxDecoration(
-                                            shape: BoxShape.circle,
-                                            color: AppTheme.primaryColor,
+                                  child: _initialNotificationTiming ==
+                                          NotificationTiming.scheduled
+                                      ? Center(
+                                          child: Container(
+                                            width: 10,
+                                            height: 10,
+                                            decoration: const BoxDecoration(
+                                              shape: BoxShape.circle,
+                                              color: AppTheme.primaryColor,
+                                            ),
                                           ),
-                                        ),
-                                      )
-                                    : null,
+                                        )
+                                      : null,
                                 ),
                                 title: Text(
                                   'Schedule notification',
@@ -488,7 +445,8 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
                                 ),
                                 onTap: () {
                                   setState(() {
-                                    _initialNotificationTiming = NotificationTiming.scheduled;
+                                    _initialNotificationTiming =
+                                        NotificationTiming.scheduled;
                                   });
                                 },
                               ),
@@ -499,24 +457,26 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
                                     border: Border.all(
-                                      color: _initialNotificationTiming == NotificationTiming.none 
-                                        ? AppTheme.primaryColor 
-                                        : Colors.grey,
+                                      color: _initialNotificationTiming ==
+                                              NotificationTiming.none
+                                          ? AppTheme.primaryColor
+                                          : Colors.grey,
                                       width: 2,
                                     ),
                                   ),
-                                  child: _initialNotificationTiming == NotificationTiming.none
-                                    ? Center(
-                                        child: Container(
-                                          width: 10,
-                                          height: 10,
-                                          decoration: const BoxDecoration(
-                                            shape: BoxShape.circle,
-                                            color: AppTheme.primaryColor,
+                                  child: _initialNotificationTiming ==
+                                          NotificationTiming.none
+                                      ? Center(
+                                          child: Container(
+                                            width: 10,
+                                            height: 10,
+                                            decoration: const BoxDecoration(
+                                              shape: BoxShape.circle,
+                                              color: AppTheme.primaryColor,
+                                            ),
                                           ),
-                                        ),
-                                      )
-                                    : null,
+                                        )
+                                      : null,
                                 ),
                                 title: Text(
                                   'No initial notification',
@@ -534,7 +494,8 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
                                 ),
                                 onTap: () {
                                   setState(() {
-                                    _initialNotificationTiming = NotificationTiming.none;
+                                    _initialNotificationTiming =
+                                        NotificationTiming.none;
                                     _scheduledNotificationDateTime = null;
                                   });
                                 },
@@ -543,41 +504,28 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
                           ),
 
                           // Scheduled Notification Date/Time Picker
-                          if (_initialNotificationTiming == NotificationTiming.scheduled) ...[
+                          if (_initialNotificationTiming ==
+                              NotificationTiming.scheduled) ...[
                             const SizedBox(height: 16),
-                            InkWell(
-                              onTap: _selectScheduledNotificationDateTime,
-                              child: Container(
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  border: Border.all(color: AppTheme.neutralColor),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Notification Date & Time',
-                                      style: GoogleFonts.inter(
-                                        fontSize: 14,
-                                        color: AppTheme.neutralColor,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      _scheduledNotificationDateTime != null
-                                          ? _formatDateTime(_scheduledNotificationDateTime!)
-                                          : 'Select when to send notification',
-                                      style: GoogleFonts.inter(
-                                        fontSize: 16,
-                                        color: _scheduledNotificationDateTime != null
-                                            ? AppTheme.darkNeutralColor
-                                            : AppTheme.neutralColor,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
+                            CustomDateTimePicker(
+                              key: ValueKey(_scheduledNotificationDateTime),
+                              label: 'Notification Date & Time',
+                              hintText: 'Select when to send notification',
+                              value: _scheduledNotificationDateTime,
+                              onChanged: (dateTime) {
+                                setState(() {
+                                  _scheduledNotificationDateTime = dateTime;
+                                });
+                              },
+                              mode: DateTimePickerMode.dateAndTime,
+                              validator: (value) {
+                                if (_initialNotificationTiming ==
+                                        NotificationTiming.scheduled &&
+                                    value == null) {
+                                  return 'Please select a notification time';
+                                }
+                                return null;
+                              },
                             ),
                           ],
 
@@ -690,7 +638,8 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
                               label: 'Repeat',
                               value: _recurrenceFrequency,
                               items: RecurrenceFrequency.values
-                                  .where((freq) => freq != RecurrenceFrequency.none)
+                                  .where((freq) =>
+                                      freq != RecurrenceFrequency.none)
                                   .map<DropdownMenuItem<RecurrenceFrequency>>(
                                       (RecurrenceFrequency freq) {
                                 return DropdownMenuItem<RecurrenceFrequency>(
@@ -753,47 +702,18 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
                             ),
                             const SizedBox(height: 8),
 
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: InkWell(
-                                    onTap: _selectRecurrenceEndDate,
-                                    child: Container(
-                                      padding: const EdgeInsets.all(16),
-                                      decoration: BoxDecoration(
-                                        border: Border.all(
-                                            color: AppTheme.neutralColor),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            'End Date',
-                                            style: GoogleFonts.inter(
-                                              fontSize: 14,
-                                              color: AppTheme.neutralColor,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            _recurrenceEndDate != null
-                                                ? _formatDate(_recurrenceEndDate!)
-                                                : 'Never',
-                                            style: GoogleFonts.inter(
-                                              fontSize: 16,
-                                              color: _recurrenceEndDate != null
-                                                  ? AppTheme.darkNeutralColor
-                                                  : AppTheme.neutralColor,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
+                            CustomDateTimePicker(
+                              key: ValueKey(_recurrenceEndDate),
+                              label: 'End Date',
+                              value: _recurrenceEndDate,
+                              hintText: 'Never',
+                              clearable: true,
+                              onChanged: (dateTime) {
+                                setState(() {
+                                  _recurrenceEndDate = dateTime;
+                                });
+                              },
+                              mode: DateTimePickerMode.date,
                             ),
                             const SizedBox(height: 8),
                             // Info message about "Never" end date
@@ -838,7 +758,9 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
                             isLoading: _isCreating,
                             height: 56,
                             child: Text(
-                              _isCreating ? 'Creating Meeting...' : 'Create Meeting',
+                              _isCreating
+                                  ? 'Creating Meeting...'
+                                  : 'Create Meeting',
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
@@ -916,201 +838,6 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
     );
   }
 
-  Future<void> _selectDateTime() async {
-    if (!mounted) return;
-
-    // FIXED: Dismiss keyboard before showing date picker
-    FocusHelper.unfocus(context);
-
-    final date = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now().add(const Duration(days: 1)),
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: AppTheme.primaryColor,
-              onPrimary: Colors.white,
-              onSurface: AppTheme.darkNeutralColor,
-            ),
-            textButtonTheme: TextButtonThemeData(
-              style: TextButton.styleFrom(
-                foregroundColor: AppTheme.primaryColor,
-              ),
-            ),
-            dialogTheme: const DialogThemeData(
-              backgroundColor: AppTheme.cardColor,
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-
-    if (date != null && mounted) {
-      final time = await showTimePicker(
-        context: context,
-        initialTime: TimeOfDay.now(),
-        initialEntryMode: TimePickerEntryMode.dialOnly,
-        builder: (context, child) {
-          return Theme(
-            data: Theme.of(context).copyWith(
-              colorScheme: const ColorScheme.light(
-                primary: AppTheme.primaryColor,
-                onPrimary: Colors.white,
-                onSurface: AppTheme.darkNeutralColor,
-              ),
-              textButtonTheme: TextButtonThemeData(
-                style: TextButton.styleFrom(
-                  foregroundColor: AppTheme.primaryColor,
-                ),
-              ),
-            ),
-            child: child!,
-          );
-        },
-      );
-
-      if (time != null && mounted) {
-        setState(() {
-          _selectedDateTime = DateTime(
-            date.year,
-            date.month,
-            date.day,
-            time.hour,
-            time.minute,
-          );
-        });
-
-        // FIXED: Ensure focus is cleared after setting the value
-        FocusHelper.unfocus(context);
-      }
-    }
-
-    // FIXED: Final cleanup - ensure keyboard stays dismissed
-    if (mounted) {
-      FocusHelper.unfocus(context);
-    }
-  }
-
-  Future<void> _selectEndTime() async {
-    // Ensure start time is selected first
-    if (_selectedDateTime == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select start time first'),
-          backgroundColor: Colors.orange,
-        ),
-      );
-      return;
-    }
-
-    if (!mounted) return;
-
-    // FIXED: Dismiss keyboard before showing date picker
-    FocusHelper.unfocus(context);
-
-    final date = await showDatePicker(
-      context: context,
-      initialDate: _selectedDateTime!,
-      firstDate: _selectedDateTime!,
-      lastDate: _selectedDateTime!.add(const Duration(days: 7)),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: AppTheme.primaryColor,
-              onPrimary: Colors.white,
-              onSurface: AppTheme.darkNeutralColor,
-            ),
-            textButtonTheme: TextButtonThemeData(
-              style: TextButton.styleFrom(
-                foregroundColor: AppTheme.primaryColor,
-              ),
-            ),
-            dialogTheme: const DialogThemeData(
-              backgroundColor: AppTheme.cardColor,
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-
-    if (date != null && mounted) {
-      final time = await showTimePicker(
-        context: context,
-        initialTime: TimeOfDay.fromDateTime(
-          _selectedDateTime!.add(const Duration(hours: 1)),
-        ),
-        initialEntryMode: TimePickerEntryMode.dialOnly,
-        builder: (context, child) {
-          return Theme(
-            data: Theme.of(context).copyWith(
-              colorScheme: const ColorScheme.light(
-                primary: AppTheme.primaryColor,
-                onPrimary: Colors.white,
-                onSurface: AppTheme.darkNeutralColor,
-              ),
-              textButtonTheme: TextButtonThemeData(
-                style: TextButton.styleFrom(
-                  foregroundColor: AppTheme.primaryColor,
-                ),
-              ),
-            ),
-            child: child!,
-          );
-        },
-      );
-
-      if (time != null && mounted) {
-        final endDateTime = DateTime(
-          date.year,
-          date.month,
-          date.day,
-          time.hour,
-          time.minute,
-        );
-
-        // Validate that end time is after start time
-        if (endDateTime.isBefore(_selectedDateTime!) ||
-            endDateTime.isAtSameMomentAs(_selectedDateTime!)) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('End time must be after start time'),
-                backgroundColor: Colors.red,
-              ),
-            );
-          }
-          return;
-        }
-
-        setState(() {
-          _selectedEndTime = endDateTime;
-        });
-
-        // FIXED: Ensure focus is cleared after setting the value
-        FocusHelper.unfocus(context);
-      }
-    }
-
-    // FIXED: Final cleanup - ensure keyboard stays dismissed
-    if (mounted) {
-      FocusHelper.unfocus(context);
-    }
-  }
-
-  String _formatDateTime(DateTime dateTime) {
-    return '${dateTime.day}/${dateTime.month}/${dateTime.year} at ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
-  }
-
-  String _formatDate(DateTime dateTime) {
-    return '${dateTime.day}/${dateTime.month}/${dateTime.year}';
-  }
-
   String _getFrequencyLabel(RecurrenceFrequency frequency) {
     switch (frequency) {
       case RecurrenceFrequency.daily:
@@ -1149,148 +876,6 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
     }
   }
 
-  Future<void> _selectRecurrenceEndDate() async {
-    if (!mounted) return;
-
-    // FIXED: Dismiss keyboard before showing date picker
-    FocusHelper.unfocus(context);
-
-    final date = await showDatePicker(
-      context: context,
-      initialDate: _selectedDateTime ?? DateTime.now().add(const Duration(days: 7)),
-      firstDate: _selectedDateTime ?? DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 730)), // 2 years
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: AppTheme.primaryColor,
-              onPrimary: Colors.white,
-              onSurface: AppTheme.darkNeutralColor,
-            ),
-            textButtonTheme: TextButtonThemeData(
-              style: TextButton.styleFrom(
-                foregroundColor: AppTheme.primaryColor,
-              ),
-            ),
-            dialogTheme: const DialogThemeData(
-              backgroundColor: AppTheme.cardColor,
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-
-    if (date != null && mounted) {
-      setState(() {
-        _recurrenceEndDate = date;
-      });
-
-      // FIXED: Ensure focus is cleared after setting the value
-      FocusHelper.unfocus(context);
-    }
-
-    // FIXED: Final cleanup - ensure keyboard stays dismissed
-    if (mounted) {
-      FocusHelper.unfocus(context);
-    }
-  }
-
-  Future<void> _selectScheduledNotificationDateTime() async {
-    if (!mounted) return;
-
-    // FIXED: Dismiss keyboard before showing date picker
-    FocusHelper.unfocus(context);
-
-    final date = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now().add(const Duration(hours: 1)),
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: AppTheme.primaryColor,
-              onPrimary: Colors.white,
-              onSurface: AppTheme.darkNeutralColor,
-            ),
-            textButtonTheme: TextButtonThemeData(
-              style: TextButton.styleFrom(
-                foregroundColor: AppTheme.primaryColor,
-              ),
-            ),
-            dialogTheme: const DialogThemeData(
-              backgroundColor: AppTheme.cardColor,
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-
-    if (date != null && mounted) {
-      final time = await showTimePicker(
-        context: context,
-        initialTime: TimeOfDay.fromDateTime(DateTime.now().add(const Duration(hours: 1))),
-        initialEntryMode: TimePickerEntryMode.dialOnly,
-        builder: (context, child) {
-          return Theme(
-            data: Theme.of(context).copyWith(
-              colorScheme: const ColorScheme.light(
-                primary: AppTheme.primaryColor,
-                onPrimary: Colors.white,
-                onSurface: AppTheme.darkNeutralColor,
-              ),
-              textButtonTheme: TextButtonThemeData(
-                style: TextButton.styleFrom(
-                  foregroundColor: AppTheme.primaryColor,
-                ),
-              ),
-            ),
-            child: child!,
-          );
-        },
-      );
-
-      if (time != null && mounted) {
-        final scheduledDateTime = DateTime(
-          date.year,
-          date.month,
-          date.day,
-          time.hour,
-          time.minute,
-        );
-
-        // Validate that scheduled time is in the future
-        if (scheduledDateTime.isBefore(DateTime.now())) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Scheduled notification time must be in the future'),
-                backgroundColor: Colors.red,
-              ),
-            );
-          }
-          return;
-        }
-
-        setState(() {
-          _scheduledNotificationDateTime = scheduledDateTime;
-        });
-
-        // FIXED: Ensure focus is cleared after setting the value
-        FocusHelper.unfocus(context);
-      }
-    }
-
-    // FIXED: Final cleanup - ensure keyboard stays dismissed
-    if (mounted) {
-      FocusHelper.unfocus(context);
-    }
-  }
-
   Future<void> _createMeeting() async {
     // Dismiss keyboard before validation
     FocusScope.of(context).unfocus();
@@ -1313,7 +898,8 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
         _scheduledNotificationDateTime == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please select a date and time for the scheduled notification'),
+          content: Text(
+              'Please select a date and time for the scheduled notification'),
           backgroundColor: Colors.red,
         ),
       );
@@ -1353,7 +939,8 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
 
     // Get the creator's timezone and convert times to UTC
     final userTimezone = TimezoneHelper.getDeviceTimezone();
-    final utcDateTime = TimezoneHelper.convertToUtc(_selectedDateTime!, userTimezone);
+    final utcDateTime =
+        TimezoneHelper.convertToUtc(_selectedDateTime!, userTimezone);
     final utcEndTime = _selectedEndTime != null
         ? TimezoneHelper.convertToUtc(_selectedEndTime!, userTimezone)
         : null;
@@ -1378,11 +965,12 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
       initialNotificationSentAt: null,
       // Recurring meeting fields
       isRecurring: _isRecurring,
-      recurrenceFrequency: _isRecurring ? _recurrenceFrequency : RecurrenceFrequency.none,
+      recurrenceFrequency:
+          _isRecurring ? _recurrenceFrequency : RecurrenceFrequency.none,
       recurrenceInterval: _isRecurring ? _recurrenceInterval : 1,
       recurrenceEndDate: _isRecurring ? _recurrenceEndDate : null,
       recurrenceDayOfWeek: _isRecurring && _selectedDateTime != null
-          ? _selectedDateTime!.weekday % 7  // 0=Sunday, 6=Saturday
+          ? _selectedDateTime!.weekday % 7 // 0=Sunday, 6=Saturday
           : null,
       recurrenceDayOfMonth: _isRecurring && _selectedDateTime != null
           ? _selectedDateTime!.day

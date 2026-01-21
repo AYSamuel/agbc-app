@@ -5,6 +5,7 @@ import '../providers/branches_provider.dart';
 import '../models/user_model.dart';
 import '../utils/theme.dart';
 import '../widgets/custom_back_button.dart';
+import '../widgets/custom_input.dart';
 import '../widgets/user_card.dart';
 import 'user_details_screen.dart';
 
@@ -21,6 +22,9 @@ class UserManagementScreen extends StatefulWidget {
 }
 
 class _UserManagementScreenState extends State<UserManagementScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+
   @override
   void initState() {
     super.initState();
@@ -30,6 +34,12 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
         Provider.of<BranchesProvider>(context, listen: false).fetchBranches();
       }
     });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   @override
@@ -123,6 +133,22 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
               ),
             ),
             const SizedBox(height: 16),
+            // Search Bar
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: CustomInput(
+                controller: _searchController,
+                hint: 'Search by name or email...',
+                prefixIcon: const Icon(Icons.search),
+                showLabel: false,
+                onChanged: (value) {
+                  setState(() {
+                    _searchQuery = value.toLowerCase();
+                  });
+                },
+              ),
+            ),
+            const SizedBox(height: 16),
             // Users List
             Expanded(
               child: StreamBuilder<List<UserModel>>(
@@ -151,12 +177,21 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                   users.sort((a, b) => a.displayName.compareTo(b.displayName));
 
                   // Filter users by branch if initialBranchFilter is set
-                  final filteredUsers = widget.initialBranchFilter != null
+                  var filteredUsers = widget.initialBranchFilter != null
                       ? users
                           .where((user) =>
                               user.branchId == widget.initialBranchFilter)
                           .toList()
                       : users;
+
+                  // Filter users by search query
+                  if (_searchQuery.isNotEmpty) {
+                    filteredUsers = filteredUsers.where((user) {
+                      final nameMatch = user.displayName.toLowerCase().contains(_searchQuery);
+                      final emailMatch = user.email.toLowerCase().contains(_searchQuery);
+                      return nameMatch || emailMatch;
+                    }).toList();
+                  }
 
                   if (filteredUsers.isEmpty) {
                     return Center(
@@ -177,12 +212,15 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            widget.initialBranchFilter != null
-                                ? 'There are no users assigned to this branch.'
-                                : 'There are currently no users in the system.',
+                            _searchQuery.isNotEmpty
+                                ? 'No users match "$_searchQuery".'
+                                : widget.initialBranchFilter != null
+                                    ? 'There are no users assigned to this branch.'
+                                    : 'There are currently no users in the system.',
                             style: AppTheme.subtitleStyle.copyWith(
                               color: AppTheme.neutralColor,
                             ),
+                            textAlign: TextAlign.center,
                           ),
                         ],
                       ),

@@ -12,10 +12,11 @@ import '../widgets/custom_back_button.dart';
 import '../widgets/custom_dropdown.dart';
 import '../utils/theme.dart';
 import '../services/auth_service.dart';
-import '../utils/focus_helper.dart';
+
 import '../utils/notification_helper.dart';
 import '../services/notification_service.dart';
 import '../models/initial_notification_config.dart';
+import '../widgets/custom_date_time_picker.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AddTaskScreen extends StatefulWidget {
@@ -29,12 +30,10 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
-  final _deadlineController = TextEditingController();
 
   // Focus nodes for keyboard navigation
   final _titleFocus = FocusNode();
   final _descriptionFocus = FocusNode();
-  final _deadlineFocus = FocusNode();
 
   UserModel? _selectedAssignee;
   ChurchBranch? _selectedBranch;
@@ -44,7 +43,6 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   // Notification timing
   NotificationTiming? _initialNotificationTiming = NotificationTiming.immediate;
   DateTime? _scheduledNotificationDateTime;
-  final _scheduledNotificationController = TextEditingController();
 
   // Track form completion
   bool _isTitleValid = false;
@@ -83,195 +81,12 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     _descriptionController.removeListener(_validateDescription);
     _titleController.dispose();
     _descriptionController.dispose();
-    _deadlineController.dispose();
-    _scheduledNotificationController.dispose();
 
     // Dispose focus nodes
     _titleFocus.dispose();
     _descriptionFocus.dispose();
-    _deadlineFocus.dispose();
 
     super.dispose();
-  }
-
-  Future<void> _selectDate(TextEditingController controller,
-      FocusNode focusNode, bool isDeadline) async {
-    if (!mounted) return;
-
-    // FIXED: Dismiss keyboard before showing date picker
-    FocusHelper.unfocus(context);
-
-    HapticFeedback.selectionClick();
-
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: AppTheme.primaryColor,
-              onPrimary: Colors.white,
-              onSurface: AppTheme.darkNeutralColor,
-            ),
-            textButtonTheme: TextButtonThemeData(
-              style: TextButton.styleFrom(
-                foregroundColor: AppTheme.primaryColor,
-              ),
-            ),
-            dialogTheme: const DialogThemeData(
-              backgroundColor: AppTheme.cardColor,
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-
-    if (!mounted) return;
-
-    if (picked != null) {
-      final TimeOfDay? time = await showTimePicker(
-        context: context,
-        initialTime: TimeOfDay.now(),
-        initialEntryMode: TimePickerEntryMode.dialOnly,
-        builder: (context, child) {
-          return Theme(
-            data: Theme.of(context).copyWith(
-              colorScheme: const ColorScheme.light(
-                primary: AppTheme.primaryColor,
-                onPrimary: Colors.white,
-                onSurface: AppTheme.darkNeutralColor,
-              ),
-              textButtonTheme: TextButtonThemeData(
-                style: TextButton.styleFrom(
-                  foregroundColor: AppTheme.primaryColor,
-                ),
-              ),
-            ),
-            child: child!,
-          );
-        },
-      );
-
-      if (!mounted) return;
-
-      if (time != null) {
-        final DateTime dateTime = DateTime(
-          picked.year,
-          picked.month,
-          picked.day,
-          time.hour,
-          time.minute,
-        );
-
-        setState(() {
-          if (isDeadline) {
-            _selectedDeadline = dateTime;
-            _isDeadlineValid = true;
-          }
-          controller.text = _formatDateTime(dateTime);
-        });
-
-        // FIXED: Ensure focus is cleared after setting the value
-        FocusHelper.unfocus(context);
-      }
-    }
-
-    // FIXED: Final cleanup - ensure keyboard stays dismissed
-    if (mounted) {
-      FocusHelper.unfocus(context);
-    }
-  }
-
-  String _formatDateTime(DateTime dateTime) {
-    return '${dateTime.day}/${dateTime.month}/${dateTime.year} ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}';
-  }
-
-  Future<void> _selectScheduledNotificationDateTime() async {
-    if (!mounted) return;
-
-    FocusHelper.unfocus(context);
-    HapticFeedback.selectionClick();
-
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: AppTheme.primaryColor,
-              onPrimary: Colors.white,
-              onSurface: AppTheme.darkNeutralColor,
-            ),
-            textButtonTheme: TextButtonThemeData(
-              style: TextButton.styleFrom(
-                foregroundColor: AppTheme.primaryColor,
-              ),
-            ),
-            dialogTheme: const DialogThemeData(
-              backgroundColor: AppTheme.cardColor,
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-
-    if (!mounted) return;
-
-    if (picked != null) {
-      final TimeOfDay? time = await showTimePicker(
-        context: context,
-        initialTime: TimeOfDay.now(),
-        initialEntryMode: TimePickerEntryMode.dialOnly,
-        builder: (context, child) {
-          return Theme(
-            data: Theme.of(context).copyWith(
-              colorScheme: const ColorScheme.light(
-                primary: AppTheme.primaryColor,
-                onPrimary: Colors.white,
-                onSurface: AppTheme.darkNeutralColor,
-              ),
-              textButtonTheme: TextButtonThemeData(
-                style: TextButton.styleFrom(
-                  foregroundColor: AppTheme.primaryColor,
-                ),
-              ),
-            ),
-            child: child!,
-          );
-        },
-      );
-
-      if (!mounted) return;
-
-      if (time != null) {
-        final DateTime dateTime = DateTime(
-          picked.year,
-          picked.month,
-          picked.day,
-          time.hour,
-          time.minute,
-        );
-
-        setState(() {
-          _scheduledNotificationDateTime = dateTime;
-          _scheduledNotificationController.text = _formatDateTime(dateTime);
-        });
-
-        FocusHelper.unfocus(context);
-      }
-    }
-
-    if (mounted) {
-      FocusHelper.unfocus(context);
-    }
   }
 
   Future<void> _submitForm() async {
@@ -285,7 +100,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
         _scheduledNotificationDateTime == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please select a date and time for the scheduled notification'),
+          content: Text(
+              'Please select a date and time for the scheduled notification'),
           backgroundColor: Colors.red,
         ),
       );
@@ -319,7 +135,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
         if (_initialNotificationTiming == NotificationTiming.immediate) {
           notificationConfig = InitialNotificationConfig.immediate();
         } else if (_initialNotificationTiming == NotificationTiming.scheduled) {
-          notificationConfig = InitialNotificationConfig.scheduled(_scheduledNotificationDateTime!);
+          notificationConfig = InitialNotificationConfig.scheduled(
+              _scheduledNotificationDateTime!);
         }
       }
 
@@ -551,20 +368,25 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                                   if (_selectedBranch == null) {
                                     // No branch selected, show empty or all users
                                     filteredUsers = [];
-                                  } else if (_selectedBranch!.name.toLowerCase() == 'global') {
+                                  } else if (_selectedBranch!.name
+                                          .toLowerCase() ==
+                                      'global') {
                                     // Global branch - show all users
                                     filteredUsers = allUsers;
                                   } else {
                                     // Specific branch - show only users in that branch
                                     filteredUsers = allUsers
-                                        .where((user) => user.branchId == _selectedBranch!.id)
+                                        .where((user) =>
+                                            user.branchId ==
+                                            _selectedBranch!.id)
                                         .toList();
                                   }
 
                                   return CustomDropdown<UserModel>(
                                     label: 'Assign To',
                                     value: _selectedAssignee,
-                                    enabled: _selectedBranch != null && filteredUsers.isNotEmpty,
+                                    enabled: _selectedBranch != null &&
+                                        filteredUsers.isNotEmpty,
                                     items: filteredUsers.isEmpty
                                         ? [
                                             const DropdownMenuItem<UserModel>(
@@ -575,11 +397,11 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                                         : filteredUsers
                                             .map<DropdownMenuItem<UserModel>>(
                                                 (UserModel user) {
-                                          return DropdownMenuItem<UserModel>(
-                                            value: user,
-                                            child: Text(user.displayName),
-                                          );
-                                        }).toList(),
+                                            return DropdownMenuItem<UserModel>(
+                                              value: user,
+                                              child: Text(user.displayName),
+                                            );
+                                          }).toList(),
                                     onChanged: (user) {
                                       if (user != null) {
                                         HapticFeedback.selectionClick();
@@ -610,18 +432,24 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                           accentColor: AppTheme.accentColor,
                           child: Column(
                             children: [
-                              CustomInput(
+                              CustomDateTimePicker(
+                                key: ValueKey(_selectedDeadline),
                                 label: 'Deadline',
-                                controller: _deadlineController,
-                                hint: 'Select deadline date & time',
-                                prefixIcon: const Icon(Icons.calendar_today),
-                                focusNode: _deadlineFocus,
-                                readOnly: true,
-                                onTap: () => _selectDate(
-                                    _deadlineController, _deadlineFocus, true),
+                                value: _selectedDeadline,
+                                hintText: 'Select deadline date & time',
+                                prefixIcon: Icons.calendar_today,
+                                onChanged: (dateTime) {
+                                  setState(() {
+                                    _selectedDeadline = dateTime;
+                                    _isDeadlineValid = dateTime != null;
+                                  });
+                                },
                                 validator: (value) {
-                                  if (_selectedDeadline == null) {
+                                  if (value == null) {
                                     return 'Please select a deadline';
+                                  }
+                                  if (value.isBefore(DateTime.now())) {
+                                    return 'Deadline cannot be in the past';
                                   }
                                   return null;
                                 },
@@ -684,24 +512,26 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
                                     border: Border.all(
-                                      color: _initialNotificationTiming == NotificationTiming.immediate
-                                        ? AppTheme.primaryColor
-                                        : Colors.grey,
+                                      color: _initialNotificationTiming ==
+                                              NotificationTiming.immediate
+                                          ? AppTheme.primaryColor
+                                          : Colors.grey,
                                       width: 2,
                                     ),
                                   ),
-                                  child: _initialNotificationTiming == NotificationTiming.immediate
-                                    ? Center(
-                                        child: Container(
-                                          width: 10,
-                                          height: 10,
-                                          decoration: const BoxDecoration(
-                                            shape: BoxShape.circle,
-                                            color: AppTheme.primaryColor,
+                                  child: _initialNotificationTiming ==
+                                          NotificationTiming.immediate
+                                      ? Center(
+                                          child: Container(
+                                            width: 10,
+                                            height: 10,
+                                            decoration: const BoxDecoration(
+                                              shape: BoxShape.circle,
+                                              color: AppTheme.primaryColor,
+                                            ),
                                           ),
-                                        ),
-                                      )
-                                    : null,
+                                        )
+                                      : null,
                                 ),
                                 title: Text(
                                   'Notify immediately',
@@ -719,7 +549,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                                 ),
                                 onTap: () {
                                   setState(() {
-                                    _initialNotificationTiming = NotificationTiming.immediate;
+                                    _initialNotificationTiming =
+                                        NotificationTiming.immediate;
                                     _scheduledNotificationDateTime = null;
                                   });
                                 },
@@ -734,24 +565,26 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
                                     border: Border.all(
-                                      color: _initialNotificationTiming == NotificationTiming.scheduled
-                                        ? AppTheme.primaryColor
-                                        : Colors.grey,
+                                      color: _initialNotificationTiming ==
+                                              NotificationTiming.scheduled
+                                          ? AppTheme.primaryColor
+                                          : Colors.grey,
                                       width: 2,
                                     ),
                                   ),
-                                  child: _initialNotificationTiming == NotificationTiming.scheduled
-                                    ? Center(
-                                        child: Container(
-                                          width: 10,
-                                          height: 10,
-                                          decoration: const BoxDecoration(
-                                            shape: BoxShape.circle,
-                                            color: AppTheme.primaryColor,
+                                  child: _initialNotificationTiming ==
+                                          NotificationTiming.scheduled
+                                      ? Center(
+                                          child: Container(
+                                            width: 10,
+                                            height: 10,
+                                            decoration: const BoxDecoration(
+                                              shape: BoxShape.circle,
+                                              color: AppTheme.primaryColor,
+                                            ),
                                           ),
-                                        ),
-                                      )
-                                    : null,
+                                        )
+                                      : null,
                                 ),
                                 title: Text(
                                   'Schedule notification',
@@ -769,7 +602,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                                 ),
                                 onTap: () {
                                   setState(() {
-                                    _initialNotificationTiming = NotificationTiming.scheduled;
+                                    _initialNotificationTiming =
+                                        NotificationTiming.scheduled;
                                   });
                                 },
                               ),
@@ -783,24 +617,26 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
                                     border: Border.all(
-                                      color: _initialNotificationTiming == NotificationTiming.none
-                                        ? AppTheme.primaryColor
-                                        : Colors.grey,
+                                      color: _initialNotificationTiming ==
+                                              NotificationTiming.none
+                                          ? AppTheme.primaryColor
+                                          : Colors.grey,
                                       width: 2,
                                     ),
                                   ),
-                                  child: _initialNotificationTiming == NotificationTiming.none
-                                    ? Center(
-                                        child: Container(
-                                          width: 10,
-                                          height: 10,
-                                          decoration: const BoxDecoration(
-                                            shape: BoxShape.circle,
-                                            color: AppTheme.primaryColor,
+                                  child: _initialNotificationTiming ==
+                                          NotificationTiming.none
+                                      ? Center(
+                                          child: Container(
+                                            width: 10,
+                                            height: 10,
+                                            decoration: const BoxDecoration(
+                                              shape: BoxShape.circle,
+                                              color: AppTheme.primaryColor,
+                                            ),
                                           ),
-                                        ),
-                                      )
-                                    : null,
+                                        )
+                                      : null,
                                 ),
                                 title: Text(
                                   'No initial notification',
@@ -818,51 +654,41 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                                 ),
                                 onTap: () {
                                   setState(() {
-                                    _initialNotificationTiming = NotificationTiming.none;
+                                    _initialNotificationTiming =
+                                        NotificationTiming.none;
                                     _scheduledNotificationDateTime = null;
                                   });
                                 },
                               ),
 
                               // Scheduled Notification Date/Time Picker
-                              if (_initialNotificationTiming == NotificationTiming.scheduled) ...[
+                              if (_initialNotificationTiming ==
+                                  NotificationTiming.scheduled) ...[
                                 const SizedBox(height: 16),
-                                InkWell(
-                                  onTap: _selectScheduledNotificationDateTime,
-                                  child: Container(
-                                    padding: const EdgeInsets.all(16),
-                                    decoration: BoxDecoration(
-                                      border: Border.all(color: AppTheme.neutralColor),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          'Notification Date & Time',
-                                          style: GoogleFonts.inter(
-                                            fontSize: 14,
-                                            color: AppTheme.neutralColor,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          _scheduledNotificationDateTime != null
-                                              ? _formatDateTime(_scheduledNotificationDateTime!)
-                                              : 'Select when to send notification',
-                                          style: GoogleFonts.inter(
-                                            fontSize: 16,
-                                            fontWeight: _scheduledNotificationDateTime != null
-                                                ? FontWeight.bold
-                                                : FontWeight.normal,
-                                            color: _scheduledNotificationDateTime != null
-                                                ? AppTheme.darkNeutralColor
-                                                : AppTheme.neutralColor,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
+                                const SizedBox(height: 16),
+                                CustomDateTimePicker(
+                                  key: ValueKey(_scheduledNotificationDateTime),
+                                  label: 'Notification Date & Time',
+                                  hintText: 'Select when to send notification',
+                                  value: _scheduledNotificationDateTime,
+                                  onChanged: (dateTime) {
+                                    setState(() {
+                                      _scheduledNotificationDateTime = dateTime;
+                                    });
+                                  },
+                                  mode: DateTimePickerMode.dateAndTime,
+                                  validator: (value) {
+                                    if (_initialNotificationTiming ==
+                                            NotificationTiming.scheduled &&
+                                        value == null) {
+                                      return 'Please select a notification time';
+                                    }
+                                    if (value != null &&
+                                        value.isBefore(DateTime.now())) {
+                                      return 'Notification time must be in the future';
+                                    }
+                                    return null;
+                                  },
                                 ),
                               ],
                             ],

@@ -422,7 +422,7 @@ class AuthService extends ChangeNotifier {
     try {
       await _supabase.auth.resetPasswordForEmail(
         email,
-        redirectTo: 'https://aysamuel.github.io/agbc-app/reset-password-success.html',
+        redirectTo: 'https://aysamuel.github.io/agbc-app/reset-password.html',
       );
     } on AuthException catch (e) {
       debugPrint("Reset password error: ${e.message}");

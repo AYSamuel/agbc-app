@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'user_management_screen.dart';
-import 'task_management_screen.dart';
 import 'meeting_management_screen.dart';
 import 'branch_management_screen.dart';
 import '../utils/theme.dart';
@@ -137,18 +136,6 @@ class AdminScreen extends StatelessWidget {
                             context,
                             MaterialPageRoute(
                               builder: (context) => const UserManagementScreen(),
-                            ),
-                          ),
-                        ),
-                        AdminCard(
-                          icon: Icons.task_alt,
-                          title: 'Tasks',
-                          description: 'Assign and track church tasks',
-                          color: AppTheme.accentColor,
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const TaskManagementScreen(),
                             ),
                           ),
                         ),

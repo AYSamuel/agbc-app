@@ -69,6 +69,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final authService = Provider.of<AuthService>(context);
     final branchesProvider = Provider.of<BranchesProvider>(context);
     final user = authService.currentUserProfile;
+    final canPop = Navigator.canPop(context);
 
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
@@ -90,15 +91,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
               bottom: false,
               child: Column(
                 children: [
-                  // Top Bar with Back Button
+                  // Top Bar with Back Button (only show if there's a route to pop)
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
                     child: Row(
                       children: [
-                        CustomBackButton(
-                          onPressed: () => Navigator.of(context).pop(),
-                        ),
-                        const SizedBox(width: 16),
+                        if (canPop) ...[
+                          CustomBackButton(
+                            onPressed: () => Navigator.of(context).pop(),
+                          ),
+                          const SizedBox(width: 16),
+                        ],
                         Text(
                           'My Profile',
                           style: AppTheme.titleStyle.copyWith(

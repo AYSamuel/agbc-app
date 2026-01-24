@@ -73,15 +73,16 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             body: SafeArea(
               child: Column(
                 children: [
-                  // Persistent Navigation Bar with Notification Bell
-                  Consumer<NotificationProvider>(
-                    builder: (context, notificationProvider, child) {
-                      return AppNavBar(
-                        onNotificationTap: _showNotificationPanel,
-                        notificationCount: notificationProvider.unreadCount,
-                      );
-                    },
-                  ),
+                  // Navigation Bar with Notification Bell - Only visible on home screen
+                  if (navigationProvider.currentIndex == 0)
+                    Consumer<NotificationProvider>(
+                      builder: (context, notificationProvider, child) {
+                        return AppNavBar(
+                          onNotificationTap: _showNotificationPanel,
+                          notificationCount: notificationProvider.unreadCount,
+                        );
+                      },
+                    ),
                   // Main Content Area
                   Expanded(
                     child: IndexedStack(

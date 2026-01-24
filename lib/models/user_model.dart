@@ -72,7 +72,10 @@ class UserModel {
       branchId: json['branch_id'] as String?,
       phoneNumber: json['phone_number'] as String?,
       photoUrl: json['photo_url'] as String?,
-      settings: Map<String, dynamic>.from(json['settings'] as Map? ?? {}),
+      settings: {
+        'notifications': Map<String, dynamic>.from(json['notification_settings'] as Map? ?? {}),
+        ...Map<String, dynamic>.from(json['preferences'] as Map? ?? {}),
+      },
       metadata: Map<String, dynamic>.from(json['metadata'] as Map? ?? {}),
       notificationToken: json['notification_token'] as String?,
       notificationTokenUpdatedAt: json['notification_token_updated_at'] != null

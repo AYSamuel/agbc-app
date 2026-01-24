@@ -20,6 +20,9 @@ class AuthService extends ChangeNotifier {
   /// Returns the currently authenticated user from Supabase Auth, or null if no user is logged in.
   User? get currentUser => _supabase.auth.currentUser;
 
+  /// Returns the Supabase client instance
+  SupabaseClient get supabase => _supabase;
+
   /// Returns the current user's profile from the public.users table
   UserModel? get currentUserProfile => _currentUserProfile;
 
@@ -372,7 +375,8 @@ class AuthService extends ChangeNotifier {
       if (location != null) updateData['location'] = location;
       if (departments != null) updateData['departments'] = departments;
       if (notificationSettings != null) {
-        updateData['settings'] = {'notifications': notificationSettings};
+        // Update notification_settings column directly (matches database schema)
+        updateData['notification_settings'] = notificationSettings;
       }
 
       await _supabase
@@ -416,7 +420,10 @@ class AuthService extends ChangeNotifier {
   /// Reset password for the given email
   Future<void> resetPassword(String email) async {
     try {
-      await _supabase.auth.resetPasswordForEmail(email);
+      await _supabase.auth.resetPasswordForEmail(
+        email,
+        redirectTo: 'https://aysamuel.github.io/agbc-app/reset-password-success.html',
+      );
     } on AuthException catch (e) {
       debugPrint("Reset password error: ${e.message}");
       rethrow;

@@ -3,9 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:grace_portal/models/meeting_model.dart';
 import 'package:grace_portal/models/user_model.dart';
 import 'package:grace_portal/screens/meeting_creation_screen.dart';
-import 'package:grace_portal/screens/meeting_details_screen.dart';
 import 'package:grace_portal/utils/theme.dart';
-import 'package:grace_portal/widgets/meeting_card.dart';
 import 'package:grace_portal/widgets/task_status_card.dart';
 import 'package:grace_portal/widgets/daily_verse_card.dart';
 import 'package:grace_portal/widgets/quick_action_card.dart';
@@ -272,16 +270,31 @@ class _HomeScreenState extends State<HomeScreen> {
                   mainAxisSpacing: 12,
                   crossAxisSpacing: 12,
                   children: [
-                    QuickActionCard(
-                      icon: Icons.calendar_today_rounded,
-                      label: 'Sunday Service',
-                      onTap: () {
-                        HapticFeedback.selectionClick();
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const UpcomingEventsScreen(),
-                          ),
+                    // Upcoming Meetings with red dot indicator
+                    StreamBuilder<List<MeetingModel>>(
+                      stream: Provider.of<SupabaseProvider>(context)
+                          .getAllMeetings(),
+                      builder: (context, snapshot) {
+                        final hasUpcomingMeetings = snapshot.hasData &&
+                            snapshot.data!.any((meeting) =>
+                                meeting.dateTime.isAfter(DateTime.now()) &&
+                                meeting.status == MeetingStatus.scheduled &&
+                                meeting.parentMeetingId == null);
+
+                        return QuickActionCard(
+                          icon: Icons.calendar_today_rounded,
+                          label: 'Services',
+                          showDot: hasUpcomingMeetings,
+                          onTap: () {
+                            HapticFeedback.selectionClick();
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    const UpcomingEventsScreen(),
+                              ),
+                            );
+                          },
                         );
                       },
                     ),
@@ -445,191 +458,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       },
                     ),
                   ],
-                ),
-
-                const SizedBox(height: 24),
-
-                // Upcoming Events
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Upcoming Events',
-                      style: GoogleFonts.inter(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.grey[800],
-                      ),
-                    ),
-                    // Only show "View all" button for admins and pastors
-                    if (userProfile?.role == UserRole.admin ||
-                        userProfile?.role == UserRole.pastor)
-                      TextButton(
-                        onPressed: () {
-                          // Navigate to upcoming events screen
-                          Navigator.pushNamed(context, '/upcoming-events');
-                        },
-                        child: Text(
-                          'View all',
-                          style: GoogleFonts.inter(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: AppTheme.primaryColor,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                StreamBuilder<List<MeetingModel>>(
-                  stream:
-                      Provider.of<SupabaseProvider>(context).getAllMeetings(),
-                  builder: (context, snapshot) {
-                    // Show loading state while data is being fetched
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const SizedBox(
-                        height: 180,
-                        child: Center(
-                          child: CircularProgressIndicator(
-                            color: AppTheme.primaryColor,
-                          ),
-                        ),
-                      );
-                    }
-
-                    // Show error state if there's an error
-                    if (snapshot.hasError) {
-                      return SizedBox(
-                        height: 180,
-                        child: Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.error_outline,
-                                size: 48,
-                                color: Colors.grey[400],
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'Failed to load meetings',
-                                style: GoogleFonts.inter(
-                                  fontSize: 14,
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              TextButton(
-                                onPressed: _onRefresh,
-                                child: Text(
-                                  'Retry',
-                                  style: GoogleFonts.inter(
-                                    fontSize: 14,
-                                    color: AppTheme.primaryColor,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    }
-
-                    // Show empty state if no data
-                    if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                      return SizedBox(
-                        height: 180,
-                        child: Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.calendar_today_outlined,
-                                size: 48,
-                                color: Colors.grey[400],
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'No upcoming meetings',
-                                style: GoogleFonts.inter(
-                                  fontSize: 14,
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    }
-
-                    final meetings = snapshot.data!;
-                    final upcomingMeetings = meetings
-                        .where((meeting) =>
-                            meeting.dateTime.isAfter(DateTime.now()) &&
-                            meeting.status == MeetingStatus.scheduled &&
-                            meeting.parentMeetingId ==
-                                null) // Only show parent meetings
-                        .toList()
-                      ..sort((a, b) => a.dateTime.compareTo(b.dateTime)); // Sort by date and time (earliest first)
-                    final displayedMeetings = upcomingMeetings.take(5).toList();
-
-                    if (upcomingMeetings.isEmpty) {
-                      return SizedBox(
-                        height: 180,
-                        child: Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.event_available,
-                                size: 48,
-                                color: Colors.grey[400],
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'No upcoming meetings scheduled',
-                                style: GoogleFonts.inter(
-                                  fontSize: 14,
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    }
-
-                    return SizedBox(
-                      height: 180,
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: displayedMeetings.length,
-                        itemBuilder: (context, index) {
-                          final meeting = displayedMeetings[index];
-                          return Padding(
-                            padding: EdgeInsets.only(
-                              right: index < displayedMeetings.length - 1 ? 12.0 : 0,
-                            ),
-                            child: MeetingCard(
-                              meeting: meeting,
-                              width: 280,
-                              onTap: () {
-                                // Navigate to meeting details screen
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        MeetingDetailsScreen(meeting: meeting),
-                                  ),
-                                );
-                              },
-                            ),
-                          );
-                        },
-                      ),
-                    );
-                  },
                 ),
 
                 const SizedBox(height: 90), // Bottom padding for the nav bar

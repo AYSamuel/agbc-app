@@ -29,6 +29,8 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final canPop = Navigator.canPop(context);
+
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       body: SafeArea(
@@ -46,25 +48,26 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
               ),
               child: Column(
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                    child: Row(
-                      children: [
-                        Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(12),
+                  if (canPop)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                      child: Row(
+                        children: [
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: CustomBackButton(
+                              onPressed: () => Navigator.pop(context),
+                              color: Colors.white,
+                              showBackground: false,
+                              showShadow: false,
+                            ),
                           ),
-                          child: CustomBackButton(
-                            onPressed: () => Navigator.pop(context),
-                            color: Colors.white,
-                            showBackground: false,
-                            showShadow: false,
-                          ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
                   Padding(
                     padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
                     child: Row(

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../utils/theme.dart';
+import '../../config/theme.dart';
 import '../custom_input.dart';
 import '../mixins/location_validation_mixin.dart';
 import 'dart:async';
@@ -239,8 +239,7 @@ class _LocationFieldState extends State<LocationField>
               focusNode:
                   focusNode, // Use the autocomplete's provided focus node
               hint: 'Start typing for suggestions...',
-              prefixIcon:
-                  const Icon(Icons.location_city, color: AppTheme.primaryColor),
+              prefixIcon: const Icon(Icons.location_city),
               textInputAction: TextInputAction.next,
               onChanged: (value) {
                 _cityController.text = value;
@@ -288,9 +287,12 @@ class _LocationFieldState extends State<LocationField>
                     maxHeight: maxHeight.clamp(150.0, 250.0),
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: Theme.of(context).colorScheme.surface,
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.grey.shade300),
+                    border: Border.all(
+                        color: Theme.of(context)
+                            .dividerColor
+                            .withValues(alpha: 0.1)),
                   ),
                   child: _isLoadingSuggestions && options.isEmpty
                       ? Center(
@@ -312,7 +314,10 @@ class _LocationFieldState extends State<LocationField>
                                   'Searching for cities...',
                                   style: TextStyle(
                                     fontSize: 13,
-                                    color: Colors.grey.shade600,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withValues(alpha: 0.6),
                                   ),
                                 ),
                               ],
@@ -329,14 +334,17 @@ class _LocationFieldState extends State<LocationField>
                                     Icon(
                                       Icons.search_off,
                                       size: 32,
-                                      color: Colors.grey.shade400,
+                                      color: Theme.of(context).disabledColor,
                                     ),
                                     const SizedBox(height: 8),
                                     Text(
                                       'No cities found',
                                       style: TextStyle(
                                         fontSize: 13,
-                                        color: Colors.grey.shade600,
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurface
+                                            .withValues(alpha: 0.6),
                                       ),
                                     ),
                                   ],
@@ -350,32 +358,47 @@ class _LocationFieldState extends State<LocationField>
                                 final option = options.elementAt(index);
                                 return ListTile(
                                   dense: true,
-                                  leading: const Icon(
+                                  leading: Icon(
                                     Icons.location_city,
                                     size: 16,
-                                    color: AppTheme.primaryColor,
+                                    color: Theme.of(context).brightness ==
+                                            Brightness.dark
+                                        ? Theme.of(context).colorScheme.primary
+                                        : Theme.of(context)
+                                            .colorScheme
+                                            .onSurface
+                                            .withValues(alpha: 0.6),
                                   ),
                                   title: Text(
                                     option['city'] ?? '',
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 14,
-                                      color: Colors.black87,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface,
                                       fontWeight: FontWeight.w500,
                                     ),
                                   ),
-                                  subtitle: option['country']?.isNotEmpty == true
-                                      ? Text(
-                                          option['country']!,
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.grey.shade600,
-                                          ),
-                                        )
-                                      : null,
+                                  subtitle:
+                                      option['country']?.isNotEmpty == true
+                                          ? Text(
+                                              option['country']!,
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color: Theme.of(context)
+                                                    .colorScheme
+                                                    .onSurface
+                                                    .withValues(alpha: 0.6),
+                                              ),
+                                            )
+                                          : null,
                                   onTap: () => onSelected(option),
-                                  hoverColor: Colors.grey.shade100,
-                                  splashColor:
-                                      AppTheme.primaryColor.withValues(alpha: 0.1),
+                                  hoverColor: Theme.of(context)
+                                      .colorScheme
+                                      .primary
+                                      .withValues(alpha: 0.05),
+                                  splashColor: AppTheme.primaryColor
+                                      .withValues(alpha: 0.1),
                                 );
                               },
                             ),
@@ -396,14 +419,20 @@ class _LocationFieldState extends State<LocationField>
               Icon(
                 Icons.info_outline,
                 size: 14,
-                color: Colors.grey.shade600,
+                color: Theme.of(context)
+                    .colorScheme
+                    .onSurface
+                    .withValues(alpha: 0.6),
               ),
               const SizedBox(width: 4),
               Text(
                 'Type at least 2 characters to see city suggestions',
                 style: TextStyle(
                   fontSize: 12,
-                  color: Colors.grey.shade600,
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.6),
                 ),
               ),
             ],
@@ -430,7 +459,7 @@ class _LocationFieldState extends State<LocationField>
                 'Searching for cities...',
                 style: TextStyle(
                   fontSize: 12,
-                  color: Colors.blue.shade600,
+                  color: Theme.of(context).colorScheme.primary,
                 ),
               ),
             ],
@@ -444,7 +473,7 @@ class _LocationFieldState extends State<LocationField>
           label: 'Country',
           controller: _countryController,
           hint: 'Select a city to auto-fill country',
-          prefixIcon: const Icon(Icons.public, color: AppTheme.primaryColor),
+          prefixIcon: const Icon(Icons.public),
           enabled: false,
           textInputAction: TextInputAction.done,
           validator: (value) {

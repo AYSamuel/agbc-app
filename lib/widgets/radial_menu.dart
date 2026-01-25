@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:grace_portal/utils/theme.dart';
+import 'package:grace_portal/config/theme.dart';
 
 class RadialMenu extends StatefulWidget {
   final VoidCallback onTaskPressed;
@@ -110,7 +110,7 @@ class _RadialMenuState extends State<RadialMenu>
               await HapticFeedback.lightImpact();
               onTap();
             },
-            backgroundColor: Colors.white,
+            backgroundColor: Theme.of(context).colorScheme.surface,
             elevation: 4,
             tooltip: label,
             child: Column(
@@ -125,8 +125,8 @@ class _RadialMenuState extends State<RadialMenu>
                 const SizedBox(height: 4),
                 Text(
                   label,
-                  style: const TextStyle(
-                    color: AppTheme.primaryColor,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
                   ),

@@ -12,6 +12,7 @@ import 'services/notification_service.dart';
 import 'providers/branches_provider.dart';
 import 'providers/supabase_provider.dart';
 import 'providers/navigation_provider.dart';
+import 'providers/theme_provider.dart';
 import 'screens/splash_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
@@ -20,11 +21,12 @@ import 'screens/meetings_screen.dart';
 import 'screens/meeting_details_screen.dart';
 import 'screens/task_details_screen.dart';
 import 'screens/upcoming_events_screen.dart';
-import 'utils/theme.dart';
+import 'config/theme.dart';
 import 'utils/notification_helper.dart';
 import 'utils/timezone_helper.dart';
 import 'models/meeting_model.dart';
 import 'models/task_model.dart';
+import 'widgets/custom_toast.dart';
 
 // Global navigator key for notification navigation
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -55,7 +57,8 @@ void _handleNotificationClick(Map<String, dynamic>? additionalData) {
 }
 
 /// Navigate based on notification data
-void _navigateFromNotification(BuildContext context, Map<String, dynamic> additionalData) {
+void _navigateFromNotification(
+    BuildContext context, Map<String, dynamic> additionalData) {
   final type = additionalData['type'] as String?;
   final screen = additionalData['screen'] as String?;
 
@@ -123,17 +126,15 @@ void handlePendingNotification() {
 }
 
 /// Navigate to meeting details screen
-Future<void> _navigateToMeetingDetails(BuildContext context, String meetingId) async {
+Future<void> _navigateToMeetingDetails(
+    BuildContext context, String meetingId) async {
   try {
     debugPrint('Fetching meeting details for ID: $meetingId');
 
     // Get the meeting from Supabase
     final supabase = Supabase.instance.client;
-    final response = await supabase
-        .from('meetings')
-        .select()
-        .eq('id', meetingId)
-        .single();
+    final response =
+        await supabase.from('meetings').select().eq('id', meetingId).single();
 
     final meeting = MeetingModel.fromJson(response);
 
@@ -150,12 +151,8 @@ Future<void> _navigateToMeetingDetails(BuildContext context, String meetingId) a
     debugPrint('Error navigating to meeting details: $e');
     // Show error message
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error loading meeting: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      CustomToast.show(context,
+          message: 'Error loading meeting: $e', type: ToastType.error);
     }
   }
 }
@@ -167,11 +164,8 @@ Future<void> _navigateToTaskDetails(BuildContext context, String taskId) async {
 
     // Get the task from Supabase
     final supabase = Supabase.instance.client;
-    final response = await supabase
-        .from('tasks')
-        .select()
-        .eq('id', taskId)
-        .single();
+    final response =
+        await supabase.from('tasks').select().eq('id', taskId).single();
 
     final task = TaskModel.fromJson(response);
 
@@ -188,12 +182,8 @@ Future<void> _navigateToTaskDetails(BuildContext context, String taskId) async {
     debugPrint('Error navigating to task details: $e');
     // Show error message
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error loading task: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      CustomToast.show(context,
+          message: 'Error loading task: $e', type: ToastType.error);
     }
   }
 }
@@ -231,7 +221,8 @@ Future<void> main() async {
 
     // Set up notification click handler
     OneSignal.Notifications.addClickListener((event) {
-      debugPrint('OneSignal notification clicked: ${event.notification.additionalData}');
+      debugPrint(
+          'OneSignal notification clicked: ${event.notification.additionalData}');
       _handleNotificationClick(event.notification.additionalData);
     });
 
@@ -273,7 +264,8 @@ Future<void> main() async {
               if (previous != null) {
                 // Check if the provider is still valid and the supabase provider hasn't changed
                 try {
-                  if (previous.supabaseProvider == supabaseProvider && !previous.disposed) {
+                  if (previous.supabaseProvider == supabaseProvider &&
+                      !previous.disposed) {
                     return previous;
                   }
                 } catch (e) {
@@ -300,15 +292,20 @@ Future<void> main() async {
           ProxyProvider2<SupabaseProvider, NotificationService,
               NotificationHelper>(
             create: (context) => NotificationHelper(
-              supabaseProvider: Provider.of<SupabaseProvider>(context, listen: false),
-              notificationService: Provider.of<NotificationService>(context, listen: false),
+              supabaseProvider:
+                  Provider.of<SupabaseProvider>(context, listen: false),
+              notificationService:
+                  Provider.of<NotificationService>(context, listen: false),
             ),
-            update: (context, supabaseProvider, notificationService, previous) =>
-                NotificationHelper(
+            update:
+                (context, supabaseProvider, notificationService, previous) =>
+                    NotificationHelper(
               supabaseProvider: supabaseProvider,
               notificationService: notificationService,
             ),
           ),
+          // Add ThemeProvider
+          ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ],
         child: const GracePortalApp(),
       ),
@@ -354,7 +351,8 @@ Future<void> _capturePlayerIdForExistingUser() async {
 
 /// Migrate existing devices to include timezone information
 /// This ensures existing users have their device timezone stored in the database
-Future<void> _migrateDeviceTimezones(NotificationService notificationService) async {
+Future<void> _migrateDeviceTimezones(
+    NotificationService notificationService) async {
   try {
     final user = Supabase.instance.client.auth.currentUser;
     if (user != null) {
@@ -369,12 +367,14 @@ Future<void> _migrateDeviceTimezones(NotificationService notificationService) as
 
         // Check if any device is missing timezone or has null/empty timezone
         final needsMigration = devices.isEmpty ||
-            devices.any((device) => device['timezone'] == null ||
-                                   device['timezone'] == '' ||
-                                   device['timezone'] == 'UTC');
+            devices.any((device) =>
+                device['timezone'] == null ||
+                device['timezone'] == '' ||
+                device['timezone'] == 'UTC');
 
         if (needsMigration) {
-          debugPrint('Device timezone migration needed - re-registering device');
+          debugPrint(
+              'Device timezone migration needed - re-registering device');
 
           // Wait for OneSignal to be ready
           await Future.delayed(const Duration(seconds: 2));
@@ -455,13 +455,9 @@ class _GracePortalAppState extends State<GracePortalApp> {
         Supabase.instance.client.auth.getSessionFromUrl(uri);
         // Show success message
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Email confirmed successfully! You can now log in.'),
-              backgroundColor: Colors.green,
-              duration: Duration(seconds: 3),
-            ),
-          );
+          CustomToast.show(context,
+              message: 'Email confirmed successfully! You can now log in.',
+              type: ToastType.success);
         }
         return;
       }
@@ -472,13 +468,9 @@ class _GracePortalAppState extends State<GracePortalApp> {
         debugPrint('Email confirmation page opened in app');
         // The app opened the link - show a message
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Email confirmed! Please log in to continue.'),
-              backgroundColor: Colors.green,
-              duration: Duration(seconds: 3),
-            ),
-          );
+          CustomToast.show(context,
+              message: 'Email confirmed! Please log in to continue.',
+              type: ToastType.success);
         }
         return;
       }
@@ -510,7 +502,8 @@ class _GracePortalAppState extends State<GracePortalApp> {
 
             // Check if context is ready
             if (navigatorKey.currentContext == null) {
-              debugPrint('Context not ready for deep link, storing as pending notification');
+              debugPrint(
+                  'Context not ready for deep link, storing as pending notification');
               // Store as pending notification data to be processed after app initialization
               _pendingNotificationData = {
                 'type': 'meeting_reminder',
@@ -529,20 +522,24 @@ class _GracePortalAppState extends State<GracePortalApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      navigatorKey: navigatorKey, // Use global navigator key
-      title: 'Grace Portal',
-      theme: AppTheme.lightTheme, // Apply the light theme
-      darkTheme: AppTheme.darkTheme, // Apply the dark theme
-      themeMode: ThemeMode.system, // Use system theme preference
-      home:
-          const AuthGate(), // The initial screen that checks authentication status
-      routes: {
-        '/login': (context) => const LoginScreen(),
-        '/register': (context) => const RegisterScreen(),
-        '/home': (context) => const MainNavigationScreen(),
-        '/meetings': (context) => const MeetingsScreen(),
-        '/upcoming-events': (context) => const UpcomingEventsScreen(),
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, child) {
+        return MaterialApp(
+          navigatorKey: navigatorKey, // Use global navigator key
+          title: 'Grace Portal',
+          theme: AppTheme.lightTheme, // Apply the light theme
+          darkTheme: AppTheme.darkTheme, // Apply the dark theme
+          themeMode: themeProvider.themeMode, // Use theme from provider
+          home:
+              const AuthGate(), // The initial screen that checks authentication status
+          routes: {
+            '/login': (context) => const LoginScreen(),
+            '/register': (context) => const RegisterScreen(),
+            '/home': (context) => const MainNavigationScreen(),
+            '/meetings': (context) => const MeetingsScreen(),
+            '/upcoming-events': (context) => const UpcomingEventsScreen(),
+          },
+        );
       },
     );
   }

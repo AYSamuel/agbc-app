@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../models/user_model.dart';
-import '../utils/theme.dart';
 import '../providers/branches_provider.dart';
 
 class UserCard extends StatelessWidget {
@@ -57,11 +56,11 @@ class UserCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: Theme.of(context).shadowColor,
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -109,7 +108,7 @@ class UserCard extends StatelessWidget {
                       ),
                       child: CircleAvatar(
                         radius: 28,
-                        backgroundColor: Colors.white,
+                        backgroundColor: Theme.of(context).colorScheme.surface,
                         child: CircleAvatar(
                           radius: 26,
                           backgroundColor: roleColor.withValues(alpha: 0.1),
@@ -139,10 +138,11 @@ class UserCard extends StatelessWidget {
                               Expanded(
                                 child: Text(
                                   user.displayName,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
-                                    color: AppTheme.darkNeutralColor,
+                                    color:
+                                        Theme.of(context).colorScheme.onSurface,
                                   ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
@@ -174,18 +174,24 @@ class UserCard extends StatelessWidget {
                           // Email
                           Row(
                             children: [
-                              const Icon(
+                              Icon(
                                 Icons.email_outlined,
                                 size: 14,
-                                color: AppTheme.neutralColor,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurface
+                                    .withValues(alpha: 0.6),
                               ),
                               const SizedBox(width: 6),
                               Expanded(
                                 child: Text(
                                   user.email,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 13,
-                                    color: AppTheme.neutralColor,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withValues(alpha: 0.6),
                                     fontWeight: FontWeight.w400,
                                   ),
                                   maxLines: 1,
@@ -199,49 +205,66 @@ class UserCard extends StatelessWidget {
                           Row(
                             children: [
                               if (user.location != null) ...[
-                                const Icon(
+                                Icon(
                                   Icons.location_on_outlined,
                                   size: 14,
-                                  color: AppTheme.neutralColor,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurface
+                                      .withValues(alpha: 0.6),
                                 ),
                                 const SizedBox(width: 4),
                                 Flexible(
                                   child: Text(
                                     _formatUserLocation(user.location),
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 12,
-                                      color: AppTheme.neutralColor,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface
+                                          .withValues(alpha: 0.5),
                                     ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
                               ],
-                              if (user.location != null && user.branchId != null)
+                              if (user.location != null &&
+                                  user.branchId != null)
                                 Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                                  padding:
+                                      const EdgeInsets.symmetric(horizontal: 8),
                                   child: Container(
                                     width: 3,
                                     height: 3,
                                     decoration: BoxDecoration(
-                                      color: AppTheme.neutralColor.withValues(alpha: 0.4),
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface
+                                          .withValues(alpha: 0.4),
                                       shape: BoxShape.circle,
                                     ),
                                   ),
                                 ),
                               if (user.branchId != null) ...[
-                                const Icon(
+                                Icon(
                                   Icons.church_outlined,
                                   size: 14,
-                                  color: AppTheme.neutralColor,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurface
+                                      .withValues(alpha: 0.6),
                                 ),
                                 const SizedBox(width: 4),
                                 Flexible(
                                   child: Text(
                                     _getBranchName(context, user.branchId),
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 12,
-                                      color: AppTheme.neutralColor,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface
+                                          .withValues(alpha: 0.5),
                                     ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
@@ -257,13 +280,16 @@ class UserCard extends StatelessWidget {
                     // Edit Button
                     Container(
                       decoration: BoxDecoration(
-                        color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                        color: Theme.of(context)
+                            .colorScheme
+                            .primary
+                            .withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: IconButton(
-                        icon: const Icon(
+                        icon: Icon(
                           Icons.arrow_forward_ios_rounded,
-                          color: AppTheme.primaryColor,
+                          color: Theme.of(context).colorScheme.primary,
                           size: 18,
                         ),
                         onPressed: () {

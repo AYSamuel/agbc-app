@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../utils/theme.dart';
+import '../config/theme.dart';
 
 class CustomDropdown<T> extends StatefulWidget {
   final T? value;
@@ -40,6 +40,7 @@ class CustomDropdown<T> extends StatefulWidget {
 }
 
 class _CustomDropdownState<T> extends State<CustomDropdown<T>> {
+  static _CustomDropdownState? _currentlyOpen;
   late FocusNode _focusNode;
   OverlayEntry? _overlayEntry;
   final LayerLink _layerLink = LayerLink();
@@ -53,14 +54,22 @@ class _CustomDropdownState<T> extends State<CustomDropdown<T>> {
   }
 
   @override
+  void didUpdateWidget(CustomDropdown<T> oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // If items have changed while the dropdown is open, close it to avoid RangeError
+    // and provide safe UX as the data source has shifted.
+    if (_isOpen && widget.items != oldWidget.items) {
+      _removeOverlay();
+    }
+  }
+
+  @override
   void dispose() {
     // Remove overlay before disposing to prevent setState on disposed widget
     if (_overlayEntry != null) {
-      _overlayEntry?.remove();
-      _overlayEntry = null;
-      _isOpen = false; // Update state without setState since we're disposing
+      _removeOverlay();
     }
-    
+
     if (widget.focusNode == null) {
       _focusNode.dispose();
     }
@@ -69,7 +78,7 @@ class _CustomDropdownState<T> extends State<CustomDropdown<T>> {
 
   void _toggleDropdown() {
     if (!widget.enabled) return;
-    
+
     if (_isOpen) {
       _removeOverlay();
     } else {
@@ -78,11 +87,19 @@ class _CustomDropdownState<T> extends State<CustomDropdown<T>> {
   }
 
   void _showOverlay() {
+    // Close any other open dropdown first
+    if (_currentlyOpen != null && _currentlyOpen != this) {
+      _currentlyOpen?._removeOverlay();
+    }
+    _currentlyOpen = this;
+
     _removeOverlay();
 
     // Get the render box to determine the width
-    final RenderBox? renderBox = _dropdownKey.currentContext?.findRenderObject() as RenderBox?;
-    final double dropdownWidth = renderBox?.size.width ?? MediaQuery.of(context).size.width - 32;
+    final RenderBox? renderBox =
+        _dropdownKey.currentContext?.findRenderObject() as RenderBox?;
+    final double dropdownWidth =
+        renderBox?.size.width ?? MediaQuery.of(context).size.width - 32;
 
     _overlayEntry = OverlayEntry(
       builder: (context) => Positioned(
@@ -91,83 +108,102 @@ class _CustomDropdownState<T> extends State<CustomDropdown<T>> {
           link: _layerLink,
           showWhenUnlinked: false,
           offset: const Offset(0, 60),
-          child: Material(
-            elevation: 4,
-            borderRadius: BorderRadius.circular(12),
-            child: Container(
-              constraints: const BoxConstraints(maxHeight: 300),
-              decoration: BoxDecoration(
-                color: widget.dropdownColor ?? AppTheme.cardColor,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey.shade300),
-              ),
-              child: ListView.builder(
-                shrinkWrap: true,
-                padding: EdgeInsets.zero,
-                itemCount: widget.items.length,
-                itemBuilder: (context, index) {
-                  final item = widget.items[index];
-                  final isSelected = item.value == widget.value;
-                  
-                  return InkWell(
-                    onTap: () {
-                      widget.onChanged?.call(item.value);
-                      _removeOverlay();
-                    },
-                    child: Container(
-                      height: 48,
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      decoration: BoxDecoration(
-                        color: isSelected 
-                            ? AppTheme.primaryColor.withValues(alpha: 0.1)
-                            : Colors.transparent,
-                        border: index < widget.items.length - 1
-                            ? Border(
-                                bottom: BorderSide(
-                                  color: Colors.grey.shade200,
-                                  width: 1,
-                                ),
-                              )
-                            : null,
-                      ),
-                      child: Row(
-                        children: [
-                          if (widget.prefixIcon != null) ...[
-                            Icon(
-                              widget.prefixIcon,
-                              size: 16,
-                              color: isSelected 
-                                  ? AppTheme.primaryColor
-                                  : AppTheme.neutralColor.withValues(alpha: 0.6),
-                            ),
-                            const SizedBox(width: 12),
-                          ],
-                          Expanded(
-                            child: DefaultTextStyle(
-                              style: widget.style ??
-                                  TextStyle(
-                                    color: isSelected
-                                        ? AppTheme.primaryColor
-                                        : AppTheme.darkNeutralColor,
-                                    fontWeight: isSelected 
-                                        ? FontWeight.w600
-                                        : FontWeight.w500,
-                                    fontSize: 16,
+          child: TapRegion(
+            groupId: this,
+            child: Material(
+              elevation: 4,
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                constraints: const BoxConstraints(maxHeight: 300),
+                decoration: BoxDecoration(
+                  color: widget.dropdownColor ??
+                      Theme.of(context).colorScheme.surface,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                      color: Theme.of(context)
+                          .dividerColor
+                          .withValues(alpha: 0.1)),
+                ),
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  padding: EdgeInsets.zero,
+                  itemCount: widget.items.length,
+                  itemBuilder: (context, index) {
+                    final item = widget.items[index];
+                    final isSelected = item.value == widget.value;
+
+                    return InkWell(
+                      onTap: () {
+                        widget.onChanged?.call(item.value);
+                        _removeOverlay();
+                      },
+                      child: Container(
+                        height: 48,
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? AppTheme.primaryColor.withValues(alpha: 0.1)
+                              : Colors.transparent,
+                          border: index < widget.items.length - 1
+                              ? Border(
+                                  bottom: BorderSide(
+                                    color: Theme.of(context)
+                                        .dividerColor
+                                        .withValues(alpha: 0.1),
+                                    width: 1,
                                   ),
-                              child: item.child,
+                                )
+                              : null,
+                        ),
+                        child: Row(
+                          children: [
+                            if (widget.prefixIcon != null) ...[
+                              Icon(
+                                widget.prefixIcon,
+                                size: 16,
+                                color: isSelected
+                                    ? Theme.of(context).colorScheme.primary
+                                    : (Theme.of(context).brightness ==
+                                            Brightness.dark
+                                        ? Theme.of(context).colorScheme.primary
+                                        : Theme.of(context)
+                                            .colorScheme
+                                            .onSurface
+                                            .withValues(alpha: 0.6)),
+                              ),
+                              const SizedBox(width: 12),
+                            ],
+                            Expanded(
+                              child: DefaultTextStyle(
+                                style: widget.style ??
+                                    TextStyle(
+                                      color: isSelected
+                                          ? Theme.of(context)
+                                              .colorScheme
+                                              .primary
+                                          : Theme.of(context)
+                                              .colorScheme
+                                              .onSurface,
+                                      fontWeight: isSelected
+                                          ? FontWeight.w600
+                                          : FontWeight.w500,
+                                      fontSize: 16,
+                                    ),
+                                child: item.child,
+                              ),
                             ),
-                          ),
-                          if (isSelected)
-                            const Icon(
-                              Icons.check,
-                              size: 16,
-                              color: AppTheme.primaryColor,
-                            ),
-                        ],
+                            if (isSelected)
+                              const Icon(
+                                Icons.check,
+                                size: 16,
+                                color: AppTheme.primaryColor,
+                              ),
+                          ],
+                        ),
                       ),
-                    ),
-                  );
-                },
+                    );
+                  },
+                ),
               ),
             ),
           ),
@@ -182,10 +218,14 @@ class _CustomDropdownState<T> extends State<CustomDropdown<T>> {
   }
 
   void _removeOverlay() {
+    if (_currentlyOpen == this) {
+      _currentlyOpen = null;
+    }
+
     if (_overlayEntry != null) {
       _overlayEntry?.remove();
       _overlayEntry = null;
-      
+
       // Only call setState if the widget is still mounted
       if (mounted) {
         setState(() {
@@ -206,93 +246,119 @@ class _CustomDropdownState<T> extends State<CustomDropdown<T>> {
         if (widget.label != null) ...[
           Text(
             widget.label!,
-            style: AppTheme.subtitleStyle.copyWith(
-              color: AppTheme.primaryColor,
-              fontWeight: FontWeight.bold,
-            ),
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.8),
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.2,
+                ),
           ),
           const SizedBox(height: 8),
         ],
-        CompositedTransformTarget(
-          link: _layerLink,
-          child: GestureDetector(
-            onTap: _toggleDropdown,
-            child: Container(
-              key: _dropdownKey,
-              decoration: BoxDecoration(
-                color: widget.enabled
-                    ? AppTheme.backgroundColor
-                    : AppTheme.backgroundColor.withValues(alpha: 0.5),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: widget.errorText != null
-                      ? AppTheme.errorColor
-                      : _isOpen
-                          ? AppTheme.primaryColor
-                          : AppTheme.neutralColor.withValues(alpha: 0.15),
-                  width: _isOpen ? 2 : 1.5,
+        TapRegion(
+          groupId: this,
+          onTapOutside: (event) => _removeOverlay(),
+          child: CompositedTransformTarget(
+            link: _layerLink,
+            child: GestureDetector(
+              onTap: _toggleDropdown,
+              child: Container(
+                key: _dropdownKey,
+                decoration: BoxDecoration(
+                  color: widget.enabled
+                      ? Theme.of(context).colorScheme.surface
+                      : Theme.of(context)
+                          .colorScheme
+                          .surface
+                          .withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: widget.errorText != null
+                        ? Theme.of(context).colorScheme.error
+                        : _isOpen
+                            ? Theme.of(context).colorScheme.primary
+                            : Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withValues(alpha: 0.15),
+                    width: _isOpen ? 2 : 1.5,
+                  ),
                 ),
-              ),
-              child: Row(
-                children: [
-                  if (widget.prefixIcon != null) ...[
+                child: Row(
+                  children: [
+                    if (widget.prefixIcon != null) ...[
+                      Padding(
+                        padding: const EdgeInsets.only(left: 12, right: 8),
+                        child: Icon(
+                          widget.prefixIcon,
+                          size: 20,
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Theme.of(context).colorScheme.primary
+                              : Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withValues(alpha: 0.6),
+                        ),
+                      ),
+                    ],
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 16,
+                        ),
+                        child: widget.value != null
+                            ? DefaultTextStyle(
+                                style: widget.style ??
+                                    TextStyle(
+                                      color: widget.enabled
+                                          ? Theme.of(context)
+                                              .colorScheme
+                                              .onSurface
+                                          : Theme.of(context)
+                                              .colorScheme
+                                              .onSurface
+                                              .withValues(alpha: 0.5),
+                                      fontWeight: FontWeight.w500,
+                                      fontSize: 16,
+                                      letterSpacing: 0.2,
+                                    ),
+                                child: widget.items
+                                    .firstWhere(
+                                        (item) => item.value == widget.value)
+                                    .child,
+                              )
+                            : Text(
+                                widget.hint ?? '',
+                                style: TextStyle(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurface
+                                      .withValues(alpha: 0.6),
+                                  fontWeight: FontWeight.w400,
+                                  fontSize: 15,
+                                  letterSpacing: 0.2,
+                                ),
+                              ),
+                      ),
+                    ),
                     Padding(
-                      padding: const EdgeInsets.only(left: 12, right: 8),
-                      child: Icon(
-                        widget.prefixIcon,
-                        size: 20,
-                        color: widget.enabled
-                            ? AppTheme.neutralColor.withValues(alpha: 0.6)
-                            : AppTheme.neutralColor.withValues(alpha: 0.5),
+                      padding: const EdgeInsets.only(right: 12),
+                      child: AnimatedRotation(
+                        turns: _isOpen ? 0.5 : 0,
+                        duration: const Duration(milliseconds: 200),
+                        child: Icon(
+                          Icons.arrow_drop_down,
+                          color: widget.enabled
+                              ? AppTheme.primaryColor
+                              : AppTheme.neutralColor.withValues(alpha: 0.5),
+                        ),
                       ),
                     ),
                   ],
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 16,
-                      ),
-                      child: widget.value != null
-                          ? DefaultTextStyle(
-                              style: widget.style ??
-                                  TextStyle(
-                                    color: widget.enabled
-                                        ? AppTheme.darkNeutralColor
-                                        : AppTheme.neutralColor,
-                                    fontWeight: FontWeight.w500,
-                                    fontSize: 16,
-                                    letterSpacing: 0.2,
-                                  ),
-                              child: widget.items
-                                  .firstWhere((item) => item.value == widget.value)
-                                  .child,
-                            )
-                          : Text(
-                              widget.hint ?? '',
-                              style: TextStyle(
-                                color: AppTheme.neutralColor.withValues(alpha: 0.6),
-                                fontWeight: FontWeight.w400,
-                                fontSize: 15,
-                                letterSpacing: 0.2,
-                              ),
-                            ),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(right: 12),
-                    child: AnimatedRotation(
-                      turns: _isOpen ? 0.5 : 0,
-                      duration: const Duration(milliseconds: 200),
-                      child: Icon(
-                        Icons.arrow_drop_down,
-                        color: widget.enabled
-                            ? AppTheme.primaryColor
-                            : AppTheme.neutralColor.withValues(alpha: 0.5),
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
           ),
@@ -301,8 +367,8 @@ class _CustomDropdownState<T> extends State<CustomDropdown<T>> {
           const SizedBox(height: 4),
           Text(
             widget.errorText!,
-            style: const TextStyle(
-              color: AppTheme.errorColor,
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.error,
               fontSize: 12,
               fontWeight: FontWeight.w500,
             ),

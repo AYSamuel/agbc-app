@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:remixicon/remixicon.dart';
-import '../utils/theme.dart';
+import '../config/theme.dart';
 
 class DrawerItem {
   final IconData icon;
@@ -33,7 +33,7 @@ class CustomDrawer extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: AppTheme.backgroundColor,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
         boxShadow: [
           BoxShadow(
@@ -52,7 +52,7 @@ class CustomDrawer extends StatelessWidget {
               height: 4,
               margin: const EdgeInsets.only(top: 12, bottom: 20),
               decoration: BoxDecoration(
-                color: Colors.grey[300],
+                color: Theme.of(context).dividerColor,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -65,7 +65,7 @@ class CustomDrawer extends StatelessWidget {
                     style: GoogleFonts.inter(
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
-                      color: const Color(0xFF1F2937),
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                   const Spacer(),
@@ -75,13 +75,16 @@ class CustomDrawer extends StatelessWidget {
                       onClose?.call();
                     },
                     icon: const Icon(Remix.close_line),
-                    color: const Color(0xFF6B7280),
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.6),
                   ),
                 ],
               ),
             ),
             const Divider(height: 1),
-            ...items.map((item) => _buildDrawerItem(item)),
+            ...items.map((item) => _buildDrawerItem(context, item)),
             const SizedBox(height: 32),
           ],
         ),
@@ -89,7 +92,7 @@ class CustomDrawer extends StatelessWidget {
     );
   }
 
-  Widget _buildDrawerItem(DrawerItem item) {
+  Widget _buildDrawerItem(BuildContext context, DrawerItem item) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -113,9 +116,9 @@ class CustomDrawer extends StatelessWidget {
               const SizedBox(width: 16),
               Text(
                 item.label,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
-                  color: Color(0xFF1A237E),
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -123,7 +126,10 @@ class CustomDrawer extends StatelessWidget {
               if (item.showChevron)
                 Icon(
                   Icons.chevron_right,
-                  color: Colors.grey[400],
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.3),
                   size: 20,
                 ),
             ],

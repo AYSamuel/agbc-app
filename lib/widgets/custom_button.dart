@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:grace_portal/widgets/loading_indicator.dart';
-import 'package:grace_portal/utils/theme.dart';
+import 'package:grace_portal/config/theme.dart';
 
 /// Different button variants
 enum ButtonVariant {

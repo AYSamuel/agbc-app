@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import '../utils/theme.dart';
+import '../config/theme.dart';
 import '../utils/focus_helper.dart';
 
 enum DateTimePickerMode {
@@ -98,8 +98,8 @@ class _CustomDateTimePickerField extends StatelessWidget {
 
         return Container(
           height: 350,
-          decoration: const BoxDecoration(
-            color: Colors.white,
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.only(
               topLeft: Radius.circular(24),
               topRight: Radius.circular(24),
@@ -128,7 +128,10 @@ class _CustomDateTimePickerField extends StatelessWidget {
                         style: GoogleFonts.inter(
                           fontSize: 16,
                           fontWeight: FontWeight.w500,
-                          color: AppTheme.neutralColor,
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withValues(alpha: 0.6),
                         ),
                       ),
                     ),
@@ -137,7 +140,7 @@ class _CustomDateTimePickerField extends StatelessWidget {
                       style: GoogleFonts.inter(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
-                        color: AppTheme.darkNeutralColor,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                     TextButton(
@@ -165,7 +168,7 @@ class _CustomDateTimePickerField extends StatelessWidget {
                     textTheme: CupertinoTextThemeData(
                       dateTimePickerTextStyle: GoogleFonts.inter(
                         fontSize: 20,
-                        color: AppTheme.darkNeutralColor,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                   ),
@@ -215,7 +218,10 @@ class _CustomDateTimePickerField extends StatelessWidget {
           Text(
             label,
             style: theme.textTheme.labelLarge?.copyWith(
-              color: AppTheme.neutralColor,
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSurface
+                  .withValues(alpha: 0.8),
               fontWeight: FontWeight.w600,
               letterSpacing: 0.2,
             ),
@@ -228,7 +234,7 @@ class _CustomDateTimePickerField extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: theme.colorScheme.surface,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: isError
@@ -242,7 +248,12 @@ class _CustomDateTimePickerField extends StatelessWidget {
                 if (prefixIcon != null) ...[
                   Icon(
                     prefixIcon,
-                    color: AppTheme.neutralColor.withValues(alpha: 0.6),
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Theme.of(context).colorScheme.primary
+                        : Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withValues(alpha: 0.6),
                     size: 20,
                   ),
                   const SizedBox(width: 12),
@@ -254,8 +265,11 @@ class _CustomDateTimePickerField extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: GoogleFonts.inter(
                       color: hasValue
-                          ? AppTheme.darkNeutralColor
-                          : AppTheme.neutralColor.withValues(alpha: 0.6),
+                          ? Theme.of(context).colorScheme.onSurface
+                          : Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withValues(alpha: 0.6),
                       fontWeight: hasValue ? FontWeight.w600 : FontWeight.w400,
                       fontSize: 15,
                       letterSpacing: 0.2,
@@ -268,7 +282,12 @@ class _CustomDateTimePickerField extends StatelessWidget {
                     constraints: const BoxConstraints(),
                     icon: Icon(
                       Icons.clear,
-                      color: AppTheme.neutralColor.withValues(alpha: 0.6),
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Theme.of(context).colorScheme.primary
+                          : Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withValues(alpha: 0.6),
                       size: 20,
                     ),
                     onPressed: () {

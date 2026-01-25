@@ -3,10 +3,11 @@ import 'package:provider/provider.dart';
 import '../providers/supabase_provider.dart';
 import '../models/church_branch_model.dart';
 import '../models/user_model.dart';
-import '../utils/theme.dart';
+import '../config/theme.dart';
 import '../widgets/custom_back_button.dart';
 import '../widgets/branch_card.dart';
 import 'add_branch_screen.dart';
+import '../widgets/custom_toast.dart';
 
 class BranchManagementScreen extends StatefulWidget {
   const BranchManagementScreen({super.key});
@@ -21,7 +22,7 @@ class _BranchManagementScreenState extends State<BranchManagementScreen> {
     final supabaseProvider = Provider.of<SupabaseProvider>(context);
 
     return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
+      backgroundColor: Theme.of(context).colorScheme.background,
       body: SafeArea(
         child: Column(
           children: [
@@ -214,22 +215,16 @@ class _BranchManagementScreenState extends State<BranchManagementScreen> {
   }
 
   // Add this helper method at the top of the class
-  void _safeShowSnackBar(String message, {Color? backgroundColor}) {
+  void _safeShowSnackBar(String message, {ToastType type = ToastType.info}) {
     if (!mounted) return;
 
     try {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(message),
-            backgroundColor: backgroundColor,
-            duration: const Duration(seconds: 3),
-          ),
-        );
+        CustomToast.show(context, message: message, type: type);
       }
     } catch (e) {
-      // Silently fail if we can't show the snackbar
-      debugPrint('Failed to show snackbar: $e');
+      // Silently fail if we can't show the toast
+      debugPrint('Failed to show toast: $e');
     }
   }
 
@@ -261,12 +256,13 @@ class _BranchManagementScreenState extends State<BranchManagementScreen> {
       final confirm = await _showDeleteConfirmationDialog(context, branch.name);
       if (confirm == true) {
         await supabaseProvider.deleteBranch(branch.id);
-        _safeShowSnackBar('Branch deleted successfully');
+        _safeShowSnackBar('Branch deleted successfully',
+            type: ToastType.success);
       }
     } catch (e) {
       _safeShowSnackBar(
         'Error deleting branch: ${e.toString()}',
-        backgroundColor: AppTheme.errorColor,
+        type: ToastType.error,
       );
     }
   }
@@ -457,7 +453,7 @@ class _BranchManagementScreenState extends State<BranchManagementScreen> {
     } catch (e) {
       _safeShowSnackBar(
         'Error loading branch details: ${e.toString()}',
-        backgroundColor: AppTheme.errorColor,
+        type: ToastType.error,
       );
     }
   }

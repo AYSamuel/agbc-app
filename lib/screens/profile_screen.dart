@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:grace_portal/utils/theme.dart';
+import 'package:grace_portal/config/theme.dart';
 import 'package:provider/provider.dart';
 import 'package:grace_portal/services/auth_service.dart';
 import 'package:grace_portal/providers/branches_provider.dart';
 import 'package:grace_portal/widgets/custom_back_button.dart';
+import 'package:grace_portal/widgets/custom_toast.dart';
 import 'package:grace_portal/models/user_model.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -55,12 +56,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } catch (e) {
       if (!mounted) return;
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString()),
-          backgroundColor: Colors.red,
-        ),
-      );
+      CustomToast.show(context, message: e.toString(), type: ToastType.error);
     }
   }
 
@@ -72,7 +68,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final canPop = Navigator.canPop(context);
 
     return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
+      backgroundColor: Theme.of(context).colorScheme.background,
       body: Column(
         children: [
           // Modern Header with Gradient Background
@@ -104,7 +100,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ],
                         Text(
                           'My Profile',
-                          style: AppTheme.titleStyle.copyWith(
+                          style: AppTheme.titleStyle(context).copyWith(
                             color: Colors.white,
                             fontSize: 22,
                             fontWeight: FontWeight.bold,
@@ -119,13 +115,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     child: Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: Theme.of(context).colorScheme.surface,
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.08),
+                            color: Theme.of(context).shadowColor,
                             blurRadius: 15,
-                            offset: const Offset(0, 4),
+                            offset: const Offset(0, 5),
                           ),
                         ],
                       ),
@@ -140,13 +136,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
                                   border: Border.all(
-                                    color: AppTheme.primaryColor.withValues(alpha: 0.2),
+                                    color: AppTheme.primaryColor
+                                        .withValues(alpha: 0.2),
                                     width: 3,
                                   ),
                                 ),
                                 child: CircleAvatar(
                                   radius: 50,
-                                  backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.1),
+                                  backgroundColor: AppTheme.primaryColor
+                                      .withValues(alpha: 0.1),
                                   backgroundImage: (user?.photoUrl != null &&
                                           user!.photoUrl!.isNotEmpty)
                                       ? NetworkImage(user.photoUrl!)
@@ -154,7 +152,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   child: (user?.photoUrl == null ||
                                           user!.photoUrl!.isEmpty)
                                       ? const Icon(Icons.person,
-                                          size: 50, color: AppTheme.primaryColor)
+                                          size: 50,
+                                          color: AppTheme.primaryColor)
                                       : null,
                                 ),
                               ),
@@ -188,10 +187,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           // Name
                           Text(
                             user?.displayName ?? 'User',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 24,
                               fontWeight: FontWeight.bold,
-                              color: AppTheme.darkNeutralColor,
+                              color: Theme.of(context).colorScheme.onSurface,
                             ),
                             textAlign: TextAlign.center,
                           ),
@@ -201,7 +200,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 16, vertical: 8),
                             decoration: BoxDecoration(
-                              color: _getRoleColor(user?.role ?? UserRole.member),
+                              color:
+                                  _getRoleColor(user?.role ?? UserRole.member),
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Text(
@@ -224,26 +224,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           Builder(builder: (context) {
                             String branchDisplayName;
                             if (user?.branchId?.isNotEmpty == true) {
-                              branchDisplayName =
-                                  branchesProvider.getBranchName(user!.branchId!);
+                              branchDisplayName = branchesProvider
+                                  .getBranchName(user!.branchId!);
                             } else {
                               branchDisplayName = 'No branch assigned';
                             }
                             return Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                const Icon(
+                                Icon(
                                   Icons.church,
                                   size: 16,
-                                  color: AppTheme.neutralColor,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurface
+                                      .withValues(alpha: 0.5),
                                 ),
                                 const SizedBox(width: 6),
                                 Text(
                                   branchDisplayName,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w500,
-                                    color: AppTheme.neutralColor,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withValues(alpha: 0.6),
                                   ),
                                 ),
                               ],
@@ -311,7 +317,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         const SizedBox(height: 16),
                         _buildInfoRow(
                           title: 'Role',
-                          value: user?.role.toString().split('.').last.toUpperCase() ?? 'MEMBER',
+                          value: user?.role
+                                  .toString()
+                                  .split('.')
+                                  .last
+                                  .toUpperCase() ??
+                              'MEMBER',
                           icon: Icons.badge,
                         ),
                       ],
@@ -326,7 +337,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     child: Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: Theme.of(context).colorScheme.surface,
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
                           color: AppTheme.errorColor.withValues(alpha: 0.2),
@@ -334,7 +345,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.04),
+                            color: Theme.of(context).shadowColor,
                             blurRadius: 10,
                             offset: const Offset(0, 2),
                           ),
@@ -355,7 +366,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ),
                           ),
                           const SizedBox(width: 12),
-                          const Expanded(
+                          Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -372,7 +383,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   'Sign out of your account',
                                   style: TextStyle(
                                     fontSize: 12,
-                                    color: AppTheme.neutralColor,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withAlpha(150),
                                   ),
                                 ),
                               ],
@@ -405,11 +419,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: Theme.of(context).shadowColor,
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -445,10 +459,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const SizedBox(width: 12),
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: AppTheme.darkNeutralColor,
+                    color: Theme.of(context).colorScheme.onSurface,
                     letterSpacing: 0.2,
                   ),
                 ),
@@ -484,19 +498,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
             children: [
               Text(
                 title,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12,
-                  color: AppTheme.neutralColor,
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.5),
                   fontWeight: FontWeight.w500,
                 ),
               ),
               const SizedBox(height: 4),
               Text(
                 value,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
-                  color: AppTheme.darkNeutralColor,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
             ],

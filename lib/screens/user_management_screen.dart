@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/supabase_provider.dart';
 import '../providers/branches_provider.dart';
 import '../models/user_model.dart';
-import '../utils/theme.dart';
+import '../config/theme.dart';
 import '../widgets/custom_back_button.dart';
 import '../widgets/custom_input.dart';
 import '../widgets/user_card.dart';
@@ -47,7 +47,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
     final supabaseProvider = Provider.of<SupabaseProvider>(context);
 
     return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
+      backgroundColor: Theme.of(context).colorScheme.background,
       body: SafeArea(
         child: Column(
           children: [
@@ -158,8 +158,8 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                     return Center(
                       child: Text(
                         'Error: ${snapshot.error}',
-                        style: AppTheme.subtitleStyle.copyWith(
-                          color: AppTheme.errorColor,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.error,
                         ),
                       ),
                     );
@@ -187,8 +187,10 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                   // Filter users by search query
                   if (_searchQuery.isNotEmpty) {
                     filteredUsers = filteredUsers.where((user) {
-                      final nameMatch = user.displayName.toLowerCase().contains(_searchQuery);
-                      final emailMatch = user.email.toLowerCase().contains(_searchQuery);
+                      final nameMatch =
+                          user.displayName.toLowerCase().contains(_searchQuery);
+                      final emailMatch =
+                          user.email.toLowerCase().contains(_searchQuery);
                       return nameMatch || emailMatch;
                     }).toList();
                   }
@@ -206,8 +208,10 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                           const SizedBox(height: 16),
                           Text(
                             'No Users Found',
-                            style: AppTheme.titleStyle.copyWith(
-                              color: AppTheme.primaryColor,
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.primary,
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
                           const SizedBox(height: 8),
@@ -217,8 +221,11 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                                 : widget.initialBranchFilter != null
                                     ? 'There are no users assigned to this branch.'
                                     : 'There are currently no users in the system.',
-                            style: AppTheme.subtitleStyle.copyWith(
-                              color: AppTheme.neutralColor,
+                            style: TextStyle(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withValues(alpha: 0.6),
                             ),
                             textAlign: TextAlign.center,
                           ),

@@ -5,12 +5,13 @@ import 'package:grace_portal/models/church_branch_model.dart';
 import 'package:grace_portal/widgets/custom_input.dart';
 import 'package:grace_portal/widgets/custom_button.dart';
 import 'package:grace_portal/widgets/form/location_field.dart'; // Add this import
-import 'package:grace_portal/utils/theme.dart';
+import 'package:grace_portal/config/theme.dart';
 import 'package:uuid/uuid.dart';
 import 'package:grace_portal/widgets/custom_back_button.dart';
 import 'package:grace_portal/models/user_model.dart';
 import 'package:grace_portal/widgets/custom_dropdown.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../widgets/custom_toast.dart';
 
 class AddBranchScreen extends StatefulWidget {
   const AddBranchScreen({super.key});
@@ -97,26 +98,18 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
       if (!mounted) return; // Add this check
 
       if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Branch created successfully')),
-        );
+        CustomToast.show(context,
+            message: 'Branch created successfully', type: ToastType.success);
         Navigator.pop(context);
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to create branch. Please try again.'),
-            backgroundColor: AppTheme.errorColor,
-          ),
-        );
+        CustomToast.show(context,
+            message: 'Failed to create branch. Please try again.',
+            type: ToastType.error);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to add branch: $e'),
-            backgroundColor: AppTheme.errorColor,
-          ),
-        );
+        CustomToast.show(context,
+            message: 'Failed to add branch: $e', type: ToastType.error);
       }
     } finally {
       if (mounted) {
@@ -130,7 +123,7 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
+      backgroundColor: Theme.of(context).colorScheme.background,
       body: SafeArea(
         child: Column(
           children: [
@@ -160,7 +153,7 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
                         children: [
                           Text(
                             'Create New Branch',
-                            style: AppTheme.titleStyle.copyWith(
+                            style: AppTheme.titleStyle(context).copyWith(
                               color: Colors.white,
                               fontSize: 22,
                               fontWeight: FontWeight.bold,
@@ -170,7 +163,10 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
                           Text(
                             'Expand your ministry reach',
                             style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.9),
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onPrimary
+                                  .withValues(alpha: 0.9),
                               fontSize: 14,
                               fontWeight: FontWeight.w400,
                             ),
@@ -311,20 +307,25 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
                                     children: [
                                       CircleAvatar(
                                         radius: 16,
-                                        backgroundColor: AppTheme.accentColor
-                                            .withValues(alpha: 0.1),
+                                        backgroundColor: Theme.of(context)
+                                            .colorScheme
+                                            .primary
+                                            .withValues(alpha: 0.05),
                                         child: const Icon(
                                           Icons.person,
                                           size: 16,
-                                          color: AppTheme.accentColor,
                                         ),
                                       ),
                                       const SizedBox(width: 12),
                                       Expanded(
                                         child: Text(
                                           pastor.displayName,
-                                          style: const TextStyle(
-                                              fontWeight: FontWeight.w500),
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w500,
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .onSurface,
+                                          ),
                                         ),
                                       ),
                                     ],
@@ -358,13 +359,18 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
                           decoration: BoxDecoration(
                             color: _isActive
                                 ? AppTheme.successColor.withValues(alpha: 0.1)
-                                : AppTheme.neutralColor.withValues(alpha: 0.1),
+                                : Theme.of(context)
+                                    .colorScheme
+                                    .onSurface
+                                    .withValues(alpha: 0.05),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
                               color: _isActive
                                   ? AppTheme.successColor.withValues(alpha: 0.3)
-                                  : AppTheme.neutralColor
-                                      .withValues(alpha: 0.3),
+                                  : Theme.of(context)
+                                      .colorScheme
+                                      .onSurface
+                                      .withValues(alpha: 0.1),
                             ),
                           ),
                           child: Row(
@@ -375,7 +381,7 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
                                     : Icons.radio_button_unchecked,
                                 color: _isActive
                                     ? AppTheme.successColor
-                                    : AppTheme.neutralColor,
+                                    : Theme.of(context).disabledColor,
                                 size: 28,
                               ),
                               const SizedBox(width: 12),
@@ -398,7 +404,10 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
                                           : 'Branch will be created as inactive',
                                       style:
                                           theme.textTheme.bodySmall?.copyWith(
-                                        color: AppTheme.neutralColor,
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurface
+                                            .withValues(alpha: 0.6),
                                       ),
                                     ),
                                   ],
@@ -453,11 +462,11 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: Theme.of(context).shadowColor,
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -493,10 +502,10 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
                 const SizedBox(width: 12),
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: AppTheme.darkNeutralColor,
+                    color: Theme.of(context).colorScheme.onSurface,
                     letterSpacing: 0.2,
                   ),
                 ),

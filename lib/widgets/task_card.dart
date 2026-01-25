@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:remixicon/remixicon.dart';
 import '../models/task_model.dart';
-import '../utils/theme.dart';
 
 class TaskCard extends StatelessWidget {
   final TaskModel task;
@@ -25,7 +24,7 @@ class TaskCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
@@ -51,7 +50,7 @@ class TaskCard extends StatelessWidget {
               Container(
                 height: 5,
                 decoration: BoxDecoration(
-                  color: _getStatusColor(task.status),
+                  color: _getStatusColor(context, task.status),
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(20),
                     topRight: Radius.circular(20),
@@ -73,18 +72,22 @@ class TaskCard extends StatelessWidget {
                             children: [
                               Text(
                                 task.title,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
-                                  color: AppTheme.darkNeutralColor,
+                                  color:
+                                      Theme.of(context).colorScheme.onSurface,
                                 ),
                               ),
                               const SizedBox(height: 8),
                               Text(
                                 task.description,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 14,
-                                  color: AppTheme.neutralColor,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurface
+                                      .withValues(alpha: 0.6),
                                 ),
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
@@ -94,15 +97,17 @@ class TaskCard extends StatelessWidget {
                         ),
                         const SizedBox(width: 12),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
-                            color: _getStatusColor(task.status).withValues(alpha: 0.15),
+                            color: _getStatusColor(context, task.status)
+                                .withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
                             _getStatusDisplayText(task.status),
                             style: TextStyle(
-                              color: _getStatusColor(task.status),
+                              color: _getStatusColor(context, task.status),
                               fontWeight: FontWeight.bold,
                               fontSize: 10,
                               letterSpacing: 0.5,
@@ -115,9 +120,11 @@ class TaskCard extends StatelessWidget {
                     Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 6),
                           decoration: BoxDecoration(
-                            color: _getPriorityColor(task.priority).withValues(alpha: 0.1),
+                            color: _getPriorityColor(context, task.priority)
+                                .withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Row(
@@ -126,14 +133,14 @@ class TaskCard extends StatelessWidget {
                               Icon(
                                 Remix.flag_line,
                                 size: 14,
-                                color: _getPriorityColor(task.priority),
+                                color: _getPriorityColor(context, task.priority),
                               ),
                               const SizedBox(width: 4),
                               Text(
                                 _getPriorityDisplayText(task.priority),
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: _getPriorityColor(task.priority),
+                                  color: _getPriorityColor(context, task.priority),
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -141,25 +148,35 @@ class TaskCard extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 12),
-                        const Icon(
+                        Icon(
                           Remix.calendar_line,
                           size: 14,
-                          color: AppTheme.neutralColor,
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withValues(alpha: 0.6),
                         ),
                         const SizedBox(width: 4),
                         Text(
                           _formatDate(task.dueDate),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
-                            color: AppTheme.neutralColor,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withValues(alpha: 0.6),
                             fontWeight: FontWeight.w500,
                           ),
                         ),
                       ],
                     ),
-                    if (showActions && (onEdit != null || onDelete != null)) ...[
+                    if (showActions &&
+                        (onEdit != null || onDelete != null)) ...[
                       const SizedBox(height: 16),
-                      const Divider(height: 1, color: AppTheme.neutralColor),
+                      Divider(
+                        height: 1,
+                        color: Theme.of(context).dividerColor,
+                      ),
                       const SizedBox(height: 12),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.end,
@@ -170,15 +187,15 @@ class TaskCard extends StatelessWidget {
                                 HapticFeedback.lightImpact();
                                 onEdit!();
                               },
-                              icon: const Icon(
+                              icon: Icon(
                                 Icons.edit_outlined,
                                 size: 16,
-                                color: AppTheme.primaryColor,
+                                color: Theme.of(context).colorScheme.primary,
                               ),
-                              label: const Text(
+                              label: Text(
                                 'Edit',
                                 style: TextStyle(
-                                  color: AppTheme.primaryColor,
+                                  color: Theme.of(context).colorScheme.primary,
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -196,15 +213,15 @@ class TaskCard extends StatelessWidget {
                                 HapticFeedback.lightImpact();
                                 onDelete!();
                               },
-                              icon: const Icon(
+                              icon: Icon(
                                 Icons.delete_outline,
                                 size: 16,
-                                color: AppTheme.errorColor,
+                                color: Theme.of(context).colorScheme.error,
                               ),
-                              label: const Text(
+                              label: Text(
                                 'Delete',
                                 style: TextStyle(
-                                  color: AppTheme.errorColor,
+                                  color: Theme.of(context).colorScheme.error,
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -253,29 +270,33 @@ class TaskCard extends StatelessWidget {
     }
   }
 
-  Color _getStatusColor(TaskStatus status) {
+  Color _getStatusColor(BuildContext context, TaskStatus status) {
+    final theme = Theme.of(context);
     switch (status) {
       case TaskStatus.completed:
-        return Colors.green;
+        return theme.colorScheme.tertiary; // Sage Green
       case TaskStatus.inProgress:
-        return Colors.orange;
+        return theme.colorScheme.tertiaryContainer; // Amber
       case TaskStatus.pending:
-        return Colors.blue;
+        return theme.colorScheme.primary; // Blue
       case TaskStatus.cancelled:
-        return Colors.red;
+        return theme.colorScheme.error; // Red
     }
   }
 
-  Color _getPriorityColor(TaskPriority priority) {
+  Color _getPriorityColor(BuildContext context, TaskPriority priority) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     switch (priority) {
       case TaskPriority.urgent:
-        return const Color(0xFF9D174D);
+        return isDark ? const Color(0xFFEC4899) : const Color(0xFF9D174D);
       case TaskPriority.high:
-        return Colors.red;
+        return theme.colorScheme.error;
       case TaskPriority.medium:
-        return Colors.orange;
+        return theme.colorScheme.tertiaryContainer;
       case TaskPriority.low:
-        return Colors.green;
+        return theme.colorScheme.tertiary;
     }
   }
 

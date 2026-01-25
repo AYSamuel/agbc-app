@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 import '../screens/home_screen.dart';
+import '../widgets/custom_toast.dart';
 
 class AdminRouteGuard extends StatelessWidget {
   final Widget child;
@@ -18,12 +19,9 @@ class AdminRouteGuard extends StatelessWidget {
     if (!authService.isAdmin) {
       // Show error and redirect to home
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Access denied. Admin privileges required.'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        CustomToast.show(context,
+            message: 'Access denied. Admin privileges required.',
+            type: ToastType.error);
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (context) => const HomeScreen()),
         );

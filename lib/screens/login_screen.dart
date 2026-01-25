@@ -2,7 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import '../widgets/login_form.dart';
-import '../utils/theme.dart';
+import '../config/theme.dart';
 
 class LoginScreen extends StatefulWidget {
   final bool isLoggingOut;
@@ -30,22 +30,23 @@ class _LoginScreenState extends State<LoginScreen> {
     final bool effectivelyIsLoggingOut = widget.isLoggingOut || clearForm;
 
     return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
-      resizeToAvoidBottomInset: true, // Ensure content resizes when keyboard appears
+      backgroundColor: Theme.of(context).colorScheme.background,
+      resizeToAvoidBottomInset:
+          true, // Ensure content resizes when keyboard appears
       body: Stack(
         children: [
           // Gorgeous layered gradient background
           Container(
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
                   AppTheme.primaryColor,
-                  AppTheme.secondaryColor,
-                  AppTheme.backgroundColor,
+                  AppTheme.secondaryColor.withValues(alpha: 0.8),
+                  Theme.of(context).colorScheme.background,
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                stops: [0, 0.5, 1],
+                stops: const [0, 0.4, 1],
               ),
             ),
           ),
@@ -73,14 +74,17 @@ class _LoginScreenState extends State<LoginScreen> {
           Center(
             child: SingleChildScrollView(
               child: Padding(
-                padding: AppTheme.screenPadding,
+                padding: AppTheme.screenPadding(context),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(32),
                   child: BackdropFilter(
                     filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
                     child: Container(
                       decoration: BoxDecoration(
-                        color: AppTheme.cardColor.withValues(alpha: 0.82),
+                        color: Theme.of(context)
+                            .colorScheme
+                            .surface
+                            .withValues(alpha: 0.82),
                         borderRadius: BorderRadius.circular(32),
                         boxShadow: [
                           BoxShadow(
@@ -91,11 +95,11 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ],
                         border: Border.all(
-                          color: AppTheme.dividerColor.withValues(alpha: 0.35),
+                          color: AppTheme.dividerColor(context).withValues(alpha: 0.35),
                           width: 1.2,
                         ),
                       ),
-                      padding: AppTheme.cardPadding,
+                      padding: AppTheme.cardPadding(context),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
@@ -117,7 +121,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           // Title Text
                           Text(
                             'Welcome Back',
-                            style: AppTheme.titleStyle.copyWith(
+                            style: AppTheme.titleStyle(context).copyWith(
                               fontSize: 28,
                               color: AppTheme.primaryColor,
                               letterSpacing: 0.5,
@@ -127,8 +131,11 @@ class _LoginScreenState extends State<LoginScreen> {
                           const SizedBox(height: 8),
                           Text(
                             'Login to your account',
-                            style: AppTheme.subtitleStyle.copyWith(
-                              color: AppTheme.neutralColor,
+                            style: AppTheme.subtitleStyle(context).copyWith(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withValues(alpha: 0.7),
                             ),
                             textAlign: TextAlign.center,
                           ),
@@ -147,14 +154,14 @@ class _LoginScreenState extends State<LoginScreen> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Text('Don\'t have an account?',
-                                  style: AppTheme.regularTextStyle),
+                                  style: AppTheme.regularTextStyle(context)),
                               TextButton(
                                 onPressed: () {
                                   Navigator.of(context)
                                       .pushReplacementNamed('/register');
                                 },
                                 child:
-                                    Text('Sign up', style: AppTheme.linkStyle),
+                                    Text('Sign up', style: AppTheme.linkStyle(context)),
                               ),
                             ],
                           ),

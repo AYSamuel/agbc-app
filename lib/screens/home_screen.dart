@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:grace_portal/models/meeting_model.dart';
 import 'package:grace_portal/models/user_model.dart';
 import 'package:grace_portal/screens/meeting_creation_screen.dart';
-import 'package:grace_portal/utils/theme.dart';
+import 'package:grace_portal/config/theme.dart';
 import 'package:grace_portal/widgets/task_status_card.dart';
 import 'package:grace_portal/widgets/daily_verse_card.dart';
 import 'package:grace_portal/widgets/quick_action_card.dart';
@@ -29,6 +29,7 @@ import 'settings_screen.dart';
 import 'help_support_screen.dart';
 import 'about_screen.dart';
 import '../widgets/admin_route_guard.dart';
+import '../widgets/custom_toast.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -89,13 +90,8 @@ class _HomeScreenState extends State<HomeScreen> {
       debugPrint('Error during refresh: $e');
       // Show error message to user
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to refresh data: $e'),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 3),
-          ),
-        );
+        CustomToast.show(context,
+            message: 'Failed to refresh data: $e', type: ToastType.error);
       }
     }
   }
@@ -107,11 +103,11 @@ class _HomeScreenState extends State<HomeScreen> {
     final userProfile = authService.currentUserProfile;
 
     return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
+      backgroundColor: Theme.of(context).colorScheme.background,
       body: RefreshIndicator(
         onRefresh: _onRefresh,
         color: AppTheme.primaryColor,
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         strokeWidth: 2.5,
         displacement: 40.0,
         child: SingleChildScrollView(
@@ -134,7 +130,10 @@ class _HomeScreenState extends State<HomeScreen> {
                             'Welcome back,',
                             style: GoogleFonts.inter(
                               fontSize: 16,
-                              color: Colors.grey[600],
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onBackground
+                                  .withValues(alpha: 0.6),
                             ),
                           ),
                           const SizedBox(height: 4),
@@ -143,7 +142,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             style: GoogleFonts.inter(
                               fontSize: 24,
                               fontWeight: FontWeight.bold,
-                              color: Colors.grey[800],
+                              color: Theme.of(context).colorScheme.onBackground,
                             ),
                           ),
                         ],
@@ -243,7 +242,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     final hasUncompletedTasks = uncompletedTasks.isNotEmpty;
 
                     // Hide card for members without uncompleted tasks
-                    if (userProfile?.role == UserRole.member && !hasUncompletedTasks) {
+                    if (userProfile?.role == UserRole.member &&
+                        !hasUncompletedTasks) {
                       return const SizedBox.shrink();
                     }
 
@@ -259,7 +259,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   style: GoogleFonts.inter(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: Colors.grey[800],
+                    color: Theme.of(context).colorScheme.onBackground,
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -488,13 +488,9 @@ class _HomeScreenState extends State<HomeScreen> {
     final userProfile =
         Provider.of<AuthService>(context, listen: false).currentUserProfile;
     if (userProfile?.role == UserRole.member) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-              'Only workers, pastors, and administrators can create tasks'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      CustomToast.show(context,
+          message: 'Only workers, pastors, and administrators can create tasks',
+          type: ToastType.error);
       return;
     }
 

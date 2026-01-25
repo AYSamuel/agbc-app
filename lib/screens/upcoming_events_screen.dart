@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import '../models/meeting_model.dart';
 import '../widgets/meeting_card.dart';
 import '../widgets/custom_back_button.dart';
-import '../utils/theme.dart';
+
 import '../providers/supabase_provider.dart';
 import 'meeting_details_screen.dart';
 
@@ -19,7 +19,7 @@ class _UpcomingEventsScreenState extends State<UpcomingEventsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
+      backgroundColor: Theme.of(context).colorScheme.background,
       body: SafeArea(
         child: Column(
           children: [
@@ -37,22 +37,22 @@ class _UpcomingEventsScreenState extends State<UpcomingEventsScreen> {
                     style: GoogleFonts.inter(
                       fontSize: 20,
                       fontWeight: FontWeight.w600,
-                      color: Colors.grey[800],
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                 ],
               ),
             ),
-            
+
             // Events List
             Expanded(
               child: StreamBuilder<List<MeetingModel>>(
                 stream: Provider.of<SupabaseProvider>(context).getAllMeetings(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(
+                    return Center(
                       child: CircularProgressIndicator(
-                        color: AppTheme.primaryColor,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     );
                   }
@@ -65,7 +65,7 @@ class _UpcomingEventsScreenState extends State<UpcomingEventsScreen> {
                           Icon(
                             Icons.error_outline,
                             size: 64,
-                            color: Colors.red[300],
+                            color: Theme.of(context).colorScheme.error,
                           ),
                           const SizedBox(height: 16),
                           Text(
@@ -73,7 +73,7 @@ class _UpcomingEventsScreenState extends State<UpcomingEventsScreen> {
                             style: GoogleFonts.inter(
                               fontSize: 18,
                               fontWeight: FontWeight.w500,
-                              color: AppTheme.neutralColor,
+                              color: Theme.of(context).colorScheme.onSurface,
                             ),
                           ),
                           const SizedBox(height: 8),
@@ -81,7 +81,7 @@ class _UpcomingEventsScreenState extends State<UpcomingEventsScreen> {
                             'Please try again later',
                             style: GoogleFonts.inter(
                               fontSize: 14,
-                              color: Colors.red[300],
+                              color: Theme.of(context).colorScheme.error,
                             ),
                             textAlign: TextAlign.center,
                           ),
@@ -98,11 +98,13 @@ class _UpcomingEventsScreenState extends State<UpcomingEventsScreen> {
                       .where((meeting) =>
                           meeting.dateTime.isAfter(DateTime.now()) &&
                           meeting.status == MeetingStatus.scheduled &&
-                          meeting.parentMeetingId == null) // Only show parent meetings, not instances
+                          meeting.parentMeetingId ==
+                              null) // Only show parent meetings, not instances
                       .toList();
 
                   // Sort by date (earliest first)
-                  upcomingMeetings.sort((a, b) => a.dateTime.compareTo(b.dateTime));
+                  upcomingMeetings
+                      .sort((a, b) => a.dateTime.compareTo(b.dateTime));
 
                   if (upcomingMeetings.isEmpty) {
                     return Center(
@@ -112,7 +114,10 @@ class _UpcomingEventsScreenState extends State<UpcomingEventsScreen> {
                           Icon(
                             Icons.event_note,
                             size: 64,
-                            color: AppTheme.neutralColor.withValues(alpha: 0.5),
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withValues(alpha: 0.6),
                           ),
                           const SizedBox(height: 16),
                           Text(
@@ -120,7 +125,7 @@ class _UpcomingEventsScreenState extends State<UpcomingEventsScreen> {
                             style: GoogleFonts.inter(
                               fontSize: 18,
                               fontWeight: FontWeight.w500,
-                              color: AppTheme.neutralColor,
+                              color: Theme.of(context).colorScheme.onSurface,
                             ),
                           ),
                           const SizedBox(height: 8),
@@ -128,7 +133,10 @@ class _UpcomingEventsScreenState extends State<UpcomingEventsScreen> {
                             'Check back later for new events',
                             style: GoogleFonts.inter(
                               fontSize: 14,
-                              color: AppTheme.neutralColor.withValues(alpha: 0.7),
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withValues(alpha: 0.7),
                             ),
                             textAlign: TextAlign.center,
                           ),
@@ -147,14 +155,18 @@ class _UpcomingEventsScreenState extends State<UpcomingEventsScreen> {
                       itemBuilder: (context, index) {
                         final meeting = upcomingMeetings[index];
                         return Padding(
-                          padding: EdgeInsets.only(bottom: index < upcomingMeetings.length - 1 ? 16.0 : 0),
+                          padding: EdgeInsets.only(
+                              bottom: index < upcomingMeetings.length - 1
+                                  ? 16.0
+                                  : 0),
                           child: MeetingCard(
                             meeting: meeting,
                             onTap: () {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => MeetingDetailsScreen(meeting: meeting),
+                                  builder: (context) =>
+                                      MeetingDetailsScreen(meeting: meeting),
                                 ),
                               );
                             },

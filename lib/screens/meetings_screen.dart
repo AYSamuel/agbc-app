@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/meeting_model.dart';
 import '../widgets/meeting_card.dart';
-import '../utils/theme.dart';
+
 import '../providers/supabase_provider.dart';
 
 class MeetingsScreen extends StatefulWidget {
@@ -18,7 +18,7 @@ class _MeetingsScreenState extends State<MeetingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
+      backgroundColor: Theme.of(context).colorScheme.background,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -44,7 +44,7 @@ class _MeetingsScreenState extends State<MeetingsScreen> {
                             Icon(
                               Icons.error_outline,
                               size: 64,
-                              color: Colors.red[300],
+                              color: Theme.of(context).colorScheme.error,
                             ),
                             const SizedBox(height: 16),
                             Text(
@@ -52,7 +52,7 @@ class _MeetingsScreenState extends State<MeetingsScreen> {
                               style: GoogleFonts.poppins(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w500,
-                                color: AppTheme.neutralColor,
+                                color: Theme.of(context).colorScheme.onSurface,
                               ),
                             ),
                             const SizedBox(height: 8),
@@ -60,7 +60,7 @@ class _MeetingsScreenState extends State<MeetingsScreen> {
                               'Please try again later',
                               style: GoogleFonts.poppins(
                                 fontSize: 14,
-                                color: Colors.red[300],
+                                color: Theme.of(context).colorScheme.error,
                               ),
                               textAlign: TextAlign.center,
                             ),
@@ -84,7 +84,10 @@ class _MeetingsScreenState extends State<MeetingsScreen> {
                             Icon(
                               Icons.event_note,
                               size: 64,
-                              color: AppTheme.neutralColor.withValues(alpha: 0.5),
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withValues(alpha: 0.5),
                             ),
                             const SizedBox(height: 16),
                             Text(
@@ -92,7 +95,7 @@ class _MeetingsScreenState extends State<MeetingsScreen> {
                               style: GoogleFonts.poppins(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w500,
-                                color: AppTheme.neutralColor,
+                                color: Theme.of(context).colorScheme.onSurface,
                               ),
                             ),
                             const SizedBox(height: 8),
@@ -100,7 +103,10 @@ class _MeetingsScreenState extends State<MeetingsScreen> {
                               'Meetings will appear here when they are created',
                               style: GoogleFonts.poppins(
                                 fontSize: 14,
-                                color: AppTheme.neutralColor.withValues(alpha: 0.7),
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurface
+                                    .withValues(alpha: 0.7),
                               ),
                               textAlign: TextAlign.center,
                             ),

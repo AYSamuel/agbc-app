@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../utils/theme.dart';
+import '../config/theme.dart';
 
 class CustomCard extends StatelessWidget {
   final Widget child;
@@ -22,7 +22,7 @@ class CustomCard extends StatelessWidget {
     return Container(
       padding: padding ?? const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: backgroundColor ?? AppTheme.cardColor,
+        color: backgroundColor ?? AppTheme.cardColor(context),
         borderRadius: BorderRadius.circular(borderRadius ?? 20),
         boxShadow: boxShadow ??
             [

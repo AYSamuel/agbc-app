@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/supabase_provider.dart';
 import '../models/user_model.dart';
-import '../utils/theme.dart';
+import '../config/theme.dart';
 import '../widgets/custom_back_button.dart';
 import '../providers/branches_provider.dart';
 import '../widgets/custom_dropdown.dart';
 import 'package:logging/logging.dart';
 import '../models/church_branch_model.dart';
+import '../widgets/custom_toast.dart';
 
 class UserDetailsScreen extends StatefulWidget {
   final UserModel user;
@@ -43,7 +44,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
     final roleColor = _getRoleColor(widget.user.role);
 
     return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
+      backgroundColor: Theme.of(context).colorScheme.background,
       body: SafeArea(
         child: Column(
           children: [
@@ -84,7 +85,9 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                           ),
                           child: IconButton(
                             icon: Icon(
-                              isEditing ? Icons.close_rounded : Icons.edit_rounded,
+                              isEditing
+                                  ? Icons.close_rounded
+                                  : Icons.edit_rounded,
                               color: Colors.white,
                             ),
                             onPressed: () {
@@ -126,7 +129,8 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                             backgroundColor: Colors.white,
                             child: CircleAvatar(
                               radius: 48,
-                              backgroundColor: Colors.white.withValues(alpha: 0.9),
+                              backgroundColor:
+                                  Colors.white.withValues(alpha: 0.9),
                               backgroundImage: widget.user.photoUrl != null &&
                                       widget.user.photoUrl!.isNotEmpty
                                   ? NetworkImage(widget.user.photoUrl!)
@@ -176,7 +180,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                             borderRadius: BorderRadius.circular(20),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.1),
+                                color: Theme.of(context).shadowColor,
                                 blurRadius: 8,
                                 offset: const Offset(0, 2),
                               ),
@@ -408,11 +412,11 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: Theme.of(context).shadowColor,
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -495,18 +499,21 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
             children: [
               Text(
                 label,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12,
-                  color: AppTheme.neutralColor,
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.6),
                   fontWeight: FontWeight.w500,
                 ),
               ),
               const SizedBox(height: 4),
               Text(
                 value,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 15,
-                  color: AppTheme.darkNeutralColor,
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -558,44 +565,16 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
       });
 
       // Show success message
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text(
-            'User updated successfully',
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          backgroundColor: AppTheme.successColor,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-      );
+      CustomToast.show(context,
+          message: 'User updated successfully', type: ToastType.success);
 
       // Force a rebuild of the screen
       setState(() {});
     } catch (e) {
       if (!context.mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Error updating user: $e',
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          backgroundColor: AppTheme.errorColor,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-      );
+      CustomToast.show(context,
+          message: 'Error updating user: $e', type: ToastType.error);
     }
   }
 }

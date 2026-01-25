@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../models/task_model.dart';
-import '../utils/theme.dart';
+import '../config/theme.dart';
 import '../widgets/custom_back_button.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/user_model.dart';
@@ -11,6 +11,7 @@ import '../providers/supabase_provider.dart';
 import '../services/auth_service.dart';
 import '../utils/notification_helper.dart';
 import '../services/notification_service.dart';
+import '../widgets/custom_toast.dart';
 
 /// A screen that displays the details of a task
 class TaskDetailsScreen extends StatefulWidget {
@@ -32,33 +33,24 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
   void initState() {
     super.initState();
     _task = widget.task;
-    // Set status bar to transparent with dark icons
-    SystemChrome.setSystemUIOverlayStyle(
-      const SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.dark,
-        statusBarBrightness: Brightness.light,
-      ),
-    );
-  }
-
-  @override
-  void dispose() {
-    // Reset status bar to default when leaving the screen
-    SystemChrome.setSystemUIOverlayStyle(
-      const SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.dark,
-        statusBarBrightness: Brightness.light,
-      ),
-    );
-    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
+    // Set status bar styling based on current theme
+    SystemChrome.setSystemUIOverlayStyle(
+      SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness:
+            isDarkMode ? Brightness.light : Brightness.dark,
+        statusBarBrightness: isDarkMode ? Brightness.dark : Brightness.light,
+      ),
+    );
+
     return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
+      backgroundColor: Theme.of(context).colorScheme.background,
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(
@@ -78,7 +70,7 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                       style: GoogleFonts.inter(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
-                        color: AppTheme.darkNeutralColor,
+                        color: Theme.of(context).colorScheme.onBackground,
                       ),
                     ),
                   ],
@@ -95,7 +87,7 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                       style: GoogleFonts.inter(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
-                        color: AppTheme.darkNeutralColor,
+                        color: Theme.of(context).colorScheme.onBackground,
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -104,11 +96,11 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: Theme.of(context).colorScheme.surface,
                         borderRadius: BorderRadius.circular(8),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.05),
+                            color: Theme.of(context).shadowColor,
                             blurRadius: 10,
                             offset: const Offset(0, 4),
                           ),
@@ -130,7 +122,10 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                                 style: GoogleFonts.inter(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
-                                  color: AppTheme.primaryColor,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurface
+                                      .withValues(alpha: 0.5),
                                 ),
                               ),
                             ],
@@ -140,7 +135,10 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                             _task.description,
                             style: GoogleFonts.inter(
                               fontSize: 14,
-                              color: AppTheme.neutralColor,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withValues(alpha: 0.6),
                             ),
                           ),
                         ],
@@ -218,7 +216,7 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                               icon: const Icon(Remix.refresh_line),
                               label: const Text('Reset Task'),
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF5B7EBF),
+                                backgroundColor: Theme.of(context).primaryColor,
                                 foregroundColor: Colors.white,
                                 padding:
                                     const EdgeInsets.symmetric(vertical: 12),
@@ -243,8 +241,8 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                     Consumer<AuthService>(
                       builder: (context, authService, child) {
                         final userRole = authService.currentUser?.role;
-                        final isAdminOrPastor = userRole == 'admin' ||
-                                                userRole == 'pastor';
+                        final isAdminOrPastor =
+                            userRole == 'admin' || userRole == 'pastor';
 
                         return Row(
                           children: [
@@ -252,7 +250,8 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                             if (isAdminOrPastor) ...[
                               Expanded(
                                 child: StreamBuilder<UserModel?>(
-                                  stream: Provider.of<SupabaseProvider>(context, listen: false)
+                                  stream: Provider.of<SupabaseProvider>(context,
+                                          listen: false)
                                       .getUser(_task.createdBy),
                                   builder: (context, snapshot) {
                                     final user = snapshot.data;
@@ -270,7 +269,8 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                             // Always show "Assigned to"
                             Expanded(
                               child: StreamBuilder<UserModel?>(
-                                stream: Provider.of<SupabaseProvider>(context, listen: false)
+                                stream: Provider.of<SupabaseProvider>(context,
+                                        listen: false)
                                     .getUser(_task.assignedTo),
                                 builder: (context, snapshot) {
                                   final user = snapshot.data;
@@ -302,11 +302,11 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(8),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Theme.of(context).shadowColor,
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -327,7 +327,10 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                 title,
                 style: GoogleFonts.inter(
                   fontSize: 14,
-                  color: AppTheme.neutralColor,
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.6),
                 ),
               ),
             ],
@@ -338,7 +341,7 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
             style: GoogleFonts.inter(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: color,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
         ],
@@ -351,11 +354,11 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(8),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Theme.of(context).shadowColor,
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -376,7 +379,10 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                 title,
                 style: GoogleFonts.inter(
                   fontSize: 14,
-                  color: AppTheme.neutralColor,
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.6),
                 ),
               ),
             ],
@@ -387,14 +393,17 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
             style: GoogleFonts.inter(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: AppTheme.darkNeutralColor,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
           Text(
             email,
             style: GoogleFonts.inter(
               fontSize: 14,
-              color: AppTheme.neutralColor,
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSurface
+                  .withValues(alpha: 0.6),
             ),
           ),
         ],
@@ -465,7 +474,7 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
-        backgroundColor: const Color(0xFFF8F9FA),
+        backgroundColor: Theme.of(context).colorScheme.surface,
         child: Container(
           padding: const EdgeInsets.all(24),
           child: Column(
@@ -477,12 +486,13 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF5B7EBF).withValues(alpha: 0.1),
+                      color:
+                          Theme.of(context).primaryColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Remix.refresh_line,
-                      color: Color(0xFF5B7EBF),
+                      color: Theme.of(context).primaryColor,
                       size: 24,
                     ),
                   ),
@@ -491,8 +501,8 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                     'Reset Task',
                     style: GoogleFonts.inter(
                       fontSize: 20,
-                      fontWeight: FontWeight.w600,
-                      color: const Color(0xFF1F2937),
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                 ],
@@ -502,7 +512,7 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                 'Are you sure you want to reset this task?',
                 style: GoogleFonts.inter(
                   fontSize: 16,
-                  color: const Color(0xFF1F2937),
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
               const SizedBox(height: 8),
@@ -510,7 +520,10 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                 'This will change its status back to pending and allow you to continue working on it.',
                 style: GoogleFonts.inter(
                   fontSize: 14,
-                  color: const Color(0xFF6B7280),
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.6),
                 ),
               ),
               const SizedBox(height: 24),
@@ -528,7 +541,10 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                       style: GoogleFonts.inter(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
-                        color: const Color(0xFF6B7280),
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withValues(alpha: 0.6),
                       ),
                     ),
                   ),
@@ -536,7 +552,7 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                   ElevatedButton(
                     onPressed: () => Navigator.pop(context, true),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF5B7EBF),
+                      backgroundColor: Theme.of(context).primaryColor,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 12),
@@ -589,29 +605,24 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
         // Fetch the updated task to reflect changes
         final updatedTask = _task.copyWith(
           status: newStatus,
-          completedAt: newStatus == TaskStatus.completed ? DateTime.now() : null,
+          completedAt:
+              newStatus == TaskStatus.completed ? DateTime.now() : null,
         );
 
         setState(() {
           _task = updatedTask;
         });
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-                'Task status updated to ${_getStatusDisplayText(newStatus).toLowerCase()}'),
-            backgroundColor: Colors.green,
-          ),
-        );
+        CustomToast.show(context,
+            message:
+                'Task status updated to ${_getStatusDisplayText(newStatus).toLowerCase()}',
+            type: ToastType.success);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to update task status: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        CustomToast.show(context,
+            message: 'Failed to update task status: ${e.toString()}',
+            type: ToastType.error);
       }
     }
   }

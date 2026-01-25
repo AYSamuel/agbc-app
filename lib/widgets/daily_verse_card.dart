@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:grace_portal/utils/theme.dart';
+
 import 'package:google_fonts/google_fonts.dart';
 
 class DailyVerseCard extends StatelessWidget {
@@ -17,11 +17,11 @@ class DailyVerseCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Theme.of(context).shadowColor,
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -35,7 +35,7 @@ class DailyVerseCard extends StatelessWidget {
             style: GoogleFonts.inter(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: Colors.grey[800],
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: 12),
@@ -44,7 +44,7 @@ class DailyVerseCard extends StatelessWidget {
             style: GoogleFonts.inter(
               fontSize: 14,
               fontStyle: FontStyle.italic,
-              color: Colors.grey[700],
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
             ),
           ),
           const SizedBox(height: 8),
@@ -53,7 +53,7 @@ class DailyVerseCard extends StatelessWidget {
             style: GoogleFonts.inter(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: AppTheme.primaryColor,
+              color: Theme.of(context).colorScheme.primary,
             ),
           ),
         ],

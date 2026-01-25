@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'user_management_screen.dart';
 import 'meeting_management_screen.dart';
 import 'branch_management_screen.dart';
-import '../utils/theme.dart';
+import '../config/theme.dart';
 import '../widgets/custom_back_button.dart';
 import '../widgets/admin_card.dart';
 
@@ -12,7 +12,7 @@ class AdminScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
+      backgroundColor: Theme.of(context).colorScheme.background,
       body: SafeArea(
         child: Column(
           children: [
@@ -86,7 +86,8 @@ class AdminScreen extends StatelessWidget {
                                   Text(
                                     'Manage your church operations',
                                     style: TextStyle(
-                                      color: Colors.white.withValues(alpha: 0.9),
+                                      color:
+                                          Colors.white.withValues(alpha: 0.9),
                                       fontSize: 14,
                                       fontWeight: FontWeight.w400,
                                     ),
@@ -110,12 +111,12 @@ class AdminScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Management',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: AppTheme.darkNeutralColor,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -135,7 +136,8 @@ class AdminScreen extends StatelessWidget {
                           onTap: () => Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const UserManagementScreen(),
+                              builder: (context) =>
+                                  const UserManagementScreen(),
                             ),
                           ),
                         ),

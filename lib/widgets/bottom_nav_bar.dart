@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../utils/theme.dart';
+import '../config/theme.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 import '../screens/tasks_screen.dart';
@@ -37,10 +37,10 @@ class BottomNavBar extends StatelessWidget {
     return Container(
       height: 65 + bottomPadding,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
+            color: Theme.of(context).shadowColor,
             blurRadius: 3,
             offset: const Offset(0, -1),
           ),

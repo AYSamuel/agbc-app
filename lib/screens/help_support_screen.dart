@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import '../utils/theme.dart';
+import '../config/theme.dart';
 import '../widgets/custom_back_button.dart';
+import '../widgets/custom_toast.dart';
 
 class HelpSupportScreen extends StatefulWidget {
   const HelpSupportScreen({super.key});
@@ -32,7 +33,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
     final canPop = Navigator.canPop(context);
 
     return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
+      backgroundColor: Theme.of(context).colorScheme.background,
       body: SafeArea(
         child: Column(
           children: [
@@ -158,22 +159,26 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
                   const SizedBox(height: 12),
                   _buildFAQCard(
                     question: 'How do I submit a prayer request?',
-                    answer: 'Go to the Prayer screen from the bottom navigation bar. Tap the "+" button to create a new prayer request. You can choose to make it public or private.',
+                    answer:
+                        'Go to the Prayer screen from the bottom navigation bar. Tap the "+" button to create a new prayer request. You can choose to make it public or private.',
                   ),
                   const SizedBox(height: 8),
                   _buildFAQCard(
                     question: 'How do I view my assigned tasks?',
-                    answer: 'Your assigned tasks appear on the Home screen. Tap on any task to view details, add notes, or mark it as complete when finished.',
+                    answer:
+                        'Your assigned tasks appear on the Home screen. Tap on any task to view details, add notes, or mark it as complete when finished.',
                   ),
                   const SizedBox(height: 8),
                   _buildFAQCard(
                     question: 'How do I join or RSVP to a meeting?',
-                    answer: 'Upcoming meetings are shown on the Home screen. Tap on a meeting to view details and RSVP. You\'ll receive notifications before the meeting starts.',
+                    answer:
+                        'Upcoming meetings are shown on the Home screen. Tap on a meeting to view details and RSVP. You\'ll receive notifications before the meeting starts.',
                   ),
                   const SizedBox(height: 8),
                   _buildFAQCard(
                     question: 'How do I contact church administration?',
-                    answer: 'You can email the church office at oami.gospel@gmail.com or call +447342920067. For urgent matters, use the Quick Actions section above.',
+                    answer:
+                        'You can email the church office at oami.gospel@gmail.com or call +447342920067. For urgent matters, use the Quick Actions section above.',
                   ),
 
                   const SizedBox(height: 24),
@@ -184,19 +189,22 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
                   _buildGuideCard(
                     icon: Icons.task_alt_rounded,
                     title: 'Managing Tasks',
-                    description: 'View assigned tasks on the Home screen. Tap any task to see details, mark as complete, or add updates.',
+                    description:
+                        'View assigned tasks on the Home screen. Tap any task to see details, mark as complete, or add updates.',
                   ),
                   const SizedBox(height: 8),
                   _buildGuideCard(
                     icon: Icons.event_rounded,
                     title: 'Joining Meetings',
-                    description: 'Check upcoming meetings on the Home screen. Tap to RSVP and view meeting details, agendas, and locations.',
+                    description:
+                        'Check upcoming meetings on the Home screen. Tap to RSVP and view meeting details, agendas, and locations.',
                   ),
                   const SizedBox(height: 8),
                   _buildGuideCard(
                     icon: Icons.group_rounded,
                     title: 'Understanding Your Role',
-                    description: 'Your role (Member, Admin, etc.) determines what features you can access. Contact church leadership for role changes.',
+                    description:
+                        'Your role (Member, Admin, etc.) determines what features you can access. Contact church leadership for role changes.',
                   ),
 
                   const SizedBox(height: 24),
@@ -207,19 +215,22 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
                   _buildLinkCard(
                     icon: Icons.privacy_tip_rounded,
                     title: 'Privacy Policy',
-                    onTap: () => _launchURL('https://aysamuel.github.io/agbc-app/privacy-policy.html'),
+                    onTap: () => _launchURL(
+                        'https://aysamuel.github.io/agbc-app/privacy-policy.html'),
                   ),
                   const SizedBox(height: 8),
                   _buildLinkCard(
                     icon: Icons.delete_outline_rounded,
                     title: 'Data Deletion Policy',
-                    onTap: () => _launchURL('https://aysamuel.github.io/agbc-app/data-deletion.html'),
+                    onTap: () => _launchURL(
+                        'https://aysamuel.github.io/agbc-app/data-deletion.html'),
                   ),
                   const SizedBox(height: 8),
                   _buildLinkCard(
                     icon: Icons.shield_rounded,
                     title: 'Child Safety Standards',
-                    onTap: () => _launchURL('https://aysamuel.github.io/agbc-app/child-safety-standards.html'),
+                    onTap: () => _launchURL(
+                        'https://aysamuel.github.io/agbc-app/child-safety-standards.html'),
                   ),
 
                   const SizedBox(height: 24),
@@ -254,11 +265,11 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.surface,
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.05),
+                          color: Theme.of(context).shadowColor,
                           blurRadius: 10,
                           offset: const Offset(0, 2),
                         ),
@@ -276,9 +287,11 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
                           ),
                         ),
                         const SizedBox(height: 12),
-                        _buildContactRow(Icons.location_on_rounded, 'SUMMERLEE MUSEUM OF SCOTTISH INDUSTRIAL LIFE\nHERITAGE WAY, COATBRIDGE ML5 1QD'),
+                        _buildContactRow(Icons.location_on_rounded,
+                            'SUMMERLEE MUSEUM OF SCOTTISH INDUSTRIAL LIFE\nHERITAGE WAY, COATBRIDGE ML5 1QD'),
                         const SizedBox(height: 8),
-                        _buildContactRow(Icons.email_rounded, 'oami.gospel@gmail.com'),
+                        _buildContactRow(
+                            Icons.email_rounded, 'oami.gospel@gmail.com'),
                         const SizedBox(height: 8),
                         _buildContactRow(Icons.phone_rounded, '+447342920067'),
                       ],
@@ -300,8 +313,12 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            Colors.red.shade50,
-            Colors.red.shade100,
+            Theme.of(context).brightness == Brightness.light
+                ? Colors.red.shade50
+                : Colors.red.shade900.withValues(alpha: 0.2),
+            Theme.of(context).brightness == Brightness.light
+                ? Colors.red.shade100
+                : Colors.red.shade900.withValues(alpha: 0.3),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -401,20 +418,27 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: Theme.of(context)
+                        .colorScheme
+                        .surface
+                        .withValues(alpha: 0.5),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(Icons.info_outline, size: 20, color: Colors.red.shade700),
+                      Icon(Icons.info_outline,
+                          size: 20, color: Colors.red.shade700),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
                           'All reports are taken seriously. You may report anonymously. View our full Child Safety Standards policy below.',
                           style: TextStyle(
                             fontSize: 13,
-                            color: Colors.grey.shade800,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withValues(alpha: 0.7),
                             height: 1.4,
                           ),
                         ),
@@ -439,11 +463,11 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
+            color: Theme.of(context).shadowColor,
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -482,7 +506,10 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
                       subtitle,
                       style: TextStyle(
                         fontSize: 13,
-                        color: Colors.grey.shade700,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withValues(alpha: 0.6),
                       ),
                     ),
                   ],
@@ -542,10 +569,10 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
-                        color: AppTheme.primaryColor,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -553,13 +580,17 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
                       subtitle,
                       style: TextStyle(
                         fontSize: 14,
-                        color: Colors.grey[600],
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withValues(alpha: 0.6),
                       ),
                     ),
                   ],
                 ),
               ),
-              Icon(Icons.arrow_forward_ios_rounded, size: 16, color: Colors.grey[400]),
+              Icon(Icons.arrow_forward_ios_rounded,
+                  size: 16, color: Colors.grey[400]),
             ],
           ),
         ),
@@ -569,17 +600,21 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
 
   Widget _buildFAQCard({required String question, required String answer}) {
     return Card(
-      elevation: 1,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 0,
+      color: Theme.of(context).colorScheme.surface,
+      shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(
+              color: Theme.of(context).dividerColor.withValues(alpha: 0.1))),
       child: Theme(
         data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
         child: ExpansionTile(
           title: Text(
             question,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w600,
-              color: AppTheme.primaryColor,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
           children: [
@@ -589,7 +624,10 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
                 answer,
                 style: TextStyle(
                   fontSize: 14,
-                  color: Colors.grey[700],
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.7),
                   height: 1.5,
                 ),
               ),
@@ -606,8 +644,12 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
     required String description,
   }) {
     return Card(
-      elevation: 1,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 0,
+      color: Theme.of(context).colorScheme.surface,
+      shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(
+              color: Theme.of(context).dividerColor.withValues(alpha: 0.1))),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
@@ -628,10 +670,10 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
-                      color: AppTheme.primaryColor,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                   const SizedBox(height: 6),
@@ -639,7 +681,10 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
                     description,
                     style: TextStyle(
                       fontSize: 14,
-                      color: Colors.grey[700],
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.7),
                       height: 1.4,
                     ),
                   ),
@@ -658,8 +703,12 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
     required VoidCallback onTap,
   }) {
     return Card(
-      elevation: 1,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 0,
+      color: Theme.of(context).colorScheme.surface,
+      shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(
+              color: Theme.of(context).dividerColor.withValues(alpha: 0.1))),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
@@ -672,14 +721,15 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
               Expanded(
                 child: Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w500,
-                    color: AppTheme.primaryColor,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
               ),
-              Icon(Icons.open_in_new_rounded, size: 18, color: Colors.grey[400]),
+              Icon(Icons.open_in_new_rounded,
+                  size: 18, color: Colors.grey[400]),
             ],
           ),
         ),
@@ -722,14 +772,18 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
                       subtitle,
                       style: TextStyle(
                         fontSize: 13,
-                        color: Colors.grey[600],
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withValues(alpha: 0.6),
                       ),
                     ),
                   ],
                 ),
               ),
               if (onTap != null)
-                Icon(Icons.arrow_forward_ios_rounded, size: 16, color: Colors.grey[400]),
+                Icon(Icons.arrow_forward_ios_rounded,
+                    size: 16, color: Colors.grey[400]),
             ],
           ),
         ),
@@ -748,7 +802,10 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
             text,
             style: TextStyle(
               fontSize: 14,
-              color: Colors.grey[700],
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSurface
+                  .withValues(alpha: 0.7),
               height: 1.4,
             ),
           ),
@@ -767,9 +824,8 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
       await launchUrl(emailUri);
     } else {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not open email app')),
-        );
+        CustomToast.show(context,
+            message: 'Could not open email app', type: ToastType.error);
       }
     }
   }
@@ -780,9 +836,8 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
       await launchUrl(phoneUri);
     } else {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not open phone app')),
-        );
+        CustomToast.show(context,
+            message: 'Could not open phone app', type: ToastType.error);
       }
     }
   }
@@ -791,7 +846,8 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
     final Uri emailUri = Uri(
       scheme: 'mailto',
       path: 'oami.gospel@gmail.com',
-      query: 'subject=GRACE PORTAL - Problem Report&body=Please describe the issue you encountered:\n\nApp Version: $_appVersion',
+      query:
+          'subject=GRACE PORTAL - Problem Report&body=Please describe the issue you encountered:\n\nApp Version: $_appVersion',
     );
     if (await canLaunchUrl(emailUri)) {
       await launchUrl(emailUri);
@@ -805,9 +861,8 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
       await launchUrl(uri);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not open link')),
-        );
+        CustomToast.show(context,
+            message: 'Could not open link', type: ToastType.error);
       }
     }
   }
@@ -832,11 +887,8 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
 
   void _rateApp() {
     // In production, this would open the Play Store/App Store
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Thank you! This will open the app store when published.'),
-      ),
-    );
+    CustomToast.show(context,
+        message: 'Thank you! This will open the app store when published.');
   }
 
   Future<void> _callEmergency() async {
@@ -879,9 +931,8 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
         await launchUrl(emergencyUri);
       } else {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Could not open phone dialer')),
-          );
+          CustomToast.show(context,
+              message: 'Could not open phone dialer', type: ToastType.error);
         }
       }
     }
@@ -893,16 +944,17 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
       await launchUrl(nspccUri);
     } else {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not open phone dialer')),
-        );
+        CustomToast.show(context,
+            message: 'Could not open phone dialer', type: ToastType.error);
       }
     }
   }
 
   Future<void> _reportChildSafetyConcern() async {
-    final String subject = Uri.encodeComponent('URGENT: Child Safety Concern - GRACE PORTAL');
-    final String body = Uri.encodeComponent('''Please describe your child safety concern below:
+    final String subject =
+        Uri.encodeComponent('URGENT: Child Safety Concern - GRACE PORTAL');
+    final String body =
+        Uri.encodeComponent('''Please describe your child safety concern below:
 
 [Describe the concern here]
 
@@ -920,23 +972,22 @@ For more information, view our Child Safety Standards:
 https://aysamuel.github.io/agbc-app/child-safety-standards.html
 ''');
 
-    final Uri emailUri = Uri.parse('mailto:oami.gospel@gmail.com?subject=$subject&body=$body');
+    final Uri emailUri =
+        Uri.parse('mailto:oami.gospel@gmail.com?subject=$subject&body=$body');
 
     try {
       if (await canLaunchUrl(emailUri)) {
         await launchUrl(emailUri);
       } else {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Could not open email app')),
-          );
+          CustomToast.show(context,
+              message: 'Could not open email app', type: ToastType.error);
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not open email app')),
-        );
+        CustomToast.show(context,
+            message: 'Could not open email app', type: ToastType.error);
       }
     }
   }

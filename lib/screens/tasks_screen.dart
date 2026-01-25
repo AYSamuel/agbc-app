@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../utils/theme.dart';
+import '../config/theme.dart';
 import '../models/task_model.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
@@ -56,7 +56,7 @@ class _TasksScreenState extends State<TasksScreen> {
     final user = Provider.of<AuthService>(context).currentUser;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
+      backgroundColor: Theme.of(context).colorScheme.background,
       body: SafeArea(
         child: Column(
           children: [
@@ -64,10 +64,10 @@ class _TasksScreenState extends State<TasksScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Theme.of(context).colorScheme.surface,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
+                    color: Theme.of(context).shadowColor,
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -86,15 +86,18 @@ class _TasksScreenState extends State<TasksScreen> {
                     style: GoogleFonts.inter(
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
-                      color: const Color(0xFF1F2937),
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                   const Spacer(),
                   IconButton(
                     icon: const Icon(Remix.filter_3_line),
                     color: _selectedOwnershipFilter != 'all'
-                        ? const Color(0xFF5B7EBF)
-                        : const Color(0xFF4B5563),
+                        ? AppTheme.primaryColor
+                        : Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withValues(alpha: 0.6),
                     onPressed: () {
                       _showOwnershipFilterOptions(context);
                     },
@@ -108,10 +111,10 @@ class _TasksScreenState extends State<TasksScreen> {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 12),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Theme.of(context).colorScheme.surface,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
+                    color: Theme.of(context).shadowColor,
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -147,11 +150,12 @@ class _TasksScreenState extends State<TasksScreen> {
             // Sort Options
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: const BoxDecoration(
-                color: Colors.white,
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface,
                 border: Border(
                   bottom: BorderSide(
-                    color: Color(0xFFF3F4F6),
+                    color:
+                        Theme.of(context).dividerColor.withValues(alpha: 0.1),
                     width: 1,
                   ),
                 ),
@@ -175,7 +179,10 @@ class _TasksScreenState extends State<TasksScreen> {
                         '$taskCount $taskText',
                         style: GoogleFonts.inter(
                           fontSize: 14,
-                          color: const Color(0xFF6B7280),
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withValues(alpha: 0.5),
                         ),
                       ),
                       const Spacer(),
@@ -183,7 +190,10 @@ class _TasksScreenState extends State<TasksScreen> {
                         'Sort by:',
                         style: GoogleFonts.inter(
                           fontSize: 14,
-                          color: const Color(0xFF4B5563),
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withValues(alpha: 0.7),
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -266,7 +276,7 @@ class _TasksScreenState extends State<TasksScreen> {
                             style: GoogleFonts.inter(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
-                              color: AppTheme.darkNeutralColor,
+                              color: Theme.of(context).colorScheme.onBackground,
                             ),
                           ),
                           const SizedBox(height: 8),
@@ -274,7 +284,10 @@ class _TasksScreenState extends State<TasksScreen> {
                             _getEmptyStateMessage(),
                             style: GoogleFonts.inter(
                               fontSize: 16,
-                              color: AppTheme.neutralColor,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onBackground
+                                  .withValues(alpha: 0.7),
                             ),
                           ),
                         ],
@@ -324,8 +337,12 @@ class _TasksScreenState extends State<TasksScreen> {
           });
         },
         style: ElevatedButton.styleFrom(
-          backgroundColor: isSelected ? const Color(0xFF5B7EBF) : Colors.white,
-          foregroundColor: isSelected ? Colors.white : const Color(0xFF4B5563),
+          backgroundColor: isSelected
+              ? AppTheme.primaryColor
+              : Theme.of(context).colorScheme.surface,
+          foregroundColor: isSelected
+              ? Colors.white
+              : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
           elevation: isSelected ? 2 : 0,
           shadowColor: isSelected
               ? const Color(0xFF5B7EBF).withValues(alpha: 0.3)
@@ -334,8 +351,8 @@ class _TasksScreenState extends State<TasksScreen> {
             borderRadius: BorderRadius.circular(12),
             side: BorderSide(
               color: isSelected
-                  ? const Color(0xFF5B7EBF)
-                  : const Color(0xFFE5E7EB),
+                  ? AppTheme.primaryColor
+                  : Theme.of(context).dividerColor.withValues(alpha: 0.2),
               width: 1,
             ),
           ),
@@ -347,7 +364,12 @@ class _TasksScreenState extends State<TasksScreen> {
             Icon(
               icon,
               size: 18,
-              color: isSelected ? Colors.white : const Color(0xFF4B5563),
+              color: isSelected
+                  ? Colors.white
+                  : Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.7),
             ),
             const SizedBox(width: 8),
             Text(

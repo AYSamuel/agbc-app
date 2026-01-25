@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../providers/notification_provider.dart';
 import '../models/notification_model.dart';
-import '../utils/theme.dart';
+import '../config/theme.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 class NotificationPanel extends StatefulWidget {
@@ -61,15 +61,15 @@ class _NotificationPanelState extends State<NotificationPanel>
             width: 380,
             height: 540,
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: AppTheme.dividerColor,
+                color: AppTheme.dividerColor(context),
                 width: 1,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.08),
+                  color: Theme.of(context).shadowColor,
                   blurRadius: 16,
                   offset: const Offset(0, 4),
                 ),
@@ -109,7 +109,7 @@ class _NotificationPanelState extends State<NotificationPanel>
             margin: const EdgeInsets.all(32),
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Column(
@@ -133,7 +133,7 @@ class _NotificationPanelState extends State<NotificationPanel>
                   style: GoogleFonts.inter(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
-                    color: AppTheme.darkNeutralColor,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -142,7 +142,10 @@ class _NotificationPanelState extends State<NotificationPanel>
                   'Mark all notifications as read? You can still view them in your notification history.',
                   style: GoogleFonts.inter(
                     fontSize: 14,
-                    color: AppTheme.neutralColor,
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.6),
                     height: 1.4,
                   ),
                   textAlign: TextAlign.center,
@@ -158,12 +161,12 @@ class _NotificationPanelState extends State<NotificationPanel>
                           });
                         },
                         style: TextButton.styleFrom(
-                          foregroundColor: AppTheme.neutralColor,
+                          foregroundColor: Theme.of(context).disabledColor,
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                             side: BorderSide(
-                              color: AppTheme.dividerColor,
+                              color: Theme.of(context).colorScheme.onSurface,
                               width: 1,
                             ),
                           ),
@@ -171,6 +174,7 @@ class _NotificationPanelState extends State<NotificationPanel>
                         child: Text(
                           'Cancel',
                           style: GoogleFonts.inter(
+                            color: Theme.of(context).colorScheme.onSurface,
                             fontWeight: FontWeight.w500,
                             fontSize: 14,
                           ),
@@ -220,11 +224,11 @@ class _NotificationPanelState extends State<NotificationPanel>
   Widget _buildHeader(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: const BoxDecoration(
-        color: Colors.white,
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
         border: Border(
           bottom: BorderSide(
-            color: AppTheme.dividerColor,
+            color: AppTheme.dividerColor(context),
             width: 1,
           ),
         ),
@@ -249,14 +253,15 @@ class _NotificationPanelState extends State<NotificationPanel>
             style: GoogleFonts.inter(
               fontSize: 18,
               fontWeight: FontWeight.w600,
-              color: AppTheme.darkNeutralColor,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
           const Spacer(),
           Consumer<NotificationProvider>(
             builder: (context, provider, child) {
               // Only show button if there are unread notifications
-              final hasUnreadNotifications = provider.notifications.any((n) => !n.isRead);
+              final hasUnreadNotifications =
+                  provider.notifications.any((n) => !n.isRead);
 
               return AnimatedSwitcher(
                 duration: const Duration(milliseconds: 200),
@@ -303,7 +308,8 @@ class _NotificationPanelState extends State<NotificationPanel>
             onPressed: widget.onClose,
             icon: const Icon(Icons.close),
             iconSize: 20,
-            color: AppTheme.neutralColor,
+            color:
+                Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
             splashRadius: 20,
             tooltip: 'Close',
           ),
@@ -331,13 +337,16 @@ class _NotificationPanelState extends State<NotificationPanel>
                 Container(
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
-                    color: AppTheme.backgroundColor,
+                    color: AppTheme.backgroundColor(context),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.notifications_none,
                     size: 48,
-                    color: AppTheme.neutralColor,
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.6),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -346,7 +355,7 @@ class _NotificationPanelState extends State<NotificationPanel>
                   style: GoogleFonts.inter(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: AppTheme.darkNeutralColor,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -354,7 +363,10 @@ class _NotificationPanelState extends State<NotificationPanel>
                   'You\'re all caught up!',
                   style: GoogleFonts.inter(
                     fontSize: 14,
-                    color: AppTheme.neutralColor,
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.6),
                   ),
                 ),
               ],
@@ -363,15 +375,16 @@ class _NotificationPanelState extends State<NotificationPanel>
         }
 
         // Sort notifications: unread first, then by creation date (newest first)
-        final sortedNotifications = List<NotificationModel>.from(provider.notifications)
-          ..sort((a, b) {
-            // First, sort by read status (unread first)
-            if (a.isRead != b.isRead) {
-              return a.isRead ? 1 : -1;
-            }
-            // Then sort by creation date (newest first)
-            return b.createdAt.compareTo(a.createdAt);
-          });
+        final sortedNotifications =
+            List<NotificationModel>.from(provider.notifications)
+              ..sort((a, b) {
+                // First, sort by read status (unread first)
+                if (a.isRead != b.isRead) {
+                  return a.isRead ? 1 : -1;
+                }
+                // Then sort by creation date (newest first)
+                return b.createdAt.compareTo(a.createdAt);
+              });
 
         return ListView.builder(
           padding: const EdgeInsets.all(12),
@@ -394,12 +407,12 @@ class _NotificationPanelState extends State<NotificationPanel>
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
         color: notification.isRead
-            ? Colors.white
-            : AppTheme.primaryColor.withValues(alpha: 0.03),
+            ? Theme.of(context).colorScheme.surface
+            : AppTheme.primaryColor.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: notification.isRead
-              ? AppTheme.dividerColor
+              ? AppTheme.dividerColor(context)
               : AppTheme.primaryColor.withValues(alpha: 0.2),
           width: 1,
         ),
@@ -436,7 +449,7 @@ class _NotificationPanelState extends State<NotificationPanel>
                                     ? FontWeight.w500
                                     : FontWeight.w600,
                                 fontSize: 14,
-                                color: AppTheme.darkNeutralColor,
+                                color: Theme.of(context).colorScheme.onSurface,
                               ),
                             ),
                           ),
@@ -445,8 +458,8 @@ class _NotificationPanelState extends State<NotificationPanel>
                             Container(
                               width: 8,
                               height: 8,
-                              decoration: const BoxDecoration(
-                                color: AppTheme.primaryColor,
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.primary,
                                 shape: BoxShape.circle,
                               ),
                             ),
@@ -459,7 +472,10 @@ class _NotificationPanelState extends State<NotificationPanel>
                           notification.message,
                           style: GoogleFonts.inter(
                             fontSize: 13,
-                            color: AppTheme.neutralColor,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withValues(alpha: 0.6),
                             height: 1.3,
                           ),
                           maxLines: 2,
@@ -471,7 +487,10 @@ class _NotificationPanelState extends State<NotificationPanel>
                         timeago.format(notification.createdAt),
                         style: GoogleFonts.inter(
                           fontSize: 12,
-                          color: AppTheme.neutralColor,
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withValues(alpha: 0.6),
                           fontWeight: FontWeight.w400,
                         ),
                       ),

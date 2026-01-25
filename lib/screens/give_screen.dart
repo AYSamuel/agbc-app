@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../utils/theme.dart';
+import '../config/theme.dart';
 import '../widgets/custom_back_button.dart';
 
 class GiveScreen extends StatelessWidget {
@@ -9,7 +9,7 @@ class GiveScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
+      backgroundColor: Theme.of(context).colorScheme.background,
       body: SafeArea(
         child: Column(
           children: [

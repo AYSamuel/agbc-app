@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../utils/theme.dart';
+import '../config/theme.dart';
 
 class SermonScreen extends StatelessWidget {
   const SermonScreen({super.key});
@@ -7,7 +7,7 @@ class SermonScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
+      backgroundColor: Theme.of(context).colorScheme.background,
       body: SafeArea(
         child: Column(
           children: [

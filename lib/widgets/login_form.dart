@@ -5,7 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/auth_service.dart';
 import 'custom_input.dart';
 import 'loading_indicator.dart';
-import '../utils/theme.dart';
+import '../config/theme.dart';
 import 'mixins/form_validation_mixin.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -182,7 +182,7 @@ class _LoginFormState extends State<LoginForm> with FormValidationMixin {
               label: 'Email',
               controller: _emailController,
               hint: 'Enter your email',
-              prefixIcon: const Icon(Icons.email, color: AppTheme.primaryColor),
+              prefixIcon: const Icon(Icons.email),
               keyboardType: TextInputType.emailAddress,
               validator: validateEmail,
               autofillHints: const [AutofillHints.email],
@@ -199,41 +199,45 @@ class _LoginFormState extends State<LoginForm> with FormValidationMixin {
             ),
             const FormSpacing(height: 5),
 
-          // Remember Me
-          Row(
-            children: [
-              Checkbox(
-                value: _rememberMe,
-                activeColor: AppTheme.primaryColor,
-                checkColor: Colors.white,
-                side: const BorderSide(color: AppTheme.primaryColor, width: 1),
-                onChanged: (value) {
-                  setState(() {
-                    _rememberMe = value ?? false;
-                  });
-                },
-              ),
-              Text('Remember me', style: AppTheme.subtitleStyle),
-              const Spacer(),
-            ],
-          ),
-          const FormSpacing(height: 5),
-
-          // Login Button
-          CustomButton(
-            onPressed: _isLoading ? null : _login,
-            height: 48,
-            child: _isLoading
-                ? const LoadingIndicator()
-                : const Text(
-                    'LOGIN',
+            // Remember Me
+            Row(
+              children: [
+                Checkbox(
+                  value: _rememberMe,
+                  activeColor: AppTheme.primaryColor,
+                  checkColor: Colors.white,
+                  side:
+                      const BorderSide(color: AppTheme.primaryColor, width: 1),
+                  onChanged: (value) {
+                    setState(() {
+                      _rememberMe = value ?? false;
+                    });
+                  },
+                ),
+                Text('Remember me',
                     style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    )),
+                const Spacer(),
+              ],
+            ),
+            const FormSpacing(height: 5),
+
+            // Login Button
+            CustomButton(
+              onPressed: _isLoading ? null : _login,
+              height: 48,
+              child: _isLoading
+                  ? const LoadingIndicator()
+                  : const Text(
+                      'LOGIN',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
                     ),
-                  ),
-          ),
+            ),
           ],
         ),
       ),
@@ -298,8 +302,11 @@ class _VerificationDialogState extends State<_VerificationDialog> {
             const SizedBox(height: 16),
             Text(
               'You can request a new verification email in ${_countdown ~/ 60}:${(_countdown % 60).toString().padLeft(2, '0')}',
-              style: const TextStyle(
-                color: Colors.grey,
+              style: TextStyle(
+                color: Theme.of(context)
+                    .colorScheme
+                    .onSurface
+                    .withValues(alpha: 0.5),
                 fontStyle: FontStyle.italic,
               ),
             ),

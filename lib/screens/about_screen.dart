@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../utils/theme.dart';
+import '../config/theme.dart';
 
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
@@ -7,7 +7,7 @@ class AboutScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
+      backgroundColor: Theme.of(context).colorScheme.background,
       body: SafeArea(
         child: Column(
           children: [
@@ -22,12 +22,12 @@ class AboutScreen extends StatelessWidget {
                       color: AppTheme.primaryColor.withValues(alpha: 0.5),
                     ),
                     const SizedBox(height: 16),
-                    const Text(
-                      'About Coming Soon',
+                    Text(
+                      'About Coming Soon', // This text is not changed by the provided snippet.
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
-                        color: AppTheme.primaryColor,
+                        color: Theme.of(context).colorScheme.primary,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -35,7 +35,10 @@ class AboutScreen extends StatelessWidget {
                       'Learn more about our church and mission',
                       style: TextStyle(
                         fontSize: 16,
-                        color: Colors.grey[600],
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withValues(alpha: 0.6),
                       ),
                     ),
                   ],

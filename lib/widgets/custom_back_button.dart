@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../utils/theme.dart';
 
 /// A customizable back button widget with animation and haptic feedback.
 ///
@@ -77,7 +76,7 @@ class _CustomBackButtonState extends State<CustomBackButton>
             padding: const EdgeInsets.all(8.0),
             child: Icon(
               Icons.arrow_back_ios_new_rounded,
-              color: widget.color ?? AppTheme.primaryColor,
+              color: widget.color ?? Theme.of(context).colorScheme.primary,
               size: widget.size,
             ),
           ),
@@ -91,12 +90,13 @@ class _CustomBackButtonState extends State<CustomBackButton>
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
         boxShadow: widget.showShadow
             ? [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.1),
+                  color:
+                      Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.15),
                   blurRadius: 4,
                   offset: const Offset(0, 2),
                 ),

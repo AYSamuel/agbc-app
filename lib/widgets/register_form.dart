@@ -7,13 +7,14 @@ import '../services/auth_service.dart';
 import '../widgets/custom_input.dart';
 import '../widgets/custom_button.dart';
 import '../widgets/loading_indicator.dart';
-import '../utils/theme.dart';
+import '../config/theme.dart';
 import '../widgets/mixins/form_validation_mixin.dart';
 import '../widgets/custom_dropdown.dart';
 import 'form/password_field.dart';
 import 'form/location_field.dart';
 import 'form/form_spacing.dart';
 import '../providers/branches_provider.dart';
+import '../widgets/custom_toast.dart';
 
 class RegisterForm extends StatefulWidget {
   final VoidCallback onRegisterSuccess;
@@ -49,31 +50,9 @@ class _RegisterFormState extends State<RegisterForm> with FormValidationMixin {
   }
 
   void _showErrorSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.error_outline, color: Colors.white),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                message,
-                style: const TextStyle(color: Colors.white),
-              ),
-            ),
-          ],
-        ),
-        backgroundColor: AppTheme.errorColor,
-        duration: const Duration(seconds: 4),
-        action: SnackBarAction(
-          label: 'Dismiss',
-          textColor: Colors.white,
-          onPressed: () {
-            ScaffoldMessenger.of(context).hideCurrentSnackBar();
-          },
-        ),
-      ),
-    );
+    if (mounted) {
+      CustomToast.show(context, message: message, type: ToastType.error);
+    }
   }
 
   String _formatLocationString() {
@@ -189,8 +168,7 @@ class _RegisterFormState extends State<RegisterForm> with FormValidationMixin {
               label: 'Full Name',
               controller: _nameController,
               hint: 'Enter only your first and last name',
-              prefixIcon:
-                  const Icon(Icons.person, color: AppTheme.primaryColor),
+              prefixIcon: const Icon(Icons.person),
               textInputAction: TextInputAction.next,
               onSubmitted: (_) => FocusScope.of(context).nextFocus(),
               validator: validateName,
@@ -203,7 +181,7 @@ class _RegisterFormState extends State<RegisterForm> with FormValidationMixin {
               label: 'Email',
               controller: _emailController,
               hint: 'Enter your email',
-              prefixIcon: const Icon(Icons.email, color: AppTheme.primaryColor),
+              prefixIcon: const Icon(Icons.email),
               keyboardType: TextInputType.emailAddress,
               textInputAction: TextInputAction.next,
               onSubmitted: (_) => FocusScope.of(context).nextFocus(),
@@ -217,7 +195,7 @@ class _RegisterFormState extends State<RegisterForm> with FormValidationMixin {
               label: 'Phone Number',
               controller: _phoneController,
               hint: 'Enter with country code (e.g., +1234567890)',
-              prefixIcon: const Icon(Icons.phone, color: AppTheme.primaryColor),
+              prefixIcon: const Icon(Icons.phone),
               keyboardType: TextInputType.phone,
               validator: validatePhone,
               autofillHints: const [AutofillHints.telephoneNumber],
@@ -242,7 +220,7 @@ class _RegisterFormState extends State<RegisterForm> with FormValidationMixin {
                 if (branches.isEmpty) {
                   return Text(
                     'No branches available',
-                    style: AppTheme.regularTextStyle.copyWith(
+                    style: AppTheme.regularTextStyle(context).copyWith(
                       color: AppTheme.errorColor,
                     ),
                   );
@@ -265,7 +243,7 @@ class _RegisterFormState extends State<RegisterForm> with FormValidationMixin {
                       child: Text(
                         branch.name,
                         style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                              color: AppTheme.darkNeutralColor,
+                              color: Theme.of(context).colorScheme.onSurface,
                               fontWeight: FontWeight.w500,
                               fontSize: 16,
                               letterSpacing: 0.2,
@@ -314,12 +292,12 @@ class _RegisterFormState extends State<RegisterForm> with FormValidationMixin {
               onPressed: _isLoading ? null : _register,
               child: _isLoading
                   ? const LoadingIndicator()
-                  : const Text(
+                  : Text(
                       'Create Account',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        color: Theme.of(context).colorScheme.onPrimary,
                       ),
                     ),
             ),

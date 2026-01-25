@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../utils/theme.dart';
+
 import '../custom_input.dart';
 
 class PasswordField extends StatefulWidget {
@@ -39,7 +39,7 @@ class _PasswordFieldState extends State<PasswordField> {
       label: widget.label,
       controller: widget.controller,
       hint: widget.hint,
-      prefixIcon: const Icon(Icons.lock, color: AppTheme.primaryColor),
+      prefixIcon: const Icon(Icons.lock),
       obscureText: _obscurePassword,
       textInputAction: widget.textInputAction,
       onSubmitted: widget.onSubmitted,
@@ -47,7 +47,6 @@ class _PasswordFieldState extends State<PasswordField> {
       suffixIcon: IconButton(
         icon: Icon(
           _obscurePassword ? Icons.visibility_off : Icons.visibility,
-          color: AppTheme.primaryColor,
         ),
         onPressed: () {
           setState(() {

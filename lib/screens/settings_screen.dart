@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../utils/theme.dart';
+import '../config/theme.dart';
 import '../services/auth_service.dart';
 import '../widgets/custom_back_button.dart';
+import '../providers/theme_provider.dart';
+import '../widgets/custom_toast.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -35,16 +37,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final notificationSettings = _localNotificationSettings ?? {};
 
     return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
+      backgroundColor: Theme.of(context).colorScheme.background,
       body: SafeArea(
         child: Column(
           children: [
             // Header
             Container(
               width: double.infinity,
-              decoration: const BoxDecoration(
-                color: AppTheme.primaryColor,
-                borderRadius: BorderRadius.only(
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primary,
+                borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(32),
                   bottomRight: Radius.circular(32),
                 ),
@@ -125,8 +127,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Appearance Section
+                    _buildSectionHeader(context, 'Appearance'),
+                    const SizedBox(height: 12),
+                    _buildAppearanceCard(context),
+
+                    const SizedBox(height: 24),
+
                     // Notifications Section
-                    _buildSectionHeader('Notifications'),
+                    _buildSectionHeader(context, 'Notifications'),
                     const SizedBox(height: 12),
                     _buildNotificationCard(
                       context,
@@ -137,7 +146,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     const SizedBox(height: 24),
 
                     // Account Section
-                    _buildSectionHeader('Account'),
+                    _buildSectionHeader(context, 'Account'),
                     const SizedBox(height: 12),
                     _buildAccountCard(context),
 
@@ -152,14 +161,87 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildSectionHeader(String title) {
+  Widget _buildSectionHeader(BuildContext context, String title) {
     return Text(
       title,
       style: GoogleFonts.inter(
         fontSize: 16,
         fontWeight: FontWeight.w600,
-        color: Colors.grey[800],
+        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
       ),
+    );
+  }
+
+  Widget _buildAppearanceCard(BuildContext context) {
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, child) {
+        return Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    themeProvider.isDarkMode
+                        ? Icons.dark_mode_rounded
+                        : Icons.light_mode_rounded,
+    color: Theme.of(context).colorScheme.primary,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Dark Mode',
+                        style: GoogleFonts.inter(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Switch between light and dark theme',
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withValues(alpha: 0.6),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Switch(
+                  value: themeProvider.isDarkMode,
+                  onChanged: (value) => themeProvider.toggleTheme(),
+                  activeColor: AppTheme.primaryColor,
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -170,7 +252,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   ) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -249,7 +331,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildAccountCard(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -305,7 +387,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   style: GoogleFonts.inter(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
-                    color: Colors.grey[800],
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -313,7 +395,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   subtitle,
                   style: GoogleFonts.inter(
                     fontSize: 13,
-                    color: Colors.grey[600],
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.6),
                   ),
                 ),
               ],
@@ -345,12 +430,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: AppTheme.primaryColor.withValues(alpha: 0.1),
+color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
                 icon,
-                color: AppTheme.primaryColor,
+color: Theme.of(context).colorScheme.primary,
                 size: 20,
               ),
             ),
@@ -364,7 +449,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     style: GoogleFonts.inter(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
-                      color: Colors.grey[800],
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -372,7 +457,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     subtitle,
                     style: GoogleFonts.inter(
                       fontSize: 13,
-                      color: Colors.grey[600],
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.6),
                     ),
                   ),
                 ],
@@ -394,7 +482,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Divider(
         height: 1,
-        color: Colors.grey[200],
+        color: Theme.of(context).dividerColor.withValues(alpha: 0.1),
       ),
     );
   }
@@ -433,12 +521,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _localNotificationSettings![key] = !value;
         });
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to update: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        CustomToast.show(context,
+            message: 'Failed to update: $e', type: ToastType.error);
       }
     } finally {
       if (mounted) {
@@ -462,20 +546,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: AppTheme.primaryColor.withValues(alpha: 0.1),
+color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.lock_reset_rounded,
-                color: AppTheme.primaryColor,
+                color: Theme.of(context).colorScheme.primary,
                 size: 24,
               ),
             ),
             const SizedBox(width: 12),
-            const Expanded(
+            Expanded(
               child: Text(
                 'Reset Password',
-                style: TextStyle(fontSize: 20),
+                style: TextStyle(
+                  fontSize: 20,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
               ),
             ),
           ],
@@ -488,23 +575,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
               'A password reset link will be sent to:',
               style: GoogleFonts.inter(
                 fontSize: 14,
-                color: Colors.grey[700],
+                color: Theme.of(context)
+                    .colorScheme
+                    .onSurface
+                    .withValues(alpha: 0.7),
               ),
             ),
             const SizedBox(height: 8),
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.grey[100],
+                color: Theme.of(context).colorScheme.surface,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey[300]!),
+                border: Border.all(
+                    color:
+                        Theme.of(context).dividerColor.withValues(alpha: 0.1)),
               ),
               child: Row(
                 children: [
                   Icon(
                     Icons.email_outlined,
                     size: 20,
-                    color: AppTheme.primaryColor,
+    color: Theme.of(context).colorScheme.primary,
                   ),
                   const SizedBox(width: 8),
                   Expanded(
@@ -513,7 +605,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       style: GoogleFonts.inter(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: Colors.grey[800],
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                   ),
@@ -525,7 +617,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
               'Click the link in the email to create a new password. The link will expire in 1 hour.',
               style: GoogleFonts.inter(
                 fontSize: 13,
-                color: Colors.grey[600],
+                color: Theme.of(context)
+                    .colorScheme
+                    .onSurface
+                    .withValues(alpha: 0.6),
               ),
             ),
           ],
@@ -592,12 +687,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
               } catch (e) {
                 if (context.mounted) {
                   Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Failed to send reset email: $e'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
+                  CustomToast.show(context,
+                      message: 'Failed to send reset email: $e',
+                      type: ToastType.error);
                 }
               }
             },

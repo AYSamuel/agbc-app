@@ -3,9 +3,10 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../providers/supabase_provider.dart';
 import '../models/meeting_model.dart';
-import '../utils/theme.dart';
+import '../config/theme.dart';
 import '../utils/timezone_helper.dart';
 import '../widgets/custom_back_button.dart';
+import '../widgets/custom_toast.dart';
 
 class MeetingManagementScreen extends StatelessWidget {
   const MeetingManagementScreen({super.key});
@@ -15,7 +16,7 @@ class MeetingManagementScreen extends StatelessWidget {
     final supabaseProvider = Provider.of<SupabaseProvider>(context);
 
     return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
+      backgroundColor: Theme.of(context).colorScheme.background,
       body: SafeArea(
         child: Column(
           children: [
@@ -110,8 +111,8 @@ class MeetingManagementScreen extends StatelessWidget {
                     return Center(
                       child: Text(
                         'Error: ${snapshot.error}',
-                        style: const TextStyle(
-                          color: Colors.red,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.error,
                           fontSize: 16,
                         ),
                       ),
@@ -129,7 +130,7 @@ class MeetingManagementScreen extends StatelessWidget {
                   final meetings = snapshot.data!;
 
                   if (meetings.isEmpty) {
-                    return const Center(
+                    return Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -152,7 +153,10 @@ class MeetingManagementScreen extends StatelessWidget {
                             'There are currently no meetings in the system.',
                             style: TextStyle(
                               fontSize: 14,
-                              color: AppTheme.neutralColor,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withValues(alpha: 0.6),
                             ),
                           ),
                         ],
@@ -183,11 +187,11 @@ class MeetingManagementScreen extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: Theme.of(context).shadowColor,
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -206,7 +210,7 @@ class MeetingManagementScreen extends StatelessWidget {
               Container(
                 height: 5,
                 decoration: BoxDecoration(
-                  color: _getStatusColor(meeting.status),
+                  color: _getStatusColor(context, meeting.status),
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(20),
                     topRight: Radius.circular(20),
@@ -228,18 +232,22 @@ class MeetingManagementScreen extends StatelessWidget {
                             children: [
                               Text(
                                 meeting.title,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
-                                  color: AppTheme.darkNeutralColor,
+                                  color:
+                                      Theme.of(context).colorScheme.onSurface,
                                 ),
                               ),
                               const SizedBox(height: 8),
                               Text(
                                 meeting.description,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 14,
-                                  color: AppTheme.neutralColor,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurface
+                                      .withValues(alpha: 0.6),
                                 ),
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
@@ -249,15 +257,17 @@ class MeetingManagementScreen extends StatelessWidget {
                         ),
                         const SizedBox(width: 12),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
-                            color: _getStatusColor(meeting.status).withValues(alpha: 0.15),
+                            color: _getStatusColor(context, meeting.status)
+                                .withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
                             _getStatusDisplayText(meeting.status),
                             style: TextStyle(
-                              color: _getStatusColor(meeting.status),
+                              color: _getStatusColor(context, meeting.status),
                               fontWeight: FontWeight.bold,
                               fontSize: 10,
                               letterSpacing: 0.5,
@@ -285,9 +295,9 @@ class MeetingManagementScreen extends StatelessWidget {
                         const SizedBox(width: 8),
                         Text(
                           _formatDateTime(meeting.dateTime),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 13,
-                            color: AppTheme.darkNeutralColor,
+                            color: Theme.of(context).colorScheme.onSurface,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -313,9 +323,9 @@ class MeetingManagementScreen extends StatelessWidget {
                         Expanded(
                           child: Text(
                             meeting.location,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 13,
-                              color: AppTheme.darkNeutralColor,
+                              color: Theme.of(context).colorScheme.onSurface,
                               fontWeight: FontWeight.w500,
                             ),
                             maxLines: 1,
@@ -344,7 +354,8 @@ class MeetingManagementScreen extends StatelessWidget {
                           const SizedBox(width: 8),
                           Expanded(
                             child: InkWell(
-                              onTap: () => _launchMeetingLink(context, meeting.meetingLink!),
+                              onTap: () => _launchMeetingLink(
+                                  context, meeting.meetingLink!),
                               child: Text(
                                 meeting.meetingLink!,
                                 style: const TextStyle(
@@ -382,21 +393,14 @@ class MeetingManagementScreen extends StatelessWidget {
         );
       } else {
         if (!context.mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Could not launch meeting link'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        CustomToast.show(context,
+            message: 'Could not launch meeting link', type: ToastType.error);
       }
     } catch (e) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error opening meeting link: ${e.toString()}'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      CustomToast.show(context,
+          message: 'Error opening meeting link: ${e.toString()}',
+          type: ToastType.error);
     }
   }
 
@@ -413,14 +417,14 @@ class MeetingManagementScreen extends StatelessWidget {
     }
   }
 
-  Color _getStatusColor(MeetingStatus status) {
+  Color _getStatusColor(BuildContext context, MeetingStatus status) {
     switch (status) {
       case MeetingStatus.scheduled:
         return Colors.blue;
       case MeetingStatus.inprogress:
         return Colors.green;
       case MeetingStatus.completed:
-        return AppTheme.neutralColor;
+        return Theme.of(context).disabledColor;
       case MeetingStatus.cancelled:
         return Colors.red;
     }

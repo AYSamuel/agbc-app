@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:remixicon/remixicon.dart';
-import '../utils/theme.dart';
+import '../config/theme.dart';
 
 class AppNavBar extends StatefulWidget {
   final VoidCallback? onNotificationTap;
@@ -39,10 +39,10 @@ class _AppNavBarState extends State<AppNavBar> {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Theme.of(context).shadowColor,
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -70,7 +70,8 @@ class _AppNavBarState extends State<AppNavBar> {
                     color: AppTheme.primaryColor,
                   ),
                 ),
-                if (widget.notificationCount != null && widget.notificationCount! > 0)
+                if (widget.notificationCount != null &&
+                    widget.notificationCount! > 0)
                   Positioned(
                     right: -4,
                     top: -4,
@@ -79,7 +80,9 @@ class _AppNavBarState extends State<AppNavBar> {
                       decoration: BoxDecoration(
                         color: AppTheme.errorColor,
                         shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 2),
+                        border: Border.all(
+                            color: Theme.of(context).colorScheme.surface,
+                            width: 2),
                       ),
                       constraints: const BoxConstraints(
                         minWidth: 16,

@@ -7,13 +7,14 @@ import '../providers/branches_provider.dart';
 import '../models/meeting_model.dart';
 import '../models/church_branch_model.dart';
 import '../models/initial_notification_config.dart';
-import '../utils/theme.dart';
+import '../config/theme.dart';
 import '../utils/timezone_helper.dart';
 import '../widgets/custom_back_button.dart';
 import '../widgets/custom_button.dart';
 import '../widgets/custom_input.dart';
 import '../widgets/custom_dropdown.dart';
 import '../widgets/custom_date_time_picker.dart';
+import '../widgets/custom_toast.dart';
 
 class MeetingCreationScreen extends StatefulWidget {
   const MeetingCreationScreen({super.key});
@@ -67,7 +68,7 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
+      backgroundColor: Theme.of(context).colorScheme.background,
       body: Stack(
         children: [
           SafeArea(
@@ -99,7 +100,7 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
                             children: [
                               Text(
                                 'Create Meeting',
-                                style: AppTheme.titleStyle.copyWith(
+                                style: AppTheme.titleStyle(context).copyWith(
                                   color: Colors.white,
                                   fontSize: 22,
                                   fontWeight: FontWeight.bold,
@@ -289,7 +290,9 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
                                       'Virtual Meeting',
                                       style: GoogleFonts.inter(
                                         fontSize: 16,
-                                        color: AppTheme.darkNeutralColor,
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurface,
                                         fontWeight: FontWeight.w600,
                                       ),
                                     ),
@@ -335,7 +338,7 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
                             style: GoogleFonts.inter(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
-                              color: AppTheme.darkNeutralColor,
+                              color: Theme.of(context).colorScheme.onSurface,
                             ),
                           ),
                           const SizedBox(height: 8),
@@ -343,7 +346,10 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
                             'Choose when to notify branch members about this meeting:',
                             style: GoogleFonts.inter(
                               fontSize: 14,
-                              color: AppTheme.neutralColor,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withValues(alpha: 0.6),
                             ),
                           ),
                           const SizedBox(height: 16),
@@ -361,7 +367,7 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
                                       color: _initialNotificationTiming ==
                                               NotificationTiming.immediate
                                           ? AppTheme.primaryColor
-                                          : Colors.grey,
+                                          : Theme.of(context).disabledColor,
                                       width: 2,
                                     ),
                                   ),
@@ -383,14 +389,18 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
                                   'Notify immediately',
                                   style: GoogleFonts.inter(
                                     fontSize: 16,
-                                    color: AppTheme.darkNeutralColor,
+                                    color:
+                                        Theme.of(context).colorScheme.onSurface,
                                   ),
                                 ),
                                 subtitle: Text(
                                   'Send notification as soon as the meeting is created',
                                   style: GoogleFonts.inter(
                                     fontSize: 14,
-                                    color: AppTheme.neutralColor,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withValues(alpha: 0.6),
                                   ),
                                 ),
                                 onTap: () {
@@ -411,7 +421,7 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
                                       color: _initialNotificationTiming ==
                                               NotificationTiming.scheduled
                                           ? AppTheme.primaryColor
-                                          : Colors.grey,
+                                          : Theme.of(context).disabledColor,
                                       width: 2,
                                     ),
                                   ),
@@ -433,14 +443,18 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
                                   'Schedule notification',
                                   style: GoogleFonts.inter(
                                     fontSize: 16,
-                                    color: AppTheme.darkNeutralColor,
+                                    color:
+                                        Theme.of(context).colorScheme.onSurface,
                                   ),
                                 ),
                                 subtitle: Text(
                                   'Send notification at a specific date and time',
                                   style: GoogleFonts.inter(
                                     fontSize: 14,
-                                    color: AppTheme.neutralColor,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withValues(alpha: 0.6),
                                   ),
                                 ),
                                 onTap: () {
@@ -460,7 +474,7 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
                                       color: _initialNotificationTiming ==
                                               NotificationTiming.none
                                           ? AppTheme.primaryColor
-                                          : Colors.grey,
+                                          : Theme.of(context).disabledColor,
                                       width: 2,
                                     ),
                                   ),
@@ -482,14 +496,18 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
                                   'No initial notification',
                                   style: GoogleFonts.inter(
                                     fontSize: 16,
-                                    color: AppTheme.darkNeutralColor,
+                                    color:
+                                        Theme.of(context).colorScheme.onSurface,
                                   ),
                                 ),
                                 subtitle: Text(
                                   'Don\'t send any notification when meeting is created',
                                   style: GoogleFonts.inter(
                                     fontSize: 14,
-                                    color: AppTheme.neutralColor,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withValues(alpha: 0.6),
                                   ),
                                 ),
                                 onTap: () {
@@ -537,7 +555,7 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
                             style: GoogleFonts.inter(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
-                              color: AppTheme.darkNeutralColor,
+                              color: Theme.of(context).colorScheme.onSurface,
                             ),
                           ),
                           const SizedBox(height: 8),
@@ -545,7 +563,10 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
                             'Select when to remind branch members about this meeting:',
                             style: GoogleFonts.inter(
                               fontSize: 14,
-                              color: AppTheme.neutralColor,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withValues(alpha: 0.6),
                             ),
                           ),
                           const SizedBox(height: 16),
@@ -561,7 +582,8 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
                                 option,
                                 style: GoogleFonts.inter(
                                   fontSize: 16,
-                                  color: AppTheme.darkNeutralColor,
+                                  color:
+                                      Theme.of(context).colorScheme.onSurface,
                                 ),
                               ),
                               value: isSelected,
@@ -579,7 +601,7 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
                               side: BorderSide(
                                 color: isSelected
                                     ? AppTheme.primaryColor
-                                    : AppTheme.neutralColor,
+                                    : Theme.of(context).dividerColor,
                                 width: 2,
                               ),
                             );
@@ -593,7 +615,7 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
                             style: GoogleFonts.inter(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
-                              color: AppTheme.darkNeutralColor,
+                              color: Theme.of(context).colorScheme.onSurface,
                             ),
                           ),
                           const SizedBox(height: 8),
@@ -601,7 +623,10 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
                             'Set up this meeting to repeat automatically',
                             style: GoogleFonts.inter(
                               fontSize: 14,
-                              color: AppTheme.neutralColor,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withValues(alpha: 0.6),
                             ),
                           ),
                           const SizedBox(height: 16),
@@ -623,7 +648,8 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
                                 'Enable Recurring',
                                 style: GoogleFonts.inter(
                                   fontSize: 16,
-                                  color: AppTheme.darkNeutralColor,
+                                  color:
+                                      Theme.of(context).colorScheme.onSurface,
                                 ),
                               ),
                             ],
@@ -686,7 +712,10 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
                               _getIntervalHint(),
                               style: GoogleFonts.inter(
                                 fontSize: 12,
-                                color: AppTheme.neutralColor,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurface
+                                    .withValues(alpha: 0.6),
                               ),
                             ),
                             const SizedBox(height: 16),
@@ -697,7 +726,7 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
                               style: GoogleFonts.inter(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
-                                color: AppTheme.darkNeutralColor,
+                                color: Theme.of(context).colorScheme.onSurface,
                               ),
                             ),
                             const SizedBox(height: 8),
@@ -786,7 +815,7 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
                 child: Container(
                   padding: const EdgeInsets.all(32),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: Theme.of(context).colorScheme.surface,
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: const [
                       BoxShadow(
@@ -883,26 +912,20 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
     if (!_formKey.currentState!.validate() ||
         _selectedDateTime == null ||
         _selectedEndTime == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-              'Please fill in all required fields including start and end times'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      CustomToast.show(context,
+          message:
+              'Please fill in all required fields including start and end times',
+          type: ToastType.error);
       return;
     }
 
     // Validate scheduled notification if selected
     if (_initialNotificationTiming == NotificationTiming.scheduled &&
         _scheduledNotificationDateTime == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-              'Please select a date and time for the scheduled notification'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      CustomToast.show(context,
+          message:
+              'Please select a date and time for the scheduled notification',
+          type: ToastType.error);
       return;
     }
 
@@ -911,12 +934,9 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
 
     // Check if user is authenticated
     if (supabaseProvider.currentUser?.id == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('You must be logged in to create a meeting'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      CustomToast.show(context,
+          message: 'You must be logged in to create a meeting',
+          type: ToastType.error);
       return;
     }
 
@@ -1007,13 +1027,10 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
       });
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(supabaseProvider.error ??
-                'Failed to create meeting. Please try again.'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        CustomToast.show(context,
+            message: supabaseProvider.error ??
+                'Failed to create meeting. Please try again.',
+            type: ToastType.error);
       }
     }
   }
@@ -1026,11 +1043,11 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: Theme.of(context).shadowColor,
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -1066,10 +1083,10 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
                 const SizedBox(width: 12),
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: AppTheme.darkNeutralColor,
+                    color: Theme.of(context).colorScheme.onSurface,
                     letterSpacing: 0.2,
                   ),
                 ),

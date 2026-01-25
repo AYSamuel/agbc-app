@@ -10,13 +10,14 @@ import '../widgets/custom_input.dart';
 import '../widgets/custom_button.dart';
 import '../widgets/custom_back_button.dart';
 import '../widgets/custom_dropdown.dart';
-import '../utils/theme.dart';
+import '../config/theme.dart';
 import '../services/auth_service.dart';
 
 import '../utils/notification_helper.dart';
 import '../services/notification_service.dart';
 import '../models/initial_notification_config.dart';
 import '../widgets/custom_date_time_picker.dart';
+import '../widgets/custom_toast.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AddTaskScreen extends StatefulWidget {
@@ -98,13 +99,10 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     // Validate scheduled notification if selected
     if (_initialNotificationTiming == NotificationTiming.scheduled &&
         _scheduledNotificationDateTime == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-              'Please select a date and time for the scheduled notification'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      CustomToast.show(context,
+          message:
+              'Please select a date and time for the scheduled notification',
+          type: ToastType.error);
       return;
     }
 
@@ -163,23 +161,15 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
           message = 'Task created successfully';
         }
 
-        ScaffoldMessenger.of(currentContext).showSnackBar(
-          SnackBar(
-            content: Text(message),
-            backgroundColor: Colors.green,
-          ),
-        );
+        CustomToast.show(currentContext,
+            message: message, type: ToastType.success);
         Navigator.pop(currentContext);
       }
     } catch (e) {
       if (currentContext.mounted) {
         setState(() => _isCreating = false);
-        ScaffoldMessenger.of(currentContext).showSnackBar(
-          SnackBar(
-            content: Text('Error creating task: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        CustomToast.show(currentContext,
+            message: 'Error creating task: $e', type: ToastType.error);
       }
     }
   }
@@ -187,7 +177,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
+      backgroundColor: Theme.of(context).colorScheme.background,
       body: SafeArea(
         child: Column(
           children: [
@@ -220,7 +210,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                             children: [
                               Text(
                                 'Create New Task',
-                                style: AppTheme.titleStyle.copyWith(
+                                style: AppTheme.titleStyle(context).copyWith(
                                   color: Colors.white,
                                   fontSize: 22,
                                   fontWeight: FontWeight.bold,
@@ -316,6 +306,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                                   return CustomDropdown<ChurchBranch>(
                                     label: 'Branch',
                                     value: _selectedBranch,
+                                    prefixIcon: Icons.church,
                                     items: branches
                                         .map<DropdownMenuItem<ChurchBranch>>(
                                             (ChurchBranch branch) {
@@ -385,6 +376,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                                   return CustomDropdown<UserModel>(
                                     label: 'Assign To',
                                     value: _selectedAssignee,
+                                    prefixIcon: Icons.person,
                                     enabled: _selectedBranch != null &&
                                         filteredUsers.isNotEmpty,
                                     items: filteredUsers.isEmpty
@@ -498,7 +490,10 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                                 'Choose when to notify the assignee about this task:',
                                 style: GoogleFonts.inter(
                                   fontSize: 14,
-                                  color: AppTheme.neutralColor,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurface
+                                      .withValues(alpha: 0.6),
                                 ),
                               ),
                               const SizedBox(height: 16),
@@ -537,14 +532,18 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                                   'Notify immediately',
                                   style: GoogleFonts.inter(
                                     fontSize: 16,
-                                    color: AppTheme.darkNeutralColor,
+                                    color:
+                                        Theme.of(context).colorScheme.onSurface,
                                   ),
                                 ),
                                 subtitle: Text(
                                   'Send notification as soon as the task is created',
                                   style: GoogleFonts.inter(
                                     fontSize: 14,
-                                    color: AppTheme.neutralColor,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withValues(alpha: 0.6),
                                   ),
                                 ),
                                 onTap: () {
@@ -590,14 +589,18 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                                   'Schedule notification',
                                   style: GoogleFonts.inter(
                                     fontSize: 16,
-                                    color: AppTheme.darkNeutralColor,
+                                    color:
+                                        Theme.of(context).colorScheme.onSurface,
                                   ),
                                 ),
                                 subtitle: Text(
                                   'Send notification at a specific date and time',
                                   style: GoogleFonts.inter(
                                     fontSize: 14,
-                                    color: AppTheme.neutralColor,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withValues(alpha: 0.6),
                                   ),
                                 ),
                                 onTap: () {
@@ -620,7 +623,10 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                                       color: _initialNotificationTiming ==
                                               NotificationTiming.none
                                           ? AppTheme.primaryColor
-                                          : Colors.grey,
+                                          : Theme.of(context)
+                                              .colorScheme
+                                              .onSurface
+                                              .withValues(alpha: 0.3),
                                       width: 2,
                                     ),
                                   ),
@@ -642,14 +648,18 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                                   'No initial notification',
                                   style: GoogleFonts.inter(
                                     fontSize: 16,
-                                    color: AppTheme.darkNeutralColor,
+                                    color:
+                                        Theme.of(context).colorScheme.onSurface,
                                   ),
                                 ),
                                 subtitle: Text(
                                   'Don\'t send any notification when task is created',
                                   style: GoogleFonts.inter(
                                     fontSize: 14,
-                                    color: AppTheme.neutralColor,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withValues(alpha: 0.6),
                                   ),
                                 ),
                                 onTap: () {
@@ -783,11 +793,11 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: Theme.of(context).shadowColor,
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -823,10 +833,10 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                 const SizedBox(width: 12),
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: AppTheme.darkNeutralColor,
+                    color: Theme.of(context).colorScheme.onSurface,
                     letterSpacing: 0.2,
                   ),
                 ),

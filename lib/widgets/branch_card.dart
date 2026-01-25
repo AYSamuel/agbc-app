@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../models/church_branch_model.dart';
-import '../utils/theme.dart';
+import '../config/theme.dart';
 
 class BranchCard extends StatelessWidget {
   final ChurchBranch branch;
@@ -44,11 +44,11 @@ class BranchCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: Theme.of(context).shadowColor,
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -105,10 +105,11 @@ class BranchCard extends StatelessWidget {
                             children: [
                               Text(
                                 branch.name,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
-                                  color: AppTheme.darkNeutralColor,
+                                  color:
+                                      Theme.of(context).colorScheme.onSurface,
                                 ),
                               ),
                               const SizedBox(height: 8),
@@ -116,9 +117,12 @@ class BranchCard extends StatelessWidget {
                                   branch.description!.isNotEmpty) ...[
                                 Text(
                                   branch.description!,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 14,
-                                    color: AppTheme.neutralColor,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withValues(alpha: 0.6),
                                   ),
                                   maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
@@ -150,9 +154,9 @@ class BranchCard extends StatelessWidget {
                         Expanded(
                           child: Text(
                             _formatLocation(branch.location),
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 13,
-                              color: AppTheme.darkNeutralColor,
+                              color: Theme.of(context).colorScheme.onSurface,
                               fontWeight: FontWeight.w500,
                             ),
                             maxLines: 1,
@@ -181,9 +185,9 @@ class BranchCard extends StatelessWidget {
                         Expanded(
                           child: Text(
                             branch.address,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 13,
-                              color: AppTheme.darkNeutralColor,
+                              color: Theme.of(context).colorScheme.onSurface,
                               fontWeight: FontWeight.w500,
                             ),
                             maxLines: 1,
@@ -192,9 +196,10 @@ class BranchCard extends StatelessWidget {
                         ),
                       ],
                     ),
-                    if (showActions && (onEdit != null || onDelete != null)) ...[
+                    if (showActions &&
+                        (onEdit != null || onDelete != null)) ...[
                       const SizedBox(height: 16),
-                      const Divider(height: 1, color: AppTheme.neutralColor),
+                      const Divider(height: 1),
                       const SizedBox(height: 12),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.end,

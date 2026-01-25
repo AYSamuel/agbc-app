@@ -11,10 +11,11 @@ import '../models/user_model.dart';
 import '../models/initial_notification_config.dart';
 import '../providers/supabase_provider.dart';
 import '../services/auth_service.dart';
-import '../utils/theme.dart';
+import '../config/theme.dart';
 import '../utils/timezone_helper.dart';
 import '../widgets/custom_back_button.dart';
 import '../widgets/custom_input.dart';
+import '../widgets/custom_toast.dart';
 
 /// A screen that displays the details of a meeting with RSVP functionality
 class MeetingDetailsScreen extends StatefulWidget {
@@ -134,12 +135,8 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
     } catch (e) {
       debugPrint('Error loading meeting data: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error loading meeting data: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        CustomToast.show(context,
+            message: 'Error loading meeting data: $e', type: ToastType.error);
       }
     } finally {
       if (mounted) {
@@ -295,12 +292,8 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
           _lastSavedReason = reasonText;
         });
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('RSVP updated successfully!'),
-            backgroundColor: Colors.green,
-          ),
-        );
+        CustomToast.show(context,
+            message: 'RSVP updated successfully!', type: ToastType.success);
 
         // Reload attendance summary if user can view it
         if (_canViewAttendance) {
@@ -316,12 +309,8 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
     } catch (e) {
       debugPrint('Error submitting response: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error submitting RSVP: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        CustomToast.show(context,
+            message: 'Error submitting RSVP: $e', type: ToastType.error);
       }
     } finally {
       if (mounted) {
@@ -364,7 +353,7 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
-            color: isSelected ? color : Colors.white,
+            color: isSelected ? color : Theme.of(context).colorScheme.surface,
             border: Border.all(color: color, width: 2),
             borderRadius: BorderRadius.circular(8),
             boxShadow: isSelected
@@ -410,11 +399,11 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(8),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Theme.of(context).shadowColor,
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -443,7 +432,7 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
             style: GoogleFonts.inter(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: AppTheme.darkNeutralColor,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
         ],
@@ -455,11 +444,11 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(8),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Theme.of(context).shadowColor,
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -515,7 +504,7 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
               style: GoogleFonts.inter(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: AppTheme.darkNeutralColor,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             )
           else
@@ -525,7 +514,7 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
               style: GoogleFonts.inter(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: AppTheme.darkNeutralColor,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
         ],
@@ -537,29 +526,8 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
     if (!mounted) return;
 
     // Show loading indicator
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const SizedBox(
-              width: 16,
-              height: 16,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Text(
-              'Opening meeting link...',
-              style: GoogleFonts.inter(),
-            ),
-          ],
-        ),
-        duration: const Duration(seconds: 2),
-        backgroundColor: AppTheme.primaryColor,
-      ),
-    );
+    CustomToast.show(context,
+        message: 'Opening meeting link...', type: ToastType.info);
 
     try {
       // Validate and normalize URL
@@ -642,23 +610,8 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
   void _showSuccessMessage() {
     if (!mounted) return;
 
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.check_circle, color: Colors.white, size: 20),
-            const SizedBox(width: 8),
-            Text(
-              'Meeting link opened successfully',
-              style: GoogleFonts.inter(),
-            ),
-          ],
-        ),
-        backgroundColor: Colors.green,
-        duration: const Duration(seconds: 2),
-      ),
-    );
+    CustomToast.show(context,
+        message: 'Meeting link opened successfully', type: ToastType.success);
   }
 
   void _showErrorWithFallback(String url, String errorMessage) {
@@ -739,34 +692,15 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
     try {
       await Clipboard.setData(ClipboardData(text: url));
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.content_copy, color: Colors.white, size: 20),
-                const SizedBox(width: 8),
-                Text(
-                  'Meeting link copied to clipboard',
-                  style: GoogleFonts.inter(),
-                ),
-              ],
-            ),
-            backgroundColor: AppTheme.primaryColor,
-            duration: const Duration(seconds: 3),
-          ),
-        );
+        CustomToast.show(context,
+            message: 'Meeting link copied to clipboard',
+            type: ToastType.success);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Failed to copy link: ${e.toString()}',
-              style: GoogleFonts.inter(),
-            ),
-            backgroundColor: Colors.red,
-          ),
-        );
+        CustomToast.show(context,
+            message: 'Failed to copy link: ${e.toString()}',
+            type: ToastType.error);
       }
     }
   }
@@ -781,11 +715,11 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(8),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Theme.of(context).shadowColor,
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -850,7 +784,10 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
               style: GoogleFonts.inter(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: AppTheme.darkNeutralColor,
+                color: Theme.of(context)
+                    .colorScheme
+                    .onSurface
+                    .withValues(alpha: 0.7),
               ),
             ),
             const SizedBox(height: 8),
@@ -913,7 +850,7 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
               response.userName,
               style: GoogleFonts.inter(
                 fontSize: 14,
-                color: AppTheme.darkNeutralColor,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
           ),
@@ -934,11 +871,11 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(8),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Theme.of(context).shadowColor,
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -998,14 +935,15 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
           style: GoogleFonts.inter(
             fontSize: 14,
             fontWeight: FontWeight.w600,
-            color: AppTheme.darkNeutralColor,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
         Text(
           value,
           style: GoogleFonts.inter(
             fontSize: 14,
-            color: AppTheme.neutralColor,
+            color:
+                Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
           ),
         ),
       ],
@@ -1066,7 +1004,7 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
         } else if (scheduledTime.isAfter(now)) {
           statusText =
               'Notification scheduled for ${TimezoneHelper.formatInTimezone(scheduledTime, TimezoneHelper.getDeviceTimezone(), 'MMM dd, h:mm a')}';
-          statusColor = Colors.blue;
+          statusColor = Theme.of(context).colorScheme.primary;
           statusIcon = Remix.time_line;
         } else {
           statusText = 'Scheduled notification pending';
@@ -1087,11 +1025,11 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(8),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Theme.of(context).shadowColor,
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -1154,7 +1092,7 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
                   'Sent on ${TimezoneHelper.formatInTimezone(_meeting.initialNotificationSentAt!, TimezoneHelper.getDeviceTimezone(), 'MMM dd, h:mm a')}',
                   style: GoogleFonts.inter(
                     fontSize: 12,
-                    color: Colors.green,
+                    color: Theme.of(context).colorScheme.primary,
                   ),
                 ),
               ],
@@ -1168,7 +1106,7 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
+      backgroundColor: Theme.of(context).colorScheme.background,
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(
@@ -1189,7 +1127,7 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
                         style: GoogleFonts.inter(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
-                          color: AppTheme.darkNeutralColor,
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
                     ),
@@ -1208,7 +1146,7 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
                       style: GoogleFonts.inter(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
-                        color: AppTheme.darkNeutralColor,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -1217,11 +1155,11 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: Theme.of(context).colorScheme.surface,
                         borderRadius: BorderRadius.circular(8),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.05),
+                            color: Theme.of(context).shadowColor,
                             blurRadius: 10,
                             offset: const Offset(0, 4),
                           ),
@@ -1253,7 +1191,10 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
                             _meeting.description,
                             style: GoogleFonts.inter(
                               fontSize: 14,
-                              color: AppTheme.neutralColor,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withValues(alpha: 0.6),
                             ),
                           ),
                         ],
@@ -1348,11 +1289,11 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
                           return Container(
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: Theme.of(context).colorScheme.surface,
                               borderRadius: BorderRadius.circular(8),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.05),
+                                  color: Theme.of(context).shadowColor,
                                   blurRadius: 10,
                                   offset: const Offset(0, 4),
                                 ),
@@ -1517,7 +1458,10 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
                 'Your reason is automatically saved as you type',
                 style: TextStyle(
                   fontSize: 12,
-                  color: Colors.grey[600],
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.6),
                   fontStyle: FontStyle.italic,
                 ),
               ),

@@ -97,7 +97,7 @@ class AuthService extends ChangeNotifier {
       final response = await _supabase.auth.signUp(
         email: email,
         password: password,
-        emailRedirectTo: 'https://aysamuel.github.io/agbc-app/email-confirmed.html',
+        emailRedirectTo: 'https://agbc-web.vercel.app/email-confirmed',
         data: {
           'display_name': displayName,
           'phone_number': phoneNumber.isNotEmpty ? phoneNumber : null,
@@ -422,7 +422,7 @@ class AuthService extends ChangeNotifier {
     try {
       await _supabase.auth.resetPasswordForEmail(
         email,
-        redirectTo: 'https://aysamuel.github.io/agbc-app/reset-password.html',
+        redirectTo: 'https://agbc-web.vercel.app/reset-password',
       );
     } on AuthException catch (e) {
       debugPrint("Reset password error: ${e.message}");

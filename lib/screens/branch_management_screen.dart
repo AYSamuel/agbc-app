@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:remixicon/remixicon.dart';
 import '../providers/supabase_provider.dart';
 import '../models/church_branch_model.dart';
 import '../models/user_model.dart';
@@ -29,8 +30,8 @@ class _BranchManagementScreenState extends State<BranchManagementScreen> {
             // Modern Header
             Container(
               width: double.infinity,
-              decoration: const BoxDecoration(
-                color: AppTheme.successColor,
+              decoration: BoxDecoration(
+                color: AppTheme.primary(context),
                 borderRadius: BorderRadius.only(
                   bottomLeft: Radius.circular(32),
                   bottomRight: Radius.circular(32),
@@ -62,7 +63,7 @@ class _BranchManagementScreenState extends State<BranchManagementScreen> {
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: IconButton(
-                            icon: const Icon(Icons.add_rounded),
+                            icon: const Icon(Remix.add_line),
                             onPressed: () => Navigator.push(
                               context,
                               MaterialPageRoute(
@@ -88,7 +89,7 @@ class _BranchManagementScreenState extends State<BranchManagementScreen> {
                             borderRadius: BorderRadius.circular(16),
                           ),
                           child: const Icon(
-                            Icons.location_city,
+                            Remix.community_line,
                             color: Colors.white,
                             size: 28,
                           ),
@@ -135,27 +136,31 @@ class _BranchManagementScreenState extends State<BranchManagementScreen> {
                     return Center(child: Text('Error: ${snapshot.error}'));
                   }
                   if (!snapshot.hasData) {
-                    return const Center(child: CircularProgressIndicator());
+                    return Center(
+                      child: CircularProgressIndicator(
+                        color: AppTheme.primary(context),
+                      ),
+                    );
                   }
                   final branches = snapshot.data!;
 
                   if (branches.isEmpty) {
-                    return const Center(
+                    return Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
-                            Icons.church,
+                            Remix.community_line,
                             size: 64,
-                            color: Color(0xFF1A237E),
+                            color: AppTheme.primary(context),
                           ),
-                          SizedBox(height: 16),
+                          const SizedBox(height: 16),
                           Text(
                             'No Branches Found',
                             style: TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
-                              color: Color(0xFF1A237E),
+                              color: AppTheme.primary(context),
                             ),
                           ),
                           SizedBox(height: 8),
@@ -405,7 +410,7 @@ class _BranchManagementScreenState extends State<BranchManagementScreen> {
                           child: ListTile(
                             dense: true,
                             leading: CircleAvatar(
-                              backgroundColor: AppTheme.primaryColor,
+                              backgroundColor: AppTheme.primary(context),
                               child: Text(
                                 member.fullName.isNotEmpty
                                     ? member.fullName[0].toUpperCase()
@@ -464,9 +469,9 @@ class _BranchManagementScreenState extends State<BranchManagementScreen> {
       case UserRole.admin:
         return AppTheme.errorColor;
       case UserRole.pastor:
-        return AppTheme.secondaryColor;
+        return AppTheme.secondary(context);
       case UserRole.worker:
-        return AppTheme.accentColor;
+        return AppTheme.secondary(context);
       case UserRole.member:
         return AppTheme.successColor;
     }

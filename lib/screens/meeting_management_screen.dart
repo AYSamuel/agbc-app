@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:remixicon/remixicon.dart';
 import '../providers/supabase_provider.dart';
 import '../models/meeting_model.dart';
 import '../config/theme.dart';
@@ -23,8 +24,8 @@ class MeetingManagementScreen extends StatelessWidget {
             // Modern Header
             Container(
               width: double.infinity,
-              decoration: const BoxDecoration(
-                color: AppTheme.secondaryColor,
+              decoration: BoxDecoration(
+                color: AppTheme.secondary(context),
                 borderRadius: BorderRadius.only(
                   bottomLeft: Radius.circular(32),
                   bottomRight: Radius.circular(32),
@@ -64,7 +65,7 @@ class MeetingManagementScreen extends StatelessWidget {
                             borderRadius: BorderRadius.circular(16),
                           ),
                           child: const Icon(
-                            Icons.event_note,
+                            Remix.calendar_line,
                             color: Colors.white,
                             size: 28,
                           ),
@@ -120,9 +121,9 @@ class MeetingManagementScreen extends StatelessWidget {
                   }
 
                   if (!snapshot.hasData) {
-                    return const Center(
+                    return Center(
                       child: CircularProgressIndicator(
-                        color: AppTheme.primaryColor,
+                        color: AppTheme.primary(context),
                       ),
                     );
                   }
@@ -135,9 +136,9 @@ class MeetingManagementScreen extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
-                            Icons.event_note,
+                            Remix.calendar_line,
                             size: 64,
-                            color: AppTheme.primaryColor,
+                            color: AppTheme.primary(context),
                           ),
                           SizedBox(height: 16),
                           Text(
@@ -145,7 +146,7 @@ class MeetingManagementScreen extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
-                              color: AppTheme.primaryColor,
+                              color: AppTheme.primary(context),
                             ),
                           ),
                           SizedBox(height: 8),
@@ -283,13 +284,14 @@ class MeetingManagementScreen extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
-                            color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                            color: AppTheme.primary(context)
+                                .withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: const Icon(
-                            Icons.calendar_today,
+                          child: Icon(
+                            Remix.calendar_line,
                             size: 14,
-                            color: AppTheme.primaryColor,
+                            color: AppTheme.primary(context),
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -310,13 +312,14 @@ class MeetingManagementScreen extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
-                            color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                            color: AppTheme.primary(context)
+                                .withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: const Icon(
-                            Icons.location_on,
+                          child: Icon(
+                            Remix.map_pin_line,
                             size: 14,
-                            color: AppTheme.primaryColor,
+                            color: AppTheme.primary(context),
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -345,10 +348,10 @@ class MeetingManagementScreen extends StatelessWidget {
                               color: Colors.blue.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: const Icon(
-                              Icons.video_call,
+                            child: Icon(
+                              Remix.video_chat_line,
                               size: 14,
-                              color: Colors.blue,
+                              color: Theme.of(context).primaryColor,
                             ),
                           ),
                           const SizedBox(width: 8),

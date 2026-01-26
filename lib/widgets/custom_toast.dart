@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:remixicon/remixicon.dart';
 import '../config/theme.dart';
 
 enum ToastType { success, error, warning, info }
@@ -99,26 +100,26 @@ class _ToastWidgetState extends State<_ToastWidget>
   Color _getBackgroundColor() {
     switch (widget.type) {
       case ToastType.success:
-        return AppTheme.successColor;
+        return AppTheme.success(context);
       case ToastType.error:
-        return AppTheme.errorColor;
+        return AppTheme.error(context);
       case ToastType.warning:
-        return AppTheme.warningColor;
+        return AppTheme.warning(context);
       case ToastType.info:
-        return AppTheme.primaryColor;
+        return AppTheme.secondary(context);
     }
   }
 
   IconData _getIcon() {
     switch (widget.type) {
       case ToastType.success:
-        return Icons.check_circle_outline;
+        return Remix.checkbox_circle_line;
       case ToastType.error:
-        return Icons.error_outline;
+        return Remix.error_warning_line;
       case ToastType.warning:
-        return Icons.warning_amber_rounded;
+        return Remix.alert_line;
       case ToastType.info:
-        return Icons.info_outline;
+        return Remix.information_line;
     }
   }
 
@@ -140,10 +141,10 @@ class _ToastWidgetState extends State<_ToastWidget>
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   decoration: BoxDecoration(
                     color: _getBackgroundColor(),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(8),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.2),
+                        color: Colors.black.withValues(alpha: 0.15),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
@@ -161,19 +162,19 @@ class _ToastWidgetState extends State<_ToastWidget>
                       Flexible(
                         child: Text(
                           widget.message,
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.roboto(
                             color: Colors.white,
                             fontSize: 14,
-                            fontWeight: FontWeight.w600,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 12),
                       GestureDetector(
                         onTap: widget.onDismiss,
-                        child: Icon(
-                          Icons.close,
-                          color: Colors.white.withValues(alpha: 0.8),
+                        child: const Icon(
+                          Remix.close_line,
+                          color: Colors.white,
                           size: 18,
                         ),
                       ),

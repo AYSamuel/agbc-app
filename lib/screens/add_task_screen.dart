@@ -19,6 +19,7 @@ import '../models/initial_notification_config.dart';
 import '../widgets/custom_date_time_picker.dart';
 import '../widgets/custom_toast.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:remixicon/remixicon.dart';
 
 class AddTaskScreen extends StatefulWidget {
   const AddTaskScreen({super.key});
@@ -184,10 +185,10 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
             // Modern Header
             Container(
               decoration: BoxDecoration(
-                color: AppTheme.primaryColor,
+                color: AppTheme.primary(context),
                 boxShadow: [
                   BoxShadow(
-                    color: AppTheme.primaryColor.withValues(alpha: 0.2),
+                    color: AppTheme.primary(context).withValues(alpha: 0.2),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
@@ -252,16 +253,16 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                       children: [
                         // Task Information Card
                         _buildModernSection(
-                          icon: Icons.edit_document,
+                          icon: Remix.edit_box_line,
                           title: 'Task Information',
-                          accentColor: AppTheme.primaryColor,
+                          accentColor: AppTheme.primary(context),
                           child: Column(
                             children: [
                               CustomInput(
                                 label: 'Task Title',
                                 controller: _titleController,
                                 hint: 'Enter a clear, descriptive title',
-                                prefixIcon: const Icon(Icons.title),
+                                prefixIcon: const Icon(Remix.file_list_2_line),
                                 focusNode: _titleFocus,
                                 nextFocusNode: _descriptionFocus,
                                 validator: (value) {
@@ -276,7 +277,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                                 label: 'Description',
                                 controller: _descriptionController,
                                 hint: 'Provide detailed task description',
-                                prefixIcon: const Icon(Icons.description),
+                                prefixIcon: const Icon(Remix.file_list_3_line),
                                 focusNode: _descriptionFocus,
                                 maxLines: 4,
                                 validator: (value) {
@@ -293,9 +294,9 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
 
                         // Assignment Card
                         _buildModernSection(
-                          icon: Icons.people,
+                          icon: Remix.group_line,
                           title: 'Assignment',
-                          accentColor: AppTheme.secondaryColor,
+                          accentColor: AppTheme.secondary(context),
                           child: Column(
                             children: [
                               // Branch Selection First
@@ -306,7 +307,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                                   return CustomDropdown<ChurchBranch>(
                                     label: 'Branch',
                                     value: _selectedBranch,
-                                    prefixIcon: Icons.church,
+                                    prefixIcon: Remix.community_line,
                                     items: branches
                                         .map<DropdownMenuItem<ChurchBranch>>(
                                             (ChurchBranch branch) {
@@ -376,7 +377,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                                   return CustomDropdown<UserModel>(
                                     label: 'Assign To',
                                     value: _selectedAssignee,
-                                    prefixIcon: Icons.person,
+                                    prefixIcon: Remix.user_line,
                                     enabled: _selectedBranch != null &&
                                         filteredUsers.isNotEmpty,
                                     items: filteredUsers.isEmpty
@@ -429,7 +430,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                                 label: 'Deadline',
                                 value: _selectedDeadline,
                                 hintText: 'Select deadline date & time',
-                                prefixIcon: Icons.calendar_today,
+                                prefixIcon: Remix.calendar_line,
                                 onChanged: (dateTime) {
                                   setState(() {
                                     _selectedDeadline = dateTime;
@@ -451,7 +452,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                                 value: _selectedPriority,
                                 label: 'Priority Level',
                                 hint: 'Select priority',
-                                prefixIcon: Icons.flag,
+                                prefixIcon: Remix.flag_line,
                                 items: const [
                                   DropdownMenuItem(
                                       value: TaskPriority.urgent,
@@ -480,9 +481,9 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
 
                         // Notification Timing Card
                         _buildModernSection(
-                          icon: Icons.notifications_active,
+                          icon: Remix.notification_3_line,
                           title: 'Notification Settings',
-                          accentColor: AppTheme.secondaryColor,
+                          accentColor: AppTheme.secondary(context),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -509,7 +510,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                                     border: Border.all(
                                       color: _initialNotificationTiming ==
                                               NotificationTiming.immediate
-                                          ? AppTheme.primaryColor
+                                          ? AppTheme.primary(context)
                                           : Colors.grey,
                                       width: 2,
                                     ),
@@ -776,8 +777,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
             value: progress,
             minHeight: 6,
             backgroundColor: Colors.white.withValues(alpha: 0.2),
-            valueColor: const AlwaysStoppedAnimation<Color>(
-              AppTheme.secondaryColor,
+            valueColor: AlwaysStoppedAnimation<Color>(
+              AppTheme.secondary(context),
             ),
           ),
         ),

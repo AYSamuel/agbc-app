@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:remixicon/remixicon.dart';
 import '../models/meeting_model.dart';
-import '../config/theme.dart';
+import 'package:grace_portal/config/theme.dart';
 import '../utils/timezone_helper.dart';
 import '../widgets/custom_toast.dart';
 
@@ -130,13 +131,14 @@ class MeetingCard extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
-                            color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                            color: AppTheme.primary(context)
+                                .withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: const Icon(
-                            Icons.calendar_today,
+                          child: Icon(
+                            Remix.calendar_line,
                             size: 14,
-                            color: AppTheme.primaryColor,
+                            color: AppTheme.primary(context),
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -159,17 +161,18 @@ class MeetingCard extends StatelessWidget {
                           decoration: BoxDecoration(
                             color: meeting.isVirtual
                                 ? Colors.blue.withValues(alpha: 0.1)
-                                : AppTheme.primaryColor.withValues(alpha: 0.1),
+                                : AppTheme.primary(context)
+                                    .withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Icon(
                             meeting.isVirtual
-                                ? Icons.video_call
-                                : Icons.location_on,
+                                ? Remix.video_chat_line
+                                : Remix.map_pin_line,
                             size: 14,
                             color: meeting.isVirtual
                                 ? Colors.blue
-                                : AppTheme.primaryColor,
+                                : AppTheme.primary(context),
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -247,15 +250,15 @@ class MeetingCard extends StatelessWidget {
                                 HapticFeedback.lightImpact();
                                 onEdit!();
                               },
-                              icon: const Icon(
-                                Icons.edit_outlined,
+                              icon: Icon(
+                                Remix.edit_line,
                                 size: 16,
-                                color: AppTheme.primaryColor,
+                                color: AppTheme.primary(context),
                               ),
-                              label: const Text(
+                              label: Text(
                                 'Edit',
                                 style: TextStyle(
-                                  color: AppTheme.primaryColor,
+                                  color: AppTheme.primary(context),
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -273,15 +276,15 @@ class MeetingCard extends StatelessWidget {
                                 HapticFeedback.lightImpact();
                                 onDelete!();
                               },
-                              icon: const Icon(
-                                Icons.delete_outline,
+                              icon: Icon(
+                                Remix.delete_bin_line,
                                 size: 16,
-                                color: AppTheme.errorColor,
+                                color: AppTheme.error(context),
                               ),
-                              label: const Text(
+                              label: Text(
                                 'Delete',
                                 style: TextStyle(
-                                  color: AppTheme.errorColor,
+                                  color: AppTheme.error(context),
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
                                 ),

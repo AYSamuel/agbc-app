@@ -1,6 +1,6 @@
 import 'dart:ui';
-
 import 'package:flutter/material.dart';
+import 'package:remixicon/remixicon.dart';
 import '../widgets/login_form.dart';
 import '../config/theme.dart';
 
@@ -19,9 +19,6 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  // Branch data is already cached from splash screen initialization
-  // No need to fetch again
-
   @override
   Widget build(BuildContext context) {
     final Map<String, bool>? args =
@@ -31,100 +28,87 @@ class _LoginScreenState extends State<LoginScreen> {
 
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.background,
-      resizeToAvoidBottomInset:
-          true, // Ensure content resizes when keyboard appears
+      resizeToAvoidBottomInset: true,
       body: Stack(
         children: [
-          // Gorgeous layered gradient background
+          // Gradient background aligned with navy/teal theme
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [
-                  AppTheme.primaryColor,
-                  AppTheme.secondaryColor.withValues(alpha: 0.8),
-                  Theme.of(context).colorScheme.background,
-                ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                stops: const [0, 0.4, 1],
+                colors: [
+                  AppTheme.primary(context),
+                  AppTheme.primary(context).withValues(alpha: 0.8),
+                ],
               ),
             ),
           ),
-          // Decorative blurred circle
+          // Subtle teal glow
           Positioned(
             top: -60,
             left: -60,
             child: Container(
-              width: 180,
-              height: 180,
+              width: 240,
+              height: 240,
               decoration: BoxDecoration(
-                color: AppTheme.secondaryColor.withValues(alpha: 0.18),
+                color: AppTheme.teal.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: AppTheme.secondaryColor.withValues(alpha: 0.18),
-                    blurRadius: 80,
-                    spreadRadius: 20,
+                    color: AppTheme.teal.withValues(alpha: 0.1),
+                    blurRadius: 100,
+                    spreadRadius: 40,
                   ),
                 ],
               ),
             ),
           ),
-          // Centered frosted glass card
           Center(
             child: SingleChildScrollView(
               child: Padding(
-                padding: AppTheme.screenPadding(context),
+                padding: const EdgeInsets.all(24.0),
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(32),
+                  borderRadius: BorderRadius.circular(24),
                   child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+                    filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
                     child: Container(
                       decoration: BoxDecoration(
                         color: Theme.of(context)
                             .colorScheme
                             .surface
-                            .withValues(alpha: 0.82),
-                        borderRadius: BorderRadius.circular(32),
-                        boxShadow: [
-                          BoxShadow(
-                            color:
-                                AppTheme.primaryColor.withValues(alpha: 0.10),
-                            blurRadius: 30,
-                            offset: const Offset(0, 8),
-                          ),
-                        ],
+                            .withValues(alpha: 0.9),
+                        borderRadius: BorderRadius.circular(24),
+                        boxShadow: AppTheme.cardShadow(context),
                         border: Border.all(
-                          color: AppTheme.dividerColor(context).withValues(alpha: 0.35),
-                          width: 1.2,
+                          color: AppTheme.dividerColor(context)
+                              .withValues(alpha: 0.2),
+                          width: 1,
                         ),
                       ),
-                      padding: AppTheme.cardPadding(context),
+                      padding: const EdgeInsets.all(32),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          const SizedBox(height: 12),
-                          // Modern lock icon
-                          Center(
-                            child: CircleAvatar(
-                              radius: 38,
-                              backgroundColor:
-                                  AppTheme.primaryColor.withValues(alpha: 0.08),
-                              child: const Icon(
-                                Icons.lock_outline_rounded,
-                                color: AppTheme.primaryColor,
-                                size: 48,
-                              ),
+                          const SizedBox(height: 8),
+                          CircleAvatar(
+                            radius: 40,
+                            backgroundColor:
+                                AppTheme.teal.withValues(alpha: 0.1),
+                            child: const Icon(
+                              Remix.lock_password_line,
+                              color: AppTheme.teal,
+                              size: 40,
                             ),
                           ),
                           const SizedBox(height: 24),
-                          // Title Text
                           Text(
                             'Welcome Back',
                             style: AppTheme.titleStyle(context).copyWith(
                               fontSize: 28,
-                              color: AppTheme.primaryColor,
-                              letterSpacing: 0.5,
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.textPrimary(context),
+                              letterSpacing: -0.5,
                             ),
                             textAlign: TextAlign.center,
                           ),
@@ -132,10 +116,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           Text(
                             'Login to your account',
                             style: AppTheme.subtitleStyle(context).copyWith(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurface
-                                  .withValues(alpha: 0.7),
+                              color: AppTheme.textMuted(context),
                             ),
                             textAlign: TextAlign.center,
                           ),
@@ -148,20 +129,27 @@ class _LoginScreenState extends State<LoginScreen> {
                             },
                             isLoggingOut: effectivelyIsLoggingOut,
                           ),
-                          const SizedBox(height: 18),
-                          // Signup link
+                          const SizedBox(height: 24),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Text('Don\'t have an account?',
-                                  style: AppTheme.regularTextStyle(context)),
+                                  style: AppTheme.regularTextStyle(context)
+                                      .copyWith(
+                                    color: AppTheme.textSecondary(context),
+                                  )),
                               TextButton(
                                 onPressed: () {
                                   Navigator.of(context)
                                       .pushReplacementNamed('/register');
                                 },
-                                child:
-                                    Text('Sign up', style: AppTheme.linkStyle(context)),
+                                child: Text(
+                                  'Sign up',
+                                  style: AppTheme.linkStyle(context).copyWith(
+                                    color: AppTheme.teal,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                               ),
                             ],
                           ),

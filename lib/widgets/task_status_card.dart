@@ -59,13 +59,14 @@ class _TaskStatusCardState extends State<TaskStatusCard> {
                 decoration: BoxDecoration(
                   color: hasTasks
                       ? AppTheme.warningColor.withValues(alpha: 0.1)
-                      : AppTheme.successColor.withValues(alpha: 0.1),
+                      : AppTheme.secondary(context).withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
                   Remix.task_line,
-                  color:
-                      hasTasks ? AppTheme.warningColor : AppTheme.successColor,
+                  color: hasTasks
+                      ? AppTheme.warningColor
+                      : AppTheme.secondary(context),
                   size: 20,
                 ),
               ),
@@ -95,7 +96,7 @@ class _TaskStatusCardState extends State<TaskStatusCard> {
                 ),
               );
             },
-            child: const Row(
+            child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
@@ -103,14 +104,14 @@ class _TaskStatusCardState extends State<TaskStatusCard> {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
-                    color: AppTheme.primaryColor,
+                    color: AppTheme.primary(context),
                   ),
                 ),
-                SizedBox(width: 4),
+                const SizedBox(width: 4),
                 Icon(
                   Remix.arrow_right_s_line,
                   size: 20,
-                  color: AppTheme.primaryColor,
+                  color: AppTheme.primary(context),
                 ),
               ],
             ),

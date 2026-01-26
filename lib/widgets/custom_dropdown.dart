@@ -112,13 +112,13 @@ class _CustomDropdownState<T> extends State<CustomDropdown<T>> {
             groupId: this,
             child: Material(
               elevation: 4,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(8),
               child: Container(
                 constraints: const BoxConstraints(maxHeight: 300),
                 decoration: BoxDecoration(
                   color: widget.dropdownColor ??
                       Theme.of(context).colorScheme.surface,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(8),
                   border: Border.all(
                       color: Theme.of(context)
                           .dividerColor
@@ -142,7 +142,8 @@ class _CustomDropdownState<T> extends State<CustomDropdown<T>> {
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         decoration: BoxDecoration(
                           color: isSelected
-                              ? AppTheme.primaryColor.withValues(alpha: 0.1)
+                              ? AppTheme.secondary(context)
+                                  .withValues(alpha: 0.1)
                               : Colors.transparent,
                           border: index < widget.items.length - 1
                               ? Border(
@@ -162,10 +163,10 @@ class _CustomDropdownState<T> extends State<CustomDropdown<T>> {
                                 widget.prefixIcon,
                                 size: 16,
                                 color: isSelected
-                                    ? Theme.of(context).colorScheme.primary
+                                    ? AppTheme.secondary(context)
                                     : (Theme.of(context).brightness ==
                                             Brightness.dark
-                                        ? Theme.of(context).colorScheme.primary
+                                        ? AppTheme.secondary(context)
                                         : Theme.of(context)
                                             .colorScheme
                                             .onSurface
@@ -178,9 +179,7 @@ class _CustomDropdownState<T> extends State<CustomDropdown<T>> {
                                 style: widget.style ??
                                     TextStyle(
                                       color: isSelected
-                                          ? Theme.of(context)
-                                              .colorScheme
-                                              .primary
+                                          ? AppTheme.secondary(context)
                                           : Theme.of(context)
                                               .colorScheme
                                               .onSurface,
@@ -193,10 +192,10 @@ class _CustomDropdownState<T> extends State<CustomDropdown<T>> {
                               ),
                             ),
                             if (isSelected)
-                              const Icon(
+                              Icon(
                                 Icons.check,
                                 size: 16,
-                                color: AppTheme.primaryColor,
+                                color: AppTheme.secondary(context),
                               ),
                           ],
                         ),
@@ -247,10 +246,7 @@ class _CustomDropdownState<T> extends State<CustomDropdown<T>> {
           Text(
             widget.label!,
             style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .onSurface
-                      .withValues(alpha: 0.8),
+                  color: AppTheme.textSecondary(context),
                   fontWeight: FontWeight.w600,
                   letterSpacing: 0.2,
                 ),
@@ -273,16 +269,13 @@ class _CustomDropdownState<T> extends State<CustomDropdown<T>> {
                           .colorScheme
                           .surface
                           .withValues(alpha: 0.5),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(8),
                   border: Border.all(
                     color: widget.errorText != null
                         ? Theme.of(context).colorScheme.error
                         : _isOpen
-                            ? Theme.of(context).colorScheme.primary
-                            : Theme.of(context)
-                                .colorScheme
-                                .onSurface
-                                .withValues(alpha: 0.15),
+                            ? AppTheme.secondary(context)
+                            : AppTheme.inputBorderColor(context),
                     width: _isOpen ? 2 : 1.5,
                   ),
                 ),
@@ -352,8 +345,9 @@ class _CustomDropdownState<T> extends State<CustomDropdown<T>> {
                         child: Icon(
                           Icons.arrow_drop_down,
                           color: widget.enabled
-                              ? AppTheme.primaryColor
-                              : AppTheme.neutralColor.withValues(alpha: 0.5),
+                              ? AppTheme.primary(context)
+                              : AppTheme.textMuted(context)
+                                  .withValues(alpha: 0.5),
                         ),
                       ),
                     ),

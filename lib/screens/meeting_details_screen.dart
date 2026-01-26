@@ -462,7 +462,7 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
               Icon(
                 _meeting.isVirtual ? Remix.video_line : Remix.map_pin_line,
                 size: 20,
-                color: AppTheme.primaryColor,
+                color: AppTheme.secondary(context),
               ),
               const SizedBox(width: 8),
               Text(
@@ -470,7 +470,7 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
                 style: GoogleFonts.inter(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: AppTheme.primaryColor,
+                  color: AppTheme.secondary(context),
                 ),
               ),
             ],
@@ -675,7 +675,7 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
                 _copyToClipboard(url);
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryColor,
+                backgroundColor: AppTheme.secondary(context),
               ),
               child: Text(
                 'Copy Link',
@@ -730,10 +730,10 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
         children: [
           Row(
             children: [
-              const Icon(
+              Icon(
                 Remix.group_line,
                 size: 20,
-                color: AppTheme.primaryColor,
+                color: AppTheme.secondary(context),
               ),
               const SizedBox(width: 8),
               Text(
@@ -741,7 +741,7 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
                 style: GoogleFonts.inter(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: AppTheme.primaryColor,
+                  color: AppTheme.secondary(context),
                 ),
               ),
             ],
@@ -1040,10 +1040,10 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
         children: [
           Row(
             children: [
-              const Icon(
+              Icon(
                 Remix.notification_3_line,
                 size: 20,
-                color: AppTheme.primaryColor,
+                color: AppTheme.secondary(context),
               ),
               const SizedBox(width: 8),
               Text(
@@ -1051,7 +1051,7 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
                 style: GoogleFonts.inter(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: AppTheme.primaryColor,
+                  color: AppTheme.secondary(context),
                 ),
               ),
             ],
@@ -1170,10 +1170,10 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
                         children: [
                           Row(
                             children: [
-                              const Icon(
+                              Icon(
                                 Remix.file_text_line,
                                 size: 20,
-                                color: AppTheme.primaryColor,
+                                color: AppTheme.secondary(context),
                               ),
                               const SizedBox(width: 8),
                               Text(
@@ -1181,7 +1181,7 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
                                 style: GoogleFonts.inter(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
-                                  color: AppTheme.primaryColor,
+                                  color: AppTheme.secondary(context),
                                 ),
                               ),
                             ],
@@ -1217,7 +1217,7 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
                               TimezoneHelper.getDeviceTimezone(),
                               'MMM dd, yyyy',
                             ),
-                            AppTheme.primaryColor,
+                            AppTheme.secondary(context),
                             Remix.calendar_line,
                           ),
                         ),
@@ -1230,7 +1230,7 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
                               TimezoneHelper.getDeviceTimezone(),
                               'h:mm a',
                             ),
-                            AppTheme.primaryColor,
+                            AppTheme.secondary(context),
                             Remix.time_line,
                           ),
                         ),
@@ -1249,7 +1249,7 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
                           child: _buildInfoCard(
                             'Organizer',
                             _organizer?.displayName ?? _meeting.organizerName,
-                            AppTheme.primaryColor,
+                            AppTheme.secondary(context),
                             Remix.user_line,
                           ),
                         ),
@@ -1304,10 +1304,10 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
                               children: [
                                 Row(
                                   children: [
-                                    const Icon(
+                                    Icon(
                                       Remix.calendar_check_line,
                                       size: 20,
-                                      color: AppTheme.primaryColor,
+                                      color: AppTheme.secondary(context),
                                     ),
                                     const SizedBox(width: 8),
                                     Text(
@@ -1315,7 +1315,7 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
                                       style: GoogleFonts.inter(
                                         fontSize: 16,
                                         fontWeight: FontWeight.bold,
-                                        color: AppTheme.primaryColor,
+                                        color: AppTheme.secondary(context),
                                       ),
                                     ),
                                   ],

@@ -77,10 +77,10 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
                 // Modern Header
                 Container(
                   decoration: BoxDecoration(
-                    color: AppTheme.primaryColor,
+                    color: AppTheme.primary(context),
                     boxShadow: [
                       BoxShadow(
-                        color: AppTheme.primaryColor.withValues(alpha: 0.2),
+                        color: AppTheme.primary(context).withValues(alpha: 0.2),
                         blurRadius: 12,
                         offset: const Offset(0, 4),
                       ),
@@ -134,16 +134,17 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
                         children: [
                           // Meeting Details Card
                           _buildModernSection(
-                            icon: Icons.event,
+                            icon: Remix.information_line,
                             title: 'Meeting Details',
-                            accentColor: AppTheme.primaryColor,
+                            accentColor: AppTheme.primary(context),
                             child: Column(
                               children: [
                                 CustomInput(
                                   controller: _titleController,
                                   label: 'Meeting Title',
                                   hint: 'Enter meeting title',
-                                  prefixIcon: const Icon(Icons.title),
+                                  prefixIcon:
+                                      const Icon(Remix.file_list_2_line),
                                   validator: (value) {
                                     if (value == null || value.isEmpty) {
                                       return 'Please enter a meeting title';
@@ -156,7 +157,8 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
                                   controller: _descriptionController,
                                   label: 'Description',
                                   hint: 'Provide meeting description',
-                                  prefixIcon: const Icon(Icons.description),
+                                  prefixIcon:
+                                      const Icon(Remix.file_list_2_line),
                                   maxLines: 3,
                                   validator: (value) {
                                     if (value == null || value.isEmpty) {
@@ -204,9 +206,9 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
 
                           // Date & Time Card
                           _buildModernSection(
-                            icon: Icons.access_time,
-                            title: 'Date & Time',
-                            accentColor: AppTheme.secondaryColor,
+                            icon: Remix.calendar_event_line,
+                            title: 'Schedule',
+                            accentColor: AppTheme.secondary(context),
                             child: Column(
                               children: [
                                 CustomDateTimePicker(
@@ -236,7 +238,7 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
                                     }
                                     return null;
                                   },
-                                  prefixIcon: Icons.event_available,
+                                  prefixIcon: Remix.calendar_event_line,
                                   mode: DateTimePickerMode.dateAndTime,
                                 ),
                                 const SizedBox(height: 16),
@@ -259,7 +261,7 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
                                     }
                                     return null;
                                   },
-                                  prefixIcon: Icons.event_busy,
+                                  prefixIcon: Remix.calendar_close_line,
                                   mode: DateTimePickerMode.dateAndTime,
                                 ),
                               ],
@@ -269,9 +271,9 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
 
                           // Location Card
                           _buildModernSection(
-                            icon: Icons.location_on,
+                            icon: Remix.map_pin_line,
                             title: 'Location',
-                            accentColor: AppTheme.accentColor,
+                            accentColor: AppTheme.secondary(context),
                             child: Column(
                               children: [
                                 Row(
@@ -304,7 +306,7 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
                                     controller: _meetingLinkController,
                                     label: 'Meeting Link',
                                     hint: 'Enter virtual meeting URL',
-                                    prefixIcon: const Icon(Icons.link),
+                                    prefixIcon: const Icon(Remix.link),
                                     validator: (value) {
                                       if (_isVirtual &&
                                           (value == null || value.isEmpty)) {
@@ -318,7 +320,7 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
                                     controller: _locationController,
                                     label: 'Physical Location',
                                     hint: 'Enter meeting location',
-                                    prefixIcon: const Icon(Icons.place),
+                                    prefixIcon: const Icon(Remix.map_pin_line),
                                     validator: (value) {
                                       if (!_isVirtual &&
                                           (value == null || value.isEmpty)) {
@@ -366,7 +368,7 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
                                     border: Border.all(
                                       color: _initialNotificationTiming ==
                                               NotificationTiming.immediate
-                                          ? AppTheme.primaryColor
+                                          ? AppTheme.primary(context)
                                           : Theme.of(context).disabledColor,
                                       width: 2,
                                     ),
@@ -420,7 +422,7 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
                                     border: Border.all(
                                       color: _initialNotificationTiming ==
                                               NotificationTiming.scheduled
-                                          ? AppTheme.primaryColor
+                                          ? AppTheme.primary(context)
                                           : Theme.of(context).disabledColor,
                                       width: 2,
                                     ),
@@ -473,7 +475,7 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
                                     border: Border.all(
                                       color: _initialNotificationTiming ==
                                               NotificationTiming.none
-                                          ? AppTheme.primaryColor
+                                          ? AppTheme.primary(context)
                                           : Theme.of(context).disabledColor,
                                       width: 2,
                                     ),
@@ -600,7 +602,7 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
                               checkColor: Colors.white,
                               side: BorderSide(
                                 color: isSelected
-                                    ? AppTheme.primaryColor
+                                    ? AppTheme.primary(context)
                                     : Theme.of(context).dividerColor,
                                 width: 2,
                               ),

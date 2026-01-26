@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../config/theme.dart';
 import '../custom_input.dart';
 
 class PasswordField extends StatefulWidget {
@@ -30,29 +31,79 @@ class PasswordField extends StatefulWidget {
   State<PasswordField> createState() => _PasswordFieldState();
 }
 
-class _PasswordFieldState extends State<PasswordField> {
+class _PasswordFieldState extends State<PasswordField>
+    with SingleTickerProviderStateMixin {
   bool _obscurePassword = true;
+  late AnimationController _animationController;
+  late Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 150),
+      vsync: this,
+    );
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.85).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  void _togglePasswordVisibility() async {
+    await _animationController.forward();
+    setState(() {
+      _obscurePassword = !_obscurePassword;
+    });
+    await _animationController.reverse();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final tealColor = AppTheme.accentTeal(context);
+
     return CustomInput(
       label: widget.label,
       controller: widget.controller,
       hint: widget.hint,
-      prefixIcon: const Icon(Icons.lock),
+      prefixIcon: const Icon(Icons.lock_outline_rounded),
       obscureText: _obscurePassword,
       textInputAction: widget.textInputAction,
       onSubmitted: widget.onSubmitted,
       autofillHints: widget.autofillHints,
-      suffixIcon: IconButton(
-        icon: Icon(
-          _obscurePassword ? Icons.visibility_off : Icons.visibility,
+      suffixIcon: GestureDetector(
+        onTap: _togglePasswordVisibility,
+        behavior: HitTestBehavior.opaque,
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: ScaleTransition(
+            scale: _scaleAnimation,
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 200),
+              transitionBuilder: (Widget child, Animation<double> animation) {
+                return FadeTransition(
+                  opacity: animation,
+                  child: child,
+                );
+              },
+              child: Icon(
+                _obscurePassword
+                    ? Icons.visibility_off_rounded
+                    : Icons.visibility_rounded,
+                key: ValueKey<bool>(_obscurePassword),
+                color: _obscurePassword
+                    ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5)
+                    : tealColor,
+                size: 22,
+              ),
+            ),
+          ),
         ),
-        onPressed: () {
-          setState(() {
-            _obscurePassword = !_obscurePassword;
-          });
-        },
       ),
       validator: widget.isConfirmField
           ? (value) {

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:remixicon/remixicon.dart';
 import '../providers/supabase_provider.dart';
 import '../models/user_model.dart';
 import '../config/theme.dart';
@@ -51,9 +52,9 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
             // Modern Header
             Container(
               width: double.infinity,
-              decoration: const BoxDecoration(
-                color: AppTheme.primaryColor,
-                borderRadius: BorderRadius.only(
+              decoration: BoxDecoration(
+                color: AppTheme.primary(context),
+                borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(32),
                   bottomRight: Radius.circular(32),
                 ),
@@ -85,9 +86,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                           ),
                           child: IconButton(
                             icon: Icon(
-                              isEditing
-                                  ? Icons.close_rounded
-                                  : Icons.edit_rounded,
+                              isEditing ? Remix.close_line : Remix.edit_line,
                               color: Colors.white,
                             ),
                             onPressed: () {
@@ -137,10 +136,10 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                                   : null,
                               child: widget.user.photoUrl == null ||
                                       widget.user.photoUrl!.isEmpty
-                                  ? const Icon(
-                                      Icons.person_rounded,
+                                  ? Icon(
+                                      Remix.user_line,
                                       size: 52,
-                                      color: AppTheme.primaryColor,
+                                      color: AppTheme.primary(context),
                                     )
                                   : null,
                             ),
@@ -225,21 +224,21 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                 children: [
                   // Contact Information
                   _buildModernSection(
-                    icon: Icons.contact_mail_rounded,
+                    icon: Remix.contacts_book_line,
                     title: 'Contact Information',
-                    accentColor: AppTheme.primaryColor,
+                    accentColor: AppTheme.primary(context),
                     child: Column(
                       children: [
                         if (widget.user.phoneNumber != null) ...[
                           _buildInfoRow(
-                            icon: Icons.phone_rounded,
+                            icon: Remix.phone_line,
                             label: 'Phone',
                             value: widget.user.phoneNumber!,
                           ),
                           const SizedBox(height: 16),
                         ],
                         _buildInfoRow(
-                          icon: Icons.location_on_rounded,
+                          icon: Remix.map_pin_line,
                           label: 'Location',
                           value: widget.user.locationString ?? 'Not set',
                         ),
@@ -251,9 +250,9 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                   // Role and Branch Selection (only visible when editing)
                   if (isEditing) ...[
                     _buildModernSection(
-                      icon: Icons.admin_panel_settings_rounded,
+                      icon: Remix.admin_line,
                       title: 'Edit Role & Branch',
-                      accentColor: AppTheme.secondaryColor,
+                      accentColor: AppTheme.secondary(context),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -360,14 +359,15 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            AppTheme.primaryColor,
-                            AppTheme.primaryColor.withValues(alpha: 0.8),
+                            AppTheme.primary(context),
+                            AppTheme.primary(context).withValues(alpha: 0.8),
                           ],
                         ),
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                            color: AppTheme.primaryColor.withValues(alpha: 0.3),
+                            color: AppTheme.primary(context)
+                                .withValues(alpha: 0.3),
                             blurRadius: 8,
                             offset: const Offset(0, 4),
                           ),
@@ -483,13 +483,13 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: AppTheme.primaryColor.withValues(alpha: 0.1),
+            color: AppTheme.primary(context).withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(
             icon,
             size: 18,
-            color: AppTheme.primaryColor,
+            color: AppTheme.primary(context),
           ),
         ),
         const SizedBox(width: 12),
@@ -527,13 +527,13 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
   Color _getRoleColor(UserRole role) {
     switch (role) {
       case UserRole.admin:
-        return AppTheme.errorColor;
+        return AppTheme.error(context);
       case UserRole.pastor:
-        return AppTheme.secondaryColor;
+        return AppTheme.secondary(context);
       case UserRole.worker:
-        return AppTheme.accentColor;
+        return AppTheme.secondary(context);
       case UserRole.member:
-        return AppTheme.successColor;
+        return AppTheme.success(context);
     }
   }
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:remixicon/remixicon.dart';
 import '../models/church_branch_model.dart';
 import '../config/theme.dart';
 
@@ -69,9 +70,9 @@ class BranchCard extends StatelessWidget {
               // Colored accent bar
               Container(
                 height: 5,
-                decoration: const BoxDecoration(
-                  color: AppTheme.successColor,
-                  borderRadius: BorderRadius.only(
+                decoration: BoxDecoration(
+                  color: AppTheme.success(context),
+                  borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(20),
                     topRight: Radius.circular(20),
                   ),
@@ -89,12 +90,13 @@ class BranchCard extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            color: AppTheme.successColor.withValues(alpha: 0.1),
+                            color: AppTheme.success(context)
+                                .withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: const Icon(
-                            Icons.church,
-                            color: AppTheme.successColor,
+                          child: Icon(
+                            Remix.community_line,
+                            color: AppTheme.success(context),
                             size: 24,
                           ),
                         ),
@@ -141,13 +143,14 @@ class BranchCard extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
-                            color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                            color: AppTheme.primary(context)
+                                .withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: const Icon(
-                            Icons.location_on,
+                          child: Icon(
+                            Remix.map_pin_line,
                             size: 14,
-                            color: AppTheme.primaryColor,
+                            color: AppTheme.primary(context),
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -172,13 +175,14 @@ class BranchCard extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
-                            color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                            color: AppTheme.primary(context)
+                                .withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: const Icon(
-                            Icons.home,
+                          child: Icon(
+                            Remix.home_4_line,
                             size: 14,
-                            color: AppTheme.primaryColor,
+                            color: AppTheme.primary(context),
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -210,15 +214,15 @@ class BranchCard extends StatelessWidget {
                                 HapticFeedback.lightImpact();
                                 onEdit!();
                               },
-                              icon: const Icon(
-                                Icons.edit_outlined,
+                              icon: Icon(
+                                Remix.edit_line,
                                 size: 16,
-                                color: AppTheme.primaryColor,
+                                color: AppTheme.primary(context),
                               ),
-                              label: const Text(
+                              label: Text(
                                 'Edit',
                                 style: TextStyle(
-                                  color: AppTheme.primaryColor,
+                                  color: AppTheme.primary(context),
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -236,15 +240,15 @@ class BranchCard extends StatelessWidget {
                                 HapticFeedback.lightImpact();
                                 onDelete!();
                               },
-                              icon: const Icon(
-                                Icons.delete_outline,
+                              icon: Icon(
+                                Remix.delete_bin_line,
                                 size: 16,
-                                color: AppTheme.errorColor,
+                                color: AppTheme.error(context),
                               ),
-                              label: const Text(
+                              label: Text(
                                 'Delete',
                                 style: TextStyle(
-                                  color: AppTheme.errorColor,
+                                  color: AppTheme.error(context),
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
                                 ),

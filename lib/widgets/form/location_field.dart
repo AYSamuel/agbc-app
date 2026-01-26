@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:remixicon/remixicon.dart';
 import '../../config/theme.dart';
 import '../custom_input.dart';
 import '../mixins/location_validation_mixin.dart';
@@ -239,7 +240,7 @@ class _LocationFieldState extends State<LocationField>
               focusNode:
                   focusNode, // Use the autocomplete's provided focus node
               hint: 'Start typing for suggestions...',
-              prefixIcon: const Icon(Icons.location_city),
+              prefixIcon: const Icon(Remix.community_line),
               textInputAction: TextInputAction.next,
               onChanged: (value) {
                 _cityController.text = value;
@@ -301,12 +302,12 @@ class _LocationFieldState extends State<LocationField>
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const SizedBox(
+                                SizedBox(
                                   width: 24,
                                   height: 24,
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2.5,
-                                    color: AppTheme.primaryColor,
+                                    color: AppTheme.primary(context),
                                   ),
                                 ),
                                 const SizedBox(height: 12),
@@ -332,7 +333,7 @@ class _LocationFieldState extends State<LocationField>
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Icon(
-                                      Icons.search_off,
+                                      Remix.search_eye_line,
                                       size: 32,
                                       color: Theme.of(context).disabledColor,
                                     ),
@@ -359,7 +360,7 @@ class _LocationFieldState extends State<LocationField>
                                 return ListTile(
                                   dense: true,
                                   leading: Icon(
-                                    Icons.location_city,
+                                    Remix.community_line,
                                     size: 16,
                                     color: Theme.of(context).brightness ==
                                             Brightness.dark
@@ -393,11 +394,9 @@ class _LocationFieldState extends State<LocationField>
                                             )
                                           : null,
                                   onTap: () => onSelected(option),
-                                  hoverColor: Theme.of(context)
-                                      .colorScheme
-                                      .primary
+                                  hoverColor: AppTheme.primary(context)
                                       .withValues(alpha: 0.05),
-                                  splashColor: AppTheme.primaryColor
+                                  splashColor: AppTheme.primary(context)
                                       .withValues(alpha: 0.1),
                                 );
                               },
@@ -417,7 +416,7 @@ class _LocationFieldState extends State<LocationField>
           Row(
             children: [
               Icon(
-                Icons.info_outline,
+                Remix.information_line,
                 size: 14,
                 color: Theme.of(context)
                     .colorScheme
@@ -473,7 +472,7 @@ class _LocationFieldState extends State<LocationField>
           label: 'Country',
           controller: _countryController,
           hint: 'Select a city to auto-fill country',
-          prefixIcon: const Icon(Icons.public),
+          prefixIcon: const Icon(Remix.global_line),
           enabled: false,
           textInputAction: TextInputAction.done,
           validator: (value) {
@@ -487,7 +486,7 @@ class _LocationFieldState extends State<LocationField>
         // Validation Status
         if (_isValidating) ...[
           const SizedBox(height: 8),
-          const Row(
+          Row(
             children: [
               SizedBox(
                 width: 12,
@@ -498,7 +497,7 @@ class _LocationFieldState extends State<LocationField>
               Text(
                 'Validating location...',
                 style: TextStyle(
-                  color: AppTheme.primaryColor,
+                  color: AppTheme.primary(context),
                   fontSize: 12,
                 ),
               ),
@@ -512,18 +511,19 @@ class _LocationFieldState extends State<LocationField>
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(
-                Icons.error_outline,
-                color: AppTheme.errorColor,
+              Icon(
+                Remix.error_warning_line,
+                color: AppTheme.error(context),
                 size: 16,
               ),
               const SizedBox(width: 4),
               Expanded(
                 child: Text(
-                  _errorMessage!,
-                  style: const TextStyle(
-                    color: AppTheme.errorColor,
+                  'Please select a valid city from the suggestions',
+                  style: TextStyle(
                     fontSize: 12,
+                    color: AppTheme.error(context),
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ),
@@ -537,22 +537,18 @@ class _LocationFieldState extends State<LocationField>
             _cityController.text.isNotEmpty &&
             _countryController.text.isNotEmpty) ...[
           const SizedBox(height: 8),
-          const Row(
-            children: [
-              Icon(
-                Icons.check_circle_outline,
-                color: Colors.green,
-                size: 16,
-              ),
-              SizedBox(width: 4),
-              Text(
-                'Location verified',
-                style: TextStyle(
-                  color: Colors.green,
-                  fontSize: 12,
-                ),
-              ),
-            ],
+          Icon(
+            Remix.checkbox_circle_line,
+            color: AppTheme.success(context),
+            size: 16,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            'Location verified',
+            style: TextStyle(
+              color: AppTheme.success(context),
+              fontSize: 12,
+            ),
           ),
         ],
       ],

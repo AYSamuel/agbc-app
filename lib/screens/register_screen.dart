@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:remixicon/remixicon.dart';
 import '../widgets/register_form.dart';
 import '../config/theme.dart';
 import '../widgets/custom_back_button.dart';
@@ -28,8 +29,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  AppTheme.primaryColor,
-                  AppTheme.secondaryColor.withValues(alpha: 0.8),
+                  AppTheme.primary(context),
+                  AppTheme.secondary(context).withValues(alpha: 0.8),
                   Theme.of(context).colorScheme.background,
                 ],
                 begin: Alignment.topLeft,
@@ -46,11 +47,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
               width: 180,
               height: 180,
               decoration: BoxDecoration(
-                color: AppTheme.secondaryColor.withValues(alpha: 0.18),
+                color: AppTheme.secondary(context).withValues(alpha: 0.18),
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: AppTheme.secondaryColor.withValues(alpha: 0.18),
+                    color: AppTheme.secondary(context).withValues(alpha: 0.18),
                     blurRadius: 80,
                     spreadRadius: 20,
                   ),
@@ -92,7 +93,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               borderRadius: BorderRadius.circular(32),
                               boxShadow: [
                                 BoxShadow(
-                                  color: AppTheme.primaryColor
+                                  color: AppTheme.primary(context)
                                       .withValues(alpha: 0.10),
                                   blurRadius: 30,
                                   offset: const Offset(0, 8),
@@ -113,11 +114,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 Center(
                                   child: CircleAvatar(
                                     radius: 38,
-                                    backgroundColor: AppTheme.primaryColor
-                                        .withValues(alpha: 0.08),
-                                    child: const Icon(
-                                      Icons.person_add_rounded,
-                                      color: AppTheme.primaryColor,
+                                    child: Icon(
+                                      Remix.user_add_line,
+                                      color: AppTheme.primary(context),
                                       size: 48,
                                     ),
                                   ),
@@ -128,7 +127,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   'Create Account',
                                   style: AppTheme.titleStyle(context).copyWith(
                                     fontSize: 28,
-                                    color: AppTheme.primaryColor,
+                                    color: AppTheme.primary(context),
                                     letterSpacing: 0.5,
                                   ),
                                   textAlign: TextAlign.center,
@@ -136,7 +135,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 const SizedBox(height: 8),
                                 Text(
                                   'Join our church community',
-                                  style: AppTheme.subtitleStyle(context).copyWith(
+                                  style:
+                                      AppTheme.subtitleStyle(context).copyWith(
                                     color: Theme.of(context)
                                         .colorScheme
                                         .onSurface
@@ -158,7 +158,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     Text('Already have an account?',
-                                        style: AppTheme.regularTextStyle(context)),
+                                        style:
+                                            AppTheme.regularTextStyle(context)),
                                     TextButton(
                                       onPressed: () {
                                         Navigator.of(context)

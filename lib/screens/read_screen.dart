@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:remixicon/remixicon.dart';
 import '../config/theme.dart';
 import '../widgets/custom_back_button.dart';
 
@@ -32,17 +33,17 @@ class ReadScreen extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(
-                      Icons.menu_book_rounded,
+                      Remix.book_open_line,
                       size: 64,
-                      color: AppTheme.primaryColor.withValues(alpha: 0.5),
+                      color: AppTheme.primary(context).withValues(alpha: 0.5),
                     ),
                     const SizedBox(height: 16),
-                    const Text(
+                    Text(
                       'Bible Reading Coming Soon',
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
-                        color: AppTheme.primaryColor,
+                        color: AppTheme.primary(context),
                       ),
                     ),
                     const SizedBox(height: 8),

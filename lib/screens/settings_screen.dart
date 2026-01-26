@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:remixicon/remixicon.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../config/theme.dart';
@@ -41,80 +42,68 @@ class _SettingsScreenState extends State<SettingsScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Header
+            // Header: Standardized with app brand
             Container(
               width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary,
-                borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(32),
-                  bottomRight: Radius.circular(32),
+                color: AppTheme.primary(context),
+                border: Border(
+                  bottom: BorderSide(
+                    color: AppTheme.teal.withValues(alpha: 0.2),
+                    width: 4,
+                  ),
                 ),
               ),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (canPop)
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                      child: Row(
-                        children: [
-                          Container(
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: CustomBackButton(
-                              onPressed: () => Navigator.pop(context),
-                              color: Colors.white,
-                              showBackground: false,
-                              showShadow: false,
-                            ),
-                          ),
-                        ],
+                  if (canPop) ...[
+                    CustomBackButton(
+                      onPressed: () => Navigator.pop(context),
+                      color: Colors.white,
+                    ),
+                    const SizedBox(height: 24),
+                  ],
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(
+                          Remix.settings_3_line,
+                          color: Colors.white,
+                          size: 28,
+                        ),
                       ),
-                    ),
-                  Padding(
-                    padding: EdgeInsets.fromLTRB(24, canPop ? 16 : 24, 24, 24),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: const Icon(
-                            Icons.settings_rounded,
-                            color: Colors.white,
-                            size: 28,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        const Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Settings',
-                                style: TextStyle(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Settings',
+                              style: GoogleFonts.roboto(
+                                fontSize: 28,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                                letterSpacing: -0.5,
                               ),
-                              SizedBox(height: 4),
-                              Text(
-                                'Manage your preferences',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.white70,
-                                ),
+                            ),
+                            Text(
+                              'Manage your preferences',
+                              style: GoogleFonts.roboto(
+                                fontSize: 14,
+                                color: Colors.white.withValues(alpha: 0.7),
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -162,12 +151,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildSectionHeader(BuildContext context, String title) {
-    return Text(
-      title,
-      style: GoogleFonts.inter(
-        fontSize: 16,
-        fontWeight: FontWeight.w600,
-        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+    return Padding(
+      padding: const EdgeInsets.only(left: 4, bottom: 8),
+      child: Text(
+        title.toUpperCase(),
+        style: GoogleFonts.roboto(
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+          color: AppTheme.textMuted(context),
+          letterSpacing: 1.2,
+        ),
       ),
     );
   }
@@ -178,14 +171,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
         return Container(
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
+            borderRadius: BorderRadius.circular(8),
+            boxShadow: AppTheme.cardShadow(context),
+            border: Border.all(
+              color: AppTheme.dividerColor(context).withValues(alpha: 0.1),
+            ),
           ),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -194,14 +184,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
+                    color: AppTheme.teal.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
-                    themeProvider.isDarkMode
-                        ? Icons.dark_mode_rounded
-                        : Icons.light_mode_rounded,
-    color: Theme.of(context).colorScheme.primary,
+                    themeProvider.isDarkMode ? Remix.moon_line : Remix.sun_line,
+                    color: AppTheme.teal,
                     size: 20,
                   ),
                 ),
@@ -212,21 +200,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     children: [
                       Text(
                         'Dark Mode',
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.roboto(
                           fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: Theme.of(context).colorScheme.onSurface,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.textPrimary(context),
                         ),
                       ),
-                      const SizedBox(height: 2),
                       Text(
                         'Switch between light and dark theme',
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.roboto(
                           fontSize: 13,
-                          color: Theme.of(context)
-                              .colorScheme
-                              .onSurface
-                              .withValues(alpha: 0.6),
+                          color: AppTheme.textSecondary(context),
                         ),
                       ),
                     ],
@@ -235,7 +219,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Switch(
                   value: themeProvider.isDarkMode,
                   onChanged: (value) => themeProvider.toggleTheme(),
-                  activeColor: AppTheme.primaryColor,
+                  activeColor: AppTheme.teal,
                 ),
               ],
             ),
@@ -253,21 +237,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Container(
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: AppTheme.cardShadow(context),
+        border: Border.all(
+          color: AppTheme.dividerColor(context).withValues(alpha: 0.1),
+        ),
       ),
       child: Column(
         children: [
           _buildNotificationToggle(
             'Push Notifications',
-            'Receive push notifications on this device',
-            Icons.notifications_active_rounded,
+            'Receive push notifications',
+            Remix.notification_badge_line,
             settings['push_enabled'] ?? true,
             (value) => _updateNotificationSetting(
               authService,
@@ -278,8 +259,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _buildDivider(),
           _buildNotificationToggle(
             'Meeting Reminders',
-            'Get notified about upcoming meetings',
-            Icons.event_rounded,
+            'Upcoming meeting alerts',
+            Remix.calendar_event_line,
             settings['meeting_notifications'] ?? true,
             (value) => _updateNotificationSetting(
               authService,
@@ -290,8 +271,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _buildDivider(),
           _buildNotificationToggle(
             'Task Updates',
-            'Notifications for task assignments and updates',
-            Icons.task_alt_rounded,
+            'Task assignments and updates',
+            Remix.task_line,
             settings['task_notifications'] ?? true,
             (value) => _updateNotificationSetting(
               authService,
@@ -301,9 +282,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           _buildDivider(),
           _buildNotificationToggle(
-            'General Announcements',
-            'Church-wide updates and announcements',
-            Icons.campaign_rounded,
+            'Announcements',
+            'Church-wide updates',
+            Remix.broadcast_line,
             settings['general_notifications'] ?? true,
             (value) => _updateNotificationSetting(
               authService,
@@ -315,7 +296,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _buildNotificationToggle(
             'Email Notifications',
             'Receive notifications via email',
-            Icons.email_rounded,
+            Remix.mail_line,
             settings['email_enabled'] ?? true,
             (value) => _updateNotificationSetting(
               authService,
@@ -332,21 +313,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Container(
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: AppTheme.cardShadow(context),
+        border: Border.all(
+          color: AppTheme.dividerColor(context).withValues(alpha: 0.1),
+        ),
       ),
       child: Column(
         children: [
           _buildSettingItem(
             'Reset Password',
             'Send password reset link to your email',
-            Icons.lock_reset_rounded,
+            Remix.lock_password_line,
             () => _showResetPasswordDialog(context),
           ),
         ],
@@ -368,12 +346,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: AppTheme.primaryColor.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
+              color: AppTheme.teal.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(
               icon,
-              color: AppTheme.primaryColor,
+              color: AppTheme.teal,
               size: 20,
             ),
           ),
@@ -384,21 +362,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
               children: [
                 Text(
                   title,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.roboto(
                     fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: Theme.of(context).colorScheme.onSurface,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.textPrimary(context),
                   ),
                 ),
-                const SizedBox(height: 2),
                 Text(
                   subtitle,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.roboto(
                     fontSize: 13,
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withValues(alpha: 0.6),
+                    color: AppTheme.textSecondary(context),
                   ),
                 ),
               ],
@@ -407,7 +381,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Switch(
             value: value,
             onChanged: onChanged,
-            activeColor: AppTheme.primaryColor,
+            activeColor: AppTheme.teal,
           ),
         ],
       ),
@@ -422,7 +396,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   ) {
     return InkWell(
       onTap: _isLoading ? null : onTap,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(8),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
@@ -430,12 +404,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
+                color: AppTheme.teal.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
                 icon,
-color: Theme.of(context).colorScheme.primary,
+                color: AppTheme.teal,
                 size: 20,
               ),
             ),
@@ -446,29 +420,25 @@ color: Theme.of(context).colorScheme.primary,
                 children: [
                   Text(
                     title,
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.roboto(
                       fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      color: Theme.of(context).colorScheme.onSurface,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.textPrimary(context),
                     ),
                   ),
-                  const SizedBox(height: 2),
                   Text(
                     subtitle,
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.roboto(
                       fontSize: 13,
-                      color: Theme.of(context)
-                          .colorScheme
-                          .onSurface
-                          .withValues(alpha: 0.6),
+                      color: AppTheme.textSecondary(context),
                     ),
                   ),
                 ],
               ),
             ),
             Icon(
-              Icons.chevron_right,
-              color: Colors.grey[400],
+              Remix.arrow_right_s_line,
+              color: AppTheme.textMuted(context),
               size: 20,
             ),
           ],
@@ -482,7 +452,7 @@ color: Theme.of(context).colorScheme.primary,
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Divider(
         height: 1,
-        color: Theme.of(context).dividerColor.withValues(alpha: 0.1),
+        color: AppTheme.dividerColor(context).withValues(alpha: 0.5),
       ),
     );
   }
@@ -492,7 +462,6 @@ color: Theme.of(context).colorScheme.primary,
     String key,
     bool value,
   ) async {
-    // Optimistic update - update UI immediately
     setState(() {
       _localNotificationSettings =
           Map<String, dynamic>.from(_localNotificationSettings ?? {});
@@ -511,11 +480,7 @@ color: Theme.of(context).colorScheme.primary,
       await authService.updateProfile(
         notificationSettings: updatedSettings,
       );
-
-      // Silent success - no snackbar needed for toggle changes
-      // User already sees the toggle change visually
     } catch (e) {
-      // Revert optimistic update on error
       if (mounted) {
         setState(() {
           _localNotificationSettings![key] = !value;
@@ -538,20 +503,21 @@ color: Theme.of(context).colorScheme.primary,
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        backgroundColor: Theme.of(context).colorScheme.surface,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(8),
         ),
         title: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(10),
+                color: AppTheme.teal.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(
-                Icons.lock_reset_rounded,
-                color: Theme.of(context).colorScheme.primary,
+              child: const Icon(
+                Remix.lock_password_line,
+                color: AppTheme.teal,
                 size: 24,
               ),
             ),
@@ -559,9 +525,10 @@ color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
             Expanded(
               child: Text(
                 'Reset Password',
-                style: TextStyle(
+                style: GoogleFonts.roboto(
                   fontSize: 20,
-                  color: Theme.of(context).colorScheme.onSurface,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.textPrimary(context),
                 ),
               ),
             ),
@@ -573,39 +540,36 @@ color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
           children: [
             Text(
               'A password reset link will be sent to:',
-              style: GoogleFonts.inter(
+              style: GoogleFonts.roboto(
                 fontSize: 14,
-                color: Theme.of(context)
-                    .colorScheme
-                    .onSurface
-                    .withValues(alpha: 0.7),
+                color: AppTheme.textSecondary(context),
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface,
+                color: AppTheme.backgroundColor(context),
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
                     color:
-                        Theme.of(context).dividerColor.withValues(alpha: 0.1)),
+                        AppTheme.dividerColor(context).withValues(alpha: 0.5)),
               ),
               child: Row(
                 children: [
-                  Icon(
-                    Icons.email_outlined,
-                    size: 20,
-    color: Theme.of(context).colorScheme.primary,
+                  const Icon(
+                    Remix.mail_line,
+                    size: 18,
+                    color: AppTheme.teal,
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Text(
                       userEmail,
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.roboto(
                         fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Theme.of(context).colorScheme.onSurface,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.textPrimary(context),
                       ),
                     ),
                   ),
@@ -614,13 +578,10 @@ color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
             ),
             const SizedBox(height: 16),
             Text(
-              'Click the link in the email to create a new password. The link will expire in 1 hour.',
-              style: GoogleFonts.inter(
+              'Check your inbox and follow the instructions. The link expires in 1 hour.',
+              style: GoogleFonts.roboto(
                 fontSize: 13,
-                color: Theme.of(context)
-                    .colorScheme
-                    .onSurface
-                    .withValues(alpha: 0.6),
+                color: AppTheme.textMuted(context),
               ),
             ),
           ],
@@ -628,7 +589,13 @@ color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(
+              'Cancel',
+              style: GoogleFonts.roboto(
+                color: AppTheme.textMuted(context),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -639,8 +606,9 @@ color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                   showDialog(
                     context: context,
                     builder: (context) => AlertDialog(
+                      backgroundColor: Theme.of(context).colorScheme.surface,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(8),
                       ),
                       title: Row(
                         children: [
@@ -649,10 +617,10 @@ color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                             decoration: BoxDecoration(
                               color:
                                   AppTheme.successColor.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(10),
+                              borderRadius: BorderRadius.circular(8),
                             ),
                             child: const Icon(
-                              Icons.check_circle_outline,
+                              Remix.checkbox_circle_line,
                               color: AppTheme.successColor,
                               size: 24,
                             ),
@@ -660,25 +628,23 @@ color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                           const SizedBox(width: 12),
                           const Text(
                             'Email Sent',
-                            style: TextStyle(fontSize: 20),
+                            style: TextStyle(fontWeight: FontWeight.bold),
                           ),
                         ],
                       ),
                       content: Text(
-                        'Please check your email inbox and follow the instructions to reset your password.',
-                        style: GoogleFonts.inter(fontSize: 14),
+                        'Follow the instructions in the email to reset your password.',
+                        style: GoogleFonts.roboto(fontSize: 14),
                       ),
                       actions: [
-                        ElevatedButton(
+                        TextButton(
                           onPressed: () => Navigator.pop(context),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.primaryColor,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
+                          child: Text(
+                            'OK',
+                            style: GoogleFonts.roboto(
+                                fontWeight: FontWeight.bold,
+                                color: AppTheme.teal),
                           ),
-                          child: const Text('OK'),
                         ),
                       ],
                     ),
@@ -694,11 +660,12 @@ color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primaryColor,
+              backgroundColor: AppTheme.teal,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(8),
               ),
+              elevation: 0,
             ),
             child: const Text('Send Reset Link'),
           ),
@@ -716,19 +683,14 @@ color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
     final lowerError = error.toLowerCase();
 
     if (lowerError.contains('rate limit') || lowerError.contains('too many')) {
-      return 'Too many requests. Please wait a few minutes before trying again.';
+      return 'Too many requests. Please wait a few minutes.';
     }
     if (lowerError.contains('network') || lowerError.contains('connection')) {
-      return 'Unable to connect. Please check your internet connection.';
+      return 'Please check your internet connection.';
     }
-    if (lowerError.contains('invalid email') || lowerError.contains('email not found')) {
-      return 'Email address not found. Please check and try again.';
+    if (lowerError.contains('invalid email')) {
+      return 'Email address not found.';
     }
-    if (lowerError.contains('timeout')) {
-      return 'Request timed out. Please try again.';
-    }
-
-    // Default friendly message
-    return 'Something went wrong. Please try again later.';
+    return 'Something went wrong. Please try again.';
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:remixicon/remixicon.dart';
 import '../providers/supabase_provider.dart';
 import '../providers/branches_provider.dart';
 import '../models/user_model.dart';
@@ -54,9 +55,9 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
             // Modern Header
             Container(
               width: double.infinity,
-              decoration: const BoxDecoration(
-                color: AppTheme.primaryColor,
-                borderRadius: BorderRadius.only(
+              decoration: BoxDecoration(
+                color: AppTheme.primary(context),
+                borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(32),
                   bottomRight: Radius.circular(32),
                 ),
@@ -95,7 +96,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                             borderRadius: BorderRadius.circular(16),
                           ),
                           child: const Icon(
-                            Icons.people_rounded,
+                            Remix.group_line,
                             color: Colors.white,
                             size: 28,
                           ),
@@ -139,7 +140,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
               child: CustomInput(
                 controller: _searchController,
                 hint: 'Search by name or email...',
-                prefixIcon: const Icon(Icons.search),
+                prefixIcon: const Icon(Remix.search_line),
                 showLabel: false,
                 onChanged: (value) {
                   setState(() {
@@ -165,9 +166,9 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                     );
                   }
                   if (!snapshot.hasData) {
-                    return const Center(
+                    return Center(
                       child: CircularProgressIndicator(
-                        color: AppTheme.primaryColor,
+                        color: AppTheme.primary(context),
                       ),
                     );
                   }
@@ -200,17 +201,16 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(
-                            Icons.group_off,
+                          Icon(
+                            Remix.group_line,
                             size: 64,
-                            color: AppTheme.primaryColor,
+                            color: AppTheme.primary(context),
                           ),
                           const SizedBox(height: 16),
                           Text(
                             'No Users Found',
                             style: TextStyle(
                               color: Theme.of(context).colorScheme.primary,
-                              fontSize: 20,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -265,9 +265,9 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
       case UserRole.admin:
         return AppTheme.errorColor;
       case UserRole.pastor:
-        return AppTheme.secondaryColor;
+        return AppTheme.secondary(context);
       case UserRole.worker:
-        return AppTheme.accentColor;
+        return AppTheme.secondary(context);
       case UserRole.member:
         return AppTheme.successColor;
     }

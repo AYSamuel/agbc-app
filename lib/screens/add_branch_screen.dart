@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:remixicon/remixicon.dart';
 import '../providers/supabase_provider.dart';
 import 'package:grace_portal/models/church_branch_model.dart';
 import 'package:grace_portal/widgets/custom_input.dart';
 import 'package:grace_portal/widgets/custom_button.dart';
-import 'package:grace_portal/widgets/form/location_field.dart'; // Add this import
+import 'package:grace_portal/widgets/form/location_field.dart';
 import 'package:grace_portal/config/theme.dart';
 import 'package:uuid/uuid.dart';
 import 'package:grace_portal/widgets/custom_back_button.dart';
@@ -130,10 +131,10 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
             // Modern Header
             Container(
               decoration: BoxDecoration(
-                color: AppTheme.primaryColor,
+                color: AppTheme.primary(context),
                 boxShadow: [
                   BoxShadow(
-                    color: AppTheme.primaryColor.withValues(alpha: 0.2),
+                    color: AppTheme.primary(context).withValues(alpha: 0.2),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
@@ -191,9 +192,9 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
                     children: [
                       // Branch Details Card
                       _buildModernSection(
-                        icon: Icons.business,
+                        icon: Remix.community_line,
                         title: 'Branch Details',
-                        accentColor: AppTheme.primaryColor,
+                        accentColor: AppTheme.primary(context),
                         child: Column(
                           children: [
                             CustomInput(
@@ -202,7 +203,7 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
                               controller: _nameController,
                               focusNode: _nameFocus,
                               nextFocusNode: _stateFocus,
-                              prefixIcon: const Icon(Icons.church),
+                              prefixIcon: const Icon(Remix.community_line),
                               validator: (value) {
                                 if (value == null || value.trim().isEmpty) {
                                   return 'Branch name is required';
@@ -216,7 +217,7 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
                               hint: 'Enter branch description (optional)',
                               controller: _descriptionController,
                               focusNode: _descriptionFocus,
-                              prefixIcon: const Icon(Icons.notes),
+                              prefixIcon: const Icon(Remix.file_list_2_line),
                               maxLines: 3,
                             ),
                           ],
@@ -226,9 +227,9 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
 
                       // Location Card
                       _buildModernSection(
-                        icon: Icons.location_on,
+                        icon: Remix.map_pin_line,
                         title: 'Location',
-                        accentColor: AppTheme.secondaryColor,
+                        accentColor: AppTheme.secondary(context),
                         child: Column(
                           children: [
                             LocationField(
@@ -246,7 +247,7 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
                               controller: _stateController,
                               focusNode: _stateFocus,
                               nextFocusNode: _addressFocus,
-                              prefixIcon: const Icon(Icons.map),
+                              prefixIcon: const Icon(Remix.map_2_line),
                               validator: (value) {
                                 if (value == null || value.trim().isEmpty) {
                                   return 'State/Province is required';
@@ -261,7 +262,7 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
                               controller: _addressController,
                               focusNode: _addressFocus,
                               nextFocusNode: _descriptionFocus,
-                              prefixIcon: const Icon(Icons.home),
+                              prefixIcon: const Icon(Remix.home_4_line),
                               maxLines: 2,
                               validator: (value) {
                                 if (value == null || value.trim().isEmpty) {
@@ -277,9 +278,9 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
 
                       // Pastor Assignment Card
                       _buildModernSection(
-                        icon: Icons.person,
+                        icon: Remix.user_line,
                         title: 'Pastor Assignment',
-                        accentColor: AppTheme.accentColor,
+                        accentColor: AppTheme.secondary(context),
                         child: StreamBuilder<List<UserModel>>(
                           stream: Provider.of<SupabaseProvider>(context,
                                   listen: false)
@@ -312,7 +313,7 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
                                             .primary
                                             .withValues(alpha: 0.05),
                                         child: const Icon(
-                                          Icons.person,
+                                          Remix.user_line,
                                           size: 16,
                                         ),
                                       ),
@@ -351,14 +352,15 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
 
                       // Status Card
                       _buildModernSection(
-                        icon: Icons.toggle_on,
+                        icon: Remix.toggle_line,
                         title: 'Branch Status',
-                        accentColor: AppTheme.primaryColor,
+                        accentColor: AppTheme.primary(context),
                         child: Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
                             color: _isActive
-                                ? AppTheme.successColor.withValues(alpha: 0.1)
+                                ? AppTheme.success(context)
+                                    .withValues(alpha: 0.1)
                                 : Theme.of(context)
                                     .colorScheme
                                     .onSurface
@@ -366,7 +368,8 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
                               color: _isActive
-                                  ? AppTheme.successColor.withValues(alpha: 0.3)
+                                  ? AppTheme.success(context)
+                                      .withValues(alpha: 0.3)
                                   : Theme.of(context)
                                       .colorScheme
                                       .onSurface
@@ -377,10 +380,10 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
                             children: [
                               Icon(
                                 _isActive
-                                    ? Icons.check_circle
-                                    : Icons.radio_button_unchecked,
+                                    ? Remix.checkbox_circle_line
+                                    : Remix.checkbox_blank_circle_line,
                                 color: _isActive
-                                    ? AppTheme.successColor
+                                    ? AppTheme.success(context)
                                     : Theme.of(context).disabledColor,
                                 size: 28,
                               ),
@@ -420,7 +423,7 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
                                     _isActive = value;
                                   });
                                 },
-                                activeTrackColor: AppTheme.successColor,
+                                activeTrackColor: AppTheme.success(context),
                               ),
                             ],
                           ),

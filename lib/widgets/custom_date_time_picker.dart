@@ -114,7 +114,7 @@ class _CustomDateTimePickerField extends StatelessWidget {
                 decoration: BoxDecoration(
                   border: Border(
                     bottom: BorderSide(
-                      color: AppTheme.neutralColor.withValues(alpha: 0.1),
+                      color: AppTheme.textMuted(context).withValues(alpha: 0.1),
                     ),
                   ),
                 ),
@@ -153,7 +153,7 @@ class _CustomDateTimePickerField extends StatelessWidget {
                         style: GoogleFonts.inter(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
-                          color: AppTheme.primaryColor,
+                          color: AppTheme.primary(context),
                         ),
                       ),
                     ),
@@ -238,8 +238,8 @@ class _CustomDateTimePickerField extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: isError
-                    ? AppTheme.errorColor
-                    : AppTheme.neutralColor.withValues(alpha: 0.15),
+                    ? AppTheme.error(context)
+                    : AppTheme.textMuted(context).withValues(alpha: 0.15),
                 width: isError ? 2 : 1.5,
               ),
             ),
@@ -303,8 +303,8 @@ class _CustomDateTimePickerField extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             errorText!,
-            style: const TextStyle(
-              color: AppTheme.errorColor,
+            style: TextStyle(
+              color: AppTheme.error(context),
               fontWeight: FontWeight.w500,
               fontSize: 13,
               letterSpacing: 0.2,

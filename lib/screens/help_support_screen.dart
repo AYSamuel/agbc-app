@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:remixicon/remixicon.dart';
 import '../config/theme.dart';
 import '../widgets/custom_back_button.dart';
 import '../widgets/custom_toast.dart';
@@ -40,8 +41,8 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
             // Header
             Container(
               width: double.infinity,
-              decoration: const BoxDecoration(
-                color: AppTheme.primaryColor,
+              decoration: BoxDecoration(
+                color: AppTheme.primary(context),
                 borderRadius: BorderRadius.only(
                   bottomLeft: Radius.circular(32),
                   bottomRight: Radius.circular(32),
@@ -80,7 +81,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
                             borderRadius: BorderRadius.circular(16),
                           ),
                           child: const Icon(
-                            Icons.help_outline_rounded,
+                            Remix.question_line,
                             color: Colors.white,
                             size: 28,
                           ),
@@ -129,26 +130,26 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
                   _buildSectionHeader('Quick Actions'),
                   const SizedBox(height: 12),
                   _buildActionCard(
-                    icon: Icons.email_rounded,
+                    icon: Remix.mail_line,
                     title: 'Email Support',
                     subtitle: 'oami.gospel@gmail.com',
-                    color: AppTheme.primaryColor,
+                    color: AppTheme.primary(context),
                     onTap: () => _launchEmail(),
                   ),
                   const SizedBox(height: 12),
                   _buildActionCard(
-                    icon: Icons.phone_rounded,
+                    icon: Remix.phone_line,
                     title: 'Call Church Office',
                     subtitle: '+447342920067',
-                    color: AppTheme.successColor,
+                    color: AppTheme.success(context),
                     onTap: () => _launchPhone(),
                   ),
                   const SizedBox(height: 12),
                   _buildActionCard(
-                    icon: Icons.bug_report_rounded,
+                    icon: Remix.bug_line,
                     title: 'Report a Problem',
                     subtitle: 'Help us improve the app',
-                    color: AppTheme.warningColor,
+                    color: AppTheme.warning(context),
                     onTap: () => _reportProblem(),
                   ),
 
@@ -187,21 +188,21 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
                   _buildSectionHeader('Getting Started'),
                   const SizedBox(height: 12),
                   _buildGuideCard(
-                    icon: Icons.task_alt_rounded,
+                    icon: Remix.checkbox_circle_line,
                     title: 'Managing Tasks',
                     description:
                         'View assigned tasks on the Home screen. Tap any task to see details, mark as complete, or add updates.',
                   ),
                   const SizedBox(height: 8),
                   _buildGuideCard(
-                    icon: Icons.event_rounded,
+                    icon: Remix.calendar_event_line,
                     title: 'Joining Meetings',
                     description:
                         'Check upcoming meetings on the Home screen. Tap to RSVP and view meeting details, agendas, and locations.',
                   ),
                   const SizedBox(height: 8),
                   _buildGuideCard(
-                    icon: Icons.group_rounded,
+                    icon: Remix.group_line,
                     title: 'Understanding Your Role',
                     description:
                         'Your role (Member, Admin, etc.) determines what features you can access. Contact church leadership for role changes.',
@@ -213,21 +214,21 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
                   _buildSectionHeader('Legal & Policies'),
                   const SizedBox(height: 12),
                   _buildLinkCard(
-                    icon: Icons.privacy_tip_rounded,
+                    icon: Remix.shield_user_line,
                     title: 'Privacy Policy',
                     onTap: () => _launchURL(
                         'https://aysamuel.github.io/agbc-app/privacy-policy.html'),
                   ),
                   const SizedBox(height: 8),
                   _buildLinkCard(
-                    icon: Icons.delete_outline_rounded,
+                    icon: Remix.delete_bin_line,
                     title: 'Data Deletion Policy',
                     onTap: () => _launchURL(
                         'https://aysamuel.github.io/agbc-app/data-deletion.html'),
                   ),
                   const SizedBox(height: 8),
                   _buildLinkCard(
-                    icon: Icons.shield_rounded,
+                    icon: Remix.shield_check_line,
                     title: 'Child Safety Standards',
                     onTap: () => _launchURL(
                         'https://aysamuel.github.io/agbc-app/child-safety-standards.html'),
@@ -239,20 +240,20 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
                   _buildSectionHeader('About'),
                   const SizedBox(height: 12),
                   _buildInfoCard(
-                    icon: Icons.info_outline_rounded,
+                    icon: Remix.information_line,
                     title: 'App Version',
                     subtitle: _appVersion.isEmpty ? 'Loading...' : _appVersion,
                   ),
                   const SizedBox(height: 8),
                   _buildInfoCard(
-                    icon: Icons.church_rounded,
+                    icon: Remix.community_line,
                     title: 'About AGBC',
                     subtitle: 'Amazing Grace Bible Church',
                     onTap: () => _showAboutDialog(),
                   ),
                   const SizedBox(height: 8),
                   _buildLinkCard(
-                    icon: Icons.star_rate_rounded,
+                    icon: Remix.star_line,
                     title: 'Rate the App',
                     onTap: () => _rateApp(),
                   ),

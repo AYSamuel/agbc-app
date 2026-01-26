@@ -93,7 +93,7 @@ class _TasksScreenState extends State<TasksScreen> {
                   IconButton(
                     icon: const Icon(Remix.filter_3_line),
                     color: _selectedOwnershipFilter != 'all'
-                        ? AppTheme.primaryColor
+                        ? AppTheme.primary(context)
                         : Theme.of(context)
                             .colorScheme
                             .onSurface
@@ -208,7 +208,7 @@ class _TasksScreenState extends State<TasksScreen> {
                               style: GoogleFonts.inter(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w500,
-                                color: const Color(0xFF5B7EBF),
+                                color: AppTheme.primary(context),
                               ),
                             ),
                             const SizedBox(width: 4),
@@ -264,9 +264,9 @@ class _TasksScreenState extends State<TasksScreen> {
                                   AppTheme.warningColor.withValues(alpha: 0.1),
                               shape: BoxShape.circle,
                             ),
-                            child: const Icon(
+                            child: Icon(
                               Remix.task_line,
-                              color: AppTheme.warningColor,
+                              color: AppTheme.warning(context),
                               size: 40,
                             ),
                           ),
@@ -338,20 +338,20 @@ class _TasksScreenState extends State<TasksScreen> {
         },
         style: ElevatedButton.styleFrom(
           backgroundColor: isSelected
-              ? AppTheme.primaryColor
+              ? AppTheme.primary(context)
               : Theme.of(context).colorScheme.surface,
           foregroundColor: isSelected
               ? Colors.white
               : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
           elevation: isSelected ? 2 : 0,
           shadowColor: isSelected
-              ? const Color(0xFF5B7EBF).withValues(alpha: 0.3)
+              ? AppTheme.primary(context).withValues(alpha: 0.3)
               : Colors.transparent,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
             side: BorderSide(
               color: isSelected
-                  ? AppTheme.primaryColor
+                  ? AppTheme.primary(context)
                   : Theme.of(context).dividerColor.withValues(alpha: 0.2),
               width: 1,
             ),

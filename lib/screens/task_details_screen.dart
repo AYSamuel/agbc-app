@@ -111,10 +111,10 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                         children: [
                           Row(
                             children: [
-                              const Icon(
+                              Icon(
                                 Remix.file_text_line,
                                 size: 20,
-                                color: AppTheme.primaryColor,
+                                color: AppTheme.secondary(context),
                               ),
                               const SizedBox(width: 8),
                               Text(
@@ -372,7 +372,7 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
               Icon(
                 icon,
                 size: 20,
-                color: AppTheme.primaryColor,
+                color: AppTheme.primary(context),
               ),
               const SizedBox(width: 8),
               Text(
@@ -472,7 +472,7 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
       context: context,
       builder: (context) => Dialog(
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(8),
         ),
         backgroundColor: Theme.of(context).colorScheme.surface,
         child: Container(
@@ -486,23 +486,22 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color:
-                          Theme.of(context).primaryColor.withValues(alpha: 0.1),
+                      color: AppTheme.teal.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Icon(
+                    child: const Icon(
                       Remix.refresh_line,
-                      color: Theme.of(context).primaryColor,
+                      color: AppTheme.teal,
                       size: 24,
                     ),
                   ),
                   const SizedBox(width: 16),
                   Text(
                     'Reset Task',
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.roboto(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.onSurface,
+                      color: AppTheme.textPrimary(context),
                     ),
                   ),
                 ],
@@ -510,20 +509,17 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
               const SizedBox(height: 24),
               Text(
                 'Are you sure you want to reset this task?',
-                style: GoogleFonts.inter(
+                style: GoogleFonts.roboto(
                   fontSize: 16,
-                  color: Theme.of(context).colorScheme.onSurface,
+                  color: AppTheme.textPrimary(context),
                 ),
               ),
               const SizedBox(height: 8),
               Text(
                 'This will change its status back to pending and allow you to continue working on it.',
-                style: GoogleFonts.inter(
+                style: GoogleFonts.roboto(
                   fontSize: 14,
-                  color: Theme.of(context)
-                      .colorScheme
-                      .onSurface
-                      .withValues(alpha: 0.6),
+                  color: AppTheme.textMuted(context),
                 ),
               ),
               const SizedBox(height: 24),
@@ -538,13 +534,10 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                     ),
                     child: Text(
                       'Cancel',
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.roboto(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
-                        color: Theme.of(context)
-                            .colorScheme
-                            .onSurface
-                            .withValues(alpha: 0.6),
+                        color: AppTheme.textMuted(context),
                       ),
                     ),
                   ),
@@ -552,19 +545,20 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                   ElevatedButton(
                     onPressed: () => Navigator.pop(context, true),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).primaryColor,
+                      backgroundColor: AppTheme.teal,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
+                      elevation: 0,
                     ),
                     child: Text(
                       'Reset Task',
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.roboto(
                         fontSize: 14,
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),

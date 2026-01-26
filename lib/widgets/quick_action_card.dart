@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import '../config/theme.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class QuickActionCard extends StatelessWidget {
@@ -21,17 +21,11 @@ class QuickActionCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 12),
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          borderRadius: BorderRadius.circular(8),
+          boxShadow: AppTheme.cardShadow(context),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -40,29 +34,26 @@ class QuickActionCard extends StatelessWidget {
               clipBehavior: Clip.none,
               children: [
                 Container(
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .primary
-                        .withValues(alpha: 0.1),
+                    color: AppTheme.teal.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
                     icon,
-                    color: Theme.of(context).colorScheme.primary,
-                    size: 24,
+                    color: AppTheme.secondary(context),
+                    size: 20,
                   ),
                 ),
                 if (showDot)
                   Positioned(
-                    right: -2,
-                    top: -2,
+                    right: 0,
+                    top: 0,
                     child: Container(
                       width: 10,
                       height: 10,
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.error,
+                        color: AppTheme.error(context),
                         shape: BoxShape.circle,
                         border: Border.all(
                           color: Theme.of(context).colorScheme.surface,
@@ -73,15 +64,13 @@ class QuickActionCard extends StatelessWidget {
                   ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
             Text(
               label,
-              style: GoogleFonts.inter(
+              style: GoogleFonts.roboto(
                 fontSize: 12,
-                color: Theme.of(context)
-                    .colorScheme
-                    .onSurface
-                    .withValues(alpha: 0.7),
+                fontWeight: FontWeight.w500,
+                color: AppTheme.textSecondary(context),
               ),
               textAlign: TextAlign.center,
               maxLines: 1,

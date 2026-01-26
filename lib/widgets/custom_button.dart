@@ -60,6 +60,9 @@ class CustomButton extends StatefulWidget {
   /// Elevation (only used for filled variant)
   final double? elevation;
 
+  /// Use teal accent color instead of primary (matching web design)
+  final bool useAccentColor;
+
   const CustomButton({
     super.key,
     required this.onPressed,
@@ -68,12 +71,13 @@ class CustomButton extends StatefulWidget {
     this.height = 50,
     this.backgroundColor,
     this.foregroundColor,
-    this.borderRadius = 12,
+    this.borderRadius = 8,
     this.isLoading = false,
     this.animationDuration = const Duration(milliseconds: 150),
     this.variant = ButtonVariant.filled,
     this.borderColor,
     this.elevation,
+    this.useAccentColor = false,
   });
 
   /// Creates a text button with default styling
@@ -86,6 +90,7 @@ class CustomButton extends StatefulWidget {
     this.foregroundColor,
     this.isLoading = false,
     this.animationDuration = const Duration(milliseconds: 150),
+    this.useAccentColor = false,
   })  : variant = ButtonVariant.text,
         backgroundColor = Colors.transparent,
         borderRadius = 0,
@@ -101,10 +106,11 @@ class CustomButton extends StatefulWidget {
     this.height = 50,
     this.backgroundColor = Colors.transparent,
     this.foregroundColor,
-    this.borderRadius = 12,
+    this.borderRadius = 8,
     this.borderColor,
     this.isLoading = false,
     this.animationDuration = const Duration(milliseconds: 150),
+    this.useAccentColor = false,
   })  : variant = ButtonVariant.outlined,
         elevation = 0;
 
@@ -124,7 +130,8 @@ class _CustomButtonState extends State<CustomButton>
       vsync: this,
       duration: widget.animationDuration,
     );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(
+    // Scale 0.98 for subtler, more premium press effect (matching web design)
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.98).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
     );
   }
@@ -149,11 +156,15 @@ class _CustomButtonState extends State<CustomButton>
   Widget build(BuildContext context) {
     final isDisabled = widget.onPressed == null || widget.isLoading;
 
+    // Use accent teal if useAccentColor is true, otherwise use primary
+    final baseColor = widget.useAccentColor
+        ? AppTheme.secondary(context)
+        : AppTheme.primary(context);
+
     // When loading, keep button solid so spinner is visible
     final backgroundColor = isDisabled && !widget.isLoading
-        ? (widget.backgroundColor ?? AppTheme.primaryColor)
-            .withValues(alpha: 0.5)
-        : widget.backgroundColor ?? AppTheme.primaryColor;
+        ? (widget.backgroundColor ?? baseColor).withValues(alpha: 0.5)
+        : widget.backgroundColor ?? baseColor;
 
     final foregroundColor = isDisabled && !widget.isLoading
         ? (widget.foregroundColor ?? Colors.white).withValues(alpha: 0.5)
@@ -188,7 +199,8 @@ class _CustomButtonState extends State<CustomButton>
               color: isDisabled
                   ? (widget.borderColor ?? foregroundColor)
                       .withValues(alpha: 0.5)
-                  : widget.borderColor ?? AppTheme.primaryColor,
+                  : widget.borderColor ?? baseColor,
+              width: 2,
             ),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(widget.borderRadius),
@@ -206,8 +218,10 @@ class _CustomButtonState extends State<CustomButton>
           style: ElevatedButton.styleFrom(
             backgroundColor: backgroundColor,
             foregroundColor: foregroundColor,
-            disabledBackgroundColor: backgroundColor, // Keep same background when loading
-            disabledForegroundColor: foregroundColor, // Keep same text color when loading
+            disabledBackgroundColor:
+                backgroundColor, // Keep same background when loading
+            disabledForegroundColor:
+                foregroundColor, // Keep same text color when loading
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(widget.borderRadius),
             ),

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:remixicon/remixicon.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../config/theme.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
@@ -38,11 +40,17 @@ class BottomNavBar extends StatelessWidget {
       height: 65 + bottomPadding,
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
+        border: Border(
+          top: BorderSide(
+            color: AppTheme.dividerColor(context).withValues(alpha: 0.5),
+            width: 1,
+          ),
+        ),
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).shadowColor,
-            blurRadius: 3,
-            offset: const Offset(0, -1),
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, -4),
           ),
         ],
       ),
@@ -58,12 +66,12 @@ class BottomNavBar extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 _buildNavItem(context, NavigationProvider.homeIndex,
-                    Icons.home_rounded, 'Home'),
+                    Remix.home_3_line, 'Home'),
                 _buildNavItem(context, NavigationProvider.sermonIndex,
-                    Icons.play_circle_outline, 'Sermon'),
+                    Remix.play_circle_line, 'Sermon'),
                 const SizedBox(width: 48), // Space for the Pray button
                 _buildNavItem(context, NavigationProvider.readIndex,
-                    Icons.menu_book_rounded, 'Read'),
+                    Remix.book_read_line, 'Read'),
                 _buildMoreButton(context, isAdmin),
               ],
             ),
@@ -85,7 +93,7 @@ class BottomNavBar extends StatelessWidget {
       BuildContext context, int index, IconData icon, String label) {
     final isSelected =
         context.watch<NavigationProvider>().currentIndex == index;
-    final color = isSelected ? AppTheme.primaryColor : const Color(0xFF6B7280);
+    final color = isSelected ? AppTheme.teal : AppTheme.textMuted(context);
 
     return Semantics(
       label: label,
@@ -93,25 +101,29 @@ class BottomNavBar extends StatelessWidget {
       selected: isSelected,
       child: GestureDetector(
         onTap: () => _handleTap(context, index),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              color: color,
-              size: 24,
-              semanticLabel: label,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
+        child: Container(
+          color: Colors.transparent, // Expand tap area
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
                 color: color,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                size: 24,
+                semanticLabel: label,
               ),
-            ),
-          ],
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: GoogleFonts.roboto(
+                  fontSize: 12,
+                  color: color,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -120,7 +132,6 @@ class BottomNavBar extends StatelessWidget {
   Widget _buildPrayButton(BuildContext context) {
     final isSelected = context.watch<NavigationProvider>().currentIndex ==
         NavigationProvider.prayIndex;
-    final color = isSelected ? AppTheme.primaryColor : const Color(0xFF6B7280);
 
     return Semantics(
       label: 'Pray',
@@ -135,18 +146,22 @@ class BottomNavBar extends StatelessWidget {
               width: 56,
               height: 56,
               decoration: BoxDecoration(
-                color: AppTheme.primaryColor,
+                color: AppTheme.secondary(context),
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: AppTheme.primaryColor.withValues(alpha: 0.3),
-                    blurRadius: 8,
+                    color: AppTheme.secondary(context).withValues(alpha: 0.3),
+                    blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
                 ],
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.surface,
+                  width: 4,
+                ),
               ),
               child: const Icon(
-                Icons.favorite_rounded,
+                Remix.heart_3_line,
                 color: Colors.white,
                 size: 24,
                 semanticLabel: 'Pray',
@@ -155,10 +170,12 @@ class BottomNavBar extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               'Pray',
-              style: TextStyle(
+              style: GoogleFonts.roboto(
                 fontSize: 12,
-                color: color,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                color: isSelected
+                    ? AppTheme.secondary(context)
+                    : AppTheme.textMuted(context),
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
               ),
             ),
           ],
@@ -170,7 +187,7 @@ class BottomNavBar extends StatelessWidget {
   Widget _buildMoreButton(BuildContext context, bool isAdmin) {
     final isSelected = context.watch<NavigationProvider>().currentIndex ==
         NavigationProvider.moreIndex;
-    final color = isSelected ? AppTheme.primaryColor : const Color(0xFF6B7280);
+    final color = isSelected ? AppTheme.teal : AppTheme.textMuted(context);
 
     return Semantics(
       label: 'More Options',
@@ -187,7 +204,7 @@ class BottomNavBar extends StatelessWidget {
               title: 'More Options',
               items: [
                 DrawerItem(
-                  icon: Icons.person_outline_rounded,
+                  icon: Remix.user_3_line,
                   label: 'Profile',
                   onTap: () {
                     Navigator.pop(context);
@@ -195,7 +212,7 @@ class BottomNavBar extends StatelessWidget {
                   },
                 ),
                 DrawerItem(
-                  icon: Icons.task_rounded,
+                  icon: Remix.task_line,
                   label: 'Tasks',
                   onTap: () {
                     Navigator.pop(context);
@@ -205,7 +222,7 @@ class BottomNavBar extends StatelessWidget {
                 ),
                 if (isAdmin)
                   DrawerItem(
-                    icon: Icons.admin_panel_settings_rounded,
+                    icon: Remix.admin_line,
                     label: 'Admin Center',
                     onTap: () {
                       Navigator.pop(context);
@@ -218,7 +235,7 @@ class BottomNavBar extends StatelessWidget {
                     },
                   ),
                 DrawerItem(
-                  icon: Icons.settings_rounded,
+                  icon: Remix.settings_3_line,
                   label: 'Settings',
                   onTap: () {
                     Navigator.pop(context);
@@ -226,7 +243,7 @@ class BottomNavBar extends StatelessWidget {
                   },
                 ),
                 DrawerItem(
-                  icon: Icons.help_outline_rounded,
+                  icon: Remix.question_line,
                   label: 'Help & Support',
                   onTap: () {
                     Navigator.pop(context);
@@ -234,7 +251,7 @@ class BottomNavBar extends StatelessWidget {
                   },
                 ),
                 DrawerItem(
-                  icon: Icons.info_outline_rounded,
+                  icon: Remix.information_line,
                   label: 'About',
                   onTap: () {
                     Navigator.pop(context);
@@ -245,25 +262,29 @@ class BottomNavBar extends StatelessWidget {
             ),
           );
         },
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.more_horiz_rounded,
-              color: color,
-              size: 24,
-              semanticLabel: 'More Options',
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'More',
-              style: TextStyle(
-                fontSize: 12,
+        child: Container(
+          color: Colors.transparent,
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Remix.more_2_line,
                 color: color,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                size: 24,
+                semanticLabel: 'More Options',
               ),
-            ),
-          ],
+              const SizedBox(height: 4),
+              Text(
+                'More',
+                style: GoogleFonts.roboto(
+                  fontSize: 12,
+                  color: color,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

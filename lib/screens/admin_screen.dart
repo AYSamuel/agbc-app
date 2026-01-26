@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:remixicon/remixicon.dart';
 import 'user_management_screen.dart';
 import 'meeting_management_screen.dart';
 import 'branch_management_screen.dart';
@@ -19,9 +20,9 @@ class AdminScreen extends StatelessWidget {
             // Modern Header
             Container(
               width: double.infinity,
-              decoration: const BoxDecoration(
-                color: AppTheme.primaryColor,
-                borderRadius: BorderRadius.only(
+              decoration: BoxDecoration(
+                color: AppTheme.primary(context),
+                borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(32),
                   bottomRight: Radius.circular(32),
                 ),
@@ -63,7 +64,7 @@ class AdminScreen extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(16),
                               ),
                               child: const Icon(
-                                Icons.admin_panel_settings,
+                                Remix.admin_line,
                                 color: Colors.white,
                                 size: 32,
                               ),
@@ -129,10 +130,10 @@ class AdminScreen extends StatelessWidget {
                       childAspectRatio: 0.85,
                       children: [
                         AdminCard(
-                          icon: Icons.people_rounded,
+                          icon: Remix.group_line,
                           title: 'Users',
                           description: 'Manage church members and roles',
-                          color: AppTheme.primaryColor,
+                          color: AppTheme.primary(context),
                           onTap: () => Navigator.push(
                             context,
                             MaterialPageRoute(
@@ -142,10 +143,10 @@ class AdminScreen extends StatelessWidget {
                           ),
                         ),
                         AdminCard(
-                          icon: Icons.event_note,
+                          icon: Remix.calendar_line,
                           title: 'Meetings',
                           description: 'Schedule and manage meetings',
-                          color: AppTheme.secondaryColor,
+                          color: AppTheme.secondary(context),
                           onTap: () => Navigator.push(
                             context,
                             MaterialPageRoute(
@@ -155,7 +156,7 @@ class AdminScreen extends StatelessWidget {
                           ),
                         ),
                         AdminCard(
-                          icon: Icons.location_city,
+                          icon: Remix.community_line,
                           title: 'Branches',
                           description: 'Manage church branches',
                           color: AppTheme.successColor,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:remixicon/remixicon.dart';
 import '../providers/notification_provider.dart';
 import '../models/notification_model.dart';
 import '../config/theme.dart';
@@ -62,21 +63,15 @@ class _NotificationPanelState extends State<NotificationPanel>
             height: 540,
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.surface,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(8),
               border: Border.all(
-                color: AppTheme.dividerColor(context),
+                color: AppTheme.dividerColor(context).withValues(alpha: 0.5),
                 width: 1,
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: Theme.of(context).shadowColor,
-                  blurRadius: 16,
-                  offset: const Offset(0, 4),
-                ),
-              ],
+              boxShadow: AppTheme.cardShadow(context),
             ),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(8),
               child: Stack(
                 children: [
                   Column(
@@ -102,7 +97,7 @@ class _NotificationPanelState extends State<NotificationPanel>
       child: Container(
         decoration: BoxDecoration(
           color: Colors.black.withValues(alpha: 0.5),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(8),
         ),
         child: Center(
           child: Container(
@@ -110,7 +105,7 @@ class _NotificationPanelState extends State<NotificationPanel>
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.surface,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(8),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -121,8 +116,8 @@ class _NotificationPanelState extends State<NotificationPanel>
                     color: AppTheme.successColor.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(
-                    Icons.done_all,
+                  child: const Icon(
+                    Remix.check_double_line,
                     color: AppTheme.successColor,
                     size: 32,
                   ),
@@ -130,22 +125,19 @@ class _NotificationPanelState extends State<NotificationPanel>
                 const SizedBox(height: 16),
                 Text(
                   'Mark All as Read',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.roboto(
                     fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: Theme.of(context).colorScheme.onSurface,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.textPrimary(context),
                   ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 8),
                 Text(
                   'Mark all notifications as read? You can still view them in your notification history.',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.roboto(
                     fontSize: 14,
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withValues(alpha: 0.6),
+                    color: AppTheme.textSecondary(context),
                     height: 1.4,
                   ),
                   textAlign: TextAlign.center,
@@ -161,20 +153,19 @@ class _NotificationPanelState extends State<NotificationPanel>
                           });
                         },
                         style: TextButton.styleFrom(
-                          foregroundColor: Theme.of(context).disabledColor,
+                          foregroundColor: AppTheme.textMuted(context),
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(8),
                             side: BorderSide(
-                              color: Theme.of(context).colorScheme.onSurface,
+                              color: AppTheme.dividerColor(context),
                               width: 1,
                             ),
                           ),
                         ),
                         child: Text(
                           'Cancel',
-                          style: GoogleFonts.inter(
-                            color: Theme.of(context).colorScheme.onSurface,
+                          style: GoogleFonts.roboto(
                             fontWeight: FontWeight.w500,
                             fontSize: 14,
                           ),
@@ -198,14 +189,14 @@ class _NotificationPanelState extends State<NotificationPanel>
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(8),
                           ),
                           elevation: 0,
                         ),
                         child: Text(
                           'Mark as Read',
-                          style: GoogleFonts.inter(
-                            fontWeight: FontWeight.w600,
+                          style: GoogleFonts.roboto(
+                            fontWeight: FontWeight.bold,
                             fontSize: 14,
                           ),
                         ),
@@ -238,39 +229,32 @@ class _NotificationPanelState extends State<NotificationPanel>
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: AppTheme.primaryColor.withValues(alpha: 0.1),
+              color: AppTheme.teal.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: const Icon(
-              Icons.notifications,
-              color: AppTheme.primaryColor,
+              Remix.notification_3_line,
+              color: AppTheme.teal,
               size: 20,
             ),
           ),
           const SizedBox(width: 12),
           Text(
             'Notifications',
-            style: GoogleFonts.inter(
+            style: GoogleFonts.roboto(
               fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: Theme.of(context).colorScheme.onSurface,
+              fontWeight: FontWeight.bold,
+              color: AppTheme.textPrimary(context),
             ),
           ),
           const Spacer(),
           Consumer<NotificationProvider>(
             builder: (context, provider, child) {
-              // Only show button if there are unread notifications
               final hasUnreadNotifications =
                   provider.notifications.any((n) => !n.isRead);
 
               return AnimatedSwitcher(
                 duration: const Duration(milliseconds: 200),
-                transitionBuilder: (Widget child, Animation<double> animation) {
-                  return FadeTransition(
-                    opacity: animation,
-                    child: child,
-                  );
-                },
                 child: hasUnreadNotifications
                     ? TextButton.icon(
                         key: const ValueKey('mark_all_button'),
@@ -280,12 +264,15 @@ class _NotificationPanelState extends State<NotificationPanel>
                           });
                         },
                         icon: const Icon(
-                          Icons.done_all,
+                          Remix.check_double_line,
                           size: 16,
                         ),
                         label: Text(
                           'Mark All as Read',
-                          style: GoogleFonts.inter(fontSize: 12),
+                          style: GoogleFonts.roboto(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                         style: TextButton.styleFrom(
                           foregroundColor: AppTheme.successColor,
@@ -306,10 +293,9 @@ class _NotificationPanelState extends State<NotificationPanel>
           const SizedBox(width: 8),
           IconButton(
             onPressed: widget.onClose,
-            icon: const Icon(Icons.close),
+            icon: const Icon(Remix.close_line),
             iconSize: 20,
-            color:
-                Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+            color: AppTheme.textMuted(context),
             splashRadius: 20,
             tooltip: 'Close',
           ),
@@ -324,7 +310,8 @@ class _NotificationPanelState extends State<NotificationPanel>
         if (provider.isLoading) {
           return const Center(
             child: CircularProgressIndicator(
-              color: AppTheme.primaryColor,
+              color: AppTheme.teal,
+              strokeWidth: 2,
             ),
           );
         }
@@ -341,32 +328,26 @@ class _NotificationPanelState extends State<NotificationPanel>
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
-                    Icons.notifications_none,
+                    Remix.notification_off_line,
                     size: 48,
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withValues(alpha: 0.6),
+                    color: AppTheme.textMuted(context),
                   ),
                 ),
                 const SizedBox(height: 16),
                 Text(
                   'No notifications yet',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.roboto(
                     fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Theme.of(context).colorScheme.onSurface,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.textPrimary(context),
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   'You\'re all caught up!',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.roboto(
                     fontSize: 14,
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withValues(alpha: 0.6),
+                    color: AppTheme.textMuted(context),
                   ),
                 ),
               ],
@@ -374,15 +355,12 @@ class _NotificationPanelState extends State<NotificationPanel>
           );
         }
 
-        // Sort notifications: unread first, then by creation date (newest first)
         final sortedNotifications =
             List<NotificationModel>.from(provider.notifications)
               ..sort((a, b) {
-                // First, sort by read status (unread first)
                 if (a.isRead != b.isRead) {
                   return a.isRead ? 1 : -1;
                 }
-                // Then sort by creation date (newest first)
                 return b.createdAt.compareTo(a.createdAt);
               });
 
@@ -408,25 +386,23 @@ class _NotificationPanelState extends State<NotificationPanel>
       decoration: BoxDecoration(
         color: notification.isRead
             ? Theme.of(context).colorScheme.surface
-            : AppTheme.primaryColor.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
+            : AppTheme.teal.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: notification.isRead
-              ? AppTheme.dividerColor(context)
-              : AppTheme.primaryColor.withValues(alpha: 0.2),
+              ? AppTheme.dividerColor(context).withValues(alpha: 0.5)
+              : AppTheme.teal.withValues(alpha: 0.1),
           width: 1,
         ),
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(8),
           onTap: () {
-            // Only mark as read when explicitly tapped
             if (!notification.isRead) {
               provider.markAsRead(notification.id);
             }
-            // TODO: Handle notification tap action based on type
           },
           child: Padding(
             padding: const EdgeInsets.all(12),
@@ -444,12 +420,12 @@ class _NotificationPanelState extends State<NotificationPanel>
                           Expanded(
                             child: Text(
                               notification.title,
-                              style: GoogleFonts.inter(
+                              style: GoogleFonts.roboto(
                                 fontWeight: notification.isRead
                                     ? FontWeight.w500
-                                    : FontWeight.w600,
+                                    : FontWeight.bold,
                                 fontSize: 14,
-                                color: Theme.of(context).colorScheme.onSurface,
+                                color: AppTheme.textPrimary(context),
                               ),
                             ),
                           ),
@@ -458,8 +434,8 @@ class _NotificationPanelState extends State<NotificationPanel>
                             Container(
                               width: 8,
                               height: 8,
-                              decoration: BoxDecoration(
-                                color: Theme.of(context).colorScheme.primary,
+                              decoration: const BoxDecoration(
+                                color: AppTheme.teal,
                                 shape: BoxShape.circle,
                               ),
                             ),
@@ -470,12 +446,9 @@ class _NotificationPanelState extends State<NotificationPanel>
                         const SizedBox(height: 4),
                         Text(
                           notification.message,
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.roboto(
                             fontSize: 13,
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurface
-                                .withValues(alpha: 0.6),
+                            color: AppTheme.textSecondary(context),
                             height: 1.3,
                           ),
                           maxLines: 2,
@@ -485,12 +458,9 @@ class _NotificationPanelState extends State<NotificationPanel>
                       const SizedBox(height: 6),
                       Text(
                         timeago.format(notification.createdAt),
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.roboto(
                           fontSize: 12,
-                          color: Theme.of(context)
-                              .colorScheme
-                              .onSurface
-                              .withValues(alpha: 0.6),
+                          color: AppTheme.textMuted(context),
                           fontWeight: FontWeight.w400,
                         ),
                       ),
@@ -511,44 +481,44 @@ class _NotificationPanelState extends State<NotificationPanel>
 
     switch (type) {
       case NotificationType.taskAssigned:
-        iconData = Icons.assignment_outlined;
-        color = AppTheme.primaryColor;
+        iconData = Remix.task_line;
+        color = AppTheme.secondary(context);
         break;
       case NotificationType.taskDue:
-        iconData = Icons.schedule_outlined;
-        color = AppTheme.warningColor;
+        iconData = Remix.time_line;
+        color = AppTheme.warning(context);
         break;
       case NotificationType.taskCompleted:
-        iconData = Icons.check_circle_outline;
-        color = AppTheme.successColor;
+        iconData = Remix.checkbox_circle_line;
+        color = AppTheme.success(context);
         break;
       case NotificationType.meetingReminder:
-        iconData = Icons.event_outlined;
-        color = AppTheme.secondaryColor;
+        iconData = Remix.calendar_event_line;
+        color = AppTheme.primary(context);
         break;
       case NotificationType.meetingCancelled:
-        iconData = Icons.event_busy_outlined;
-        color = AppTheme.errorColor;
+        iconData = Remix.calendar_close_line;
+        color = AppTheme.error(context);
         break;
       case NotificationType.meetingUpdated:
-        iconData = Icons.event_note_outlined;
-        color = AppTheme.primaryColor;
+        iconData = Remix.calendar_check_line;
+        color = AppTheme.primary(context);
         break;
       case NotificationType.commentAdded:
-        iconData = Icons.comment_outlined;
-        color = AppTheme.accentColor;
+        iconData = Remix.chat_3_line;
+        color = AppTheme.secondary(context);
         break;
       case NotificationType.roleChanged:
-        iconData = Icons.person_outline;
-        color = AppTheme.primaryColor;
+        iconData = Remix.user_settings_line;
+        color = AppTheme.secondary(context);
         break;
       case NotificationType.branchAnnouncement:
-        iconData = Icons.campaign_outlined;
-        color = AppTheme.secondaryColor;
+        iconData = Remix.broadcast_line;
+        color = AppTheme.primary(context);
         break;
       case NotificationType.general:
-        iconData = Icons.info_outline;
-        color = AppTheme.neutralColor;
+        iconData = Remix.information_line;
+        color = AppTheme.primary(context);
         break;
     }
 

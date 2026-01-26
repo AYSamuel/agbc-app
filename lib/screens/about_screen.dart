@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:remixicon/remixicon.dart';
 import '../config/theme.dart';
 
 class AboutScreen extends StatelessWidget {
@@ -17,9 +18,9 @@ class AboutScreen extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(
-                      Icons.info_outline_rounded,
+                      Remix.information_line,
                       size: 64,
-                      color: AppTheme.primaryColor.withValues(alpha: 0.5),
+                      color: AppTheme.primary(context).withValues(alpha: 0.5),
                     ),
                     const SizedBox(height: 16),
                     Text(

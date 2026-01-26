@@ -34,10 +34,10 @@ class CustomDrawer extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.primaryColor.withValues(alpha: 0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 30,
             offset: const Offset(0, -8),
           ),
@@ -52,7 +52,7 @@ class CustomDrawer extends StatelessWidget {
               height: 4,
               margin: const EdgeInsets.only(top: 12, bottom: 20),
               decoration: BoxDecoration(
-                color: Theme.of(context).dividerColor,
+                color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -62,10 +62,10 @@ class CustomDrawer extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.roboto(
                       fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: Theme.of(context).colorScheme.onSurface,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.textPrimary(context),
                     ),
                   ),
                   const Spacer(),
@@ -75,10 +75,7 @@ class CustomDrawer extends StatelessWidget {
                       onClose?.call();
                     },
                     icon: const Icon(Remix.close_line),
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withValues(alpha: 0.6),
+                    color: AppTheme.textMuted(context),
                   ),
                 ],
               ),
@@ -98,38 +95,35 @@ class CustomDrawer extends StatelessWidget {
       child: InkWell(
         onTap: item.onTap,
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
           child: Row(
             children: [
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
+                  color: AppTheme.teal.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
                   item.icon,
-                  color: AppTheme.primaryColor,
-                  size: 24,
+                  color: AppTheme.teal,
+                  size: 22,
                 ),
               ),
               const SizedBox(width: 16),
               Text(
                 item.label,
-                style: TextStyle(
+                style: GoogleFonts.roboto(
                   fontSize: 16,
-                  color: Theme.of(context).colorScheme.onSurface,
+                  color: AppTheme.textPrimary(context),
                   fontWeight: FontWeight.w500,
                 ),
               ),
               const Spacer(),
               if (item.showChevron)
                 Icon(
-                  Icons.chevron_right,
-                  color: Theme.of(context)
-                      .colorScheme
-                      .onSurface
-                      .withValues(alpha: 0.3),
+                  Remix.arrow_right_s_line,
+                  color: AppTheme.textMuted(context),
                   size: 20,
                 ),
             ],

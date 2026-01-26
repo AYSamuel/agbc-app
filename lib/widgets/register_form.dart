@@ -10,6 +10,8 @@ import '../widgets/loading_indicator.dart';
 import '../config/theme.dart';
 import '../widgets/mixins/form_validation_mixin.dart';
 import '../widgets/custom_dropdown.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:remixicon/remixicon.dart';
 import 'form/password_field.dart';
 import 'form/location_field.dart';
 import 'form/form_spacing.dart';
@@ -105,19 +107,40 @@ class _RegisterFormState extends State<RegisterForm> with FormValidationMixin {
           barrierDismissible: false,
           builder: (context) {
             return AlertDialog(
-              title: const Text('Email Verification Required'),
-              content: const Column(
+              backgroundColor: Theme.of(context).colorScheme.surface,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              title: Text(
+                'Verification Required',
+                style: GoogleFonts.roboto(
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.textPrimary(context),
+                ),
+              ),
+              content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(
-                    Icons.mark_email_unread,
-                    size: 64,
-                    color: AppTheme.accentColor,
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppTheme.secondary(context).withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Remix.mail_send_line,
+                      size: 48,
+                      color: AppTheme.secondary(context),
+                    ),
                   ),
-                  SizedBox(height: 16),
+                  const SizedBox(height: 24),
                   Text(
                     'A verification link has been sent to your email. Please check your email and click the link to verify your account.',
                     textAlign: TextAlign.center,
+                    style: GoogleFonts.roboto(
+                      color: AppTheme.textSecondary(context),
+                      height: 1.5,
+                    ),
                   ),
                 ],
               ),
@@ -127,7 +150,13 @@ class _RegisterFormState extends State<RegisterForm> with FormValidationMixin {
                     Navigator.pop(context);
                     widget.onRegisterSuccess();
                   },
-                  child: const Text('OK'),
+                  child: Text(
+                    'OK',
+                    style: GoogleFonts.roboto(
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.secondary(context),
+                    ),
+                  ),
                 ),
               ],
             );
@@ -168,7 +197,7 @@ class _RegisterFormState extends State<RegisterForm> with FormValidationMixin {
               label: 'Full Name',
               controller: _nameController,
               hint: 'Enter only your first and last name',
-              prefixIcon: const Icon(Icons.person),
+              prefixIcon: const Icon(Remix.user_line, size: 20),
               textInputAction: TextInputAction.next,
               onSubmitted: (_) => FocusScope.of(context).nextFocus(),
               validator: validateName,
@@ -181,7 +210,7 @@ class _RegisterFormState extends State<RegisterForm> with FormValidationMixin {
               label: 'Email',
               controller: _emailController,
               hint: 'Enter your email',
-              prefixIcon: const Icon(Icons.email),
+              prefixIcon: const Icon(Remix.mail_line, size: 20),
               keyboardType: TextInputType.emailAddress,
               textInputAction: TextInputAction.next,
               onSubmitted: (_) => FocusScope.of(context).nextFocus(),
@@ -195,7 +224,7 @@ class _RegisterFormState extends State<RegisterForm> with FormValidationMixin {
               label: 'Phone Number',
               controller: _phoneController,
               hint: 'Enter with country code (e.g., +1234567890)',
-              prefixIcon: const Icon(Icons.phone),
+              prefixIcon: const Icon(Remix.phone_line, size: 20),
               keyboardType: TextInputType.phone,
               validator: validatePhone,
               autofillHints: const [AutofillHints.telephoneNumber],
@@ -220,9 +249,8 @@ class _RegisterFormState extends State<RegisterForm> with FormValidationMixin {
                 if (branches.isEmpty) {
                   return Text(
                     'No branches available',
-                    style: AppTheme.regularTextStyle(context).copyWith(
-                      color: AppTheme.errorColor,
-                    ),
+                    style: AppTheme.regularTextStyle(context)
+                        .copyWith(color: AppTheme.primary(context)),
                   );
                 }
 
@@ -230,7 +258,7 @@ class _RegisterFormState extends State<RegisterForm> with FormValidationMixin {
                   value: _selectedBranchId,
                   label: 'Select Branch',
                   hint: 'Choose your church branch',
-                  prefixIcon: Icons.church,
+                  prefixIcon: Remix.community_line,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Please select a branch';

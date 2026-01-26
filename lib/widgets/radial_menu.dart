@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:grace_portal/config/theme.dart';
+import 'package:remixicon/remixicon.dart';
 
 class RadialMenu extends StatefulWidget {
   final VoidCallback onTaskPressed;
@@ -118,7 +119,7 @@ class _RadialMenuState extends State<RadialMenu>
               children: [
                 Icon(
                   icon,
-                  color: AppTheme.primaryColor,
+                  color: AppTheme.primary(context),
                   size: 24,
                   semanticLabel: semanticLabel,
                 ),
@@ -152,7 +153,7 @@ class _RadialMenuState extends State<RadialMenu>
           right: 50,
           bottom: 50,
           child: _buildMenuItem(
-            icon: Icons.task_alt,
+            icon: Remix.task_line,
             label: 'Task',
             semanticLabel: 'Create new task',
             onTap: () {
@@ -168,7 +169,7 @@ class _RadialMenuState extends State<RadialMenu>
             right: 50,
             bottom: 10,
             child: _buildMenuItem(
-              icon: Icons.calendar_today,
+              icon: Remix.calendar_line,
               label: 'Meeting',
               semanticLabel: 'Schedule new meeting',
               onTap: () {
@@ -184,7 +185,7 @@ class _RadialMenuState extends State<RadialMenu>
             right: 10,
             bottom: 50,
             child: _buildMenuItem(
-              icon: Icons.church,
+              icon: Remix.community_line,
               label: 'Branch',
               semanticLabel: 'Create new branch',
               onTap: () {
@@ -202,11 +203,11 @@ class _RadialMenuState extends State<RadialMenu>
             turns: _rotationAnimation!,
             child: FloatingActionButton(
               onPressed: _toggleMenu,
-              backgroundColor: AppTheme.primaryColor,
+              backgroundColor: AppTheme.primary(context),
               elevation: 4,
               tooltip: _isOpen ? 'Close menu' : 'Open menu',
               child: Icon(
-                _isOpen ? Icons.close : Icons.add,
+                _isOpen ? Remix.close_line : Remix.add_line,
                 color: Colors.white,
                 semanticLabel: _isOpen ? 'Close menu' : 'Open menu',
               ),

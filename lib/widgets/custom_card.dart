@@ -23,15 +23,8 @@ class CustomCard extends StatelessWidget {
       padding: padding ?? const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: backgroundColor ?? AppTheme.cardColor(context),
-        borderRadius: BorderRadius.circular(borderRadius ?? 20),
-        boxShadow: boxShadow ??
-            [
-              BoxShadow(
-                color: AppTheme.primaryColor.withValues(alpha: 0.1),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
-              ),
-            ],
+        borderRadius: BorderRadius.circular(borderRadius ?? 8),
+        boxShadow: boxShadow ?? AppTheme.cardShadow(context),
       ),
       child: child,
     );

@@ -9,6 +9,8 @@ import '../config/theme.dart';
 import 'mixins/form_validation_mixin.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:google_fonts/google_fonts.dart';
+import 'package:remixicon/remixicon.dart';
 import 'form/form_spacing.dart';
 import 'form/password_field.dart';
 import 'custom_button.dart';
@@ -182,7 +184,7 @@ class _LoginFormState extends State<LoginForm> with FormValidationMixin {
               label: 'Email',
               controller: _emailController,
               hint: 'Enter your email',
-              prefixIcon: const Icon(Icons.email),
+              prefixIcon: const Icon(Remix.mail_line, size: 20),
               keyboardType: TextInputType.emailAddress,
               validator: validateEmail,
               autofillHints: const [AutofillHints.email],
@@ -204,10 +206,10 @@ class _LoginFormState extends State<LoginForm> with FormValidationMixin {
               children: [
                 Checkbox(
                   value: _rememberMe,
-                  activeColor: AppTheme.primaryColor,
+                  activeColor: AppTheme.secondary(context),
                   checkColor: Colors.white,
-                  side:
-                      const BorderSide(color: AppTheme.primaryColor, width: 1),
+                  side: BorderSide(
+                      color: AppTheme.secondary(context), width: 1.5),
                   onChanged: (value) {
                     setState(() {
                       _rememberMe = value ?? false;
@@ -215,26 +217,28 @@ class _LoginFormState extends State<LoginForm> with FormValidationMixin {
                   },
                 ),
                 Text('Remember me',
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurface,
+                    style: GoogleFonts.roboto(
+                      color: AppTheme.textSecondary(context),
+                      fontSize: 14,
                     )),
                 const Spacer(),
               ],
             ),
-            const FormSpacing(height: 5),
+            const FormSpacing(height: 10),
 
             // Login Button
             CustomButton(
               onPressed: _isLoading ? null : _login,
-              height: 48,
+              height: 50,
               child: _isLoading
                   ? const LoadingIndicator()
-                  : const Text(
-                      'LOGIN',
-                      style: TextStyle(
+                  : Text(
+                      'LOG IN',
+                      style: GoogleFonts.roboto(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
+                        letterSpacing: 1,
                       ),
                     ),
             ),
@@ -291,23 +295,51 @@ class _VerificationDialogState extends State<_VerificationDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Email Not Verified'),
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+      ),
+      title: Text(
+        'Email Not Verified',
+        style: GoogleFonts.roboto(
+          fontWeight: FontWeight.bold,
+          color: AppTheme.textPrimary(context),
+        ),
+      ),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Text(
+          Text(
             'Please check your email for a verification link. If you haven\'t received it, you can request a new one.',
+            style: GoogleFonts.roboto(
+              color: AppTheme.textSecondary(context),
+              height: 1.5,
+            ),
           ),
           if (!_canResend) ...[
-            const SizedBox(height: 16),
-            Text(
-              'You can request a new verification email in ${_countdown ~/ 60}:${(_countdown % 60).toString().padLeft(2, '0')}',
-              style: TextStyle(
-                color: Theme.of(context)
-                    .colorScheme
-                    .onSurface
-                    .withValues(alpha: 0.5),
-                fontStyle: FontStyle.italic,
+            const SizedBox(height: 20),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: AppTheme.warning(context).withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Icon(Remix.time_line,
+                      size: 16, color: AppTheme.warning(context)),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Request new link in ${_countdown ~/ 60}:${(_countdown % 60).toString().padLeft(2, '0')}',
+                      style: GoogleFonts.roboto(
+                        color: AppTheme.warning(context),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -316,7 +348,13 @@ class _VerificationDialogState extends State<_VerificationDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Close'),
+          child: Text(
+            'Close',
+            style: GoogleFonts.roboto(
+              color: AppTheme.textMuted(context),
+              fontWeight: FontWeight.w500,
+            ),
+          ),
         ),
         TextButton(
           onPressed: _canResend
@@ -326,7 +364,15 @@ class _VerificationDialogState extends State<_VerificationDialog> {
                       .sendVerificationEmail();
                 }
               : null,
-          child: const Text('Resend Email'),
+          child: Text(
+            'Resend Email',
+            style: GoogleFonts.roboto(
+              color: _canResend
+                  ? AppTheme.secondary(context)
+                  : AppTheme.textMuted(context),
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ),
       ],
     );

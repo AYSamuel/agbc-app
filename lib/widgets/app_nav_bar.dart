@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:remixicon/remixicon.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../config/theme.dart';
 
 class AppNavBar extends StatefulWidget {
@@ -37,12 +38,18 @@ class _AppNavBarState extends State<AppNavBar> {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
+        border: Border(
+          bottom: BorderSide(
+            color: AppTheme.dividerColor(context).withValues(alpha: 0.5),
+            width: 1,
+          ),
+        ),
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).shadowColor,
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -53,46 +60,46 @@ class _AppNavBarState extends State<AppNavBar> {
         children: [
           // Notification Bell
           GestureDetector(
-            onTap: _handleNotificationTap, // OPTIMIZED: Use debounced handler
+            onTap: _handleNotificationTap,
             child: Stack(
               clipBehavior: Clip.none,
               children: [
                 Container(
-                  width: 32,
-                  height: 32,
+                  width: 36,
+                  height: 36,
                   decoration: BoxDecoration(
-                    color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                    color: AppTheme.secondary(context).withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Remix.notification_3_line,
                     size: 20,
-                    color: AppTheme.primaryColor,
+                    color: AppTheme.secondary(context),
                   ),
                 ),
                 if (widget.notificationCount != null &&
                     widget.notificationCount! > 0)
                   Positioned(
-                    right: -4,
-                    top: -4,
+                    right: -2,
+                    top: -2,
                     child: Container(
                       padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(
-                        color: AppTheme.errorColor,
+                        color: AppTheme.error(context),
                         shape: BoxShape.circle,
                         border: Border.all(
                             color: Theme.of(context).colorScheme.surface,
                             width: 2),
                       ),
                       constraints: const BoxConstraints(
-                        minWidth: 16,
-                        minHeight: 16,
+                        minWidth: 18,
+                        minHeight: 18,
                       ),
                       child: Text(
                         widget.notificationCount! > 99
                             ? '99+'
                             : widget.notificationCount.toString(),
-                        style: const TextStyle(
+                        style: GoogleFonts.roboto(
                           color: Colors.white,
                           fontSize: 10,
                           fontWeight: FontWeight.bold,

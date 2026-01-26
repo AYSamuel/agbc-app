@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../config/theme.dart';
 
 /// A customizable input field widget with support for various features including
 /// focus management, and custom styling.
@@ -20,6 +21,7 @@ class CustomInput extends StatefulWidget {
   final FocusNode? focusNode;
   final Color? backgroundColor;
   final Color? borderColor;
+  final Color? focusBorderColor;
   final Color? labelColor;
   final double borderRadius;
   final String? Function(String?)? validator;
@@ -49,8 +51,9 @@ class CustomInput extends StatefulWidget {
     this.focusNode,
     this.backgroundColor,
     this.borderColor,
+    this.focusBorderColor,
     this.labelColor,
-    this.borderRadius = 12.0,
+    this.borderRadius = 8.0,
     this.validator,
     this.textInputAction,
     this.autofocus = false,
@@ -118,8 +121,7 @@ class _CustomInputState extends State<CustomInput>
           Text(
             widget.label!,
             style: theme.textTheme.labelLarge?.copyWith(
-              color: widget.labelColor ??
-                  theme.colorScheme.onSurface.withValues(alpha: 0.8),
+              color: widget.labelColor ?? AppTheme.textSecondary(context),
               fontWeight: FontWeight.w600,
               letterSpacing: 0.2,
             ),
@@ -132,6 +134,10 @@ class _CustomInputState extends State<CustomInput>
   }
 
   Widget _buildInputField(ThemeData theme) {
+    final focusColor = widget.focusBorderColor ?? AppTheme.secondary(context);
+    final borderColor =
+        widget.borderColor ?? AppTheme.inputBorderColor(context);
+
     return TextFormField(
       controller: widget.controller,
       focusNode: _focusNode,
@@ -161,7 +167,7 @@ class _CustomInputState extends State<CustomInput>
       decoration: InputDecoration(
         hintText: widget.hint,
         hintStyle: TextStyle(
-          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+          color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
           fontWeight: FontWeight.w400,
           fontSize: 15,
           letterSpacing: 0.2,
@@ -178,9 +184,9 @@ class _CustomInputState extends State<CustomInput>
                 padding: const EdgeInsets.only(left: 12, right: 8),
                 child: IconTheme(
                   data: IconThemeData(
-                    color: theme.brightness == Brightness.dark
-                        ? theme.colorScheme.primary
-                        : theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                    color: _isFocused
+                        ? focusColor
+                        : theme.colorScheme.onSurface.withValues(alpha: 0.5),
                     size: 20,
                   ),
                   child: widget.prefixIcon!,
@@ -193,21 +199,21 @@ class _CustomInputState extends State<CustomInput>
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(widget.borderRadius),
           borderSide: BorderSide(
-            color: theme.colorScheme.onSurface.withValues(alpha: 0.15),
-            width: 1.5,
+            color: borderColor,
+            width: 2,
           ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(widget.borderRadius),
           borderSide: BorderSide(
-            color: theme.colorScheme.onSurface.withValues(alpha: 0.15),
-            width: 1.5,
+            color: borderColor,
+            width: 2,
           ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(widget.borderRadius),
           borderSide: BorderSide(
-            color: theme.colorScheme.primary,
+            color: focusColor,
             width: 2,
           ),
         ),
@@ -215,11 +221,18 @@ class _CustomInputState extends State<CustomInput>
           borderRadius: BorderRadius.circular(widget.borderRadius),
           borderSide: BorderSide(
             color: theme.colorScheme.error,
-            width: 1.5,
+            width: 2,
+          ),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(widget.borderRadius),
+          borderSide: BorderSide(
+            color: theme.colorScheme.error,
+            width: 2,
           ),
         ),
         contentPadding:
-            const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         isDense: true,
       ),
     );
@@ -227,14 +240,16 @@ class _CustomInputState extends State<CustomInput>
 
   Widget? _buildSuffixIcon() {
     final theme = Theme.of(context);
+    final focusColor = widget.focusBorderColor ?? AppTheme.accentTeal(context);
+
     if (widget.suffixIcon != null) {
       return Padding(
-        padding: const EdgeInsets.only(right: 8),
+        padding: const EdgeInsets.only(right: 12),
         child: IconTheme(
           data: IconThemeData(
             color: _isFocused
-                ? theme.colorScheme.primary
-                : theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                ? focusColor
+                : theme.colorScheme.onSurface.withValues(alpha: 0.5),
             size: 20,
           ),
           child: widget.suffixIcon!,
@@ -249,15 +264,15 @@ class _CustomInputState extends State<CustomInput>
         if (value.text.isEmpty) return const SizedBox.shrink();
 
         return Padding(
-          padding: const EdgeInsets.only(right: 8),
+          padding: const EdgeInsets.only(right: 12),
           child: IconButton(
             padding: const EdgeInsets.all(0),
             constraints: const BoxConstraints(),
             icon: Icon(
               Icons.clear,
               color: _isFocused
-                  ? theme.colorScheme.primary
-                  : theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                  ? focusColor
+                  : theme.colorScheme.onSurface.withValues(alpha: 0.5),
               size: 20,
             ),
             onPressed: () {

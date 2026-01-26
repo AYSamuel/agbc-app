@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:grace_portal/config/theme.dart';
+import 'package:remixicon/remixicon.dart';
 import 'package:provider/provider.dart';
 import 'package:grace_portal/services/auth_service.dart';
 import 'package:grace_portal/providers/branches_provider.dart';
@@ -74,10 +75,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
           // Modern Header with Gradient Background
           Container(
             decoration: BoxDecoration(
-              color: AppTheme.primaryColor,
+              color: AppTheme.primary(context),
               boxShadow: [
                 BoxShadow(
-                  color: AppTheme.primaryColor.withValues(alpha: 0.2),
+                  color: AppTheme.primary(context).withValues(alpha: 0.2),
                   blurRadius: 12,
                   offset: const Offset(0, 4),
                 ),
@@ -136,14 +137,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
                                   border: Border.all(
-                                    color: AppTheme.primaryColor
+                                    color: AppTheme.primary(context)
                                         .withValues(alpha: 0.2),
                                     width: 3,
                                   ),
                                 ),
                                 child: CircleAvatar(
                                   radius: 50,
-                                  backgroundColor: AppTheme.primaryColor
+                                  backgroundColor: AppTheme.primary(context)
                                       .withValues(alpha: 0.1),
                                   backgroundImage: (user?.photoUrl != null &&
                                           user!.photoUrl!.isNotEmpty)
@@ -151,9 +152,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                       : null,
                                   child: (user?.photoUrl == null ||
                                           user!.photoUrl!.isEmpty)
-                                      ? const Icon(Icons.person,
+                                      ? Icon(Remix.user_3_line,
                                           size: 50,
-                                          color: AppTheme.primaryColor)
+                                          color: AppTheme.primary(context))
                                       : null,
                                 ),
                               ),
@@ -163,11 +164,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 child: Container(
                                   padding: const EdgeInsets.all(10),
                                   decoration: BoxDecoration(
-                                    color: AppTheme.secondaryColor,
+                                    color: AppTheme.secondary(context),
                                     shape: BoxShape.circle,
                                     boxShadow: [
                                       BoxShadow(
-                                        color: AppTheme.secondaryColor
+                                        color: AppTheme.secondary(context)
                                             .withValues(alpha: 0.3),
                                         blurRadius: 8,
                                         offset: const Offset(0, 2),
@@ -175,7 +176,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     ],
                                   ),
                                   child: const Icon(
-                                    Icons.camera_alt,
+                                    Remix.camera_line,
                                     color: Colors.white,
                                     size: 16,
                                   ),
@@ -233,7 +234,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Icon(
-                                  Icons.church,
+                                  Remix.community_line,
                                   size: 16,
                                   color: Theme.of(context)
                                       .colorScheme
@@ -273,27 +274,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 children: [
                   // Personal Information Section
                   _buildModernSection(
-                    icon: Icons.person,
+                    icon: Remix.user_3_line,
                     title: 'Personal Information',
-                    accentColor: AppTheme.primaryColor,
+                    accentColor: AppTheme.primary(context),
                     child: Column(
                       children: [
                         _buildInfoRow(
                           title: 'Email',
                           value: user?.email ?? 'Not set',
-                          icon: Icons.email,
+                          icon: Remix.mail_line,
                         ),
                         const SizedBox(height: 16),
                         _buildInfoRow(
                           title: 'Phone',
                           value: user?.phoneNumber ?? 'Not set',
-                          icon: Icons.phone,
+                          icon: Remix.phone_line,
                         ),
                         const SizedBox(height: 16),
                         _buildInfoRow(
                           title: 'Location',
                           value: user?.locationString ?? 'Not set',
-                          icon: Icons.location_on,
+                          icon: Remix.map_pin_line,
                         ),
                       ],
                     ),
@@ -302,9 +303,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                   // Branch Information Section
                   _buildModernSection(
-                    icon: Icons.church,
+                    icon: Remix.community_line,
                     title: 'Branch Information',
-                    accentColor: AppTheme.secondaryColor,
+                    accentColor: AppTheme.secondary(context),
                     child: Column(
                       children: [
                         _buildInfoRow(
@@ -312,7 +313,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           value: user?.branchId?.isNotEmpty == true
                               ? branchesProvider.getBranchName(user!.branchId!)
                               : 'Not assigned',
-                          icon: Icons.church,
+                          icon: Remix.community_line,
                         ),
                         const SizedBox(height: 16),
                         _buildInfoRow(
@@ -323,7 +324,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   .last
                                   .toUpperCase() ??
                               'MEMBER',
-                          icon: Icons.badge,
+                          icon: Remix.government_line,
                         ),
                       ],
                     ),
@@ -360,7 +361,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: const Icon(
-                              Icons.logout,
+                              Remix.logout_box_r_line,
                               color: AppTheme.errorColor,
                               size: 20,
                             ),
@@ -378,7 +379,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     color: AppTheme.errorColor,
                                   ),
                                 ),
-                                SizedBox(height: 2),
+                                const SizedBox(height: 2),
                                 Text(
                                   'Sign out of your account',
                                   style: TextStyle(
@@ -393,7 +394,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ),
                           ),
                           Icon(
-                            Icons.chevron_right,
+                            Remix.arrow_right_s_line,
                             color: AppTheme.errorColor.withValues(alpha: 0.5),
                             size: 20,
                           ),
@@ -489,7 +490,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         Icon(
           icon,
           size: 20,
-          color: AppTheme.primaryColor,
+          color: AppTheme.primary(context),
         ),
         const SizedBox(width: 12),
         Expanded(

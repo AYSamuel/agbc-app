@@ -688,7 +688,7 @@ color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                 if (context.mounted) {
                   Navigator.pop(context);
                   CustomToast.show(context,
-                      message: 'Failed to send reset email: $e',
+                      message: _getFriendlyErrorMessage(e.toString()),
                       type: ToastType.error);
                 }
               }
@@ -710,5 +710,25 @@ color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
   Future<void> _sendPasswordResetEmail(String email) async {
     final authService = Provider.of<AuthService>(context, listen: false);
     await authService.resetPassword(email);
+  }
+
+  String _getFriendlyErrorMessage(String error) {
+    final lowerError = error.toLowerCase();
+
+    if (lowerError.contains('rate limit') || lowerError.contains('too many')) {
+      return 'Too many requests. Please wait a few minutes before trying again.';
+    }
+    if (lowerError.contains('network') || lowerError.contains('connection')) {
+      return 'Unable to connect. Please check your internet connection.';
+    }
+    if (lowerError.contains('invalid email') || lowerError.contains('email not found')) {
+      return 'Email address not found. Please check and try again.';
+    }
+    if (lowerError.contains('timeout')) {
+      return 'Request timed out. Please try again.';
+    }
+
+    // Default friendly message
+    return 'Something went wrong. Please try again later.';
   }
 }

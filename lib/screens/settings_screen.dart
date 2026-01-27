@@ -38,7 +38,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final notificationSettings = _localNotificationSettings ?? {};
 
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           children: [
@@ -47,65 +47,78 @@ class _SettingsScreenState extends State<SettingsScreen> {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
               decoration: BoxDecoration(
-                color: AppTheme.primary(context),
-                border: Border(
-                  bottom: BorderSide(
-                    color: AppTheme.teal.withValues(alpha: 0.2),
-                    width: 4,
-                  ),
+                color: AppTheme.surface(context),
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(32),
+                  bottomRight: Radius.circular(32),
                 ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Theme.of(context).shadowColor,
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (canPop) ...[
-                    CustomBackButton(
-                      onPressed: () => Navigator.pop(context),
-                      color: Colors.white,
-                    ),
-                    const SizedBox(height: 24),
-                  ],
-                  Row(
-                    children: [
+              child: SafeArea(
+                bottom: false,
+                child: Row(
+                  children: [
+                    if (canPop) ...[
                       Container(
-                        padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(8),
+                          color:
+                              AppTheme.primary(context).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        child: const Icon(
-                          Remix.settings_3_line,
-                          color: Colors.white,
-                          size: 28,
+                        child: CustomBackButton(
+                          onPressed: () => Navigator.pop(context),
+                          color: AppTheme.textPrimary(context),
+                          showBackground: false,
+                          showShadow: false,
                         ),
                       ),
                       const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Settings',
-                              style: GoogleFonts.roboto(
-                                fontSize: 28,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                                letterSpacing: -0.5,
-                              ),
-                            ),
-                            Text(
-                              'Manage your preferences',
-                              style: GoogleFonts.roboto(
-                                fontSize: 14,
-                                color: Colors.white.withValues(alpha: 0.7),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
                     ],
-                  ),
-                ],
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primary(context).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Icon(
+                        Remix.settings_3_line,
+                        color: AppTheme.primary(context),
+                        size: 28,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Settings',
+                            style: GoogleFonts.roboto(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.textPrimary(context),
+                              letterSpacing: -0.5,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Manage your preferences',
+                            style: GoogleFonts.roboto(
+                              fontSize: 14,
+                              color: AppTheme.textSecondary(context),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
 
@@ -184,12 +197,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: AppTheme.teal.withValues(alpha: 0.1),
+                    color: AppTheme.accent(context).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
                     themeProvider.isDarkMode ? Remix.moon_line : Remix.sun_line,
-                    color: AppTheme.teal,
+                    color: AppTheme.accent(context),
                     size: 20,
                   ),
                 ),
@@ -219,7 +232,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Switch(
                   value: themeProvider.isDarkMode,
                   onChanged: (value) => themeProvider.toggleTheme(),
-                  activeColor: AppTheme.teal,
+                  activeThumbColor: AppTheme.accent(context),
                 ),
               ],
             ),
@@ -346,12 +359,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: AppTheme.teal.withValues(alpha: 0.1),
+              color: AppTheme.accent(context).withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(
               icon,
-              color: AppTheme.teal,
+              color: AppTheme.accent(context),
               size: 20,
             ),
           ),
@@ -381,7 +394,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Switch(
             value: value,
             onChanged: onChanged,
-            activeColor: AppTheme.teal,
+            activeThumbColor: AppTheme.accent(context),
           ),
         ],
       ),
@@ -404,12 +417,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: AppTheme.teal.withValues(alpha: 0.1),
+                color: AppTheme.accent(context).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
                 icon,
-                color: AppTheme.teal,
+                color: AppTheme.accent(context),
                 size: 20,
               ),
             ),
@@ -512,12 +525,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: AppTheme.teal.withValues(alpha: 0.1),
+                color: AppTheme.accent(context).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(
+              child: Icon(
                 Remix.lock_password_line,
-                color: AppTheme.teal,
+                color: AppTheme.accent(context),
                 size: 24,
               ),
             ),
@@ -557,10 +570,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               child: Row(
                 children: [
-                  const Icon(
+                  Icon(
                     Remix.mail_line,
                     size: 18,
-                    color: AppTheme.teal,
+                    color: AppTheme.accent(context),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -643,7 +656,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             'OK',
                             style: GoogleFonts.roboto(
                                 fontWeight: FontWeight.bold,
-                                color: AppTheme.teal),
+                                color: AppTheme.accent(context)),
                           ),
                         ),
                       ],
@@ -660,7 +673,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.teal,
+              backgroundColor: AppTheme.accent(context),
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),

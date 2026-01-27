@@ -153,17 +153,15 @@ class AppTheme {
       secondary: teal,
       error: errorColor,
       surface: Colors.white,
-      background: pearl,
       onPrimary: Colors.white,
       onSecondary: Colors.white,
       onSurface: Color(0xFF0F172A),
-      onBackground: Color(0xFF0F172A),
     );
 
     return ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,
-      scaffoldBackgroundColor: colorScheme.background,
+      scaffoldBackgroundColor: pearl,
       shadowColor: navy.withValues(alpha: 0.1),
       dividerColor: mist,
       appBarTheme: AppBarTheme(
@@ -264,24 +262,22 @@ class AppTheme {
   static ThemeData get darkTheme {
     const ColorScheme colorScheme = ColorScheme.dark(
       primary: Color(0xFF7A9FD9),
-      secondary: tealLight,
+      secondary: Color.fromARGB(255, 68, 172, 160),
       error: Color(0xFFEF5350),
       surface: Color(0xFF1E293B), // Charcoal
-      background: Color(0xFF0F172A), // Navy Dark
       onPrimary: Color(0xFF0F172A),
       onSecondary: Color(0xFF0F172A),
       onSurface: Colors.white,
-      onBackground: Colors.white,
     );
 
     return ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,
-      scaffoldBackgroundColor: colorScheme.background,
+      scaffoldBackgroundColor: const Color(0xFF0F172A), // Navy Dark
       shadowColor: Colors.black.withValues(alpha: 0.4),
       dividerColor: const Color(0xFF334155),
       appBarTheme: AppBarTheme(
-        backgroundColor: colorScheme.background,
+        backgroundColor: colorScheme.surface,
         foregroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,

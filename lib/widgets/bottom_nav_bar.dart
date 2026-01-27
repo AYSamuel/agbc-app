@@ -93,7 +93,7 @@ class BottomNavBar extends StatelessWidget {
       BuildContext context, int index, IconData icon, String label) {
     final isSelected =
         context.watch<NavigationProvider>().currentIndex == index;
-    final color = isSelected ? AppTheme.teal : AppTheme.textMuted(context);
+    final color = isSelected ? AppTheme.accent(context) : AppTheme.textMuted(context);
 
     return Semantics(
       label: label,

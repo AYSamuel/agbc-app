@@ -50,7 +50,7 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
     );
 
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(
@@ -70,7 +70,7 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                       style: GoogleFonts.inter(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.onBackground,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                   ],
@@ -87,7 +87,7 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                       style: GoogleFonts.inter(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.onBackground,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -486,12 +486,12 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: AppTheme.teal.withValues(alpha: 0.1),
+                      color: AppTheme.accent(context).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Remix.refresh_line,
-                      color: AppTheme.teal,
+                      color: AppTheme.accent(context),
                       size: 24,
                     ),
                   ),
@@ -545,7 +545,7 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                   ElevatedButton(
                     onPressed: () => Navigator.pop(context, true),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.teal,
+                      backgroundColor: AppTheme.accent(context),
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 12),

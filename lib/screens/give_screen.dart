@@ -10,7 +10,7 @@ class GiveScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           children: [
@@ -28,7 +28,7 @@ class GiveScreen extends StatelessWidget {
                     style: GoogleFonts.inter(
                       fontSize: 20,
                       fontWeight: FontWeight.w600,
-                      color: Colors.grey[800],
+                      color: AppTheme.textPrimary(context),
                     ),
                   ),
                 ],
@@ -58,7 +58,7 @@ class GiveScreen extends StatelessWidget {
                       'Support the church with your generous contributions',
                       style: TextStyle(
                         fontSize: 16,
-                        color: Colors.grey[600],
+                        color: AppTheme.textSecondary(context),
                       ),
                       textAlign: TextAlign.center,
                     ),

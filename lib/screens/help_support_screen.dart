@@ -34,7 +34,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
     final canPop = Navigator.canPop(context);
 
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           children: [
@@ -42,52 +42,49 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
             Container(
               width: double.infinity,
               decoration: BoxDecoration(
-                color: AppTheme.primary(context),
-                borderRadius: BorderRadius.only(
+                color: AppTheme.surface(context),
+                borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(32),
                   bottomRight: Radius.circular(32),
                 ),
               ),
               child: Column(
                 children: [
-                  if (canPop)
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                      child: Row(
-                        children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 24, 24, 24),
+                    child: Row(
+                      children: [
+                        if (canPop) ...[
                           Container(
                             decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.2),
+                              color: AppTheme.primary(context)
+                                  .withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: CustomBackButton(
                               onPressed: () => Navigator.pop(context),
-                              color: Colors.white,
+                              color: AppTheme.textPrimary(context),
                               showBackground: false,
                               showShadow: false,
                             ),
                           ),
+                          const SizedBox(width: 16),
                         ],
-                      ),
-                    ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
-                    child: Row(
-                      children: [
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.2),
+                            color: AppTheme.primary(context)
+                                .withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(16),
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Remix.question_line,
-                            color: Colors.white,
+                            color: AppTheme.primary(context),
                             size: 28,
                           ),
                         ),
                         const SizedBox(width: 16),
-                        const Expanded(
+                        Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -96,15 +93,15 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
                                 style: TextStyle(
                                   fontSize: 24,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.white,
+                                  color: AppTheme.textPrimary(context),
                                 ),
                               ),
-                              SizedBox(height: 4),
+                              const SizedBox(height: 4),
                               Text(
                                 'We\'re here to help you',
                                 style: TextStyle(
                                   fontSize: 14,
-                                  color: Colors.white70,
+                                  color: AppTheme.textSecondary(context),
                                 ),
                               ),
                             ],
@@ -279,12 +276,12 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
+                        Text(
                           'Amazing Grace Bible Church',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
-                            color: AppTheme.primaryColor,
+                            color: AppTheme.primary(context),
                           ),
                         ),
                         const SizedBox(height: 12),
@@ -529,10 +526,10 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
       padding: const EdgeInsets.only(left: 4),
       child: Text(
         title,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 18,
           fontWeight: FontWeight.bold,
-          color: AppTheme.primaryColor,
+          color: AppTheme.primary(context),
         ),
       ),
     );
@@ -659,10 +656,10 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                color: AppTheme.primary(context).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(icon, color: AppTheme.primaryColor, size: 22),
+              child: Icon(icon, color: AppTheme.primary(context), size: 22),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -717,7 +714,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
           padding: const EdgeInsets.all(16),
           child: Row(
             children: [
-              Icon(icon, color: AppTheme.primaryColor, size: 24),
+              Icon(icon, color: AppTheme.primary(context), size: 24),
               const SizedBox(width: 16),
               Expanded(
                 child: Text(
@@ -730,7 +727,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
                 ),
               ),
               Icon(Icons.open_in_new_rounded,
-                  size: 18, color: Colors.grey[400]),
+                  size: 18, color: AppTheme.textMuted(context)),
             ],
           ),
         ),
@@ -754,7 +751,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
           padding: const EdgeInsets.all(16),
           child: Row(
             children: [
-              Icon(icon, color: AppTheme.primaryColor, size: 24),
+              Icon(icon, color: AppTheme.primary(context), size: 24),
               const SizedBox(width: 16),
               Expanded(
                 child: Column(
@@ -762,10 +759,10 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w500,
-                        color: AppTheme.primaryColor,
+                        color: AppTheme.primary(context),
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -784,7 +781,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
               ),
               if (onTap != null)
                 Icon(Icons.arrow_forward_ios_rounded,
-                    size: 16, color: Colors.grey[400]),
+                    size: 16, color: AppTheme.textMuted(context)),
             ],
           ),
         ),
@@ -796,7 +793,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 18, color: AppTheme.primaryColor),
+        Icon(icon, size: 18, color: AppTheme.primary(context)),
         const SizedBox(width: 12),
         Expanded(
           child: Text(

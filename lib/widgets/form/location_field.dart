@@ -362,13 +362,7 @@ class _LocationFieldState extends State<LocationField>
                                   leading: Icon(
                                     Remix.community_line,
                                     size: 16,
-                                    color: Theme.of(context).brightness ==
-                                            Brightness.dark
-                                        ? Theme.of(context).colorScheme.primary
-                                        : Theme.of(context)
-                                            .colorScheme
-                                            .onSurface
-                                            .withValues(alpha: 0.6),
+                                    color: AppTheme.primary(context),
                                   ),
                                   title: Text(
                                     option['city'] ?? '',
@@ -488,12 +482,12 @@ class _LocationFieldState extends State<LocationField>
           const SizedBox(height: 8),
           Row(
             children: [
-              SizedBox(
+              const SizedBox(
                 width: 12,
                 height: 12,
                 child: CircularProgressIndicator(strokeWidth: 2),
               ),
-              SizedBox(width: 8),
+              const SizedBox(width: 8),
               Text(
                 'Validating location...',
                 style: TextStyle(

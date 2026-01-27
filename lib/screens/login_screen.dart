@@ -27,7 +27,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final bool effectivelyIsLoggingOut = widget.isLoggingOut || clearForm;
 
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       resizeToAvoidBottomInset: true,
       body: Stack(
         children: [
@@ -52,11 +52,11 @@ class _LoginScreenState extends State<LoginScreen> {
               width: 240,
               height: 240,
               decoration: BoxDecoration(
-                color: AppTheme.teal.withValues(alpha: 0.1),
+                color: AppTheme.accent(context).withValues(alpha: 0.1),
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: AppTheme.teal.withValues(alpha: 0.1),
+                    color: AppTheme.accent(context).withValues(alpha: 0.1),
                     blurRadius: 100,
                     spreadRadius: 40,
                   ),
@@ -94,10 +94,10 @@ class _LoginScreenState extends State<LoginScreen> {
                           CircleAvatar(
                             radius: 40,
                             backgroundColor:
-                                AppTheme.teal.withValues(alpha: 0.1),
-                            child: const Icon(
+                                AppTheme.accent(context).withValues(alpha: 0.1),
+                            child: Icon(
                               Remix.lock_password_line,
-                              color: AppTheme.teal,
+                              color: AppTheme.accent(context),
                               size: 40,
                             ),
                           ),
@@ -146,7 +146,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 child: Text(
                                   'Sign up',
                                   style: AppTheme.linkStyle(context).copyWith(
-                                    color: AppTheme.teal,
+                                    color: AppTheme.accent(context),
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),

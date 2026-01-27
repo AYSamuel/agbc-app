@@ -45,7 +45,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
     final roleColor = _getRoleColor(widget.user.role);
 
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           children: [
@@ -257,10 +257,10 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           // Role Selection
-                          const Text(
+                          Text(
                             'Role',
                             style: TextStyle(
-                              color: AppTheme.darkNeutralColor,
+                              color: AppTheme.textSecondary(context),
                               fontWeight: FontWeight.w600,
                               fontSize: 14,
                             ),
@@ -296,10 +296,10 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                           ),
                           const SizedBox(height: 20),
                           // Branch Selection
-                          const Text(
+                          Text(
                             'Branch',
                             style: TextStyle(
-                              color: AppTheme.darkNeutralColor,
+                              color: AppTheme.textSecondary(context),
                               fontWeight: FontWeight.w600,
                               fontSize: 14,
                             ),

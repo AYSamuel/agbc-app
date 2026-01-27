@@ -70,36 +70,18 @@ class CustomInput extends StatefulWidget {
 class _CustomInputState extends State<CustomInput>
     with SingleTickerProviderStateMixin {
   late final FocusNode _focusNode;
-  bool _isFocused = false;
-
   @override
   void initState() {
     super.initState();
     _focusNode = widget.focusNode ?? FocusNode();
-    _setupListeners();
-  }
-
-  void _setupListeners() {
-    _focusNode.addListener(_handleFocusChange);
   }
 
   @override
   void dispose() {
-    _cleanupListeners();
-    super.dispose();
-  }
-
-  void _cleanupListeners() {
-    _focusNode.removeListener(_handleFocusChange);
     if (widget.focusNode == null) {
       _focusNode.dispose();
     }
-  }
-
-  void _handleFocusChange() {
-    setState(() {
-      _isFocused = _focusNode.hasFocus;
-    });
+    super.dispose();
   }
 
   void _handleSubmitted(String value) {
@@ -184,9 +166,7 @@ class _CustomInputState extends State<CustomInput>
                 padding: const EdgeInsets.only(left: 12, right: 8),
                 child: IconTheme(
                   data: IconThemeData(
-                    color: _isFocused
-                        ? focusColor
-                        : theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                    color: AppTheme.primary(context),
                     size: 20,
                   ),
                   child: widget.prefixIcon!,
@@ -239,17 +219,12 @@ class _CustomInputState extends State<CustomInput>
   }
 
   Widget? _buildSuffixIcon() {
-    final theme = Theme.of(context);
-    final focusColor = widget.focusBorderColor ?? AppTheme.accentTeal(context);
-
     if (widget.suffixIcon != null) {
       return Padding(
         padding: const EdgeInsets.only(right: 12),
         child: IconTheme(
           data: IconThemeData(
-            color: _isFocused
-                ? focusColor
-                : theme.colorScheme.onSurface.withValues(alpha: 0.5),
+            color: AppTheme.primary(context),
             size: 20,
           ),
           child: widget.suffixIcon!,
@@ -270,9 +245,7 @@ class _CustomInputState extends State<CustomInput>
             constraints: const BoxConstraints(),
             icon: Icon(
               Icons.clear,
-              color: _isFocused
-                  ? focusColor
-                  : theme.colorScheme.onSurface.withValues(alpha: 0.5),
+              color: AppTheme.primary(context),
               size: 20,
             ),
             onPressed: () {

@@ -48,7 +48,7 @@ class DailyVerseCard extends StatelessWidget {
             style: GoogleFonts.roboto(
               fontSize: 14,
               fontWeight: FontWeight.bold,
-              color: AppTheme.teal,
+              color: AppTheme.accent(context),
             ),
           ),
         ],

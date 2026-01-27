@@ -124,28 +124,55 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           children: [
             // Modern Header
             Container(
+              width: double.infinity,
               decoration: BoxDecoration(
-                color: AppTheme.primary(context),
+                color: AppTheme.surface(context),
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(32),
+                  bottomRight: Radius.circular(32),
+                ),
                 boxShadow: [
                   BoxShadow(
-                    color: AppTheme.primary(context).withValues(alpha: 0.2),
+                    color: Theme.of(context).shadowColor,
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
                 ],
               ),
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                padding: const EdgeInsets.fromLTRB(16, 24, 24, 24),
                 child: Row(
                   children: [
-                    CustomBackButton(
-                      onPressed: () => Navigator.pop(context),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: AppTheme.primary(context).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: CustomBackButton(
+                        onPressed: () => Navigator.pop(context),
+                        color: AppTheme.textPrimary(context),
+                        showBackground: false,
+                        showShadow: false,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primary(context).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Icon(
+                        Remix.community_line,
+                        color: AppTheme.primary(context),
+                        size: 28,
+                      ),
                     ),
                     const SizedBox(width: 16),
                     Expanded(
@@ -155,7 +182,7 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
                           Text(
                             'Create New Branch',
                             style: AppTheme.titleStyle(context).copyWith(
-                              color: Colors.white,
+                              color: AppTheme.textPrimary(context),
                               fontSize: 22,
                               fontWeight: FontWeight.bold,
                             ),
@@ -164,10 +191,7 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
                           Text(
                             'Expand your ministry reach',
                             style: TextStyle(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onPrimary
-                                  .withValues(alpha: 0.9),
+                              color: AppTheme.textSecondary(context),
                               fontSize: 14,
                               fontWeight: FontWeight.w400,
                             ),
@@ -312,9 +336,10 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
                                             .colorScheme
                                             .primary
                                             .withValues(alpha: 0.05),
-                                        child: const Icon(
+                                        child: Icon(
                                           Remix.user_line,
                                           size: 16,
+                                          color: AppTheme.primary(context),
                                         ),
                                       ),
                                       const SizedBox(width: 12),

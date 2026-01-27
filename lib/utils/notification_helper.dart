@@ -211,21 +211,29 @@ class NotificationHelper {
     }
   }
 
-  /// Notify branch members about a new meeting (immediate notification)
-  /// If branchId is null, notifies all users (global meeting)
+  /// Notify users about a new meeting (immediate notification)
+  /// - If invitedUserIds is provided, notifies only those users (invite-only meeting)
+  /// - If branchId is provided, notifies branch members (local meeting)
+  /// - If both are null, notifies all users (global meeting)
   /// OPTIMIZED: Uses batched notifications grouped by timezone for accurate time display
   Future<void> notifyMeetingCreated({
     required String meetingId,
     required String meetingTitle,
     required DateTime meetingDateTime,
     String? branchId,
+    List<String>? invitedUserIds,
     required String organizerName,
   }) async {
     try {
-      // Get users: all users for global meetings, or branch-specific users
-      final users = branchId != null
-          ? await _supabaseProvider.getUsersByBranch(branchId)
-          : await _supabaseProvider.getAllUsersList();
+      // Get users based on meeting type:
+      // - invite-only: specific invited users
+      // - branch: branch members
+      // - global: all users
+      final users = invitedUserIds != null && invitedUserIds.isNotEmpty
+          ? await _supabaseProvider.getUsersByIds(invitedUserIds)
+          : branchId != null
+              ? await _supabaseProvider.getUsersByBranch(branchId)
+              : await _supabaseProvider.getAllUsersList();
 
       if (users.isNotEmpty) {
         // Group users by timezone for accurate time display
@@ -268,8 +276,13 @@ class NotificationHelper {
           debugPrint('Sent notification to ${userIds.length} users in timezone $timezone');
         }
 
+        final meetingType = invitedUserIds != null && invitedUserIds.isNotEmpty
+            ? ' (invite-only)'
+            : branchId != null
+                ? ' in branch'
+                : ' (global)';
         debugPrint(
-            'Successfully sent batched meeting creation notification to ${users.length} users in ${usersByTimezone.length} timezone(s)${branchId != null ? " in branch" : " (global)"}');
+            'Successfully sent batched meeting creation notification to ${users.length} users in ${usersByTimezone.length} timezone(s)$meetingType');
       }
     } catch (e) {
       debugPrint('Error sending meeting creation notifications: $e');
@@ -277,21 +290,29 @@ class NotificationHelper {
   }
 
   /// Schedule initial notification for a meeting at a specific date/time
-  /// If branchId is null, schedules notifications for all users (global meeting)
+  /// - If invitedUserIds is provided, schedules for those users (invite-only meeting)
+  /// - If branchId is provided, schedules for branch members (local meeting)
+  /// - If both are null, schedules for all users (global meeting)
   /// OPTIMIZED: Uses batched notifications grouped by timezone for accurate time display
   Future<void> scheduleInitialMeetingNotification({
     required String meetingId,
     required String meetingTitle,
     required DateTime meetingDateTime,
     String? branchId,
+    List<String>? invitedUserIds,
     required String organizerName,
     required DateTime scheduledDateTime,
   }) async {
     try {
-      // Get users: all users for global meetings, or branch-specific users
-      final users = branchId != null
-          ? await _supabaseProvider.getUsersByBranch(branchId)
-          : await _supabaseProvider.getAllUsersList();
+      // Get users based on meeting type:
+      // - invite-only: specific invited users
+      // - branch: branch members
+      // - global: all users
+      final users = invitedUserIds != null && invitedUserIds.isNotEmpty
+          ? await _supabaseProvider.getUsersByIds(invitedUserIds)
+          : branchId != null
+              ? await _supabaseProvider.getUsersByBranch(branchId)
+              : await _supabaseProvider.getAllUsersList();
 
       if (users.isNotEmpty) {
         // Only schedule if the scheduled time is in the future
@@ -339,8 +360,13 @@ class NotificationHelper {
             debugPrint('Scheduled notification for ${userIds.length} users in timezone $timezone');
           }
 
+          final meetingType = invitedUserIds != null && invitedUserIds.isNotEmpty
+              ? ' (invite-only)'
+              : branchId != null
+                  ? ' in branch'
+                  : ' (global)';
           debugPrint(
-              'Successfully scheduled batched initial meeting notification for ${users.length} users in ${usersByTimezone.length} timezone(s)${branchId != null ? " in branch" : " (global)"} at $scheduledDateTime');
+              'Successfully scheduled batched initial meeting notification for ${users.length} users in ${usersByTimezone.length} timezone(s)$meetingType at $scheduledDateTime');
         } else {
           debugPrint(
               'Skipping initial notification scheduling - scheduled time is in the past');
@@ -352,20 +378,27 @@ class NotificationHelper {
   }
 
   /// Schedule meeting reminder notifications using OneSignal's native scheduling
-  /// Schedule meeting reminders for branch members or all users (if global)
-  /// If branchId is null, schedules reminders for all users (global meeting)
+  /// - If invitedUserIds is provided, schedules for those users (invite-only meeting)
+  /// - If branchId is provided, schedules for branch members (local meeting)
+  /// - If both are null, schedules for all users (global meeting)
   Future<void> scheduleMeetingReminders({
     required String meetingId,
     required String meetingTitle,
     required DateTime meetingDateTime,
     String? branchId,
+    List<String>? invitedUserIds,
     required List<int> reminderMinutes,
   }) async {
     try {
-      // Get users: all users for global meetings, or branch-specific users
-      final users = branchId != null
-          ? await _supabaseProvider.getUsersByBranch(branchId)
-          : await _supabaseProvider.getAllUsersList();
+      // Get users based on meeting type:
+      // - invite-only: specific invited users
+      // - branch: branch members
+      // - global: all users
+      final users = invitedUserIds != null && invitedUserIds.isNotEmpty
+          ? await _supabaseProvider.getUsersByIds(invitedUserIds)
+          : branchId != null
+              ? await _supabaseProvider.getUsersByBranch(branchId)
+              : await _supabaseProvider.getAllUsersList();
 
       // Schedule reminders for each time using OneSignal's native scheduling
       for (final reminderMinute in reminderMinutes) {

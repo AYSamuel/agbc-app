@@ -9,7 +9,11 @@ import 'package:grace_portal/widgets/custom_toast.dart';
 import 'package:grace_portal/models/user_model.dart';
 
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({super.key});
+  final bool isMainTab;
+  const ProfileScreen({
+    super.key,
+    this.isMainTab = false,
+  });
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -67,6 +71,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final branchesProvider = Provider.of<BranchesProvider>(context);
     final user = authService.currentUserProfile;
     final canPop = Navigator.canPop(context);
+    final showBackButton = canPop && !widget.isMainTab;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -77,12 +82,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
             bottom: false,
             child: Column(
               children: [
-                // Top Bar with Back Button (only show if there's a route to pop)
+                // Top Bar with Back Button (only show if there's a route to pop and not in main tab)
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
                   child: Row(
                     children: [
-                      if (canPop) ...[
+                      if (showBackButton) ...[
                         Container(
                           decoration: BoxDecoration(
                             color: AppTheme.primary(context)

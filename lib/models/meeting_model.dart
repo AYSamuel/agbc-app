@@ -191,6 +191,7 @@ class MeetingModel {
       'end_time': endTime?.toIso8601String(),
       'type': type, // Add type field for global/local distinction
       'organizer_id': organizerId,
+      'organizer_name': organizerName,
       'branch_id': branchId,
       'location': location,
       'is_virtual': isVirtual,

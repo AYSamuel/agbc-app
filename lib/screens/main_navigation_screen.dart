@@ -90,9 +90,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                       children: const [
                         HomeScreen(),
                         SermonScreen(),
-                        PrayScreen(),
-                        ReadScreen(),
-                        ProfileScreen(),
+                        PrayScreen(isMainTab: true),
+                        ReadScreen(isMainTab: true),
+                        ProfileScreen(isMainTab: true),
                         AdminCenterScreen(),
                         SettingsScreen(),
                         HelpSupportScreen(),

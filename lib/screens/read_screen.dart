@@ -4,19 +4,25 @@ import '../config/theme.dart';
 import '../widgets/custom_back_button.dart';
 
 class ReadScreen extends StatelessWidget {
-  const ReadScreen({super.key});
+  final bool isMainTab;
+
+  const ReadScreen({
+    super.key,
+    this.isMainTab = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     final canPop = Navigator.canPop(context);
+    final showBackButton = canPop && !isMainTab;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           children: [
-            // Header with back button (only show if there's a route to pop)
-            if (canPop)
+            // Header with back button (only show if there's a route to pop and not in main tab)
+            if (showBackButton)
               Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Row(

@@ -203,12 +203,12 @@ class _RadialMenuState extends State<RadialMenu>
             turns: _rotationAnimation!,
             child: FloatingActionButton(
               onPressed: _toggleMenu,
-              backgroundColor: AppTheme.primary(context),
+              backgroundColor: AppTheme.surface(context),
               elevation: 4,
               tooltip: _isOpen ? 'Close menu' : 'Open menu',
               child: Icon(
                 _isOpen ? Remix.close_line : Remix.add_line,
-                color: Colors.white,
+                color: AppTheme.primary(context),
                 semanticLabel: _isOpen ? 'Close menu' : 'Open menu',
               ),
             ),

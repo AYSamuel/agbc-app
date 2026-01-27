@@ -65,8 +65,6 @@ class _PasswordFieldState extends State<PasswordField>
 
   @override
   Widget build(BuildContext context) {
-    final tealColor = AppTheme.accentTeal(context);
-
     return CustomInput(
       label: widget.label,
       controller: widget.controller,
@@ -96,10 +94,8 @@ class _PasswordFieldState extends State<PasswordField>
                     ? Icons.visibility_off_rounded
                     : Icons.visibility_rounded,
                 key: ValueKey<bool>(_obscurePassword),
-                color: _obscurePassword
-                    ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5)
-                    : tealColor,
-                size: 22,
+                color: AppTheme.primary(context),
+                size: 20,
               ),
             ),
           ),

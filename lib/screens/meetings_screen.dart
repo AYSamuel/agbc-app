@@ -14,11 +14,38 @@ class MeetingsScreen extends StatefulWidget {
 
 class _MeetingsScreenState extends State<MeetingsScreen> {
   final SupabaseProvider _supabaseProvider = SupabaseProvider();
+  String? _currentUserBranchId;
+  bool _isLoadingUser = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCurrentUserData();
+  }
+
+  Future<void> _loadCurrentUserData() async {
+    final userId = _supabaseProvider.currentUser?.id;
+    if (userId != null) {
+      final user = await _supabaseProvider.getUserById(userId);
+      if (mounted) {
+        setState(() {
+          _currentUserBranchId = user?.branchId;
+          _isLoadingUser = false;
+        });
+      }
+    } else {
+      if (mounted) {
+        setState(() {
+          _isLoadingUser = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -69,12 +96,36 @@ class _MeetingsScreenState extends State<MeetingsScreen> {
                       );
                     }
 
+                    // Show loading while fetching user data
+                    if (_isLoadingUser) {
+                      return const Center(
+                        child: CircularProgressIndicator(),
+                      );
+                    }
+
                     final allMeetings = snapshot.data ?? [];
 
-                    // Filter to show only parent meetings (exclude recurring instances)
-                    final meetings = allMeetings
-                        .where((meeting) => meeting.parentMeetingId == null)
-                        .toList();
+                    // Get current user info for visibility filtering
+                    final currentUserId = _supabaseProvider.currentUser?.id;
+
+                    // Filter meetings:
+                    // 1. Exclude recurring instances (only show parent meetings)
+                    // 2. Show only meetings visible to current user (based on type)
+                    // 3. Always show meetings where user is the organizer
+                    final meetings = allMeetings.where((meeting) {
+                      // Exclude recurring instances
+                      if (meeting.parentMeetingId != null) return false;
+
+                      // Always show if user is the organizer
+                      if (currentUserId != null &&
+                          meeting.organizerId == currentUserId) {
+                        return true;
+                      }
+
+                      // Check visibility based on meeting type
+                      return meeting.shouldNotify(
+                          _currentUserBranchId, currentUserId);
+                    }).toList();
 
                     if (meetings.isEmpty) {
                       return Center(

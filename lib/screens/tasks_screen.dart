@@ -56,19 +56,23 @@ class _TasksScreenState extends State<TasksScreen> {
     final user = Provider.of<AuthService>(context).currentUser;
 
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           children: [
             // Fixed Header
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.fromLTRB(16, 24, 24, 24),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface,
+                color: AppTheme.surface(context),
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(32),
+                  bottomRight: Radius.circular(32),
+                ),
                 boxShadow: [
                   BoxShadow(
                     color: Theme.of(context).shadowColor,
-                    blurRadius: 10,
+                    blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
                 ],
@@ -76,28 +80,61 @@ class _TasksScreenState extends State<TasksScreen> {
               child: Row(
                 children: [
                   if (widget.showBackButton) ...[
-                    CustomBackButton(
-                      onPressed: () => Navigator.pop(context),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: AppTheme.primary(context).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: CustomBackButton(
+                        onPressed: () => Navigator.pop(context),
+                        color: AppTheme.textPrimary(context),
+                        showBackground: false,
+                        showShadow: false,
+                      ),
                     ),
                     const SizedBox(width: 16),
                   ],
-                  Text(
-                    'Tasks',
-                    style: GoogleFonts.inter(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: Theme.of(context).colorScheme.onSurface,
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primary(context).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Icon(
+                      Remix.task_line,
+                      color: AppTheme.primary(context),
+                      size: 28,
                     ),
                   ),
-                  const Spacer(),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Tasks',
+                          style: GoogleFonts.inter(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.textPrimary(context),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Manage your tasks',
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            color: AppTheme.textSecondary(context),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                   IconButton(
                     icon: const Icon(Remix.filter_3_line),
                     color: _selectedOwnershipFilter != 'all'
                         ? AppTheme.primary(context)
-                        : Theme.of(context)
-                            .colorScheme
-                            .onSurface
-                            .withValues(alpha: 0.6),
+                        : AppTheme.textSecondary(context),
                     onPressed: () {
                       _showOwnershipFilterOptions(context);
                     },
@@ -276,7 +313,7 @@ class _TasksScreenState extends State<TasksScreen> {
                             style: GoogleFonts.inter(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
-                              color: Theme.of(context).colorScheme.onBackground,
+                              color: Theme.of(context).colorScheme.onSurface,
                             ),
                           ),
                           const SizedBox(height: 8),
@@ -286,7 +323,7 @@ class _TasksScreenState extends State<TasksScreen> {
                               fontSize: 16,
                               color: Theme.of(context)
                                   .colorScheme
-                                  .onBackground
+                                  .onSurface
                                   .withValues(alpha: 0.7),
                             ),
                           ),

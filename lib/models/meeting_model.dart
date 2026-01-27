@@ -21,9 +21,12 @@ class MeetingModel {
   final DateTime? endTime;
 
   // Meeting classification
-  final String type; // "global" or "local"
+  final String type; // "global", "local", or "invite"
   final String? branchId;
   final String category;
+
+  // Invite-only meeting support
+  final List<String> invitedUserIds; // User IDs for invite-only meetings
 
   // Organizational details
   final String organizerId; // Changed from 'organizer' to match DB
@@ -76,6 +79,7 @@ class MeetingModel {
     this.isVirtual = false,
     this.meetingLink,
     Map<String, dynamic>? attendees,
+    List<String>? invitedUserIds,
     this.creatorTimezone = 'UTC',
     this.status = MeetingStatus.scheduled,
     Map<String, dynamic>? metadata,
@@ -95,6 +99,7 @@ class MeetingModel {
   })  : createdAt = createdAt ?? DateTime.now(),
         updatedAt = updatedAt ?? DateTime.now(),
         attendees = attendees ?? {},
+        invitedUserIds = invitedUserIds ?? [],
         metadata = metadata ?? {},
         recurrenceExceptions = recurrenceExceptions ?? [];
 
@@ -114,9 +119,8 @@ class MeetingModel {
       updatedAt: json['updated_at'] != null
           ? DateTime.parse(json['updated_at'])
           : DateTime.now(),
-      endTime: json['end_time'] != null
-          ? DateTime.parse(json['end_time'])
-          : null,
+      endTime:
+          json['end_time'] != null ? DateTime.parse(json['end_time']) : null,
       branchId: json['branch_id'],
       category: json['category'] ?? 'general',
       organizerId: json['organizer_id'] ?? '',
@@ -124,10 +128,19 @@ class MeetingModel {
       location: json['location'] ?? '',
       isVirtual: json['is_virtual'] ?? false,
       meetingLink: json['meeting_link'],
-      attendees: {
-        'confirmed': List<String>.from(json['attendees'] ?? []),
-        'pending': <String>[]
-      }, // Convert array to map format for internal use
+      attendees: json['attendees'] is Map
+          ? {
+              'confirmed':
+                  List<String>.from(json['attendees']['confirmed'] ?? []),
+              'pending': List<String>.from(json['attendees']['pending'] ?? [])
+            }
+          : {
+              'confirmed': List<String>.from(json['attendees'] ?? []),
+              'pending': <String>[]
+            }, // Handle both legacy array and new structured map
+      invitedUserIds: json['invited_user_ids'] != null
+          ? List<String>.from(json['invited_user_ids'])
+          : [],
       creatorTimezone: json['creator_timezone'] ?? 'UTC',
       status: MeetingStatus.values.firstWhere(
         (e) => e.toString().split('.').last == json['status'],
@@ -146,7 +159,8 @@ class MeetingModel {
       isRecurring: json['is_recurring'] ?? false,
       recurrenceFrequency: json['recurrence_frequency'] != null
           ? RecurrenceFrequency.values.firstWhere(
-              (e) => e.toString().split('.').last == json['recurrence_frequency'],
+              (e) =>
+                  e.toString().split('.').last == json['recurrence_frequency'],
               orElse: () => RecurrenceFrequency.none,
             )
           : RecurrenceFrequency.none,
@@ -181,13 +195,18 @@ class MeetingModel {
       'location': location,
       'is_virtual': isVirtual,
       'meeting_link': meetingLink,
-      'attendees': [], // Send as empty array for new meetings
+      'attendees': {
+        'confirmed': [],
+        'pending': []
+      }, // Send structured empty object for new meetings
+      'invited_user_ids': invitedUserIds,
       'creator_timezone': creatorTimezone,
       'status': status.toString().split('.').last,
       'metadata': metadata,
       'initial_notification_config': initialNotificationConfig?.toJson(),
       'initial_notification_sent': initialNotificationSent,
-      'initial_notification_sent_at': initialNotificationSentAt?.toIso8601String(),
+      'initial_notification_sent_at':
+          initialNotificationSentAt?.toIso8601String(),
       // Recurring meeting fields
       'is_recurring': isRecurring,
       'recurrence_frequency': recurrenceFrequency.toString().split('.').last,
@@ -197,7 +216,8 @@ class MeetingModel {
       'parent_meeting_id': parentMeetingId,
       'recurrence_day_of_week': recurrenceDayOfWeek,
       'recurrence_day_of_month': recurrenceDayOfMonth,
-      'recurrence_exceptions': recurrenceExceptions.map((e) => e.toIso8601String()).toList(),
+      'recurrence_exceptions':
+          recurrenceExceptions.map((e) => e.toIso8601String()).toList(),
     };
 
     // Only include ID if it's not empty (for updates)
@@ -208,10 +228,20 @@ class MeetingModel {
     return json;
   }
 
+  /// Returns true if this is an invite-only meeting
+  bool get isInviteOnly => type == 'invite';
+
   /// Determines if a meeting should be visible to a user based on their branch affiliation
-  bool shouldNotify(String? userBranchId) {
+  /// and/or if they are in the invited users list (for invite-only meetings).
+  ///
+  /// [userBranchId] - The user's branch ID (can be null)
+  /// [userId] - The user's ID (required for invite-only meeting visibility check)
+  bool shouldNotify(String? userBranchId, [String? userId]) {
     if (status == MeetingStatus.cancelled) return false;
     if (type == 'global') return true;
+    if (type == 'invite') {
+      return userId != null && invitedUserIds.contains(userId);
+    }
     return userBranchId != null && userBranchId == branchId;
   }
 
@@ -265,6 +295,7 @@ class MeetingModel {
     bool? isVirtual,
     String? meetingLink,
     Map<String, dynamic>? attendees,
+    List<String>? invitedUserIds,
     String? creatorTimezone,
     MeetingStatus? status,
     Map<String, dynamic>? metadata,
@@ -298,12 +329,16 @@ class MeetingModel {
       isVirtual: isVirtual ?? this.isVirtual,
       meetingLink: meetingLink ?? this.meetingLink,
       attendees: attendees ?? this.attendees,
+      invitedUserIds: invitedUserIds ?? this.invitedUserIds,
       creatorTimezone: creatorTimezone ?? this.creatorTimezone,
       status: status ?? this.status,
       metadata: metadata ?? this.metadata,
-      initialNotificationConfig: initialNotificationConfig ?? this.initialNotificationConfig,
-      initialNotificationSent: initialNotificationSent ?? this.initialNotificationSent,
-      initialNotificationSentAt: initialNotificationSentAt ?? this.initialNotificationSentAt,
+      initialNotificationConfig:
+          initialNotificationConfig ?? this.initialNotificationConfig,
+      initialNotificationSent:
+          initialNotificationSent ?? this.initialNotificationSent,
+      initialNotificationSentAt:
+          initialNotificationSentAt ?? this.initialNotificationSentAt,
       isRecurring: isRecurring ?? this.isRecurring,
       recurrenceFrequency: recurrenceFrequency ?? this.recurrenceFrequency,
       recurrenceInterval: recurrenceInterval ?? this.recurrenceInterval,

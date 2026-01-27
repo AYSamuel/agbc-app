@@ -394,6 +394,194 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
     );
   }
 
+  Widget _buildMeetingTypeBadge() {
+    String label;
+    Color color;
+    IconData icon;
+
+    switch (_meeting.type) {
+      case 'global':
+        label = 'Global';
+        color = Colors.blue;
+        icon = Remix.global_line;
+        break;
+      case 'invite':
+        label = 'Invite Only';
+        color = Colors.purple;
+        icon = Remix.user_star_line;
+        break;
+      case 'local':
+      default:
+        label = 'Branch';
+        color = Colors.green;
+        icon = Remix.building_2_line;
+        break;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: color),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: GoogleFonts.inter(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInvitedUsersSection() {
+    if (!_meeting.isInviteOnly || _meeting.invitedUserIds.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: Theme.of(context).shadowColor,
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Remix.user_star_line,
+                size: 20,
+                color: Colors.purple,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Invited Users',
+                style: GoogleFonts.inter(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.purple,
+                ),
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.purple.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '${_meeting.invitedUserIds.length}',
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.purple,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          FutureBuilder<List<UserModel>>(
+            future: Provider.of<SupabaseProvider>(context, listen: false)
+                .getUsersByIds(_meeting.invitedUserIds),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(16),
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                );
+              }
+
+              final users = snapshot.data ?? [];
+              if (users.isEmpty) {
+                return Text(
+                  'Unable to load invited users',
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    color: AppTheme.textMuted(context),
+                  ),
+                );
+              }
+
+              return Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: users.map((user) {
+                  return Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surface,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: Colors.purple.withValues(alpha: 0.3),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        CircleAvatar(
+                          radius: 12,
+                          backgroundColor: Colors.purple.withValues(alpha: 0.1),
+                          backgroundImage: user.photoUrl != null
+                              ? NetworkImage(user.photoUrl!)
+                              : null,
+                          child: user.photoUrl == null
+                              ? Text(
+                                  user.displayName.isNotEmpty
+                                      ? user.displayName[0].toUpperCase()
+                                      : '?',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.purple,
+                                  ),
+                                )
+                              : null,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          user.displayName,
+                          style: GoogleFonts.inter(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildInfoCard(
       String title, String value, Color color, IconData icon) {
     return Container(
@@ -1013,12 +1201,12 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
         }
       } else {
         statusText = 'Scheduled notification (time not set)';
-        statusColor = Colors.grey;
+        statusColor = AppTheme.textMuted(context);
         statusIcon = Remix.notification_line;
       }
     } else {
       statusText = 'Unknown notification status';
-      statusColor = Colors.grey;
+      statusColor = AppTheme.textMuted(context);
       statusIcon = Remix.question_line;
     }
 
@@ -1106,7 +1294,7 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(
@@ -1140,14 +1328,23 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Meeting Title
-                    Text(
-                      _meeting.title,
-                      style: GoogleFonts.inter(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
+                    // Meeting Title with Type Badge
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            _meeting.title,
+                            style: GoogleFonts.inter(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        _buildMeetingTypeBadge(),
+                      ],
                     ),
                     const SizedBox(height: 16),
 
@@ -1257,6 +1454,12 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
                     ),
                     const SizedBox(height: 16),
 
+                    // Invited Users Section (only for invite-only meetings)
+                    if (_meeting.isInviteOnly) ...[
+                      _buildInvitedUsersSection(),
+                      const SizedBox(height: 16),
+                    ],
+
                     // Notification Status Section (only visible to pastors and admins)
                     Consumer<AuthService>(
                       builder: (context, authService, child) {
@@ -1282,8 +1485,8 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
                     Consumer<AuthService>(
                       builder: (context, authService, child) {
                         final currentUser = authService.currentUserProfile;
-                        final canRSVP =
-                            _meeting.shouldNotify(currentUser?.branchId);
+                        final canRSVP = _meeting.shouldNotify(
+                            currentUser?.branchId, currentUser?.id);
 
                         if (canRSVP) {
                           return Container(

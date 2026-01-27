@@ -8,7 +8,7 @@ class SermonScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           children: [
@@ -36,7 +36,7 @@ class SermonScreen extends StatelessWidget {
                       'Stay tuned for inspiring sermons and messages',
                       style: TextStyle(
                         fontSize: 16,
-                        color: Colors.grey[600],
+                        color: AppTheme.textMuted(context),
                       ),
                     ),
                   ],

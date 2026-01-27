@@ -100,7 +100,7 @@ class _CustomDateTimePickerField extends StatelessWidget {
           height: 350,
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.only(
+            borderRadius: const BorderRadius.only(
               topLeft: Radius.circular(24),
               topRight: Radius.circular(24),
             ),
@@ -282,12 +282,7 @@ class _CustomDateTimePickerField extends StatelessWidget {
                     constraints: const BoxConstraints(),
                     icon: Icon(
                       Icons.clear,
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? Theme.of(context).colorScheme.primary
-                          : Theme.of(context)
-                              .colorScheme
-                              .onSurface
-                              .withValues(alpha: 0.6),
+                      color: AppTheme.primary(context),
                       size: 20,
                     ),
                     onPressed: () {

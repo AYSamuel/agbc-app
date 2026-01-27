@@ -19,7 +19,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       resizeToAvoidBottomInset:
           true, // Ensure content resizes when keyboard appears
       body: Stack(
@@ -31,7 +31,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 colors: [
                   AppTheme.primary(context),
                   AppTheme.secondary(context).withValues(alpha: 0.8),
-                  Theme.of(context).colorScheme.background,
+                  Theme.of(context).scaffoldBackgroundColor,
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,

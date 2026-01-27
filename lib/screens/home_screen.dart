@@ -42,15 +42,24 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   @override
-  void initState() {
-    super.initState();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
     SystemChrome.setSystemUIOverlayStyle(
       SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.dark,
-        statusBarBrightness: Brightness.light,
+        statusBarIconBrightness: Theme.of(context).brightness == Brightness.dark
+            ? Brightness.light
+            : Brightness.dark,
+        statusBarBrightness: Theme.of(context).brightness == Brightness.dark
+            ? Brightness.dark
+            : Brightness.light,
       ),
     );
+  }
+
+  @override
+  void initState() {
+    super.initState();
   }
 
   Future<void> _onRefresh() async {
@@ -86,10 +95,10 @@ class _HomeScreenState extends State<HomeScreen> {
     final userProfile = authService.currentUserProfile;
 
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: RefreshIndicator(
         onRefresh: _onRefresh,
-        color: AppTheme.teal,
+        color: AppTheme.accent(context),
         backgroundColor: Theme.of(context).colorScheme.surface,
         strokeWidth: 2.5,
         displacement: 40.0,
@@ -146,7 +155,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: AppTheme.teal,
+                                color: AppTheme.accent(context),
                                 width: 2,
                               ),
                             ),
@@ -158,17 +167,17 @@ class _HomeScreenState extends State<HomeScreen> {
                                       fit: BoxFit.cover,
                                       errorBuilder:
                                           (context, error, stackTrace) {
-                                        return const Icon(
+                                        return Icon(
                                           Remix.user_3_line,
                                           size: 24,
-                                          color: AppTheme.teal,
+                                          color: AppTheme.accent(context),
                                         );
                                       },
                                     )
-                                  : const Icon(
+                                  : Icon(
                                       Remix.user_3_line,
                                       size: 24,
-                                      color: AppTheme.teal,
+                                      color: AppTheme.accent(context),
                                     ),
                             ),
                           ),

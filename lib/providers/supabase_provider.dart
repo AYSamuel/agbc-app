@@ -231,12 +231,12 @@ class SupabaseProvider extends ChangeNotifier {
       // Schedule notifications if reminder minutes are provided
       if (reminderMinutes.isNotEmpty) {
         // Create NotificationHelper if none provided
-        final helper = notificationHelper ?? 
+        final helper = notificationHelper ??
             NotificationHelper(
               supabaseProvider: this,
               notificationService: NotificationService(),
             );
-        
+
         await scheduleMeetingNotifications(
           meetingId: meetingId,
           meetingTitle: meeting.title,
@@ -286,18 +286,20 @@ class SupabaseProvider extends ChangeNotifier {
       // Handle initial notification based on configuration
       if (meeting.initialNotificationConfig != null &&
           meeting.initialNotificationConfig!.enabled) {
-
         final config = meeting.initialNotificationConfig!;
 
         switch (config.timing) {
           case NotificationTiming.immediate:
-            // Send immediate notification (for both global and branch-specific meetings)
+            // Send immediate notification (for global, branch-specific, or invite-only meetings)
             await helper.notifyMeetingCreated(
               meetingId: meetingId,
               meetingTitle: meeting.title,
               meetingDateTime: meeting.dateTime,
               organizerName: meeting.organizerName,
-              branchId: meeting.branchId, // null for global, specific ID for branch
+              branchId: meeting
+                  .branchId, // null for global/invite, specific ID for branch
+              invitedUserIds:
+                  meeting.isInviteOnly ? meeting.invitedUserIds : null,
             );
 
             // Mark initial notification as sent
@@ -306,13 +308,16 @@ class SupabaseProvider extends ChangeNotifier {
 
           case NotificationTiming.scheduled:
             if (config.scheduledDateTime != null) {
-              // Schedule initial notification for later (for both global and branch-specific)
+              // Schedule initial notification for later (for global, branch-specific, or invite-only)
               await helper.scheduleInitialMeetingNotification(
                 meetingId: meetingId,
                 meetingTitle: meeting.title,
                 meetingDateTime: meeting.dateTime,
                 organizerName: meeting.organizerName,
-                branchId: meeting.branchId, // null for global, specific ID for branch
+                branchId: meeting
+                    .branchId, // null for global/invite, specific ID for branch
+                invitedUserIds:
+                    meeting.isInviteOnly ? meeting.invitedUserIds : null,
                 scheduledDateTime: config.scheduledDateTime!,
               );
             }
@@ -334,6 +339,7 @@ class SupabaseProvider extends ChangeNotifier {
           reminderMinutes: reminderMinutes,
           notificationHelper: helper,
           branchId: meeting.branchId,
+          invitedUserIds: meeting.isInviteOnly ? meeting.invitedUserIds : null,
         );
       }
 
@@ -347,11 +353,13 @@ class SupabaseProvider extends ChangeNotifier {
   }
 
   /// Update initial notification status for a meeting
-  Future<bool> _updateInitialNotificationStatus(String meetingId, bool sent) async {
+  Future<bool> _updateInitialNotificationStatus(
+      String meetingId, bool sent) async {
     try {
       await _supabase.from('meetings').update({
         'initial_notification_sent': sent,
-        'initial_notification_sent_at': sent ? DateTime.now().toIso8601String() : null,
+        'initial_notification_sent_at':
+            sent ? DateTime.now().toIso8601String() : null,
         'updated_at': DateTime.now().toIso8601String(),
       }).eq('id', meetingId);
       return true;
@@ -456,16 +464,25 @@ class SupabaseProvider extends ChangeNotifier {
       return null;
     } on PostgrestException catch (e) {
       // Handle specific database errors
-      if (e.code == '42703' || e.message.contains('column') || e.message.contains('does not exist')) {
-        debugPrint('Database schema error in getMeetingAttendanceSummary: ${e.message}');
-        debugPrint('This usually means the database functions need to be updated.');
+      if (e.code == '42703' ||
+          e.message.contains('column') ||
+          e.message.contains('does not exist')) {
+        debugPrint(
+            'Database schema error in getMeetingAttendanceSummary: ${e.message}');
+        debugPrint(
+            'This usually means the database functions need to be updated.');
         return null;
-      } else if (e.code == '42883' || e.message.contains('function') || e.message.contains('does not exist')) {
-        debugPrint('Database function error in getMeetingAttendanceSummary: ${e.message}');
-        debugPrint('The get_meeting_attendance_summary function may not exist in the database.');
+      } else if (e.code == '42883' ||
+          e.message.contains('function') ||
+          e.message.contains('does not exist')) {
+        debugPrint(
+            'Database function error in getMeetingAttendanceSummary: ${e.message}');
+        debugPrint(
+            'The get_meeting_attendance_summary function may not exist in the database.');
         return null;
       }
-      debugPrint('PostgrestException in getMeetingAttendanceSummary: ${e.message} (Code: ${e.code})');
+      debugPrint(
+          'PostgrestException in getMeetingAttendanceSummary: ${e.message} (Code: ${e.code})');
       return null;
     } catch (e) {
       debugPrint('Unexpected error getting meeting attendance summary: $e');
@@ -486,12 +503,17 @@ class SupabaseProvider extends ChangeNotifier {
       return response == true;
     } on PostgrestException catch (e) {
       // Handle specific database errors
-      if (e.code == '42883' || e.message.contains('function') || e.message.contains('does not exist')) {
-        debugPrint('Database function error in canViewAttendanceData: ${e.message}');
-        debugPrint('The can_view_attendance_data function may not exist in the database.');
+      if (e.code == '42883' ||
+          e.message.contains('function') ||
+          e.message.contains('does not exist')) {
+        debugPrint(
+            'Database function error in canViewAttendanceData: ${e.message}');
+        debugPrint(
+            'The can_view_attendance_data function may not exist in the database.');
         return false;
       }
-      debugPrint('PostgrestException in canViewAttendanceData: ${e.message} (Code: ${e.code})');
+      debugPrint(
+          'PostgrestException in canViewAttendanceData: ${e.message} (Code: ${e.code})');
       return false;
     } catch (e) {
       debugPrint('Unexpected error checking attendance data permissions: $e');
@@ -537,6 +559,7 @@ class SupabaseProvider extends ChangeNotifier {
     required List<int> reminderMinutes,
     required NotificationHelper notificationHelper,
     String? branchId,
+    List<String>? invitedUserIds,
   }) async {
     try {
       // Use the notification helper to schedule reminders
@@ -544,7 +567,8 @@ class SupabaseProvider extends ChangeNotifier {
         meetingId: meetingId,
         meetingTitle: meetingTitle,
         meetingDateTime: startTime,
-        branchId: branchId, // null for global, specific ID for branch
+        branchId: branchId, // null for global/invite, specific ID for branch
+        invitedUserIds: invitedUserIds, // for invite-only meetings
         reminderMinutes: reminderMinutes,
       );
     } catch (e) {
@@ -561,6 +585,21 @@ class SupabaseProvider extends ChangeNotifier {
       return response.map((json) => UserModel.fromJson(json)).toList();
     } catch (e) {
       debugPrint('Error getting users by branch: $e');
+      return [];
+    }
+  }
+
+  /// Get users by their IDs (for invite-only meetings/notifications)
+  Future<List<UserModel>> getUsersByIds(List<String> userIds) async {
+    if (userIds.isEmpty) return [];
+
+    try {
+      final response =
+          await _supabase.from('users').select().filter('id', 'in', userIds);
+
+      return response.map((json) => UserModel.fromJson(json)).toList();
+    } catch (e) {
+      debugPrint('Error getting users by IDs: $e');
       return [];
     }
   }
@@ -614,7 +653,8 @@ class SupabaseProvider extends ChangeNotifier {
   /// Default limit: 50 most recent notifications
   Stream<List<NotificationModel>> getUserNotifications({int limit = 50}) {
     final userId = _supabase.auth.currentUser?.id;
-    debugPrint('Setting up notification stream for user: $userId (limit: $limit)');
+    debugPrint(
+        'Setting up notification stream for user: $userId (limit: $limit)');
     if (userId == null) {
       debugPrint('No user ID - returning empty stream');
       return Stream.value([]);
@@ -627,14 +667,17 @@ class SupabaseProvider extends ChangeNotifier {
         .order('created_at', ascending: false)
         .limit(limit) // OPTIMIZED: Limit results to prevent memory issues
         .map((data) {
-          final notifications = data.map((json) => NotificationModel.fromJson(json)).toList();
+          final notifications =
+              data.map((json) => NotificationModel.fromJson(json)).toList();
           // Filter out future scheduled notifications (client-side filtering)
           final now = DateTime.now();
           return notifications.where((notification) {
             // Show notification if:
             // 1. It has no scheduled_for (immediate notification), OR
             // 2. Its scheduled_for time has passed or is now
-            return notification.scheduledFor == null || notification.scheduledFor!.isBefore(now) || notification.scheduledFor!.isAtSameMomentAs(now);
+            return notification.scheduledFor == null ||
+                notification.scheduledFor!.isBefore(now) ||
+                notification.scheduledFor!.isAtSameMomentAs(now);
           }).toList();
         });
   }
@@ -655,9 +698,7 @@ class SupabaseProvider extends ChangeNotifier {
           .order('created_at', ascending: false)
           .range(offset, offset + limit - 1);
 
-      return response
-          .map((json) => NotificationModel.fromJson(json))
-          .toList();
+      return response.map((json) => NotificationModel.fromJson(json)).toList();
     } catch (e) {
       debugPrint('Error fetching paginated notifications: $e');
       return [];
@@ -850,7 +891,6 @@ class SupabaseProvider extends ChangeNotifier {
           assignedTo != currentUser.id &&
           notificationConfig != null &&
           notificationConfig.enabled) {
-
         if (notificationConfig.timing == NotificationTiming.immediate) {
           // Send immediate notification
           await notificationHelper.notifyTaskAssignment(
@@ -860,7 +900,7 @@ class SupabaseProvider extends ChangeNotifier {
             assignedByUserId: currentUser.id,
           );
         } else if (notificationConfig.timing == NotificationTiming.scheduled &&
-                   notificationConfig.scheduledDateTime != null) {
+            notificationConfig.scheduledDateTime != null) {
           // Send scheduled notification
           await notificationHelper.notifyTaskAssignmentScheduled(
             assignedUserId: assignedTo,

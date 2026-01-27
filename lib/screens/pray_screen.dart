@@ -11,7 +11,7 @@ class PrayScreen extends StatelessWidget {
     final canPop = Navigator.canPop(context);
 
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           children: [
@@ -51,7 +51,7 @@ class PrayScreen extends StatelessWidget {
                       'Share your prayer requests and support others',
                       style: TextStyle(
                         fontSize: 16,
-                        color: Colors.grey[600],
+                        color: AppTheme.textMuted(context),
                       ),
                     ),
                   ],

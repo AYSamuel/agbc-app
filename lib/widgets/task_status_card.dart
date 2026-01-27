@@ -104,14 +104,14 @@ class _TaskStatusCardState extends State<TaskStatusCard> {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
-                    color: AppTheme.primary(context),
+                    color: AppTheme.secondary(context),
                   ),
                 ),
                 const SizedBox(width: 4),
                 Icon(
                   Remix.arrow_right_s_line,
                   size: 20,
-                  color: AppTheme.primary(context),
+                  color: AppTheme.secondary(context),
                 ),
               ],
             ),

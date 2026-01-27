@@ -164,13 +164,7 @@ class _CustomDropdownState<T> extends State<CustomDropdown<T>> {
                                 size: 16,
                                 color: isSelected
                                     ? AppTheme.secondary(context)
-                                    : (Theme.of(context).brightness ==
-                                            Brightness.dark
-                                        ? AppTheme.secondary(context)
-                                        : Theme.of(context)
-                                            .colorScheme
-                                            .onSurface
-                                            .withValues(alpha: 0.6)),
+                                    : AppTheme.primary(context),
                               ),
                               const SizedBox(width: 12),
                             ],
@@ -287,12 +281,7 @@ class _CustomDropdownState<T> extends State<CustomDropdown<T>> {
                         child: Icon(
                           widget.prefixIcon,
                           size: 20,
-                          color: Theme.of(context).brightness == Brightness.dark
-                              ? Theme.of(context).colorScheme.primary
-                              : Theme.of(context)
-                                  .colorScheme
-                                  .onSurface
-                                  .withValues(alpha: 0.6),
+                          color: AppTheme.primary(context),
                         ),
                       ),
                     ],

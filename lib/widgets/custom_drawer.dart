@@ -101,12 +101,12 @@ class CustomDrawer extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppTheme.teal.withValues(alpha: 0.1),
+                  color: AppTheme.accent(context).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
                   item.icon,
-                  color: AppTheme.teal,
+                  color: AppTheme.accent(context),
                   size: 22,
                 ),
               ),

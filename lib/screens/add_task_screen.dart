@@ -178,31 +178,60 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           children: [
             // Modern Header
             Container(
+              width: double.infinity,
               decoration: BoxDecoration(
-                color: AppTheme.primary(context),
+                color: AppTheme.surface(context),
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(32),
+                  bottomRight: Radius.circular(32),
+                ),
                 boxShadow: [
                   BoxShadow(
-                    color: AppTheme.primary(context).withValues(alpha: 0.2),
+                    color: Theme.of(context).shadowColor,
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
                 ],
               ),
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                padding: const EdgeInsets.fromLTRB(16, 24, 24, 24),
                 child: Column(
                   children: [
                     // Header Row
                     Row(
                       children: [
-                        CustomBackButton(
-                          onPressed: () => Navigator.pop(context),
+                        Container(
+                          decoration: BoxDecoration(
+                            color: AppTheme.primary(context)
+                                .withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: CustomBackButton(
+                            onPressed: () => Navigator.pop(context),
+                            color: AppTheme.textPrimary(context),
+                            showBackground: false,
+                            showShadow: false,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primary(context)
+                                .withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Icon(
+                            Remix.task_line,
+                            color: AppTheme.primary(context),
+                            size: 28,
+                          ),
                         ),
                         const SizedBox(width: 16),
                         Expanded(
@@ -212,7 +241,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                               Text(
                                 'Create New Task',
                                 style: AppTheme.titleStyle(context).copyWith(
-                                  color: Colors.white,
+                                  color: AppTheme.textPrimary(context),
                                   fontSize: 22,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -221,7 +250,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                               Text(
                                 'Fill in the details below',
                                 style: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.9),
+                                  color: AppTheme.textSecondary(context),
                                   fontSize: 14,
                                   fontWeight: FontWeight.w400,
                                 ),
@@ -422,7 +451,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                         _buildModernSection(
                           icon: Icons.schedule,
                           title: 'Scheduling',
-                          accentColor: AppTheme.accentColor,
+                          accentColor: AppTheme.accent(context),
                           child: Column(
                             children: [
                               CustomDateTimePicker(
@@ -511,7 +540,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                                       color: _initialNotificationTiming ==
                                               NotificationTiming.immediate
                                           ? AppTheme.primary(context)
-                                          : Colors.grey,
+                                          : AppTheme.dividerColor(context),
                                       width: 2,
                                     ),
                                   ),
@@ -521,9 +550,9 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                                           child: Container(
                                             width: 10,
                                             height: 10,
-                                            decoration: const BoxDecoration(
+                                            decoration: BoxDecoration(
                                               shape: BoxShape.circle,
-                                              color: AppTheme.primaryColor,
+                                              color: AppTheme.primary(context),
                                             ),
                                           ),
                                         )
@@ -567,8 +596,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                                     border: Border.all(
                                       color: _initialNotificationTiming ==
                                               NotificationTiming.scheduled
-                                          ? AppTheme.primaryColor
-                                          : Colors.grey,
+                                          ? AppTheme.primary(context)
+                                          : AppTheme.dividerColor(context),
                                       width: 2,
                                     ),
                                   ),
@@ -578,9 +607,9 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                                           child: Container(
                                             width: 10,
                                             height: 10,
-                                            decoration: const BoxDecoration(
+                                            decoration: BoxDecoration(
                                               shape: BoxShape.circle,
-                                              color: AppTheme.primaryColor,
+                                              color: AppTheme.primary(context),
                                             ),
                                           ),
                                         )
@@ -623,7 +652,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                                     border: Border.all(
                                       color: _initialNotificationTiming ==
                                               NotificationTiming.none
-                                          ? AppTheme.primaryColor
+                                          ? AppTheme.primary(context)
                                           : Theme.of(context)
                                               .colorScheme
                                               .onSurface
@@ -637,9 +666,9 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                                           child: Container(
                                             width: 10,
                                             height: 10,
-                                            decoration: const BoxDecoration(
+                                            decoration: BoxDecoration(
                                               shape: BoxShape.circle,
-                                              color: AppTheme.primaryColor,
+                                              color: AppTheme.primary(context),
                                             ),
                                           ),
                                         )
@@ -755,7 +784,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
             Text(
               'Progress',
               style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.9),
+                color: AppTheme.textPrimary(context),
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
               ),
@@ -763,7 +792,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
             Text(
               '$completedSteps of $totalSteps completed',
               style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.8),
+                color: AppTheme.textSecondary(context),
                 fontSize: 12,
                 fontWeight: FontWeight.w400,
               ),
@@ -776,9 +805,9 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
           child: LinearProgressIndicator(
             value: progress,
             minHeight: 6,
-            backgroundColor: Colors.white.withValues(alpha: 0.2),
+            backgroundColor: AppTheme.primary(context).withValues(alpha: 0.1),
             valueColor: AlwaysStoppedAnimation<Color>(
-              AppTheme.secondary(context),
+              AppTheme.primary(context),
             ),
           ),
         ),

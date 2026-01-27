@@ -48,7 +48,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
     final supabaseProvider = Provider.of<SupabaseProvider>(context);
 
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           children: [
@@ -56,7 +56,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
             Container(
               width: double.infinity,
               decoration: BoxDecoration(
-                color: AppTheme.primary(context),
+                color: AppTheme.surface(context),
                 borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(32),
                   bottomRight: Radius.circular(32),
@@ -64,40 +64,35 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
               ),
               child: Column(
                 children: [
-                  // Back button row
+                  // Header row
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                    padding: const EdgeInsets.fromLTRB(16, 24, 24, 24),
                     child: Row(
                       children: [
                         Container(
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.2),
+                            color: AppTheme.primary(context)
+                                .withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: CustomBackButton(
                             onPressed: () => Navigator.pop(context),
-                            color: Colors.white,
+                            color: AppTheme.textPrimary(context),
                             showBackground: false,
                             showShadow: false,
                           ),
                         ),
-                      ],
-                    ),
-                  ),
-                  // Title and subtitle
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
-                    child: Row(
-                      children: [
+                        const SizedBox(width: 16),
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.2),
+                            color: AppTheme.primary(context)
+                                .withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(16),
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Remix.group_line,
-                            color: Colors.white,
+                            color: AppTheme.primary(context),
                             size: 28,
                           ),
                         ),
@@ -106,10 +101,10 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text(
+                              Text(
                                 'User Management',
                                 style: TextStyle(
-                                  color: Colors.white,
+                                  color: AppTheme.textPrimary(context),
                                   fontSize: 22,
                                   fontWeight: FontWeight.bold,
                                   letterSpacing: 0.5,
@@ -117,9 +112,9 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                'Manage church members and roles',
+                                'Manage users and permissions',
                                 style: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.9),
+                                  color: AppTheme.textSecondary(context),
                                   fontSize: 13,
                                   fontWeight: FontWeight.w400,
                                 ),

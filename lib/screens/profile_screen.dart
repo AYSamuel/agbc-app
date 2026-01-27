@@ -69,199 +69,187 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final canPop = Navigator.canPop(context);
 
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Column(
         children: [
           // Modern Header with Gradient Background
-          Container(
-            decoration: BoxDecoration(
-              color: AppTheme.primary(context),
-              boxShadow: [
-                BoxShadow(
-                  color: AppTheme.primary(context).withValues(alpha: 0.2),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: SafeArea(
-              bottom: false,
-              child: Column(
-                children: [
-                  // Top Bar with Back Button (only show if there's a route to pop)
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-                    child: Row(
-                      children: [
-                        if (canPop) ...[
-                          CustomBackButton(
-                            onPressed: () => Navigator.of(context).pop(),
+          SafeArea(
+            bottom: false,
+            child: Column(
+              children: [
+                // Top Bar with Back Button (only show if there's a route to pop)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                  child: Row(
+                    children: [
+                      if (canPop) ...[
+                        Container(
+                          decoration: BoxDecoration(
+                            color: AppTheme.primary(context)
+                                .withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                          const SizedBox(width: 16),
-                        ],
-                        Text(
-                          'My Profile',
-                          style: AppTheme.titleStyle(context).copyWith(
-                            color: Colors.white,
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
+                          child: CustomBackButton(
+                            onPressed: () => Navigator.of(context).pop(),
+                            color: AppTheme.textPrimary(context),
+                            showBackground: false,
+                            showShadow: false,
                           ),
                         ),
                       ],
-                    ),
+                    ],
                   ),
-                  // Profile Card
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                    child: Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surface,
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Theme.of(context).shadowColor,
-                            blurRadius: 15,
-                            offset: const Offset(0, 5),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        children: [
-                          // Profile Picture
-                          Stack(
-                            children: [
-                              Container(
-                                width: 100,
-                                height: 100,
+                ),
+                // Profile Card
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                  child: Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surface,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Theme.of(context).shadowColor,
+                          blurRadius: 15,
+                          offset: const Offset(0, 5),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        // Profile Picture
+                        Stack(
+                          children: [
+                            Container(
+                              width: 100,
+                              height: 100,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: AppTheme.primary(context)
+                                      .withValues(alpha: 0.2),
+                                  width: 3,
+                                ),
+                              ),
+                              child: CircleAvatar(
+                                radius: 50,
+                                backgroundColor: AppTheme.primary(context)
+                                    .withValues(alpha: 0.1),
+                                backgroundImage: (user?.photoUrl != null &&
+                                        user!.photoUrl!.isNotEmpty)
+                                    ? NetworkImage(user.photoUrl!)
+                                    : null,
+                                child: (user?.photoUrl == null ||
+                                        user!.photoUrl!.isEmpty)
+                                    ? Icon(Remix.user_3_line,
+                                        size: 50,
+                                        color: AppTheme.primary(context))
+                                    : null,
+                              ),
+                            ),
+                            Positioned(
+                              right: 0,
+                              bottom: 0,
+                              child: Container(
+                                padding: const EdgeInsets.all(10),
                                 decoration: BoxDecoration(
+                                  color: AppTheme.secondary(context),
                                   shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: AppTheme.primary(context)
-                                        .withValues(alpha: 0.2),
-                                    width: 3,
-                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: AppTheme.secondary(context)
+                                          .withValues(alpha: 0.3),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
                                 ),
-                                child: CircleAvatar(
-                                  radius: 50,
-                                  backgroundColor: AppTheme.primary(context)
-                                      .withValues(alpha: 0.1),
-                                  backgroundImage: (user?.photoUrl != null &&
-                                          user!.photoUrl!.isNotEmpty)
-                                      ? NetworkImage(user.photoUrl!)
-                                      : null,
-                                  child: (user?.photoUrl == null ||
-                                          user!.photoUrl!.isEmpty)
-                                      ? Icon(Remix.user_3_line,
-                                          size: 50,
-                                          color: AppTheme.primary(context))
-                                      : null,
-                                ),
-                              ),
-                              Positioned(
-                                right: 0,
-                                bottom: 0,
-                                child: Container(
-                                  padding: const EdgeInsets.all(10),
-                                  decoration: BoxDecoration(
-                                    color: AppTheme.secondary(context),
-                                    shape: BoxShape.circle,
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: AppTheme.secondary(context)
-                                            .withValues(alpha: 0.3),
-                                        blurRadius: 8,
-                                        offset: const Offset(0, 2),
-                                      ),
-                                    ],
-                                  ),
-                                  child: const Icon(
-                                    Remix.camera_line,
-                                    color: Colors.white,
-                                    size: 16,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          // Name
-                          Text(
-                            user?.displayName ?? 'User',
-                            style: TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(context).colorScheme.onSurface,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 8),
-                          // Role Badge
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 8),
-                            decoration: BoxDecoration(
-                              color:
-                                  _getRoleColor(user?.role ?? UserRole.member),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              user?.role
-                                      .toString()
-                                      .split('.')
-                                      .last
-                                      .toUpperCase() ??
-                                  'MEMBER',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 13,
-                                letterSpacing: 0.8,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          // Branch Info
-                          Builder(builder: (context) {
-                            String branchDisplayName;
-                            if (user?.branchId?.isNotEmpty == true) {
-                              branchDisplayName = branchesProvider
-                                  .getBranchName(user!.branchId!);
-                            } else {
-                              branchDisplayName = 'No branch assigned';
-                            }
-                            return Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Remix.community_line,
+                                child: const Icon(
+                                  Remix.camera_line,
+                                  color: Colors.white,
                                   size: 16,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        // Name
+                        Text(
+                          user?.displayName ?? 'User',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 8),
+                        // Role Badge
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: _getRoleColor(user?.role ?? UserRole.member),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            user?.role
+                                    .toString()
+                                    .split('.')
+                                    .last
+                                    .toUpperCase() ??
+                                'MEMBER',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                              letterSpacing: 0.8,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        // Branch Info
+                        Builder(builder: (context) {
+                          String branchDisplayName;
+                          if (user?.branchId?.isNotEmpty == true) {
+                            branchDisplayName =
+                                branchesProvider.getBranchName(user!.branchId!);
+                          } else {
+                            branchDisplayName = 'No branch assigned';
+                          }
+                          return Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Remix.community_line,
+                                size: 16,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurface
+                                    .withValues(alpha: 0.5),
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                branchDisplayName,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
                                   color: Theme.of(context)
                                       .colorScheme
                                       .onSurface
-                                      .withValues(alpha: 0.5),
+                                      .withValues(alpha: 0.6),
                                 ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  branchDisplayName,
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurface
-                                        .withValues(alpha: 0.6),
-                                  ),
-                                ),
-                              ],
-                            );
-                          }),
-                        ],
-                      ),
+                              ),
+                            ],
+                          );
+                        }),
+                      ],
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
 
@@ -371,7 +359,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
+                                const Text(
                                   'Logout',
                                   style: TextStyle(
                                     fontSize: 15,

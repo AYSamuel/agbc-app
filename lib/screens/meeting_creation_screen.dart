@@ -15,6 +15,7 @@ import '../widgets/custom_input.dart';
 import '../widgets/custom_dropdown.dart';
 import '../widgets/custom_date_time_picker.dart';
 import '../widgets/custom_toast.dart';
+import '../widgets/multi_user_select_widget.dart';
 
 class MeetingCreationScreen extends StatefulWidget {
   const MeetingCreationScreen({super.key});
@@ -35,6 +36,10 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
   DateTime? _selectedEndTime;
   ChurchBranch? _selectedBranch;
   bool _isVirtual = false;
+
+  // Meeting scope: 'global', 'local', or 'invite'
+  String _meetingScope = 'local';
+  List<String> _selectedUserIds = [];
 
   // Add these missing state variables for the loading overlay
   bool _isCreating = false;
@@ -68,7 +73,7 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Stack(
         children: [
           SafeArea(
@@ -76,22 +81,51 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
               children: [
                 // Modern Header
                 Container(
+                  width: double.infinity,
                   decoration: BoxDecoration(
-                    color: AppTheme.primary(context),
+                    color: AppTheme.surface(context),
+                    borderRadius: const BorderRadius.only(
+                      bottomLeft: Radius.circular(32),
+                      bottomRight: Radius.circular(32),
+                    ),
                     boxShadow: [
                       BoxShadow(
-                        color: AppTheme.primary(context).withValues(alpha: 0.2),
+                        color: Theme.of(context).shadowColor,
                         blurRadius: 12,
                         offset: const Offset(0, 4),
                       ),
                     ],
                   ),
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                    padding: const EdgeInsets.fromLTRB(16, 24, 24, 24),
                     child: Row(
                       children: [
-                        CustomBackButton(
-                          onPressed: () => Navigator.pop(context),
+                        Container(
+                          decoration: BoxDecoration(
+                            color: AppTheme.primary(context)
+                                .withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: CustomBackButton(
+                            onPressed: () => Navigator.pop(context),
+                            color: AppTheme.textPrimary(context),
+                            showBackground: false,
+                            showShadow: false,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primary(context)
+                                .withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Icon(
+                            Remix.calendar_event_line,
+                            color: AppTheme.primary(context),
+                            size: 28,
+                          ),
                         ),
                         const SizedBox(width: 16),
                         Expanded(
@@ -101,7 +135,7 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
                               Text(
                                 'Create Meeting',
                                 style: AppTheme.titleStyle(context).copyWith(
-                                  color: Colors.white,
+                                  color: AppTheme.textPrimary(context),
                                   fontSize: 22,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -110,7 +144,7 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
                               Text(
                                 'Schedule a new meeting event',
                                 style: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.9),
+                                  color: AppTheme.textSecondary(context),
                                   fontSize: 14,
                                   fontWeight: FontWeight.w400,
                                 ),
@@ -168,37 +202,67 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
                                   },
                                 ),
                                 const SizedBox(height: 20),
-                                Consumer<BranchesProvider>(
-                                  builder: (context, branchesProvider, child) {
-                                    final branches = branchesProvider.branches;
+                                // Meeting Scope Selector
+                                _buildMeetingScopeSelector(),
+                                const SizedBox(height: 20),
+                                // Conditional: Branch dropdown or User picker
+                                if (_meetingScope == 'local')
+                                  Consumer<BranchesProvider>(
+                                    builder:
+                                        (context, branchesProvider, child) {
+                                      final branches =
+                                          branchesProvider.branches;
 
-                                    return CustomDropdown<ChurchBranch>(
-                                      label: 'Branch',
-                                      value: _selectedBranch,
-                                      items: branches
-                                          .map<DropdownMenuItem<ChurchBranch>>(
-                                              (ChurchBranch branch) {
-                                        return DropdownMenuItem<ChurchBranch>(
-                                          value: branch,
-                                          child: Text(branch.name),
-                                        );
-                                      }).toList(),
-                                      onChanged: (branch) {
-                                        if (branch != null) {
-                                          setState(() {
-                                            _selectedBranch = branch;
-                                          });
-                                        }
-                                      },
-                                      validator: (value) {
-                                        if (value == null) {
-                                          return 'Please select a branch';
-                                        }
-                                        return null;
-                                      },
-                                    );
-                                  },
-                                ),
+                                      return CustomDropdown<ChurchBranch>(
+                                        label: 'Branch',
+                                        value: _selectedBranch,
+                                        items: branches.map<
+                                                DropdownMenuItem<ChurchBranch>>(
+                                            (ChurchBranch branch) {
+                                          return DropdownMenuItem<ChurchBranch>(
+                                            value: branch,
+                                            child: Text(branch.name),
+                                          );
+                                        }).toList(),
+                                        onChanged: (branch) {
+                                          if (branch != null) {
+                                            setState(() {
+                                              _selectedBranch = branch;
+                                            });
+                                          }
+                                        },
+                                        validator: (value) {
+                                          if (_meetingScope == 'local' &&
+                                              value == null) {
+                                            return 'Please select a branch';
+                                          }
+                                          return null;
+                                        },
+                                      );
+                                    },
+                                  ),
+                                if (_meetingScope == 'invite')
+                                  MultiUserSelectWidget(
+                                    label: 'Invite Users',
+                                    selectedUserIds: _selectedUserIds,
+                                    excludeUserId:
+                                        Provider.of<SupabaseProvider>(context,
+                                                listen: false)
+                                            .currentUser
+                                            ?.id,
+                                    onSelectionChanged: (userIds) {
+                                      setState(() {
+                                        _selectedUserIds = userIds;
+                                      });
+                                    },
+                                    validator: (userIds) {
+                                      if (_meetingScope == 'invite' &&
+                                          userIds.isEmpty) {
+                                        return 'Please select at least one user';
+                                      }
+                                      return null;
+                                    },
+                                  ),
                               ],
                             ),
                           ),
@@ -285,7 +349,8 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
                                           _isVirtual = value;
                                         });
                                       },
-                                      activeThumbColor: AppTheme.accentColor,
+                                      activeThumbColor:
+                                          AppTheme.accent(context),
                                     ),
                                     const SizedBox(width: 8),
                                     Text(
@@ -379,9 +444,9 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
                                           child: Container(
                                             width: 10,
                                             height: 10,
-                                            decoration: const BoxDecoration(
+                                            decoration: BoxDecoration(
                                               shape: BoxShape.circle,
-                                              color: AppTheme.primaryColor,
+                                              color: AppTheme.primary(context),
                                             ),
                                           ),
                                         )
@@ -433,9 +498,9 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
                                           child: Container(
                                             width: 10,
                                             height: 10,
-                                            decoration: const BoxDecoration(
+                                            decoration: BoxDecoration(
                                               shape: BoxShape.circle,
-                                              color: AppTheme.primaryColor,
+                                              color: AppTheme.primary(context),
                                             ),
                                           ),
                                         )
@@ -486,9 +551,9 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
                                           child: Container(
                                             width: 10,
                                             height: 10,
-                                            decoration: const BoxDecoration(
+                                            decoration: BoxDecoration(
                                               shape: BoxShape.circle,
-                                              color: AppTheme.primaryColor,
+                                              color: AppTheme.primary(context),
                                             ),
                                           ),
                                         )
@@ -598,7 +663,7 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
                                   }
                                 });
                               },
-                              activeColor: AppTheme.primaryColor,
+                              activeColor: AppTheme.primary(context),
                               checkColor: Colors.white,
                               side: BorderSide(
                                 color: isSelected
@@ -643,7 +708,7 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
                                     _isRecurring = value;
                                   });
                                 },
-                                activeTrackColor: AppTheme.primaryColor,
+                                activeTrackColor: AppTheme.primary(context),
                               ),
                               const SizedBox(width: 8),
                               Text(
@@ -839,10 +904,10 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
                                 color: Colors.green,
                                 size: 64,
                               )
-                            : const CircularProgressIndicator(
-                                key: ValueKey('loading'),
+                            : CircularProgressIndicator(
+                                key: const ValueKey('loading'),
                                 valueColor: AlwaysStoppedAnimation<Color>(
-                                  AppTheme.primaryColor,
+                                  AppTheme.primary(context),
                                 ),
                               ),
                       ),
@@ -856,7 +921,7 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
                           fontWeight: FontWeight.w600,
                           color: _showSuccess
                               ? Colors.green
-                              : AppTheme.darkNeutralColor,
+                              : Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
                     ],
@@ -931,6 +996,21 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
       return;
     }
 
+    // Validate meeting scope requirements
+    if (_meetingScope == 'local' && _selectedBranch == null) {
+      CustomToast.show(context,
+          message: 'Please select a branch for the meeting',
+          type: ToastType.error);
+      return;
+    }
+
+    if (_meetingScope == 'invite' && _selectedUserIds.isEmpty) {
+      CustomToast.show(context,
+          message: 'Please select at least one user to invite',
+          type: ToastType.error);
+      return;
+    }
+
     final supabaseProvider =
         Provider.of<SupabaseProvider>(context, listen: false);
 
@@ -956,9 +1036,6 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
       reminderMinutes: _reminderMinutes.isNotEmpty ? _reminderMinutes : null,
     );
 
-    // Determine if this is a global meeting based on selected branch
-    final isGlobalMeeting = _selectedBranch?.isGlobalBranch ?? false;
-
     // Get the creator's timezone and convert times to UTC
     final userTimezone = TimezoneHelper.getDeviceTimezone();
     final utcDateTime =
@@ -967,14 +1044,21 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
         ? TimezoneHelper.convertToUtc(_selectedEndTime!, userTimezone)
         : null;
 
+    // Determine branch ID based on meeting scope
+    String? branchId;
+    if (_meetingScope == 'local') {
+      branchId = _selectedBranch?.id;
+    }
+
     final meeting = MeetingModel(
       id: '', // Will be generated by database
       title: _titleController.text,
       description: _descriptionController.text,
       dateTime: utcDateTime,
-      type: isGlobalMeeting ? 'global' : 'local',
+      type: _meetingScope, // 'global', 'local', or 'invite'
       endTime: utcEndTime,
-      branchId: isGlobalMeeting ? null : _selectedBranch?.id,
+      branchId: branchId,
+      invitedUserIds: _meetingScope == 'invite' ? _selectedUserIds : [],
       organizerId: supabaseProvider.currentUser!.id,
       organizerName:
           supabaseProvider.currentUser?.userMetadata?['full_name'] ?? 'Unknown',
@@ -1035,6 +1119,171 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
             type: ToastType.error);
       }
     }
+  }
+
+  Widget _buildMeetingScopeSelector() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Meeting Scope',
+          style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                color: AppTheme.textSecondary(context),
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.2,
+              ),
+        ),
+        const SizedBox(height: 12),
+        Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: AppTheme.inputBorderColor(context),
+              width: 1.5,
+            ),
+          ),
+          child: Column(
+            children: [
+              _buildScopeOption(
+                value: 'global',
+                icon: Remix.global_line,
+                title: 'All Members',
+                subtitle: 'Visible to everyone in the church',
+                isFirst: true,
+              ),
+              _buildScopeOption(
+                value: 'local',
+                icon: Remix.building_2_line,
+                title: 'Branch Members',
+                subtitle: 'Visible to selected branch only',
+              ),
+              _buildScopeOption(
+                value: 'invite',
+                icon: Remix.user_star_line,
+                title: 'Specific People',
+                subtitle: 'Invite individual users',
+                isLast: true,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildScopeOption({
+    required String value,
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    bool isFirst = false,
+    bool isLast = false,
+  }) {
+    final isSelected = _meetingScope == value;
+
+    return InkWell(
+      onTap: () {
+        setState(() {
+          _meetingScope = value;
+          // Clear branch selection when switching away from 'local'
+          if (value != 'local') {
+            _selectedBranch = null;
+          }
+          // Clear user selection when switching away from 'invite'
+          if (value != 'invite') {
+            _selectedUserIds = [];
+          }
+        });
+      },
+      borderRadius: BorderRadius.only(
+        topLeft: isFirst ? const Radius.circular(11) : Radius.zero,
+        topRight: isFirst ? const Radius.circular(11) : Radius.zero,
+        bottomLeft: isLast ? const Radius.circular(11) : Radius.zero,
+        bottomRight: isLast ? const Radius.circular(11) : Radius.zero,
+      ),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppTheme.primary(context).withValues(alpha: 0.08)
+              : Colors.transparent,
+          border: !isLast
+              ? Border(
+                  bottom: BorderSide(
+                    color:
+                        Theme.of(context).dividerColor.withValues(alpha: 0.1),
+                  ),
+                )
+              : null,
+        ),
+        child: Row(
+          children: [
+            // Radio indicator
+            Container(
+              width: 22,
+              height: 22,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: isSelected
+                      ? AppTheme.primary(context)
+                      : AppTheme.inputBorderColor(context),
+                  width: 2,
+                ),
+              ),
+              child: isSelected
+                  ? Center(
+                      child: Container(
+                        width: 12,
+                        height: 12,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppTheme.primary(context),
+                        ),
+                      ),
+                    )
+                  : null,
+            ),
+            const SizedBox(width: 14),
+            // Icon
+            Icon(
+              icon,
+              size: 22,
+              color: isSelected
+                  ? AppTheme.primary(context)
+                  : AppTheme.textSecondary(context),
+            ),
+            const SizedBox(width: 14),
+            // Text
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: GoogleFonts.inter(
+                      fontSize: 15,
+                      fontWeight:
+                          isSelected ? FontWeight.w600 : FontWeight.w500,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      color: AppTheme.textMuted(context),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _buildModernSection({

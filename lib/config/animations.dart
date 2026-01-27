@@ -32,7 +32,8 @@ class AppAnimations {
 
   /// Subtle lift effect for cards (matching web design)
   static Matrix4 hoverLift(bool isHovered) {
-    return Matrix4.identity()..translate(0, isHovered ? -4 : 0, 0);
+    return Matrix4.identity()
+      ..setTranslationRaw(0.0, isHovered ? -4.0 : 0.0, 0.0);
   }
 
   /// Subtle scale effect for buttons (matching web design)

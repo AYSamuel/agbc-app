@@ -17,7 +17,7 @@ class MeetingManagementScreen extends StatelessWidget {
     final supabaseProvider = Provider.of<SupabaseProvider>(context);
 
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           children: [
@@ -25,70 +25,65 @@ class MeetingManagementScreen extends StatelessWidget {
             Container(
               width: double.infinity,
               decoration: BoxDecoration(
-                color: AppTheme.secondary(context),
-                borderRadius: BorderRadius.only(
+                color: AppTheme.surface(context),
+                borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(32),
                   bottomRight: Radius.circular(32),
                 ),
               ),
               child: Column(
                 children: [
-                  // Back button row
+                  // Header row
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                    padding: const EdgeInsets.fromLTRB(16, 24, 24, 24),
                     child: Row(
                       children: [
                         Container(
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.2),
+                            color: AppTheme.primary(context)
+                                .withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: CustomBackButton(
                             onPressed: () => Navigator.pop(context),
-                            color: Colors.white,
+                            color: AppTheme.textPrimary(context),
                             showBackground: false,
                             showShadow: false,
                           ),
                         ),
-                      ],
-                    ),
-                  ),
-                  // Title and subtitle
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
-                    child: Row(
-                      children: [
+                        const SizedBox(width: 16),
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.2),
+                            color: AppTheme.primary(context)
+                                .withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(16),
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Remix.calendar_line,
-                            color: Colors.white,
+                            color: AppTheme.primary(context),
                             size: 28,
                           ),
                         ),
                         const SizedBox(width: 16),
-                        const Expanded(
+                        Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
                                 'Meeting Management',
                                 style: TextStyle(
-                                  color: Colors.white,
+                                  color: AppTheme.textPrimary(context),
                                   fontSize: 22,
                                   fontWeight: FontWeight.bold,
                                   letterSpacing: 0.5,
                                 ),
                               ),
-                              SizedBox(height: 4),
+                              const SizedBox(height: 4),
                               Text(
                                 'Schedule and manage meetings',
                                 style: TextStyle(
-                                  color: Colors.white70,
+                                  color: AppTheme.textSecondary(context),
                                   fontSize: 13,
                                   fontWeight: FontWeight.w400,
                                 ),
@@ -140,7 +135,7 @@ class MeetingManagementScreen extends StatelessWidget {
                             size: 64,
                             color: AppTheme.primary(context),
                           ),
-                          SizedBox(height: 16),
+                          const SizedBox(height: 16),
                           Text(
                             'No Meetings Found',
                             style: TextStyle(
@@ -149,7 +144,7 @@ class MeetingManagementScreen extends StatelessWidget {
                               color: AppTheme.primary(context),
                             ),
                           ),
-                          SizedBox(height: 8),
+                          const SizedBox(height: 8),
                           Text(
                             'There are currently no meetings in the system.',
                             style: TextStyle(

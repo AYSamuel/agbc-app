@@ -36,7 +36,7 @@ class QuickActionCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: AppTheme.teal.withValues(alpha: 0.1),
+                    color: AppTheme.accent(context).withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(

@@ -32,6 +32,7 @@ import 'help_support_screen.dart';
 import 'about_screen.dart';
 import '../widgets/admin_route_guard.dart';
 import '../widgets/custom_toast.dart';
+import '../services/bible_verse_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -190,10 +191,30 @@ class _HomeScreenState extends State<HomeScreen> {
                 // Daily Verse Card
                 AppAnimations.staggeredFadeIn(
                   index: 1,
-                  child: const DailyVerseCard(
-                    verse:
-                        '"For I know the plans I have for you," declares the LORD, "plans to prosper you and not to harm you, plans to give you hope and a future."',
-                    reference: 'Jeremiah 29:11',
+                  child: FutureBuilder<DailyVerse>(
+                    future: BibleVerseService().getTodayVerse(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState ==
+                          ConnectionState.waiting) {
+                        return const DailyVerseCard(
+                          verse: 'Loading daily verse...',
+                          reference: 'KJV',
+                        );
+                      }
+                      if (snapshot.hasError || !snapshot.hasData) {
+                        return const DailyVerseCard(
+                          verse:
+                              '"For I know the plans I have for you," declares the LORD, "plans to prosper you and not to harm you, plans to give you hope and a future."',
+                          reference: 'Jeremiah 29:11',
+                        );
+                      }
+                      final dv = snapshot.data!;
+                      return DailyVerseCard(
+                        verse: dv.verse,
+                        reference:
+                            '${dv.reference} (${dv.translationId.toUpperCase()})',
+                      );
+                    },
                   ),
                 ),
 

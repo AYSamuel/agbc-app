@@ -76,7 +76,7 @@ class _CustomBackButtonState extends State<CustomBackButton>
             padding: const EdgeInsets.all(8.0),
             child: Icon(
               Icons.arrow_back_ios_new_rounded,
-              color: widget.color ?? Theme.of(context).colorScheme.primary,
+              color: widget.color ?? Theme.of(context).colorScheme.secondary,
               size: widget.size,
             ),
           ),

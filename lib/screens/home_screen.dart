@@ -92,8 +92,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final authService = Provider.of<AuthService>(context, listen: false);
+    final authService = Provider.of<AuthService>(context, listen: true);
     final userProfile = authService.currentUserProfile;
+    final userId = userProfile?.id ?? authService.currentUser?.id;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -194,8 +195,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: FutureBuilder<DailyVerse>(
                     future: BibleVerseService().getTodayVerse(),
                     builder: (context, snapshot) {
-                      if (snapshot.connectionState ==
-                          ConnectionState.waiting) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
                         return const DailyVerseCard(
                           verse: 'Loading daily verse...',
                           reference: 'KJV',
@@ -223,29 +223,48 @@ class _HomeScreenState extends State<HomeScreen> {
                 // Task Status Card
                 AppAnimations.staggeredFadeIn(
                   index: 2,
-                  child: StreamBuilder<List<TaskModel>>(
-                    stream: Provider.of<SupabaseProvider>(context)
-                        .getUserInvolvedTasks(userProfile?.id ?? ''),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const SizedBox.shrink();
-                      }
-                      if (snapshot.hasError || !snapshot.hasData) {
-                        return const SizedBox.shrink();
-                      }
+                  child: Consumer<SupabaseProvider>(
+                    builder: (context, provider, child) {
+                      return StreamBuilder<List<TaskModel>>(
+                        initialData: provider.cachedUserTasks.isNotEmpty
+                            ? provider.cachedUserTasks
+                            : null,
+                        stream: provider.getUserInvolvedTasks(userId ?? ''),
+                        builder: (context, snapshot) {
+                          // If we have cached data and stream is loading, show cached data
+                          // This prevents the "flash" of empty state
+                          final effectiveData = snapshot.hasData
+                              ? snapshot.data
+                              : (provider.cachedUserTasks.isNotEmpty
+                                  ? provider.cachedUserTasks
+                                  : null);
 
-                      final tasks = snapshot.data!;
-                      final uncompletedTasks = tasks
-                          .where((task) => task.status != TaskStatus.completed)
-                          .toList();
-                      final hasUncompletedTasks = uncompletedTasks.isNotEmpty;
+                          if (snapshot.connectionState ==
+                                  ConnectionState.waiting &&
+                              effectiveData == null) {
+                            return const SizedBox.shrink();
+                          }
 
-                      if (userProfile?.role == UserRole.member &&
-                          !hasUncompletedTasks) {
-                        return const SizedBox.shrink();
-                      }
+                          if (effectiveData == null) {
+                            return const SizedBox.shrink();
+                          }
 
-                      return TaskStatusCard(tasks: tasks);
+                          final tasks = effectiveData;
+                          final uncompletedTasks = tasks
+                              .where(
+                                  (task) => task.status != TaskStatus.completed)
+                              .toList();
+                          final hasUncompletedTasks =
+                              uncompletedTasks.isNotEmpty;
+
+                          if (userProfile?.role == UserRole.member &&
+                              !hasUncompletedTasks) {
+                            return const SizedBox.shrink();
+                          }
+
+                          return TaskStatusCard(tasks: tasks);
+                        },
+                      );
                     },
                   ),
                 ),

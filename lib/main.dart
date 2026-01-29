@@ -12,6 +12,7 @@ import 'services/notification_service.dart';
 import 'providers/branches_provider.dart';
 import 'providers/supabase_provider.dart';
 import 'providers/navigation_provider.dart';
+import 'providers/daily_verse_provider.dart';
 import 'providers/theme_provider.dart';
 import 'screens/splash_screen.dart';
 import 'screens/login_screen.dart';
@@ -252,6 +253,8 @@ Future<void> main() async {
           ChangeNotifierProvider(create: (_) => BranchesProvider()),
           // Provide SupabaseProvider
           ChangeNotifierProvider(create: (_) => SupabaseProvider()),
+          // Provide DailyVerseProvider
+          ChangeNotifierProvider(create: (_) => DailyVerseProvider()),
           // Provide NavigationProvider
           ChangeNotifierProvider(create: (_) => NavigationProvider()),
           // Add NotificationProvider with SupabaseProvider dependency

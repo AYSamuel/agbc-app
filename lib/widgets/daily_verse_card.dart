@@ -15,7 +15,8 @@ class DailyVerseCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(24),
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(8),
@@ -35,6 +36,7 @@ class DailyVerseCard extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             verse,
+            textAlign: TextAlign.justify,
             style: GoogleFonts.roboto(
               fontSize: 15,
               fontStyle: FontStyle.italic,

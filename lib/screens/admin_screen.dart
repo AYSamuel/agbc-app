@@ -42,7 +42,6 @@ class AdminScreen extends StatelessWidget {
                           ),
                           child: CustomBackButton(
                             onPressed: () => Navigator.pop(context),
-                            color: AppTheme.textPrimary(context),
                             showBackground: false,
                             showShadow: false,
                           ),

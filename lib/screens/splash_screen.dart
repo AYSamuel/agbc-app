@@ -4,6 +4,7 @@ import '../services/auth_service.dart';
 import '../services/notification_service.dart';
 import '../providers/branches_provider.dart';
 import '../providers/supabase_provider.dart';
+import '../providers/daily_verse_provider.dart';
 import '../main.dart' as main_app;
 
 class SplashScreen extends StatefulWidget {
@@ -59,6 +60,9 @@ class _SplashScreenState extends State<SplashScreen>
           Provider.of<SupabaseProvider>(context, listen: false);
       final branchesProvider =
           Provider.of<BranchesProvider>(context, listen: false);
+      final dailyVerseProvider =
+          Provider.of<DailyVerseProvider>(context, listen: false);
+      final authService = Provider.of<AuthService>(context, listen: false);
 
       // Clear any previous errors
       if (supabaseProvider.error != null) {
@@ -89,6 +93,29 @@ class _SplashScreenState extends State<SplashScreen>
             debugPrint('✓ Branches loaded');
           } catch (e) {
             debugPrint('⚠ Failed to load branches: $e');
+          }
+        }),
+
+        // Fetch daily verse
+        Future(() async {
+          try {
+            await dailyVerseProvider.fetchDailyVerse();
+            debugPrint('✓ Daily verse loaded');
+          } catch (e) {
+            debugPrint('⚠ Failed to load daily verse: $e');
+          }
+        }),
+
+        // Prefetch tasks if user is logged in
+        Future(() async {
+          final userId = authService.currentUser?.id;
+          if (userId != null) {
+            try {
+              await supabaseProvider.prefetchUserTasks(userId);
+              debugPrint('✓ User tasks preloaded');
+            } catch (e) {
+              debugPrint('⚠ Failed to preload user tasks: $e');
+            }
           }
         }),
       ]).timeout(
@@ -212,20 +239,14 @@ class _SplashScreenState extends State<SplashScreen>
                     height: 200,
                     color: colorScheme.onPrimary,
                   ),
-                  const SizedBox(height: 24),
-                  Text(
-                    'Grace Portal',
-                    style: TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      color: colorScheme.onPrimary,
-                      letterSpacing: 1.2,
+                  SizedBox(
+                    width: 200,
+                    child: LinearProgressIndicator(
+                      backgroundColor:
+                          colorScheme.onPrimary.withValues(alpha: 0.3),
+                      valueColor:
+                          AlwaysStoppedAnimation<Color>(colorScheme.onPrimary),
                     ),
-                  ),
-                  const SizedBox(height: 40),
-                  CircularProgressIndicator(
-                    valueColor:
-                        AlwaysStoppedAnimation<Color>(colorScheme.onPrimary),
                   ),
                 ],
               ),

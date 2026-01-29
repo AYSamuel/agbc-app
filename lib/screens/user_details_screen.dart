@@ -10,6 +10,8 @@ import '../widgets/custom_dropdown.dart';
 import 'package:logging/logging.dart';
 import '../models/church_branch_model.dart';
 import '../widgets/custom_toast.dart';
+import '../utils/notification_helper.dart';
+import '../services/notification_service.dart';
 
 class UserDetailsScreen extends StatefulWidget {
   final UserModel user;
@@ -541,11 +543,20 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
     try {
       final supabaseProvider =
           Provider.of<SupabaseProvider>(context, listen: false);
+      final notificationService =
+          Provider.of<NotificationService>(context, listen: false);
+
+      // Create notification helper
+      final notificationHelper = NotificationHelper(
+        supabaseProvider: supabaseProvider,
+        notificationService: notificationService,
+      );
 
       // Update role
-      await supabaseProvider.updateUserRole(
-        widget.user.id,
-        selectedRole.name,
+      await supabaseProvider.updateUserRoleWithNotification(
+        userId: widget.user.id,
+        newRole: selectedRole.name,
+        notificationHelper: notificationHelper,
       );
 
       // Update branch if changed

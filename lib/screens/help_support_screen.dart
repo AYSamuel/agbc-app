@@ -63,7 +63,6 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
                             ),
                             child: CustomBackButton(
                               onPressed: () => Navigator.pop(context),
-                              color: AppTheme.textPrimary(context),
                               showBackground: false,
                               showShadow: false,
                             ),

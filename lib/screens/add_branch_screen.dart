@@ -156,7 +156,6 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
                       ),
                       child: CustomBackButton(
                         onPressed: () => Navigator.pop(context),
-                        color: AppTheme.textPrimary(context),
                         showBackground: false,
                         showShadow: false,
                       ),

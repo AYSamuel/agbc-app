@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/user_model.dart';
+import '../models/recurrence.dart';
 import '../models/task_model.dart';
 import '../models/meeting_model.dart';
 import '../models/notification_model.dart';
@@ -141,6 +142,26 @@ class SupabaseProvider extends ChangeNotifier {
   }
 
   // ==================== TASKS ====================
+
+  List<TaskModel> _cachedUserTasks = [];
+  List<TaskModel> get cachedUserTasks => _cachedUserTasks;
+
+  /// Prefetch user tasks for initial display
+  Future<void> prefetchUserTasks(String userId) async {
+    try {
+      final response = await _supabase
+          .from('tasks')
+          .select()
+          .or('assigned_to.eq.$userId,created_by.eq.$userId')
+          .order('created_at', ascending: false);
+
+      _cachedUserTasks =
+          (response as List).map((json) => TaskModel.fromJson(json)).toList();
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error prefetching user tasks: $e');
+    }
+  }
 
   /// Get all tasks stream
   Stream<List<TaskModel>> getAllTasks() {
@@ -635,7 +656,7 @@ class SupabaseProvider extends ChangeNotifier {
           .select('id')
           .eq('user_id', userId)
           .eq('is_read', false)
-          .or('scheduled_for.is.null,scheduled_for.lte.${DateTime.now().toIso8601String()}'); // Only count immediate or due notifications
+          .or('scheduled_for.is.null,scheduled_for.lte.${DateTime.now().toUtc().toIso8601String()}'); // Only count immediate or due notifications
 
       final count = response.length;
       debugPrint('Unread notification count for user $userId: $count');
@@ -777,8 +798,8 @@ class SupabaseProvider extends ChangeNotifier {
         'is_read': false,
         'delivery_status': 'pending',
         'is_push_sent': false,
-        'created_at': DateTime.now().toIso8601String(),
-        'updated_at': DateTime.now().toIso8601String(),
+        'created_at': DateTime.now().toUtc().toIso8601String(),
+        'updated_at': DateTime.now().toUtc().toIso8601String(),
       });
       return true;
     } catch (e) {
@@ -806,8 +827,8 @@ class SupabaseProvider extends ChangeNotifier {
                 'is_read': false,
                 'delivery_status': 'pending',
                 'is_push_sent': false,
-                'created_at': DateTime.now().toIso8601String(),
-                'updated_at': DateTime.now().toIso8601String(),
+                'created_at': DateTime.now().toUtc().toIso8601String(),
+                'updated_at': DateTime.now().toUtc().toIso8601String(),
               })
           .toList();
 
@@ -920,6 +941,67 @@ class SupabaseProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> createRecurringTaskWithNotifications({
+    required String title,
+    required String description,
+    required String priority,
+    required String assignedTo,
+    required String branchId,
+    required DateTime firstDueDate,
+    required RecurrenceFrequency frequency,
+    required int interval,
+    DateTime? endDate,
+    int? count,
+    NotificationHelper? notificationHelper,
+  }) async {
+    try {
+      _setLoading(true);
+      final currentUser = _supabase.auth.currentUser;
+      if (currentUser == null) throw Exception('User not authenticated');
+      final recurrenceMeta = {
+        'recurrence': {
+          'is_recurring': true,
+          'frequency': frequency.name,
+          'interval': interval,
+          'end_date': endDate?.toIso8601String(),
+          'count': count,
+        }
+      };
+      final parent = await _supabase
+          .from('tasks')
+          .insert({
+            'title': title,
+            'description': description,
+            'priority': priority,
+            'assigned_to': assignedTo,
+            'created_by': currentUser.id,
+            'branch_id': branchId,
+            'due_date': firstDueDate.toIso8601String(),
+            'status': 'pending',
+            'created_at': DateTime.now().toIso8601String(),
+            'metadata': recurrenceMeta,
+          })
+          .select()
+          .single();
+      final helper = notificationHelper ??
+          NotificationHelper(
+            supabaseProvider: this,
+            notificationService: NotificationService(),
+          );
+      await helper.scheduleTaskReminders(
+        taskId: parent['id'],
+        taskTitle: title,
+        dueDate: firstDueDate,
+        assignedUserId: assignedTo,
+      );
+      _setLoading(false);
+    } catch (e) {
+      _setError('Failed to create recurring task: $e');
+      _setLoading(false);
+      rethrow;
+    }
+  }
+
   /// Enhanced task update with notification support
   Future<void> updateTaskWithNotification({
     required String taskId,
@@ -1000,6 +1082,10 @@ class SupabaseProvider extends ChangeNotifier {
       final currentUser = _supabase.auth.currentUser;
       if (currentUser == null) throw Exception('User not authenticated');
 
+      // Get current user role BEFORE update
+      final userBeforeUpdate = await getUserById(userId);
+      final oldRole = userBeforeUpdate?.role.name ?? 'member';
+
       // Update the user's role
       await _supabase.from('users').update({
         'role': newRole,
@@ -1011,6 +1097,7 @@ class SupabaseProvider extends ChangeNotifier {
         await notificationHelper.notifyRoleUpdate(
           userId: userId,
           newRole: newRole,
+          oldRole: oldRole,
           updatedByUserId: currentUser.id,
         );
       }

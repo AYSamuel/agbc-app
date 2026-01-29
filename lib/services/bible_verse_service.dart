@@ -17,7 +17,7 @@ class DailyVerse {
 
 class BibleVerseService {
   static const String _baseUrl = 'https://bible-api.com';
-  static const String _cacheKey = 'daily_verse_cache';
+  static const String _cacheKey = 'daily_verse_cache_v2';
 
   Future<DailyVerse> getTodayVerse() async {
     try {
@@ -86,7 +86,12 @@ class BibleVerseService {
   }
 
   Future<DailyVerse> _fetchRandomKjvVerse() async {
-    final uri = Uri.parse('$_baseUrl/data/kjv/random');
+    // Restrict random verse to: Psalms, Proverbs, John, Paul's Epistles, Hebrews, James, 1-2 Peter, 1-3 John
+    // Using standard USFM book identifiers
+    const allowedBooks =
+        'PSA,PRO,JHN,ROM,1CO,2CO,GAL,EPH,PHP,COL,1TH,2TH,1TI,2TI,TIT,PHM,HEB,JAS,1PE,2PE,1JN,2JN,3JN';
+    final uri = Uri.parse('$_baseUrl/data/kjv/random/$allowedBooks');
+
     final res = await http.get(uri, headers: {
       'Accept': 'application/json'
     }).timeout(const Duration(seconds: 10));

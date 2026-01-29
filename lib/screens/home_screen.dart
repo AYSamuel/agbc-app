@@ -33,6 +33,7 @@ import 'about_screen.dart';
 import '../widgets/admin_route_guard.dart';
 import '../widgets/custom_toast.dart';
 import '../services/bible_verse_service.dart';
+import '../services/version_check_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -61,6 +62,9 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      VersionCheckService().checkVersion(context);
+    });
   }
 
   Future<void> _onRefresh() async {

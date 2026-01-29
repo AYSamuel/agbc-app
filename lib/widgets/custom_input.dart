@@ -8,7 +8,7 @@ class CustomInput extends StatefulWidget {
   final String? hint;
   final String? errorText;
   final TextEditingController controller;
-  final TextInputType keyboardType;
+  final TextInputType? keyboardType;
   final bool obscureText;
   final Widget? prefixIcon;
   final Widget? suffixIcon;
@@ -38,7 +38,7 @@ class CustomInput extends StatefulWidget {
     required this.controller,
     this.hint,
     this.errorText,
-    this.keyboardType = TextInputType.text,
+    this.keyboardType,
     this.obscureText = false,
     this.prefixIcon,
     this.suffixIcon,
@@ -120,21 +120,30 @@ class _CustomInputState extends State<CustomInput>
     final borderColor =
         widget.borderColor ?? AppTheme.inputBorderColor(context);
 
+    // Determine effective keyboard type and action
+    final effectiveKeyboardType = widget.keyboardType ??
+        (widget.maxLines > 1 ? TextInputType.multiline : TextInputType.text);
+
+    final effectiveTextInputAction = widget.textInputAction ??
+        (widget.maxLines > 1
+            ? TextInputAction.newline
+            : (widget.nextFocusNode != null
+                ? TextInputAction.next
+                : TextInputAction.done));
+
     return TextFormField(
       controller: widget.controller,
       focusNode: _focusNode,
       onChanged: widget.onChanged,
       onFieldSubmitted: _handleSubmitted,
       onTap: widget.onTap,
-      keyboardType: widget.keyboardType,
+      keyboardType: effectiveKeyboardType,
       obscureText: widget.obscureText,
       enabled: widget.enabled,
       maxLines: widget.maxLines,
       maxLength: widget.maxLength,
       validator: widget.validator,
-      textInputAction: widget.nextFocusNode != null
-          ? TextInputAction.next
-          : TextInputAction.done,
+      textInputAction: effectiveTextInputAction,
       autofocus: widget.autofocus,
       style: theme.textTheme.bodyLarge?.copyWith(
         color: widget.enabled

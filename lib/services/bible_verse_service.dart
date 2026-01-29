@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class DailyVerse {
   final String verse;
@@ -17,16 +18,56 @@ class DailyVerse {
 
 class BibleVerseService {
   static const String _baseUrl = 'https://bible-api.com';
-  static const String _cacheKey = 'daily_verse_cache_v2';
+  // Bump cache key to force a refresh and hit Supabase
+  static const String _cacheKey = 'daily_verse_cache_v3';
 
   Future<DailyVerse> getTodayVerse() async {
     try {
+      // 1. Check local cache first (fastest)
       final cached = await _getCachedForToday();
       if (cached != null) {
         return cached;
       }
 
+      // 2. Check Supabase (Consistent daily verse for all users)
+      final todayStr = _todayString();
+      try {
+        final data = await Supabase.instance.client
+            .from('daily_verses')
+            .select()
+            .eq('date', todayStr)
+            .maybeSingle();
+
+        if (data != null) {
+          final verse = DailyVerse(
+            verse: data['verse_text'] as String,
+            reference: data['reference'] as String,
+            translationId: data['translation_id'] as String,
+          );
+          await _cacheToday(verse);
+          return verse;
+        }
+      } catch (e) {
+        debugPrint('Error fetching from Supabase: $e');
+      }
+
+      // 3. If not in Supabase, fetch random from API
+      // This happens for the first user of the day
       final verse = await _fetchRandomKjvVerse();
+
+      // 4. Try to insert into Supabase using RPC (safe for anon users)
+      // This function handles "ON CONFLICT DO NOTHING" internally
+      try {
+        await Supabase.instance.client.rpc('insert_daily_verse', params: {
+          'p_date': todayStr,
+          'p_verse_text': verse.verse,
+          'p_reference': verse.reference,
+          'p_translation_id': verse.translationId,
+        });
+      } catch (e) {
+        debugPrint('Error inserting daily verse via RPC: $e');
+      }
+
       await _cacheToday(verse);
       return verse;
     } catch (e) {

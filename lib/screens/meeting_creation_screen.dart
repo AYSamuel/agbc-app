@@ -599,10 +599,16 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
         ? TimezoneHelper.convertToUtc(_selectedEndTime!, userTimezone)
         : null;
 
-    // Determine branch ID based on meeting scope
+    // Determine branch ID and meeting type
     String? branchId;
+    String meetingType = _meetingScope;
+
     if (_meetingScope == 'local') {
       branchId = _selectedBranch?.id;
+      // If the selected branch is the Global branch, treat it as a global meeting
+      if (_selectedBranch?.isGlobalBranch == true) {
+        meetingType = 'global';
+      }
     }
 
     final meeting = MeetingModel(
@@ -610,7 +616,7 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
       title: _titleController.text,
       description: _descriptionController.text,
       dateTime: utcDateTime,
-      type: _meetingScope, // 'global', 'local', or 'invite'
+      type: meetingType, // 'global', 'local', or 'invite'
       endTime: utcEndTime,
       branchId: branchId,
       invitedUserIds: _meetingScope == 'invite' ? _selectedUserIds : [],
@@ -697,17 +703,11 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
           child: Column(
             children: [
               _buildScopeOption(
-                value: 'global',
-                icon: Remix.global_line,
-                title: 'All Members',
-                subtitle: 'Visible to everyone in the church',
-                isFirst: true,
-              ),
-              _buildScopeOption(
                 value: 'local',
                 icon: Remix.building_2_line,
                 title: 'Branch Members',
-                subtitle: 'Visible to selected branch only',
+                subtitle: 'Visible to selected branch (or Global)',
+                isFirst: true,
               ),
               _buildScopeOption(
                 value: 'invite',

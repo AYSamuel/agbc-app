@@ -3,6 +3,7 @@ import 'package:remixicon/remixicon.dart';
 import 'user_management_screen.dart';
 import 'meeting_management_screen.dart';
 import 'branch_management_screen.dart';
+import 'version_management_screen.dart';
 import '../config/theme.dart';
 import '../widgets/custom_back_button.dart';
 import '../widgets/admin_card.dart';
@@ -152,6 +153,19 @@ class AdminScreen extends StatelessWidget {
                             MaterialPageRoute(
                               builder: (context) =>
                                   const BranchManagementScreen(),
+                            ),
+                          ),
+                        ),
+                        AdminCard(
+                          icon: Remix.smartphone_line,
+                          title: 'App Versions',
+                          description: 'Manage app updates',
+                          color: Colors.purple,
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  const VersionManagementScreen(),
                             ),
                           ),
                         ),

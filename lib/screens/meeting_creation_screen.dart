@@ -18,6 +18,7 @@ import '../widgets/custom_date_time_picker.dart';
 import '../widgets/custom_toast.dart';
 import '../widgets/multi_user_select_widget.dart';
 import '../widgets/recurrence_options_widget.dart';
+import '../widgets/initial_notification_settings.dart';
 
 class MeetingCreationScreen extends StatefulWidget {
   const MeetingCreationScreen({super.key});
@@ -44,7 +45,6 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
 
   // Add these missing state variables for the loading overlay
   bool _isCreating = false;
-  bool _showSuccess = false;
 
   // Initial notification configuration
   NotificationTiming? _initialNotificationTiming = NotificationTiming.immediate;
@@ -164,7 +164,7 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
                     child: Form(
                       key: _formKey,
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           // Meeting Details Card
                           _buildModernSection(
@@ -399,185 +399,20 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
                           ),
                           const SizedBox(height: 24),
 
-                          _buildModernSection(
-                            icon: Remix.notification_3_line,
-                            title: 'Initial Notification',
-                            accentColor: AppTheme.secondary(context),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Choose when to notify branch members about this meeting:',
-                                  style: GoogleFonts.inter(
-                                    fontSize: 14,
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurface
-                                        .withValues(alpha: 0.6),
-                                  ),
-                                ),
-                                const SizedBox(height: 16),
-                                Column(
-                                  children: [
-                                    ListTile(
-                                      leading: Container(
-                                        width: 20,
-                                        height: 20,
-                                        decoration: BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          border: Border.all(
-                                            color: _initialNotificationTiming ==
-                                                    NotificationTiming.immediate
-                                                ? AppTheme.primary(context)
-                                                : Theme.of(context)
-                                                    .disabledColor,
-                                            width: 2,
-                                          ),
-                                        ),
-                                      ),
-                                      title: Text(
-                                        'Notify immediately',
-                                        style: GoogleFonts.inter(
-                                          fontSize: 16,
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .onSurface,
-                                        ),
-                                      ),
-                                      subtitle: Text(
-                                        'Send notification as soon as the meeting is created',
-                                        style: GoogleFonts.inter(
-                                          fontSize: 14,
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .onSurface
-                                              .withValues(alpha: 0.6),
-                                        ),
-                                      ),
-                                      onTap: () {
-                                        setState(() {
-                                          _initialNotificationTiming =
-                                              NotificationTiming.immediate;
-                                          _scheduledNotificationDateTime = null;
-                                        });
-                                      },
-                                    ),
-                                    ListTile(
-                                      leading: Container(
-                                        width: 20,
-                                        height: 20,
-                                        decoration: BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          border: Border.all(
-                                            color: _initialNotificationTiming ==
-                                                    NotificationTiming.scheduled
-                                                ? AppTheme.primary(context)
-                                                : Theme.of(context)
-                                                    .disabledColor,
-                                            width: 2,
-                                          ),
-                                        ),
-                                      ),
-                                      title: Text(
-                                        'Schedule notification',
-                                        style: GoogleFonts.inter(
-                                          fontSize: 16,
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .onSurface,
-                                        ),
-                                      ),
-                                      subtitle: Text(
-                                        'Send notification at a specific date and time',
-                                        style: GoogleFonts.inter(
-                                          fontSize: 14,
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .onSurface
-                                              .withValues(alpha: 0.6),
-                                        ),
-                                      ),
-                                      onTap: () {
-                                        setState(() {
-                                          _initialNotificationTiming =
-                                              NotificationTiming.scheduled;
-                                        });
-                                      },
-                                    ),
-                                    ListTile(
-                                      leading: Container(
-                                        width: 20,
-                                        height: 20,
-                                        decoration: BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          border: Border.all(
-                                            color: _initialNotificationTiming ==
-                                                    NotificationTiming.none
-                                                ? AppTheme.primary(context)
-                                                : Theme.of(context)
-                                                    .disabledColor,
-                                            width: 2,
-                                          ),
-                                        ),
-                                      ),
-                                      title: Text(
-                                        'No initial notification',
-                                        style: GoogleFonts.inter(
-                                          fontSize: 16,
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .onSurface,
-                                        ),
-                                      ),
-                                      subtitle: Text(
-                                        'Don\'t send any notification when meeting is created',
-                                        style: GoogleFonts.inter(
-                                          fontSize: 14,
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .onSurface
-                                              .withValues(alpha: 0.6),
-                                        ),
-                                      ),
-                                      onTap: () {
-                                        setState(() {
-                                          _initialNotificationTiming =
-                                              NotificationTiming.none;
-                                          _scheduledNotificationDateTime = null;
-                                        });
-                                      },
-                                    ),
-                                  ],
-                                ),
-                                if (_initialNotificationTiming ==
-                                    NotificationTiming.scheduled) ...[
-                                  const SizedBox(height: 16),
-                                  CustomDateTimePicker(
-                                    key: ValueKey(
-                                        _scheduledNotificationDateTime),
-                                    label: 'Notification Date & Time',
-                                    hintText:
-                                        'Select when to send notification',
-                                    value: _scheduledNotificationDateTime,
-                                    onChanged: (dateTime) {
-                                      setState(() {
-                                        _scheduledNotificationDateTime =
-                                            dateTime;
-                                      });
-                                    },
-                                    mode: DateTimePickerMode.dateAndTime,
-                                    validator: (value) {
-                                      if (_initialNotificationTiming ==
-                                              NotificationTiming.scheduled &&
-                                          value == null) {
-                                        return 'Please select a notification time';
-                                      }
-                                      return null;
-                                    },
-                                  ),
-                                ],
-                              ],
-                            ),
+                          InitialNotificationSettings(
+                            timing: _initialNotificationTiming,
+                            scheduledTime: _scheduledNotificationDateTime,
+                            onTimingChanged: (val) => setState(() {
+                              _initialNotificationTiming = val;
+                              if (val != NotificationTiming.scheduled) {
+                                _scheduledNotificationDateTime = null;
+                              }
+                            }),
+                            onScheduledTimeChanged: (val) => setState(() {
+                              _scheduledNotificationDateTime = val;
+                            }),
+                            itemType: 'meeting',
+                            targetAudience: 'branch members',
                           ),
 
                           const SizedBox(height: 24),
@@ -688,62 +523,6 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
               ],
             ),
           ),
-
-          // Loading Overlay
-          if (_isCreating)
-            Container(
-              color: Colors.black.withValues(alpha: 0.5),
-              child: Center(
-                child: Container(
-                  padding: const EdgeInsets.all(32),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surface,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Colors.black12,
-                        blurRadius: 10,
-                        spreadRadius: 2,
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 300),
-                        child: _showSuccess
-                            ? const Icon(
-                                Icons.check_circle,
-                                key: ValueKey('success'),
-                                color: Colors.green,
-                                size: 64,
-                              )
-                            : CircularProgressIndicator(
-                                key: const ValueKey('loading'),
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  AppTheme.primary(context),
-                                ),
-                              ),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        _showSuccess
-                            ? 'Meeting Created!'
-                            : 'Creating Meeting...',
-                        style: GoogleFonts.inter(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: _showSuccess
-                              ? Colors.green
-                              : Theme.of(context).colorScheme.onSurface,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
         ],
       ),
     );
@@ -799,10 +578,9 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
       return;
     }
 
-    // Show loading overlay
+    // Show loading state
     setState(() {
       _isCreating = true;
-      _showSuccess = false;
     });
 
     // Create initial notification config with reminder minutes
@@ -866,27 +644,23 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
     );
 
     if (success) {
-      // Show success checkmark
-      setState(() {
-        _showSuccess = true;
-      });
-
-      // Wait for animation, then navigate back to home
-      await Future.delayed(const Duration(milliseconds: 1500));
-
       if (mounted) {
-        // Navigate back to home screen by removing all routes and pushing home
-        Navigator.pushNamedAndRemoveUntil(
-          context,
-          '/home',
-          (route) => false,
-        );
+        String message;
+        if (_initialNotificationTiming == NotificationTiming.immediate) {
+          message = 'Meeting created and members notified';
+        } else if (_initialNotificationTiming == NotificationTiming.scheduled) {
+          message = 'Meeting created, notification scheduled';
+        } else {
+          message = 'Meeting created successfully';
+        }
+
+        CustomToast.show(context, message: message, type: ToastType.success);
+        Navigator.pop(context);
       }
     } else {
-      // Hide loading overlay and show error
+      // Hide loading state and show error
       setState(() {
         _isCreating = false;
-        _showSuccess = false;
       });
 
       if (mounted) {

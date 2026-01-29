@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../widgets/recurrence_options_widget.dart';
+import '../widgets/initial_notification_settings.dart';
 import '../models/recurrence.dart';
 import 'package:provider/provider.dart';
 import '../providers/supabase_provider.dart';
@@ -20,7 +21,6 @@ import '../services/notification_service.dart';
 import '../models/initial_notification_config.dart';
 import '../widgets/custom_date_time_picker.dart';
 import '../widgets/custom_toast.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:remixicon/remixicon.dart';
 
 class AddTaskScreen extends StatefulWidget {
@@ -534,230 +534,20 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                         const SizedBox(height: 20),
 
                         // Notification Timing Card
-                        _buildModernSection(
-                          icon: Remix.notification_3_line,
-                          title: 'Initial Notification',
-                          accentColor: AppTheme.secondary(context),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Choose when to notify the assignee about this task:',
-                                style: GoogleFonts.inter(
-                                  fontSize: 14,
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .onSurface
-                                      .withValues(alpha: 0.6),
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-
-                              // Immediate Notification Option
-                              ListTile(
-                                contentPadding: EdgeInsets.zero,
-                                leading: Container(
-                                  width: 20,
-                                  height: 20,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: _initialNotificationTiming ==
-                                              NotificationTiming.immediate
-                                          ? AppTheme.primary(context)
-                                          : AppTheme.dividerColor(context),
-                                      width: 2,
-                                    ),
-                                  ),
-                                  child: _initialNotificationTiming ==
-                                          NotificationTiming.immediate
-                                      ? Center(
-                                          child: Container(
-                                            width: 10,
-                                            height: 10,
-                                            decoration: BoxDecoration(
-                                              shape: BoxShape.circle,
-                                              color: AppTheme.primary(context),
-                                            ),
-                                          ),
-                                        )
-                                      : null,
-                                ),
-                                title: Text(
-                                  'Notify immediately',
-                                  style: GoogleFonts.inter(
-                                    fontSize: 16,
-                                    color:
-                                        Theme.of(context).colorScheme.onSurface,
-                                  ),
-                                ),
-                                subtitle: Text(
-                                  'Send notification as soon as the task is created',
-                                  style: GoogleFonts.inter(
-                                    fontSize: 14,
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurface
-                                        .withValues(alpha: 0.6),
-                                  ),
-                                ),
-                                onTap: () {
-                                  setState(() {
-                                    _initialNotificationTiming =
-                                        NotificationTiming.immediate;
-                                    _scheduledNotificationDateTime = null;
-                                  });
-                                },
-                              ),
-
-                              // Scheduled Notification Option
-                              ListTile(
-                                contentPadding: EdgeInsets.zero,
-                                leading: Container(
-                                  width: 20,
-                                  height: 20,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: _initialNotificationTiming ==
-                                              NotificationTiming.scheduled
-                                          ? AppTheme.primary(context)
-                                          : AppTheme.dividerColor(context),
-                                      width: 2,
-                                    ),
-                                  ),
-                                  child: _initialNotificationTiming ==
-                                          NotificationTiming.scheduled
-                                      ? Center(
-                                          child: Container(
-                                            width: 10,
-                                            height: 10,
-                                            decoration: BoxDecoration(
-                                              shape: BoxShape.circle,
-                                              color: AppTheme.primary(context),
-                                            ),
-                                          ),
-                                        )
-                                      : null,
-                                ),
-                                title: Text(
-                                  'Schedule notification',
-                                  style: GoogleFonts.inter(
-                                    fontSize: 16,
-                                    color:
-                                        Theme.of(context).colorScheme.onSurface,
-                                  ),
-                                ),
-                                subtitle: Text(
-                                  'Send notification at a specific date and time',
-                                  style: GoogleFonts.inter(
-                                    fontSize: 14,
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurface
-                                        .withValues(alpha: 0.6),
-                                  ),
-                                ),
-                                onTap: () {
-                                  setState(() {
-                                    _initialNotificationTiming =
-                                        NotificationTiming.scheduled;
-                                  });
-                                },
-                              ),
-
-                              // No Notification Option
-                              ListTile(
-                                contentPadding: EdgeInsets.zero,
-                                leading: Container(
-                                  width: 20,
-                                  height: 20,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: _initialNotificationTiming ==
-                                              NotificationTiming.none
-                                          ? AppTheme.primary(context)
-                                          : Theme.of(context)
-                                              .colorScheme
-                                              .onSurface
-                                              .withValues(alpha: 0.3),
-                                      width: 2,
-                                    ),
-                                  ),
-                                  child: _initialNotificationTiming ==
-                                          NotificationTiming.none
-                                      ? Center(
-                                          child: Container(
-                                            width: 10,
-                                            height: 10,
-                                            decoration: BoxDecoration(
-                                              shape: BoxShape.circle,
-                                              color: AppTheme.primary(context),
-                                            ),
-                                          ),
-                                        )
-                                      : null,
-                                ),
-                                title: Text(
-                                  'No initial notification',
-                                  style: GoogleFonts.inter(
-                                    fontSize: 16,
-                                    color:
-                                        Theme.of(context).colorScheme.onSurface,
-                                  ),
-                                ),
-                                subtitle: Text(
-                                  'Don\'t send any notification when task is created',
-                                  style: GoogleFonts.inter(
-                                    fontSize: 14,
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurface
-                                        .withValues(alpha: 0.6),
-                                  ),
-                                ),
-                                onTap: () {
-                                  setState(() {
-                                    _initialNotificationTiming =
-                                        NotificationTiming.none;
-                                    _scheduledNotificationDateTime = null;
-                                  });
-                                },
-                              ),
-
-                              // Scheduled Notification Date/Time Picker
-                              if (_initialNotificationTiming ==
-                                  NotificationTiming.scheduled) ...[
-                                const SizedBox(height: 16),
-                                const SizedBox(height: 16),
-                                CustomDateTimePicker(
-                                  key: ValueKey(_scheduledNotificationDateTime),
-                                  label: 'Notification Date & Time',
-                                  hintText: 'Select when to send notification',
-                                  value: _scheduledNotificationDateTime,
-                                  onChanged: (dateTime) {
-                                    setState(() {
-                                      _scheduledNotificationDateTime = dateTime;
-                                    });
-                                  },
-                                  mode: DateTimePickerMode.dateAndTime,
-                                  validator: (value) {
-                                    if (_initialNotificationTiming ==
-                                            NotificationTiming.scheduled &&
-                                        value == null) {
-                                      return 'Please select a notification time';
-                                    }
-                                    if (value != null &&
-                                        value.isBefore(DateTime.now())) {
-                                      return 'Notification time must be in the future';
-                                    }
-                                    return null;
-                                  },
-                                ),
-                              ],
-                            ],
-                          ),
+                        InitialNotificationSettings(
+                          timing: _initialNotificationTiming,
+                          scheduledTime: _scheduledNotificationDateTime,
+                          onTimingChanged: (val) => setState(() {
+                            _initialNotificationTiming = val;
+                            if (val != NotificationTiming.scheduled) {
+                              _scheduledNotificationDateTime = null;
+                            }
+                          }),
+                          onScheduledTimeChanged: (val) => setState(() {
+                            _scheduledNotificationDateTime = val;
+                          }),
+                          itemType: 'task',
+                          targetAudience: 'the assignee',
                         ),
                         const SizedBox(height: 20),
                         _buildModernSection(

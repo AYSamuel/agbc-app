@@ -15,10 +15,13 @@ class NotificationService extends ChangeNotifier {
   /// Log errors to Supabase for monitoring
   Future<void> logError(String operation, String error) async {
     try {
-      await _supabase.from('error_logs').insert({
-        'operation': operation,
-        'error': error,
-        'timestamp': DateTime.now().toIso8601String(),
+      final user = _supabase.auth.currentUser;
+      await _supabase.from('audit_logs').insert({
+        'user_id': user?.id,
+        'action': 'ERROR',
+        'table_name': 'notifications',
+        'old_values': {'operation': operation},
+        'new_values': {'error': error},
       });
     } catch (e) {
       debugPrint('Error logging error: $e');
@@ -135,9 +138,9 @@ class NotificationService extends ChangeNotifier {
       // OPTIMIZED: Upsert handles both insert and update automatically
       // Uses device_id as conflict resolution key
       final result = await _supabase.from('user_devices').upsert(
-        deviceData,
-        onConflict: 'device_id', // Update if device_id already exists
-      );
+            deviceData,
+            onConflict: 'device_id', // Update if device_id already exists
+          );
       debugPrint('Database upsert result: $result');
 
       debugPrint('✅ Device registered/updated successfully for user: $userId');
@@ -214,20 +217,23 @@ class NotificationService extends ChangeNotifier {
 
       // Create notification records in database for in-app notification panel
       // Note: This happens in parallel with push notification sending
-      final notificationRecords = userIds.map((userId) => {
-        'user_id': userId,
-        'title': title,
-        'message': message,
-        'type': data?['type'] ?? 'general',
-        'data': data ?? {},
-        'is_read': false,
-        'created_at': DateTime.now().toIso8601String(),
-        'updated_at': DateTime.now().toIso8601String(),
-      }).toList();
+      final notificationRecords = userIds
+          .map((userId) => {
+                'user_id': userId,
+                'title': title,
+                'message': message,
+                'type': data?['type'] ?? 'general',
+                'data': data ?? {},
+                'is_read': false,
+                'created_at': DateTime.now().toUtc().toIso8601String(),
+                'updated_at': DateTime.now().toUtc().toIso8601String(),
+              })
+          .toList();
 
       // Insert all notification records in one batch operation
       await _supabase.from('notifications').insert(notificationRecords);
-      debugPrint('Created ${notificationRecords.length} notification records in database');
+      debugPrint(
+          'Created ${notificationRecords.length} notification records in database');
 
       // Send push notification via Edge Function
       final response =
@@ -306,21 +312,26 @@ class NotificationService extends ChangeNotifier {
 
       // Create notification records in database for in-app notification panel
       // These records have scheduled_for set, so they won't appear until that time
-      final notificationRecords = userIds.map((userId) => {
-        'user_id': userId,
-        'title': title,
-        'message': message,
-        'type': data?['type'] ?? 'general',
-        'data': data ?? {},
-        'is_read': false,
-        'created_at': DateTime.now().toIso8601String(),
-        'updated_at': DateTime.now().toIso8601String(),
-        'scheduled_for': scheduledDate.toIso8601String(), // KEY: Notification becomes visible at this time
-      }).toList();
+      final notificationRecords = userIds
+          .map((userId) => {
+                'user_id': userId,
+                'title': title,
+                'message': message,
+                'type': data?['type'] ?? 'general',
+                'data': data ?? {},
+                'is_read': false,
+                'created_at': DateTime.now().toUtc().toIso8601String(),
+                'updated_at': DateTime.now().toUtc().toIso8601String(),
+                'scheduled_for': scheduledDate
+                    .toUtc()
+                    .toIso8601String(), // KEY: Notification becomes visible at this time
+              })
+          .toList();
 
       // Insert all notification records in one batch operation
       await _supabase.from('notifications').insert(notificationRecords);
-      debugPrint('Created ${notificationRecords.length} scheduled notification records (visible from: $scheduledDate)');
+      debugPrint(
+          'Created ${notificationRecords.length} scheduled notification records (visible from: $scheduledDate)');
 
       // Schedule push notification via Edge Function
       final response = await _supabase.functions.invoke(

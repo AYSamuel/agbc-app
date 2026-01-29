@@ -6,6 +6,7 @@ import '../providers/supabase_provider.dart';
 import '../providers/branches_provider.dart';
 import '../models/meeting_model.dart';
 import '../models/church_branch_model.dart';
+import '../models/recurrence.dart';
 import '../models/initial_notification_config.dart';
 import '../config/theme.dart';
 import '../utils/timezone_helper.dart';
@@ -16,6 +17,7 @@ import '../widgets/custom_dropdown.dart';
 import '../widgets/custom_date_time_picker.dart';
 import '../widgets/custom_toast.dart';
 import '../widgets/multi_user_select_widget.dart';
+import '../widgets/recurrence_options_widget.dart';
 
 class MeetingCreationScreen extends StatefulWidget {
   const MeetingCreationScreen({super.key});
@@ -30,7 +32,6 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
   final _descriptionController = TextEditingController();
   final _locationController = TextEditingController();
   final _meetingLinkController = TextEditingController();
-  final _recurrenceIntervalController = TextEditingController(text: '1');
 
   DateTime? _selectedDateTime;
   DateTime? _selectedEndTime;
@@ -108,7 +109,6 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
                           ),
                           child: CustomBackButton(
                             onPressed: () => Navigator.pop(context),
-                            color: AppTheme.textPrimary(context),
                             showBackground: false,
                             showShadow: false,
                           ),
@@ -399,69 +399,15 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
                           ),
                           const SizedBox(height: 24),
 
-                          // Initial Notification Section
-                          Text(
-                            'Initial Notification',
-                            style: GoogleFonts.inter(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(context).colorScheme.onSurface,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Choose when to notify branch members about this meeting:',
-                            style: GoogleFonts.inter(
-                              fontSize: 14,
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurface
-                                  .withValues(alpha: 0.6),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Initial Notification Timing Options
-                          Column(
-                            children: [
-                              ListTile(
-                                leading: Container(
-                                  width: 20,
-                                  height: 20,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: _initialNotificationTiming ==
-                                              NotificationTiming.immediate
-                                          ? AppTheme.primary(context)
-                                          : Theme.of(context).disabledColor,
-                                      width: 2,
-                                    ),
-                                  ),
-                                  child: _initialNotificationTiming ==
-                                          NotificationTiming.immediate
-                                      ? Center(
-                                          child: Container(
-                                            width: 10,
-                                            height: 10,
-                                            decoration: BoxDecoration(
-                                              shape: BoxShape.circle,
-                                              color: AppTheme.primary(context),
-                                            ),
-                                          ),
-                                        )
-                                      : null,
-                                ),
-                                title: Text(
-                                  'Notify immediately',
-                                  style: GoogleFonts.inter(
-                                    fontSize: 16,
-                                    color:
-                                        Theme.of(context).colorScheme.onSurface,
-                                  ),
-                                ),
-                                subtitle: Text(
-                                  'Send notification as soon as the meeting is created',
+                          _buildModernSection(
+                            icon: Remix.notification_3_line,
+                            title: 'Initial Notification',
+                            accentColor: AppTheme.secondary(context),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Choose when to notify branch members about this meeting:',
                                   style: GoogleFonts.inter(
                                     fontSize: 14,
                                     color: Theme.of(context)
@@ -470,381 +416,250 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
                                         .withValues(alpha: 0.6),
                                   ),
                                 ),
-                                onTap: () {
-                                  setState(() {
-                                    _initialNotificationTiming =
-                                        NotificationTiming.immediate;
-                                    _scheduledNotificationDateTime = null;
-                                  });
-                                },
-                              ),
-                              ListTile(
-                                leading: Container(
-                                  width: 20,
-                                  height: 20,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: _initialNotificationTiming ==
-                                              NotificationTiming.scheduled
-                                          ? AppTheme.primary(context)
-                                          : Theme.of(context).disabledColor,
-                                      width: 2,
-                                    ),
-                                  ),
-                                  child: _initialNotificationTiming ==
-                                          NotificationTiming.scheduled
-                                      ? Center(
-                                          child: Container(
-                                            width: 10,
-                                            height: 10,
-                                            decoration: BoxDecoration(
-                                              shape: BoxShape.circle,
-                                              color: AppTheme.primary(context),
-                                            ),
-                                          ),
-                                        )
-                                      : null,
-                                ),
-                                title: Text(
-                                  'Schedule notification',
-                                  style: GoogleFonts.inter(
-                                    fontSize: 16,
-                                    color:
-                                        Theme.of(context).colorScheme.onSurface,
-                                  ),
-                                ),
-                                subtitle: Text(
-                                  'Send notification at a specific date and time',
-                                  style: GoogleFonts.inter(
-                                    fontSize: 14,
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurface
-                                        .withValues(alpha: 0.6),
-                                  ),
-                                ),
-                                onTap: () {
-                                  setState(() {
-                                    _initialNotificationTiming =
-                                        NotificationTiming.scheduled;
-                                  });
-                                },
-                              ),
-                              ListTile(
-                                leading: Container(
-                                  width: 20,
-                                  height: 20,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: _initialNotificationTiming ==
-                                              NotificationTiming.none
-                                          ? AppTheme.primary(context)
-                                          : Theme.of(context).disabledColor,
-                                      width: 2,
-                                    ),
-                                  ),
-                                  child: _initialNotificationTiming ==
-                                          NotificationTiming.none
-                                      ? Center(
-                                          child: Container(
-                                            width: 10,
-                                            height: 10,
-                                            decoration: BoxDecoration(
-                                              shape: BoxShape.circle,
-                                              color: AppTheme.primary(context),
-                                            ),
-                                          ),
-                                        )
-                                      : null,
-                                ),
-                                title: Text(
-                                  'No initial notification',
-                                  style: GoogleFonts.inter(
-                                    fontSize: 16,
-                                    color:
-                                        Theme.of(context).colorScheme.onSurface,
-                                  ),
-                                ),
-                                subtitle: Text(
-                                  'Don\'t send any notification when meeting is created',
-                                  style: GoogleFonts.inter(
-                                    fontSize: 14,
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurface
-                                        .withValues(alpha: 0.6),
-                                  ),
-                                ),
-                                onTap: () {
-                                  setState(() {
-                                    _initialNotificationTiming =
-                                        NotificationTiming.none;
-                                    _scheduledNotificationDateTime = null;
-                                  });
-                                },
-                              ),
-                            ],
-                          ),
-
-                          // Scheduled Notification Date/Time Picker
-                          if (_initialNotificationTiming ==
-                              NotificationTiming.scheduled) ...[
-                            const SizedBox(height: 16),
-                            CustomDateTimePicker(
-                              key: ValueKey(_scheduledNotificationDateTime),
-                              label: 'Notification Date & Time',
-                              hintText: 'Select when to send notification',
-                              value: _scheduledNotificationDateTime,
-                              onChanged: (dateTime) {
-                                setState(() {
-                                  _scheduledNotificationDateTime = dateTime;
-                                });
-                              },
-                              mode: DateTimePickerMode.dateAndTime,
-                              validator: (value) {
-                                if (_initialNotificationTiming ==
-                                        NotificationTiming.scheduled &&
-                                    value == null) {
-                                  return 'Please select a notification time';
-                                }
-                                return null;
-                              },
-                            ),
-                          ],
-
-                          const SizedBox(height: 24),
-
-                          // Notification Reminders Section
-                          Text(
-                            'Notification Reminders',
-                            style: GoogleFonts.inter(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(context).colorScheme.onSurface,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Select when to remind branch members about this meeting:',
-                            style: GoogleFonts.inter(
-                              fontSize: 14,
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurface
-                                  .withValues(alpha: 0.6),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Reminder Options
-                          ..._reminderOptions.map((option) {
-                            final minutes = _reminderValues[option]!;
-                            final isSelected =
-                                _reminderMinutes.contains(minutes);
-
-                            return CheckboxListTile(
-                              title: Text(
-                                option,
-                                style: GoogleFonts.inter(
-                                  fontSize: 16,
-                                  color:
-                                      Theme.of(context).colorScheme.onSurface,
-                                ),
-                              ),
-                              value: isSelected,
-                              onChanged: (value) {
-                                setState(() {
-                                  if (value == true) {
-                                    _reminderMinutes.add(minutes);
-                                  } else {
-                                    _reminderMinutes.remove(minutes);
-                                  }
-                                });
-                              },
-                              activeColor: AppTheme.primary(context),
-                              checkColor: Colors.white,
-                              side: BorderSide(
-                                color: isSelected
-                                    ? AppTheme.primary(context)
-                                    : Theme.of(context).dividerColor,
-                                width: 2,
-                              ),
-                            );
-                          }),
-
-                          const SizedBox(height: 32),
-
-                          // Recurring Meeting Section
-                          Text(
-                            'Recurring Meeting',
-                            style: GoogleFonts.inter(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(context).colorScheme.onSurface,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Set up this meeting to repeat automatically',
-                            style: GoogleFonts.inter(
-                              fontSize: 14,
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurface
-                                  .withValues(alpha: 0.6),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Recurring Toggle
-                          Row(
-                            children: [
-                              Switch(
-                                value: _isRecurring,
-                                onChanged: (value) {
-                                  setState(() {
-                                    _isRecurring = value;
-                                  });
-                                },
-                                activeTrackColor: AppTheme.primary(context),
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                'Enable Recurring',
-                                style: GoogleFonts.inter(
-                                  fontSize: 16,
-                                  color:
-                                      Theme.of(context).colorScheme.onSurface,
-                                ),
-                              ),
-                            ],
-                          ),
-
-                          // Recurring Configuration (shown when enabled)
-                          if (_isRecurring) ...[
-                            const SizedBox(height: 16),
-
-                            // Frequency Selector
-                            CustomDropdown<RecurrenceFrequency>(
-                              label: 'Repeat',
-                              value: _recurrenceFrequency,
-                              items: RecurrenceFrequency.values
-                                  .where((freq) =>
-                                      freq != RecurrenceFrequency.none)
-                                  .map<DropdownMenuItem<RecurrenceFrequency>>(
-                                      (RecurrenceFrequency freq) {
-                                return DropdownMenuItem<RecurrenceFrequency>(
-                                  value: freq,
-                                  child: Text(_getFrequencyLabel(freq)),
-                                );
-                              }).toList(),
-                              onChanged: (freq) {
-                                if (freq != null) {
-                                  setState(() {
-                                    _recurrenceFrequency = freq;
-                                  });
-                                }
-                              },
-                              validator: null,
-                            ),
-                            const SizedBox(height: 16),
-
-                            // Interval Selector (Every X weeks/months, etc.)
-                            CustomInput(
-                              controller: _recurrenceIntervalController,
-                              label: 'Every (interval)',
-                              keyboardType: TextInputType.number,
-                              onChanged: (value) {
-                                final interval = int.tryParse(value) ?? 1;
-                                setState(() {
-                                  _recurrenceInterval =
-                                      interval > 0 ? interval : 1;
-                                });
-                              },
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Please enter an interval';
-                                }
-                                final interval = int.tryParse(value);
-                                if (interval == null || interval < 1) {
-                                  return 'Interval must be at least 1';
-                                }
-                                return null;
-                              },
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              _getIntervalHint(),
-                              style: GoogleFonts.inter(
-                                fontSize: 12,
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onSurface
-                                    .withValues(alpha: 0.6),
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-
-                            // End Date or Count
-                            Text(
-                              'Ends',
-                              style: GoogleFonts.inter(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Theme.of(context).colorScheme.onSurface,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-
-                            CustomDateTimePicker(
-                              key: ValueKey(_recurrenceEndDate),
-                              label: 'End Date',
-                              value: _recurrenceEndDate,
-                              hintText: 'Never',
-                              clearable: true,
-                              onChanged: (dateTime) {
-                                setState(() {
-                                  _recurrenceEndDate = dateTime;
-                                });
-                              },
-                              mode: DateTimePickerMode.date,
-                            ),
-                            const SizedBox(height: 8),
-                            // Info message about "Never" end date
-                            if (_recurrenceEndDate == null)
-                              Container(
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: Colors.blue.withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(
-                                    color: Colors.blue.withValues(alpha: 0.3),
-                                  ),
-                                ),
-                                child: Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                const SizedBox(height: 16),
+                                Column(
                                   children: [
-                                    Icon(
-                                      Remix.information_line,
-                                      size: 20,
-                                      color: Colors.blue[700],
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: Text(
-                                        'When set to "Never", only 3 months of future instances will be created. You can manually extend the series later as needed.',
-                                        style: GoogleFonts.inter(
-                                          fontSize: 12,
-                                          color: Colors.blue[700],
+                                    ListTile(
+                                      leading: Container(
+                                        width: 20,
+                                        height: 20,
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          border: Border.all(
+                                            color: _initialNotificationTiming ==
+                                                    NotificationTiming.immediate
+                                                ? AppTheme.primary(context)
+                                                : Theme.of(context)
+                                                    .disabledColor,
+                                            width: 2,
+                                          ),
                                         ),
                                       ),
+                                      title: Text(
+                                        'Notify immediately',
+                                        style: GoogleFonts.inter(
+                                          fontSize: 16,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurface,
+                                        ),
+                                      ),
+                                      subtitle: Text(
+                                        'Send notification as soon as the meeting is created',
+                                        style: GoogleFonts.inter(
+                                          fontSize: 14,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurface
+                                              .withValues(alpha: 0.6),
+                                        ),
+                                      ),
+                                      onTap: () {
+                                        setState(() {
+                                          _initialNotificationTiming =
+                                              NotificationTiming.immediate;
+                                          _scheduledNotificationDateTime = null;
+                                        });
+                                      },
+                                    ),
+                                    ListTile(
+                                      leading: Container(
+                                        width: 20,
+                                        height: 20,
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          border: Border.all(
+                                            color: _initialNotificationTiming ==
+                                                    NotificationTiming.scheduled
+                                                ? AppTheme.primary(context)
+                                                : Theme.of(context)
+                                                    .disabledColor,
+                                            width: 2,
+                                          ),
+                                        ),
+                                      ),
+                                      title: Text(
+                                        'Schedule notification',
+                                        style: GoogleFonts.inter(
+                                          fontSize: 16,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurface,
+                                        ),
+                                      ),
+                                      subtitle: Text(
+                                        'Send notification at a specific date and time',
+                                        style: GoogleFonts.inter(
+                                          fontSize: 14,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurface
+                                              .withValues(alpha: 0.6),
+                                        ),
+                                      ),
+                                      onTap: () {
+                                        setState(() {
+                                          _initialNotificationTiming =
+                                              NotificationTiming.scheduled;
+                                        });
+                                      },
+                                    ),
+                                    ListTile(
+                                      leading: Container(
+                                        width: 20,
+                                        height: 20,
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          border: Border.all(
+                                            color: _initialNotificationTiming ==
+                                                    NotificationTiming.none
+                                                ? AppTheme.primary(context)
+                                                : Theme.of(context)
+                                                    .disabledColor,
+                                            width: 2,
+                                          ),
+                                        ),
+                                      ),
+                                      title: Text(
+                                        'No initial notification',
+                                        style: GoogleFonts.inter(
+                                          fontSize: 16,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurface,
+                                        ),
+                                      ),
+                                      subtitle: Text(
+                                        'Don\'t send any notification when meeting is created',
+                                        style: GoogleFonts.inter(
+                                          fontSize: 14,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurface
+                                              .withValues(alpha: 0.6),
+                                        ),
+                                      ),
+                                      onTap: () {
+                                        setState(() {
+                                          _initialNotificationTiming =
+                                              NotificationTiming.none;
+                                          _scheduledNotificationDateTime = null;
+                                        });
+                                      },
                                     ),
                                   ],
                                 ),
-                              ),
-                          ],
+                                if (_initialNotificationTiming ==
+                                    NotificationTiming.scheduled) ...[
+                                  const SizedBox(height: 16),
+                                  CustomDateTimePicker(
+                                    key: ValueKey(
+                                        _scheduledNotificationDateTime),
+                                    label: 'Notification Date & Time',
+                                    hintText:
+                                        'Select when to send notification',
+                                    value: _scheduledNotificationDateTime,
+                                    onChanged: (dateTime) {
+                                      setState(() {
+                                        _scheduledNotificationDateTime =
+                                            dateTime;
+                                      });
+                                    },
+                                    mode: DateTimePickerMode.dateAndTime,
+                                    validator: (value) {
+                                      if (_initialNotificationTiming ==
+                                              NotificationTiming.scheduled &&
+                                          value == null) {
+                                        return 'Please select a notification time';
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+
+                          const SizedBox(height: 24),
+
+                          _buildModernSection(
+                            icon: Remix.notification_line,
+                            title: 'Notification Reminders',
+                            accentColor: AppTheme.secondary(context),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Select when to remind branch members about this meeting:',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 14,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withValues(alpha: 0.6),
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                ..._reminderOptions.map((option) {
+                                  final minutes = _reminderValues[option]!;
+                                  final isSelected =
+                                      _reminderMinutes.contains(minutes);
+                                  return CheckboxListTile(
+                                    title: Text(
+                                      option,
+                                      style: GoogleFonts.inter(
+                                        fontSize: 16,
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurface,
+                                      ),
+                                    ),
+                                    value: isSelected,
+                                    onChanged: (value) {
+                                      setState(() {
+                                        if (value == true) {
+                                          _reminderMinutes.add(minutes);
+                                        } else {
+                                          _reminderMinutes.remove(minutes);
+                                        }
+                                      });
+                                    },
+                                    activeColor: AppTheme.primary(context),
+                                    checkColor: Colors.white,
+                                    side: BorderSide(
+                                      color: isSelected
+                                          ? AppTheme.primary(context)
+                                          : Theme.of(context).dividerColor,
+                                      width: 2,
+                                    ),
+                                  );
+                                }),
+                              ],
+                            ),
+                          ),
+
+                          const SizedBox(height: 32),
+
+                          _buildModernSection(
+                            icon: Remix.repeat_line,
+                            title: 'Recurring Meeting',
+                            accentColor: AppTheme.primary(context),
+                            child: RecurrenceOptionsWidget(
+                              isRecurring: _isRecurring,
+                              onRecurringChanged: (val) =>
+                                  setState(() => _isRecurring = val),
+                              frequency: _recurrenceFrequency,
+                              onFrequencyChanged: (val) =>
+                                  setState(() => _recurrenceFrequency = val),
+                              interval: _recurrenceInterval,
+                              onIntervalChanged: (val) =>
+                                  setState(() => _recurrenceInterval = val),
+                              endDate: _recurrenceEndDate,
+                              onEndDateChanged: (val) =>
+                                  setState(() => _recurrenceEndDate = val),
+                              itemType: 'Meeting',
+                            ),
+                          ),
 
                           const SizedBox(height: 32),
 
@@ -932,44 +747,6 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
         ],
       ),
     );
-  }
-
-  String _getFrequencyLabel(RecurrenceFrequency frequency) {
-    switch (frequency) {
-      case RecurrenceFrequency.daily:
-        return 'Daily';
-      case RecurrenceFrequency.weekly:
-        return 'Weekly';
-      case RecurrenceFrequency.monthly:
-        return 'Monthly';
-      case RecurrenceFrequency.yearly:
-        return 'Yearly';
-      case RecurrenceFrequency.none:
-        return 'None';
-    }
-  }
-
-  String _getIntervalHint() {
-    switch (_recurrenceFrequency) {
-      case RecurrenceFrequency.daily:
-        return _recurrenceInterval == 1
-            ? 'Repeats every day'
-            : 'Repeats every $_recurrenceInterval days';
-      case RecurrenceFrequency.weekly:
-        return _recurrenceInterval == 1
-            ? 'Repeats every week'
-            : 'Repeats every $_recurrenceInterval weeks';
-      case RecurrenceFrequency.monthly:
-        return _recurrenceInterval == 1
-            ? 'Repeats every month'
-            : 'Repeats every $_recurrenceInterval months';
-      case RecurrenceFrequency.yearly:
-        return _recurrenceInterval == 1
-            ? 'Repeats every year'
-            : 'Repeats every $_recurrenceInterval years';
-      case RecurrenceFrequency.none:
-        return '';
-    }
   }
 
   Future<void> _createMeeting() async {
@@ -1360,7 +1137,6 @@ class _MeetingCreationScreenState extends State<MeetingCreationScreen> {
     _descriptionController.dispose();
     _locationController.dispose();
     _meetingLinkController.dispose();
-    _recurrenceIntervalController.dispose();
     super.dispose();
   }
 }

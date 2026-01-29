@@ -96,7 +96,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                           child: CustomBackButton(
                             onPressed: () => Navigator.of(context).pop(),
-                            color: AppTheme.textPrimary(context),
                             showBackground: false,
                             showShadow: false,
                           ),

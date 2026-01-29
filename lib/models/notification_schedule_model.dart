@@ -345,18 +345,21 @@ class NotificationScheduleTemplates {
         timings: [
           NotificationTiming(
             days: 7,
-            message: 'You have a meeting coming up next week',
+            message:
+                'Just a friendly reminder: Your meeting is happening in 1 week. We’re looking forward to it!',
             type: NotificationType.meetingReminder,
           ),
           NotificationTiming(
             days: 1,
             customTime: '09:00',
-            message: 'Reminder: You have a meeting tomorrow',
+            message:
+                'Just a friendly reminder: Your meeting is happening tomorrow. We’re looking forward to it!',
             type: NotificationType.meetingReminder,
           ),
           NotificationTiming(
             hours: 1,
-            message: 'Your meeting starts in 1 hour',
+            message:
+                'Just a friendly reminder: Your meeting starts in 1 hour. See you soon!',
             type: NotificationType.meetingReminder,
           ),
         ],
@@ -372,18 +375,18 @@ class NotificationScheduleTemplates {
           NotificationTiming(
             days: 2,
             customTime: '09:00',
-            message: 'Task due in 2 days',
+            message: 'Just a friendly reminder: Your task is due in 2 days.',
             type: NotificationType.taskDue,
           ),
           NotificationTiming(
             days: 1,
             customTime: '09:00',
-            message: 'Task due tomorrow',
+            message: 'Just a friendly reminder: Your task is due tomorrow.',
             type: NotificationType.taskDue,
           ),
           NotificationTiming(
             hours: 2,
-            message: 'Task due in 2 hours',
+            message: 'Just a friendly reminder: Your task is due in 2 hours.',
             type: NotificationType.taskDue,
           ),
         ],
@@ -400,17 +403,18 @@ class NotificationScheduleTemplates {
           NotificationTiming(
             days: 1,
             customTime: '09:00',
-            message: 'Urgent task due tomorrow',
+            message:
+                'Important: Your urgent task is due tomorrow. Please prioritize this.',
             type: NotificationType.taskDue,
           ),
           NotificationTiming(
             hours: 4,
-            message: 'Urgent task due in 4 hours',
+            message: 'Important: Your urgent task is due in 4 hours.',
             type: NotificationType.taskDue,
           ),
           NotificationTiming(
             hours: 1,
-            message: 'Urgent task due in 1 hour',
+            message: 'Important: Your urgent task is due in 1 hour.',
             type: NotificationType.taskDue,
           ),
         ],
@@ -427,12 +431,12 @@ class NotificationScheduleTemplates {
           NotificationTiming(
             days: 1,
             customTime: '09:00',
-            message: 'Meeting tomorrow',
+            message: 'Reminder: Meeting tomorrow.',
             type: NotificationType.meetingReminder,
           ),
           NotificationTiming(
             minutes: 15,
-            message: 'Meeting starts in 15 minutes',
+            message: 'Reminder: Meeting starts in 15 minutes.',
             type: NotificationType.meetingReminder,
           ),
         ],

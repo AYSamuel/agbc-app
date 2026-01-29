@@ -1,3 +1,5 @@
+import 'recurrence.dart';
+
 /// Enhanced TaskModel with new schema features including metadata, attachments, and ENUMs.
 class TaskModel {
   // Basic task information
@@ -40,10 +42,10 @@ class TaskModel {
     this.completedAt,
     Map<String, dynamic>? metadata,
     List<Map<String, dynamic>>? attachments,
-  }) : createdAt = createdAt ?? DateTime.now(),
-       updatedAt = updatedAt ?? DateTime.now(),
-       metadata = metadata ?? {},
-       attachments = attachments ?? [];
+  })  : createdAt = createdAt ?? DateTime.now(),
+        updatedAt = updatedAt ?? DateTime.now(),
+        metadata = metadata ?? {},
+        attachments = attachments ?? [];
 
   /// Creates a TaskModel instance from JSON data
   factory TaskModel.fromJson(Map<String, dynamic> json) {
@@ -61,7 +63,8 @@ class TaskModel {
       assignedTo: json['assigned_to'] ?? '',
       dueDate: DateTime.parse(json['due_date']),
       branchId: json['branch_id'],
-      status: TaskStatusExtension.fromDatabaseValue(json['status'] ?? 'pending'),
+      status:
+          TaskStatusExtension.fromDatabaseValue(json['status'] ?? 'pending'),
       priority: TaskPriority.values.firstWhere(
         (e) => e.toString().split('.').last == json['priority'],
         orElse: () => TaskPriority.medium,
@@ -133,6 +136,45 @@ class TaskModel {
       case TaskStatus.cancelled:
         return '#F44336'; // Red
     }
+  }
+
+  bool get isRecurring {
+    final rec = metadata['recurrence'] as Map<String, dynamic>?;
+    return rec?['is_recurring'] == true;
+  }
+
+  RecurrenceFrequency get recurrenceFrequency {
+    final rec = metadata['recurrence'] as Map<String, dynamic>?;
+    final value = rec?['frequency'] as String?;
+    return RecurrenceFrequencyExtension.fromDatabaseValue(value ?? 'none');
+  }
+
+  int get recurrenceInterval {
+    final rec = metadata['recurrence'] as Map<String, dynamic>?;
+    return (rec?['interval'] as int?) ?? 1;
+  }
+
+  DateTime? get recurrenceEndDate {
+    final rec = metadata['recurrence'] as Map<String, dynamic>?;
+    final v = rec?['end_date'] as String?;
+    return v != null ? DateTime.parse(v) : null;
+  }
+
+  int? get recurrenceCount {
+    final rec = metadata['recurrence'] as Map<String, dynamic>?;
+    return rec?['count'] as int?;
+  }
+
+  String? get parentTaskId {
+    final rec = metadata['recurrence'] as Map<String, dynamic>?;
+    return rec?['parent_task_id'] as String?;
+  }
+
+  List<DateTime> get recurrenceExceptions {
+    final rec = metadata['recurrence'] as Map<String, dynamic>?;
+    final list = rec?['exceptions'] as List<dynamic>?;
+    if (list == null) return [];
+    return list.whereType<String>().map((e) => DateTime.parse(e)).toList();
   }
 
   /// Creates a copy of the task with updated fields

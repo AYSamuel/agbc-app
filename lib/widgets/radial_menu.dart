@@ -119,7 +119,7 @@ class _RadialMenuState extends State<RadialMenu>
               children: [
                 Icon(
                   icon,
-                  color: AppTheme.primary(context),
+                  color: AppTheme.secondary(context),
                   size: 24,
                   semanticLabel: semanticLabel,
                 ),
@@ -208,7 +208,7 @@ class _RadialMenuState extends State<RadialMenu>
               tooltip: _isOpen ? 'Close menu' : 'Open menu',
               child: Icon(
                 _isOpen ? Remix.close_line : Remix.add_line,
-                color: AppTheme.primary(context),
+                color: AppTheme.secondary(context),
                 semanticLabel: _isOpen ? 'Close menu' : 'Open menu',
               ),
             ),

@@ -150,7 +150,7 @@ class AppTheme {
   static ThemeData get lightTheme {
     const ColorScheme colorScheme = ColorScheme.light(
       primary: navy,
-      secondary: teal,
+      secondary: Color.fromARGB(255, 81, 30, 95),
       error: errorColor,
       surface: Colors.white,
       onPrimary: Colors.white,
@@ -262,7 +262,7 @@ class AppTheme {
   static ThemeData get darkTheme {
     const ColorScheme colorScheme = ColorScheme.dark(
       primary: Color(0xFF7A9FD9),
-      secondary: Color.fromARGB(255, 68, 172, 160),
+      secondary: Color.fromARGB(255, 110, 94, 210),
       error: Color(0xFFEF5350),
       surface: Color(0xFF1E293B), // Charcoal
       onPrimary: Color(0xFF0F172A),

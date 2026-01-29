@@ -73,7 +73,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                         child: CustomBackButton(
                           onPressed: () => Navigator.pop(context),
-                          color: AppTheme.textPrimary(context),
                           showBackground: false,
                           showShadow: false,
                         ),

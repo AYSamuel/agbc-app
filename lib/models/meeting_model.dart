@@ -1,13 +1,5 @@
 import 'initial_notification_config.dart';
-
-/// Enum for recurrence frequency matching the database schema
-enum RecurrenceFrequency {
-  none,
-  daily,
-  weekly,
-  monthly,
-  yearly,
-}
+import 'recurrence.dart';
 
 /// Enhanced MeetingModel with new schema features including metadata and ENUM status.
 class MeetingModel {

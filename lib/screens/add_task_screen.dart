@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../widgets/recurrence_options_widget.dart';
+import '../models/recurrence.dart';
 import 'package:provider/provider.dart';
 import '../providers/supabase_provider.dart';
 import '../providers/branches_provider.dart';
@@ -45,6 +47,11 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   // Notification timing
   NotificationTiming? _initialNotificationTiming = NotificationTiming.immediate;
   DateTime? _scheduledNotificationDateTime;
+
+  bool _isRecurringTask = false;
+  RecurrenceFrequency _recurrenceFrequency = RecurrenceFrequency.weekly;
+  int _recurrenceInterval = 1;
+  DateTime? _recurrenceEndDate;
 
   // Track form completion
   bool _isTitleValid = false;
@@ -139,27 +146,46 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
         }
       }
 
-      // Use the notification-enabled method instead of basic createTask
-      await supabaseProvider.createTaskWithNotification(
-        title: _titleController.text.trim(),
-        description: _descriptionController.text.trim(),
-        priority: _selectedPriority.name,
-        assignedTo: _selectedAssignee!.id,
-        branchId: _selectedBranch!.id,
-        dueDate: _selectedDeadline,
-        notificationHelper: notificationHelper,
-        notificationConfig: notificationConfig,
-      );
+      if (_isRecurringTask) {
+        await supabaseProvider.createRecurringTaskWithNotifications(
+          title: _titleController.text.trim(),
+          description: _descriptionController.text.trim(),
+          priority: _selectedPriority.name,
+          assignedTo: _selectedAssignee!.id,
+          branchId: _selectedBranch!.id,
+          firstDueDate: _selectedDeadline!,
+          frequency: _recurrenceFrequency,
+          interval: _recurrenceInterval,
+          endDate: _recurrenceEndDate,
+          notificationHelper: notificationHelper,
+        );
+      } else {
+        await supabaseProvider.createTaskWithNotification(
+          title: _titleController.text.trim(),
+          description: _descriptionController.text.trim(),
+          priority: _selectedPriority.name,
+          assignedTo: _selectedAssignee!.id,
+          branchId: _selectedBranch!.id,
+          dueDate: _selectedDeadline,
+          notificationHelper: notificationHelper,
+          notificationConfig: notificationConfig,
+        );
+      }
 
       if (currentContext.mounted) {
         // Show appropriate success message based on notification timing
         String message;
-        if (_initialNotificationTiming == NotificationTiming.immediate) {
-          message = 'Task created and assignee notified';
-        } else if (_initialNotificationTiming == NotificationTiming.scheduled) {
-          message = 'Task created, notification scheduled';
+        if (_isRecurringTask) {
+          message = 'Recurring task created and reminders scheduled';
         } else {
-          message = 'Task created successfully';
+          if (_initialNotificationTiming == NotificationTiming.immediate) {
+            message = 'Task created and assignee notified';
+          } else if (_initialNotificationTiming ==
+              NotificationTiming.scheduled) {
+            message = 'Task created, notification scheduled';
+          } else {
+            message = 'Task created successfully';
+          }
         }
 
         CustomToast.show(currentContext,
@@ -214,7 +240,6 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                           ),
                           child: CustomBackButton(
                             onPressed: () => Navigator.pop(context),
-                            color: AppTheme.textPrimary(context),
                             showBackground: false,
                             showShadow: false,
                           ),
@@ -511,7 +536,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                         // Notification Timing Card
                         _buildModernSection(
                           icon: Remix.notification_3_line,
-                          title: 'Notification Settings',
+                          title: 'Initial Notification',
                           accentColor: AppTheme.secondary(context),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -732,6 +757,27 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                                 ),
                               ],
                             ],
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        _buildModernSection(
+                          icon: Remix.repeat_line,
+                          title: 'Recurrence',
+                          accentColor: AppTheme.primary(context),
+                          child: RecurrenceOptionsWidget(
+                            isRecurring: _isRecurringTask,
+                            onRecurringChanged: (val) =>
+                                setState(() => _isRecurringTask = val),
+                            frequency: _recurrenceFrequency,
+                            onFrequencyChanged: (val) =>
+                                setState(() => _recurrenceFrequency = val),
+                            interval: _recurrenceInterval,
+                            onIntervalChanged: (val) =>
+                                setState(() => _recurrenceInterval = val),
+                            endDate: _recurrenceEndDate,
+                            onEndDateChanged: (val) =>
+                                setState(() => _recurrenceEndDate = val),
+                            itemType: 'Task',
                           ),
                         ),
                         const SizedBox(height: 32),

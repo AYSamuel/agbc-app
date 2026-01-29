@@ -87,7 +87,6 @@ class _TasksScreenState extends State<TasksScreen> {
                       ),
                       child: CustomBackButton(
                         onPressed: () => Navigator.pop(context),
-                        color: AppTheme.textPrimary(context),
                         showBackground: false,
                         showShadow: false,
                       ),
@@ -556,6 +555,9 @@ class _TasksScreenState extends State<TasksScreen> {
   List<TaskModel> _filterAndSortTasks(List<TaskModel> tasks) {
     final user = Provider.of<AuthService>(context, listen: false).currentUser;
     var filteredTasks = tasks;
+
+    filteredTasks =
+        filteredTasks.where((task) => task.parentTaskId == null).toList();
 
     // Apply ownership filter first
     if (_selectedOwnershipFilter == 'created_by_me') {

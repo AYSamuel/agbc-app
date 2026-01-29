@@ -30,9 +30,9 @@ class NotificationHelper {
       // Send notification (this creates database record AND sends push)
       await _notificationService.sendNotification(
         userIds: [assignedUserId],
-        title: 'New Task Assigned',
+        title: 'New Assignment 📋',
         message:
-            '$assignerName assigned you a new task: "$taskTitle". Wanna check it out?',
+            '$assignerName made a task for you: "$taskTitle". Tap to review instructions.',
         data: {
           'type': 'task_assigned', // FIXED: Use correct notification type
           'task_id': taskId,
@@ -64,9 +64,9 @@ class NotificationHelper {
       // Send scheduled notification (this creates database record AND schedules push)
       await _notificationService.scheduleNotification(
         userIds: [assignedUserId],
-        title: 'New Task Assigned',
+        title: 'New Assignment 📋',
         message:
-            '$assignerName assigned you a new task: "$taskTitle". Wanna check it out?',
+            '$assignerName made a task for you: "$taskTitle". Tap to review.',
         data: {
           'type': 'task_assigned',
           'task_id': taskId,
@@ -76,7 +76,8 @@ class NotificationHelper {
         scheduledDate: scheduledDateTime,
       );
 
-      debugPrint('Scheduled task assignment notification for user: $assignedUserId at $scheduledDateTime');
+      debugPrint(
+          'Scheduled task assignment notification for user: $assignedUserId at $scheduledDateTime');
     } catch (e) {
       debugPrint('Error sending scheduled task assignment notification: $e');
     }
@@ -86,6 +87,7 @@ class NotificationHelper {
   Future<void> notifyRoleUpdate({
     required String userId,
     required String newRole,
+    required String oldRole,
     required String updatedByUserId,
   }) async {
     try {
@@ -94,11 +96,48 @@ class NotificationHelper {
           await _supabaseProvider.getUserById(updatedByUserId);
       final updaterName = updatedByUser?.fullName ?? 'An administrator';
 
+      // Use updaterName in debug log to silence unused variable warning
+      debugPrint('Role update triggered by: $updaterName');
+
+      // Determine if it's a demotion
+      int getRoleRank(String role) {
+        switch (role.toLowerCase()) {
+          case 'admin':
+            return 4;
+          case 'pastor':
+            return 3;
+          case 'worker':
+            return 2;
+          case 'member':
+            return 1;
+          default:
+            return 0;
+        }
+      }
+
+      final oldRank = getRoleRank(oldRole);
+      final newRank = getRoleRank(newRole);
+      final isDemotion = newRank < oldRank;
+
+      String title;
+      String message;
+
+      if (isDemotion) {
+        // Option A: Warm demotion message
+        title = 'Role Update 📋';
+        message =
+            'We’ve updated your role to $newRole. Thank you for staying with us on this journey!';
+      } else {
+        // Option A: Warm promotion message
+        title = 'Role Update 🌟';
+        message = 'Your role is now $newRole. We appreciate everything you do!';
+      }
+
       // Send notification (this creates database record AND sends push)
       await _notificationService.sendNotification(
         userIds: [userId],
-        title: 'Role Updated',
-        message: '$updaterName updated your role to $newRole',
+        title: title,
+        message: message,
         data: {
           'type': 'role_changed', // FIXED: Use correct notification type
           'user_id': userId,
@@ -110,6 +149,39 @@ class NotificationHelper {
       debugPrint('Role update notification sent to user: $userId');
     } catch (e) {
       debugPrint('Error sending role update notification: $e');
+    }
+  }
+
+  /// Schedule reminders for a task
+  Future<void> scheduleTaskReminders({
+    required String taskId,
+    required String taskTitle,
+    required DateTime dueDate,
+    required String assignedUserId,
+  }) async {
+    try {
+      // Schedule reminder 24 hours before due date
+      final reminderTime = dueDate.subtract(const Duration(hours: 24));
+
+      // Only schedule if the reminder time is in the future
+      if (reminderTime.isAfter(DateTime.now())) {
+        await _notificationService.scheduleNotification(
+          userIds: [assignedUserId],
+          title: 'Task Due Soon ⏰',
+          message: 'Your task "$taskTitle" is due tomorrow. You’ve got this!',
+          scheduledDate: reminderTime,
+          data: {
+            'type': 'task_reminder',
+            'task_id': taskId,
+            'screen': 'task_details',
+            'deep_link': 'agbcapp://task?id=$taskId',
+          },
+        );
+        debugPrint(
+            'Scheduled task reminder for user: $assignedUserId at $reminderTime');
+      }
+    } catch (e) {
+      debugPrint('Error scheduling task reminders: $e');
     }
   }
 
@@ -139,11 +211,12 @@ class NotificationHelper {
         case 'in_progress':
           title = 'Task Started';
           message = '$updaterName has started working on the "$taskTitle" task';
-          notificationType = 'task_assigned'; // Use task_assigned type for started tasks
+          notificationType =
+              'task_assigned'; // Use task_assigned type for started tasks
           break;
         case 'completed':
-          title = 'Task Completed';
-          message = '$updaterName has finished the "$taskTitle" task';
+          title = 'Task Completed ✅';
+          message = 'The task "$taskTitle" is now finished.';
           notificationType = 'task_completed';
           break;
         default:
@@ -196,7 +269,7 @@ class NotificationHelper {
       await _notificationService.sendNotification(
         userIds: notifyUserIds,
         title: 'New Comment on Task',
-        message: '$commenterName commented on "$taskTitle"',
+        message: '**$commenterName** commented on "**$taskTitle**"',
         data: {
           'type': 'comment_added', // FIXED: Use correct notification type
           'task_id': taskId,
@@ -244,7 +317,8 @@ class NotificationHelper {
         }
 
         // Use the proper title format for initial notification
-        final title = formatMeetingNotificationTitle(1440); // Initial notification
+        final title =
+            formatMeetingNotificationTitle(1440); // Initial notification
 
         // Send separate batched notifications per timezone group
         for (final entry in usersByTimezone.entries) {
@@ -273,7 +347,8 @@ class NotificationHelper {
             },
           );
 
-          debugPrint('Sent notification to ${userIds.length} users in timezone $timezone');
+          debugPrint(
+              'Sent notification to ${userIds.length} users in timezone $timezone');
         }
 
         final meetingType = invitedUserIds != null && invitedUserIds.isNotEmpty
@@ -320,12 +395,14 @@ class NotificationHelper {
           // Group users by timezone for accurate time display
           final usersByTimezone = <String, List<String>>{};
           for (final user in users) {
-            final timezone = user.timezone ?? TimezoneHelper.getDeviceTimezone();
+            final timezone =
+                user.timezone ?? TimezoneHelper.getDeviceTimezone();
             usersByTimezone.putIfAbsent(timezone, () => []).add(user.id);
           }
 
           // Use the proper title format for initial notification
-          final title = formatMeetingNotificationTitle(1440); // Initial notification
+          final title =
+              formatMeetingNotificationTitle(1440); // Initial notification
 
           // Schedule separate batched notifications per timezone group
           for (final entry in usersByTimezone.entries) {
@@ -357,14 +434,16 @@ class NotificationHelper {
               },
             );
 
-            debugPrint('Scheduled notification for ${userIds.length} users in timezone $timezone');
+            debugPrint(
+                'Scheduled notification for ${userIds.length} users in timezone $timezone');
           }
 
-          final meetingType = invitedUserIds != null && invitedUserIds.isNotEmpty
-              ? ' (invite-only)'
-              : branchId != null
-                  ? ' in branch'
-                  : ' (global)';
+          final meetingType =
+              invitedUserIds != null && invitedUserIds.isNotEmpty
+                  ? ' (invite-only)'
+                  : branchId != null
+                      ? ' in branch'
+                      : ' (global)';
           debugPrint(
               'Successfully scheduled batched initial meeting notification for ${users.length} users in ${usersByTimezone.length} timezone(s)$meetingType at $scheduledDateTime');
         } else {
@@ -439,7 +518,9 @@ class NotificationHelper {
         final usersByTimezone = <String, List<String>>{};
         for (final user in branchUsers) {
           final timezone = user.timezone ?? TimezoneHelper.getDeviceTimezone();
-          usersByTimezone.putIfAbsent(timezone, () => []).add(user.id as String);
+          usersByTimezone
+              .putIfAbsent(timezone, () => [])
+              .add(user.id as String);
         }
 
         // Format notification title
@@ -452,7 +533,8 @@ class NotificationHelper {
 
           // Create timezone-specific message
           final message = formatMeetingNotificationMessage(
-            userName: '', // Empty - will be handled by formatMeetingNotificationMessage
+            userName:
+                '', // Empty - will be handled by formatMeetingNotificationMessage
             meetingTitle: meetingTitle,
             meetingDateTime: meetingDateTime,
             reminderMinutes: reminderMinutes,
@@ -475,7 +557,8 @@ class NotificationHelper {
             },
           );
 
-          debugPrint('Scheduled reminder for ${userIds.length} users in timezone $timezone');
+          debugPrint(
+              'Scheduled reminder for ${userIds.length} users in timezone $timezone');
         }
 
         debugPrint(
@@ -499,51 +582,63 @@ class NotificationHelper {
     required bool isInitialNotification,
     String recipientTimezone = 'UTC',
   }) {
-    // Convert UTC meeting time to recipient's timezone
-    final localDateTime = TimezoneHelper.convertFromUtc(meetingDateTime, recipientTimezone);
+    // Format the date/time in the recipient's timezone
+    // Note: We're not showing the time anymore per user request, but keeping the date calculation correct
+    final localDateTime =
+        TimezoneHelper.convertFromUtc(meetingDateTime, recipientTimezone);
 
-    final dayName = DateFormat('EEEE').format(localDateTime);
-    final formattedDate =
-        DateFormat('d\'th of MMMM, yyyy').format(localDateTime);
-    final formattedTime = DateFormat('h:mm a').format(localDateTime);
+    // Format date only (e.g. "Monday 28th")
+    final dateStr = DateFormat('EEEE d').format(localDateTime) +
+        _getOrdinalSuffix(localDateTime.day);
 
-    if (isInitialNotification || reminderMinutes >= 1440) {
-      return 'Your church family has a meeting on $dayName $formattedDate at $formattedTime. There\'s no church without U 😊';
-    } else {
-      String timeUnit;
-      int timeValue;
+    if (isInitialNotification) {
+      // Option A: Warm initial invitation
+      return 'We’re getting together for $meetingTitle on $dateStr! We’d love to see you there.';
+    }
 
-      if (reminderMinutes >= 10080) {
-        // weeks
-        timeValue = reminderMinutes ~/ 10080;
-        timeUnit = timeValue == 1 ? 'week' : 'weeks';
-      } else if (reminderMinutes >= 1440) {
-        // days
-        timeValue = reminderMinutes ~/ 1440;
-        timeUnit = timeValue == 1 ? 'day' : 'days';
-      } else if (reminderMinutes >= 60) {
-        // hours
-        timeValue = reminderMinutes ~/ 60;
-        timeUnit = timeValue == 1 ? 'hour' : 'hours';
-      } else {
-        // minutes
-        timeValue = reminderMinutes;
-        timeUnit = timeValue == 1 ? 'minute' : 'minutes';
-      }
-
-      // OPTIMIZED: Generic message for better performance (no user name)
-      return 'This is a reminder that "$meetingTitle" starts in $timeValue $timeUnit. U make church complete 😊';
+    switch (reminderMinutes) {
+      case 1440: // 24 hours / 1 day
+        // Option A: Warm 1 day reminder
+        return 'Just a reminder that $meetingTitle is happening tomorrow ($dateStr). Can’t wait to see you!';
+      case 60: // 1 hour
+        // Option A: Warm 1 hour reminder
+        return 'We’re starting $meetingTitle in about an hour! Hope you can make it.';
+      case 15: // 15 minutes
+        // Option A: Warm 15 minute reminder
+        return '$meetingTitle is starting very soon! We’re ready for you.';
+      default:
+        // Generic warm reminder
+        return 'Reminder: $meetingTitle is coming up on $dateStr. We look forward to seeing you!';
     }
   }
 
   /// Format meeting notification title based on reminder time
   static String formatMeetingNotificationTitle(int reminderMinutes) {
-    if (reminderMinutes >= 1440) {
-      return 'Meeting scheduled for you';
-    } else if (reminderMinutes >= 60) {
-      return 'Meeting Reminder';
+    if (reminderMinutes == 1440) {
+      return 'Upcoming Gathering 📅'; // Initial/24h
+    } else if (reminderMinutes == 60) {
+      return 'See You Soon! ⏳'; // 1h
+    } else if (reminderMinutes <= 15) {
+      return 'Starting Soon 🚀'; // 15m
     } else {
-      return 'Meeting Starting Soon';
+      return 'Event Reminder 🔔'; // Default
+    }
+  }
+
+  /// Helper to get ordinal suffix (st, nd, rd, th)
+  static String _getOrdinalSuffix(int day) {
+    if (day >= 11 && day <= 13) {
+      return 'th';
+    }
+    switch (day % 10) {
+      case 1:
+        return 'st';
+      case 2:
+        return 'nd';
+      case 3:
+        return 'rd';
+      default:
+        return 'th';
     }
   }
 }

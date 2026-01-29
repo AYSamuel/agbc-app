@@ -7,6 +7,7 @@ import 'package:remixicon/remixicon.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/meeting_model.dart';
 import '../models/meeting_response_model.dart';
+import '../models/recurrence.dart';
 import '../models/user_model.dart';
 import '../models/initial_notification_config.dart';
 import '../providers/supabase_provider.dart';
@@ -1277,7 +1278,7 @@ class _MeetingDetailsScreenState extends State<MeetingDetailsScreen> {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  'Sent on ${TimezoneHelper.formatInTimezone(_meeting.initialNotificationSentAt!, TimezoneHelper.getDeviceTimezone(), 'MMM dd, h:mm a')}',
+                  'Sent on ${TimezoneHelper.formatInTimezone(_meeting.initialNotificationSentAt!, TimezoneHelper.getUserTimezone(_organizer), 'MMM dd, h:mm a')}',
                   style: GoogleFonts.inter(
                     fontSize: 12,
                     color: Theme.of(context).colorScheme.primary,

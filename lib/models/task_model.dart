@@ -14,6 +14,8 @@ class TaskModel {
   final String assignedTo;
   final DateTime dueDate;
   final String? branchId;
+  final String?
+      parentTaskId; // Reference to parent task for recurring instances
 
   // Task status and tracking using ENUMs
   final TaskStatus status;
@@ -37,6 +39,7 @@ class TaskModel {
     DateTime? createdAt,
     DateTime? updatedAt,
     this.branchId,
+    this.parentTaskId,
     this.status = TaskStatus.pending,
     this.priority = TaskPriority.medium,
     this.completedAt,
@@ -63,6 +66,7 @@ class TaskModel {
       assignedTo: json['assigned_to'] ?? '',
       dueDate: DateTime.parse(json['due_date']),
       branchId: json['branch_id'],
+      parentTaskId: json['parent_task_id'],
       status:
           TaskStatusExtension.fromDatabaseValue(json['status'] ?? 'pending'),
       priority: TaskPriority.values.firstWhere(
@@ -91,6 +95,7 @@ class TaskModel {
       'assigned_to': assignedTo,
       'due_date': dueDate.toIso8601String(),
       'branch_id': branchId,
+      'parent_task_id': parentTaskId,
       'status': status.databaseValue,
       'priority': priority.toString().split('.').last,
       'completed_at': completedAt?.toIso8601String(),
@@ -163,11 +168,6 @@ class TaskModel {
   int? get recurrenceCount {
     final rec = metadata['recurrence'] as Map<String, dynamic>?;
     return rec?['count'] as int?;
-  }
-
-  String? get parentTaskId {
-    final rec = metadata['recurrence'] as Map<String, dynamic>?;
-    return rec?['parent_task_id'] as String?;
   }
 
   List<DateTime> get recurrenceExceptions {

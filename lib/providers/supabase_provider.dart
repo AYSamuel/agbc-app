@@ -187,6 +187,10 @@ class SupabaseProvider extends ChangeNotifier {
   Stream<List<TaskModel>> getUserInvolvedTasks(String userId) {
     return getAllTasks().map((tasks) {
       return tasks.where((task) {
+        // Exclude recurring instances (children) from the main count
+        // The user only wants to see the parent task representing the series
+        if (task.parentTaskId != null) return false;
+
         return task.assignedTo == userId || task.createdBy == userId;
       }).toList();
     });

@@ -46,25 +46,61 @@ serve(async (req: Request) => {
 
     for (const notification of notifications) {
       try {
-        // A. Get User's OneSignal ID (Device ID)
-        //    We check the user_devices table
-        const { data: devices, error: deviceError } = await supabase
-          .from('user_devices')
-          .select('onesignal_user_id')
-          .eq('user_id', notification.user_id)
-          .eq('is_active', true)
-          .neq('onesignal_user_id', null)
-          .neq('onesignal_user_id', '')
-
-        // If user has no registered devices, we can't send push, but we should mark as processed
-        // so we don't retry forever. optional: log error.
+        // A. Determine Target (Broadcast or User)
         let targetIds: string[] = []
-        
-        if (devices && devices.length > 0) {
-            targetIds = devices.map((d: any) => d.onesignal_user_id)
+        let filters: any[] = [] // OneSignal filters (segments/tags)
+
+        if (notification.user_id) {
+            // Personal Notification
+            const { data: devices } = await supabase
+              .from('user_devices')
+              .select('onesignal_user_id')
+              .eq('user_id', notification.user_id)
+              .eq('is_active', true)
+              .neq('onesignal_user_id', null)
+            
+            if (devices && devices.length > 0) {
+                targetIds = devices.map((d: any) => d.onesignal_user_id)
+            } else {
+                targetIds = [notification.user_id]
+            }
+        } else if (notification.target_type === 'branch') {
+            // Broadcast to Branch (Using Tags)
+            // Assuming users are tagged with "branch_id" : "some_uuid" in OneSignal
+            filters = [
+                { field: "tag", key: "branch_id", relation: "=", value: notification.target_value }
+            ]
+        } else if (notification.target_type === 'global') {
+            // Broadcast to All (Subscribed Users)
+            filters = [
+                { field: "tag", key: "role", relation: "exists" } // Or just "all" segment? OneSignal "included_segments": ["Subscribed Users"]
+            ]
+        }
+
+        // B. Send to OneSignal
+        const oneSignalPayload: any = {
+          app_id: oneSignalAppId,
+          headings: { en: notification.title },
+          contents: { en: notification.message },
+          data: notification.data || {},
+          android_channel_id: 'default',
+          priority: 10,
+          ttl: 86400,
+        }
+
+        if (targetIds.length > 0) {
+            oneSignalPayload.include_external_user_ids = targetIds
+            oneSignalPayload.channel_for_external_user_ids = 'push'
+        } else if (filters.length > 0) {
+             oneSignalPayload.filters = filters
+        } else if (notification.target_type === 'global') {
+             oneSignalPayload.included_segments = ["Subscribed Users"]
         } else {
-             // Fallback: try using the internal user ID as External ID (if configured that way)
-             targetIds = [notification.user_id]
+            // No valid target
+            console.warn(`Skipping notification ${notification.id} - no target`)
+            // Mark as failed/skipped
+             await supabase.from('notifications').update({ is_push_sent: true, delivery_status: 'skipped' }).eq('id', notification.id)
+             continue
         }
 
         // B. Send to OneSignal

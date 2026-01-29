@@ -644,27 +644,17 @@ class SupabaseProvider extends ChangeNotifier {
   /// Get unread notification count for current user
   /// OPTIMIZED: Fetches only IDs instead of full records (lighter query)
   /// FILTERED: Only counts immediate or due notifications (excludes future scheduled ones)
+  /// Get unread notification count
+  /// Uses "get_unread_notification_count" RPC to count both personal and broadcast notifications
   Future<int> getUnreadNotificationCount() async {
     try {
       final userId = _supabase.auth.currentUser?.id;
-      debugPrint('Getting unread count for user: $userId');
-      if (userId == null) {
-        debugPrint('No authenticated user - returning 0');
-        return 0;
-      }
+      // debugPrint('Getting unread count for user: $userId');
+      if (userId == null) return 0;
 
-      // OPTIMIZED: Select only 'id' field instead of all fields
-      // This reduces data transfer and improves performance
-      final response = await _supabase
-          .from('notifications')
-          .select('id')
-          .eq('user_id', userId)
-          .eq('is_read', false)
-          .or('scheduled_for.is.null,scheduled_for.lte.${DateTime.now().toUtc().toIso8601String()}'); // Only count immediate or due notifications
-
-      final count = response.length;
-      debugPrint('Unread notification count for user $userId: $count');
-      return count;
+      final count = await _supabase.rpc('get_unread_notification_count');
+      // debugPrint('Unread notification count: $count');
+      return count as int;
     } catch (e) {
       debugPrint('Error getting notification count: $e');
       _setError('Failed to get notification count: $e');
@@ -673,41 +663,30 @@ class SupabaseProvider extends ChangeNotifier {
   }
 
   /// Get notifications for current user
-  /// OPTIMIZED: Added pagination to prevent memory issues with large notification lists
-  /// FILTERED: Only shows immediate notifications or scheduled notifications that are due
-  /// Default limit: 50 most recent notifications
-  Stream<List<NotificationModel>> getUserNotifications({int limit = 50}) {
-    final userId = _supabase.auth.currentUser?.id;
-    debugPrint(
-        'Setting up notification stream for user: $userId (limit: $limit)');
-    if (userId == null) {
-      debugPrint('No user ID - returning empty stream');
-      return Stream.value([]);
-    }
+  /// Uses polling (every 30s) + RPC to fetch "My + Global/Branch" notifications
+  /// Replaces direct table stream which cannot handle the complex permission logic
+  Stream<List<NotificationModel>> getUserNotifications(
+      {int limit = 50}) async* {
+    while (true) {
+      if (_supabase.auth.currentUser?.id == null) {
+        yield [];
+        break;
+      }
 
-    return _supabase
-        .from('notifications')
-        .stream(primaryKey: ['id'])
-        .eq('user_id', userId)
-        .order('created_at', ascending: false)
-        .limit(limit) // OPTIMIZED: Limit results to prevent memory issues
-        .map((data) {
-          final notifications =
-              data.map((json) => NotificationModel.fromJson(json)).toList();
-          // Filter out future scheduled notifications (client-side filtering)
-          final now = DateTime.now();
-          return notifications.where((notification) {
-            // Show notification if:
-            // 1. It has no scheduled_for (immediate notification), OR
-            // 2. Its scheduled_for time has passed or is now
-            return notification.scheduledFor == null ||
-                notification.scheduledFor!.isBefore(now) ||
-                notification.scheduledFor!.isAtSameMomentAs(now);
-          }).toList();
-        });
+      try {
+        final notifications =
+            await getNotificationsPaginated(offset: 0, limit: limit);
+        yield notifications;
+      } catch (e) {
+        debugPrint('Error polling notifications: $e');
+      }
+
+      await Future.delayed(const Duration(seconds: 30));
+    }
   }
 
-  /// Get paginated notifications for current user (for "load more" functionality)
+  /// Get paginated notifications for current user
+  /// Uses "get_user_notifications" RPC
   Future<List<NotificationModel>> getNotificationsPaginated({
     required int offset,
     int limit = 20,
@@ -716,14 +695,15 @@ class SupabaseProvider extends ChangeNotifier {
       final userId = _supabase.auth.currentUser?.id;
       if (userId == null) return [];
 
-      final response = await _supabase
-          .from('notifications')
-          .select()
-          .eq('user_id', userId)
-          .order('created_at', ascending: false)
-          .range(offset, offset + limit - 1);
+      final data = await _supabase.rpc<List<dynamic>>(
+        'get_user_notifications',
+        params: {
+          'p_limit': limit,
+          'p_offset': offset,
+        },
+      );
 
-      return response.map((json) => NotificationModel.fromJson(json)).toList();
+      return data.map((json) => NotificationModel.fromJson(json)).toList();
     } catch (e) {
       debugPrint('Error fetching paginated notifications: $e');
       return [];
@@ -731,13 +711,12 @@ class SupabaseProvider extends ChangeNotifier {
   }
 
   /// Mark notification as read
+  /// Uses "mark_broadcast_as_read" RPC to handle both personal and broadcast messages
   Future<bool> markNotificationAsRead(String notificationId) async {
     try {
-      await _supabase.from('notifications').update({
-        'is_read': true,
-        'read_at': DateTime.now().toIso8601String(),
-        'updated_at': DateTime.now().toIso8601String(),
-      }).eq('id', notificationId);
+      await _supabase.rpc('mark_broadcast_as_read', params: {
+        'p_notification_id': notificationId,
+      });
       return true;
     } catch (e) {
       _setError('Failed to mark notification as read: $e');
@@ -746,20 +725,13 @@ class SupabaseProvider extends ChangeNotifier {
   }
 
   /// Mark all notifications as read for current user
+  /// Uses "mark_all_notifications_as_read" RPC (to be created)
   Future<bool> markAllNotificationsAsRead() async {
     try {
       final userId = _supabase.auth.currentUser?.id;
       if (userId == null) return false;
 
-      await _supabase
-          .from('notifications')
-          .update({
-            'is_read': true,
-            'read_at': DateTime.now().toIso8601String(),
-            'updated_at': DateTime.now().toIso8601String(),
-          })
-          .eq('user_id', userId)
-          .eq('is_read', false);
+      await _supabase.rpc('mark_all_notifications_as_read');
       return true;
     } catch (e) {
       _setError('Failed to mark all notifications as read: $e');

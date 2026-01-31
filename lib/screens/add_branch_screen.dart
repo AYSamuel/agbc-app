@@ -459,6 +459,7 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
                       CustomButton(
                         onPressed: _isLoading ? null : _addBranch,
                         isLoading: _isLoading,
+                        width: double.infinity,
                         height: 56,
                         child: Text(
                           _isLoading ? 'Creating Branch...' : 'Create Branch',

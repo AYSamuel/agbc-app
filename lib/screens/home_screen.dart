@@ -26,6 +26,7 @@ import 'upcoming_events_screen.dart';
 import 'pray_screen.dart';
 import 'read_screen.dart';
 import 'give_screen.dart';
+import 'community_screen.dart';
 import 'profile_screen.dart';
 import 'tasks_screen.dart';
 import 'admin_screen.dart';
@@ -392,7 +393,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => const PrayScreen(),
+                                    builder: (context) => const CommunityScreen(),
                                   ),
                                 );
                               },

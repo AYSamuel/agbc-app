@@ -68,7 +68,7 @@ class QuickActionCard extends StatelessWidget {
             Text(
               label,
               style: GoogleFonts.roboto(
-                fontSize: 12,
+                fontSize: 13,
                 fontWeight: FontWeight.w500,
                 color: AppTheme.textSecondary(context),
               ),

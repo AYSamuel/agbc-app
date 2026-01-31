@@ -96,7 +96,7 @@ class _TaskStatusCardState extends State<TaskStatusCard> {
                 Text(
                   'View all tasks',
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: 15,
                     fontWeight: FontWeight.w500,
                     color: AppTheme.secondary(context),
                   ),

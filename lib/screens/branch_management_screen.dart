@@ -3,10 +3,10 @@ import 'package:provider/provider.dart';
 import 'package:remixicon/remixicon.dart';
 import '../providers/supabase_provider.dart';
 import '../models/church_branch_model.dart';
-import '../models/user_model.dart';
 import '../config/theme.dart';
 import '../widgets/custom_back_button.dart';
 import '../widgets/branch_card.dart';
+import '../widgets/branch_details_sheet.dart';
 import 'add_branch_screen.dart';
 import '../widgets/custom_toast.dart';
 
@@ -336,138 +336,18 @@ class _BranchManagementScreenState extends State<BranchManagementScreen> {
 
       if (!context.mounted) return;
 
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Text(branch.name),
-          content: SizedBox(
-            width: double.maxFinite,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Location:',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
-                Text(branch.locationString),
-                const SizedBox(height: 16),
-                const Text(
-                  'Address:',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
-                Text(branch.address),
-                const SizedBox(height: 16),
-                if (branch.description != null) ...[
-                  const Text(
-                    'Description:',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                  Text(branch.description!),
-                  const SizedBox(height: 16),
-                ],
-                Text(
-                  'Members (${branchMembers.length}):',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                if (branchMembers.isEmpty)
-                  const Text(
-                    'No members in this branch yet.',
-                    style: TextStyle(
-                      color: Colors.grey,
-                      fontStyle: FontStyle.italic,
-                    ),
-                  )
-                else
-                  SizedBox(
-                    height: 200, // Constrain height for scrolling
-                    child: ListView.builder(
-                      shrinkWrap: true,
-                      itemCount: branchMembers.length,
-                      itemBuilder: (context, index) {
-                        final member = branchMembers[index];
-                        return Card(
-                          margin: const EdgeInsets.symmetric(vertical: 2),
-                          child: ListTile(
-                            dense: true,
-                            leading: CircleAvatar(
-                              backgroundColor: AppTheme.primary(context),
-                              child: Text(
-                                member.fullName.isNotEmpty
-                                    ? member.fullName[0].toUpperCase()
-                                    : 'U',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                            title: Text(
-                              member.fullName.isNotEmpty
-                                  ? member.fullName
-                                  : 'Unknown User',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            trailing: Chip(
-                              label: Text(
-                                member.role.name.toUpperCase(),
-                                style: const TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              backgroundColor: _getRoleColor(member.role),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Close'),
-            ),
-          ],
-        ),
+      BranchDetailsSheet.show(
+        context,
+        branch: branch,
+        members: branchMembers,
+        onEdit: () => _showEditBranchDialog(context, branch),
+        onDelete: () => _deleteBranch(context, branch),
       );
     } catch (e) {
       _safeShowSnackBar(
         'Error loading branch details: ${e.toString()}',
         type: ToastType.error,
       );
-    }
-  }
-
-  // Helper method to get role colors
-  Color _getRoleColor(UserRole role) {
-    switch (role) {
-      case UserRole.admin:
-        return AppTheme.errorColor;
-      case UserRole.pastor:
-        return AppTheme.secondary(context);
-      case UserRole.worker:
-        return AppTheme.secondary(context);
-      case UserRole.member:
-        return AppTheme.successColor;
     }
   }
 }

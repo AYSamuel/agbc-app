@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:grace_portal/config/theme.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:provider/provider.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:grace_portal/services/auth_service.dart';
+import 'package:grace_portal/services/storage_service.dart';
 import 'package:grace_portal/providers/branches_provider.dart';
 import 'package:grace_portal/widgets/custom_back_button.dart';
 import 'package:grace_portal/widgets/custom_toast.dart';
@@ -20,6 +23,9 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
+  bool _isUploadingPhoto = false;
+  final StorageService _storageService = StorageService();
+
   @override
   void initState() {
     super.initState();
@@ -40,6 +46,193 @@ class _ProfileScreenState extends State<ProfileScreen> {
         }
       }
     });
+  }
+
+  /// Show bottom sheet with options to take photo or choose from gallery
+  void _showImagePickerOptions() {
+    final authService = Provider.of<AuthService>(context, listen: false);
+    final user = authService.currentUserProfile;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primary(context).withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(Remix.camera_line, color: AppTheme.primary(context)),
+                ),
+                title: const Text('Take Photo'),
+                subtitle: Text(
+                  'Use your camera',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                  ),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickAndUploadImage(ImageSource.camera);
+                },
+              ),
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppTheme.secondary(context).withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(Remix.image_line, color: AppTheme.secondary(context)),
+                ),
+                title: const Text('Choose from Gallery'),
+                subtitle: Text(
+                  'Select an existing photo',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                  ),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickAndUploadImage(ImageSource.gallery);
+                },
+              ),
+              if (user?.photoUrl != null && user!.photoUrl!.isNotEmpty) ...[
+                const Divider(),
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: AppTheme.errorColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(Remix.delete_bin_line, color: AppTheme.errorColor),
+                  ),
+                  title: const Text(
+                    'Remove Photo',
+                    style: TextStyle(color: AppTheme.errorColor),
+                  ),
+                  subtitle: Text(
+                    'Delete your profile picture',
+                    style: TextStyle(
+                      color: AppTheme.errorColor.withValues(alpha: 0.6),
+                    ),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _removeProfilePicture();
+                  },
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Pick, crop, and upload a profile picture
+  Future<void> _pickAndUploadImage(ImageSource source) async {
+    final authService = Provider.of<AuthService>(context, listen: false);
+
+    if (authService.currentUser == null) {
+      if (mounted) {
+        CustomToast.show(context, message: 'Please sign in first', type: ToastType.error);
+      }
+      return;
+    }
+
+    setState(() => _isUploadingPhoto = true);
+
+    try {
+      final url = await _storageService.pickCropAndUploadProfilePicture(
+        source: source,
+        userId: authService.currentUser!.id,
+        toolbarColor: AppTheme.primary(context),
+      );
+
+      if (url != null) {
+        // Refresh user profile to show new image
+        await authService.refreshUserProfile();
+
+        if (mounted) {
+          CustomToast.show(
+            context,
+            message: 'Profile picture updated!',
+            type: ToastType.success,
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        CustomToast.show(
+          context,
+          message: 'Failed to update profile picture',
+          type: ToastType.error,
+        );
+      }
+      debugPrint('Error uploading profile picture: $e');
+    } finally {
+      if (mounted) {
+        setState(() => _isUploadingPhoto = false);
+      }
+    }
+  }
+
+  /// Remove the current profile picture
+  Future<void> _removeProfilePicture() async {
+    final authService = Provider.of<AuthService>(context, listen: false);
+
+    if (authService.currentUser == null) return;
+
+    setState(() => _isUploadingPhoto = true);
+
+    try {
+      await _storageService.deleteProfilePicture(authService.currentUser!.id);
+
+      // Refresh user profile
+      await authService.refreshUserProfile();
+
+      if (mounted) {
+        CustomToast.show(
+          context,
+          message: 'Profile picture removed',
+          type: ToastType.success,
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        CustomToast.show(
+          context,
+          message: 'Failed to remove profile picture',
+          type: ToastType.error,
+        );
+      }
+      debugPrint('Error removing profile picture: $e');
+    } finally {
+      if (mounted) {
+        setState(() => _isUploadingPhoto = false);
+      }
+    }
   }
 
   Future<void> _logout() async {
@@ -136,43 +329,78 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   width: 3,
                                 ),
                               ),
-                              child: CircleAvatar(
-                                radius: 50,
-                                backgroundColor: AppTheme.primary(context)
-                                    .withValues(alpha: 0.1),
-                                backgroundImage: (user?.photoUrl != null &&
+                              child: ClipOval(
+                                child: (user?.photoUrl != null &&
                                         user!.photoUrl!.isNotEmpty)
-                                    ? NetworkImage(user.photoUrl!)
-                                    : null,
-                                child: (user?.photoUrl == null ||
-                                        user!.photoUrl!.isEmpty)
-                                    ? Icon(Remix.user_3_line,
-                                        size: 50,
-                                        color: AppTheme.primary(context))
-                                    : null,
+                                    ? CachedNetworkImage(
+                                        imageUrl: user.photoUrl!,
+                                        width: 100,
+                                        height: 100,
+                                        fit: BoxFit.cover,
+                                        placeholder: (context, url) => Container(
+                                          color: AppTheme.primary(context)
+                                              .withValues(alpha: 0.1),
+                                          child: const Center(
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                            ),
+                                          ),
+                                        ),
+                                        errorWidget: (context, url, error) =>
+                                            Container(
+                                          color: AppTheme.primary(context)
+                                              .withValues(alpha: 0.1),
+                                          child: Icon(
+                                            Remix.user_3_line,
+                                            size: 50,
+                                            color: AppTheme.primary(context),
+                                          ),
+                                        ),
+                                      )
+                                    : Container(
+                                        color: AppTheme.primary(context)
+                                            .withValues(alpha: 0.1),
+                                        child: Icon(
+                                          Remix.user_3_line,
+                                          size: 50,
+                                          color: AppTheme.primary(context),
+                                        ),
+                                      ),
                               ),
                             ),
                             Positioned(
                               right: 0,
                               bottom: 0,
-                              child: Container(
-                                padding: const EdgeInsets.all(10),
-                                decoration: BoxDecoration(
-                                  color: AppTheme.secondary(context),
-                                  shape: BoxShape.circle,
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: AppTheme.secondary(context)
-                                          .withValues(alpha: 0.3),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
-                                ),
-                                child: const Icon(
-                                  Remix.camera_line,
-                                  color: Colors.white,
-                                  size: 16,
+                              child: GestureDetector(
+                                onTap: _isUploadingPhoto ? null : _showImagePickerOptions,
+                                child: Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.secondary(context),
+                                    shape: BoxShape.circle,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: AppTheme.secondary(context)
+                                            .withValues(alpha: 0.3),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: _isUploadingPhoto
+                                      ? const SizedBox(
+                                          width: 16,
+                                          height: 16,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            color: Colors.white,
+                                          ),
+                                        )
+                                      : const Icon(
+                                          Remix.camera_line,
+                                          color: Colors.white,
+                                          size: 16,
+                                        ),
                                 ),
                               ),
                             ),

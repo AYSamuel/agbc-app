@@ -15,4 +15,15 @@
     <style name="NormalTheme" parent="@android:style/Theme.Black.NoTitleBar">
         <item name="android:windowBackground">?android:colorBackground</item>
     </style>
+
+    <!-- UCrop Theme for image cropping (Dark Mode) - handles system insets properly -->
+    <style name="UCropTheme" parent="Theme.AppCompat.DayNight.NoActionBar">
+        <item name="android:fitsSystemWindows">true</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">#1C1B1F</item>
+        <item name="colorPrimary">#D0BCFF</item>
+        <item name="colorPrimaryDark">#6750A4</item>
+        <item name="colorAccent">#D0BCFF</item>
+    </style>
 </resources>

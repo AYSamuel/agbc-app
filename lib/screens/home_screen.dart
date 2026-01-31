@@ -156,13 +156,13 @@ class _HomeScreenState extends State<HomeScreen> {
                             );
                           },
                           child: Container(
-                            width: 48,
-                            height: 48,
+                            width: 72,
+                            height: 72,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               border: Border.all(
                                 color: AppTheme.accent(context),
-                                width: 2,
+                                width: 3,
                               ),
                             ),
                             child: ClipOval(
@@ -175,14 +175,14 @@ class _HomeScreenState extends State<HomeScreen> {
                                           (context, error, stackTrace) {
                                         return Icon(
                                           Remix.user_3_line,
-                                          size: 24,
+                                          size: 28,
                                           color: AppTheme.accent(context),
                                         );
                                       },
                                     )
                                   : Icon(
                                       Remix.user_3_line,
-                                      size: 24,
+                                      size: 28,
                                       color: AppTheme.accent(context),
                                     ),
                             ),

@@ -267,6 +267,26 @@ class AuthService extends ChangeNotifier {
     }
   }
 
+  /// Refresh the current user's profile from the database
+  /// Use this after updating profile data (e.g., profile picture) to sync local state
+  Future<void> refreshUserProfile() async {
+    if (currentUser == null) return;
+
+    try {
+      final response = await _supabase
+          .from('users')
+          .select()
+          .eq('id', currentUser!.id)
+          .single();
+
+      _currentUserProfile = UserModel.fromJson(response);
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error refreshing user profile: $e');
+      // Don't throw - just log the error
+    }
+  }
+
   /// Attempts to sign up a new user with email, password, and display name.
   Future<void> signUp({
     required String email,
